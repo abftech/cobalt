@@ -1,0 +1,151 @@
+{#------------------------------------------------------------------------#}
+{#                                                                        #}
+{# builds the player and payments section of the event entry screen       #}
+{#                                                                        #}
+{#------------------------------------------------------------------------#}
+{% load cobalt_tags %}
+
+<!-- WE ARE ALREADY INSIDE A FORM -->
+
+<div class="container">
+
+    <!-- PLAYER 1 -->
+    <div class="row bg-success">
+
+        <!-- NAME -->
+        <div class="col-md-4">
+            <div id="div_id_player0">
+
+                <select class="selectpicker cobalt-playerN"
+                    data-style="btn btn-primary"
+                    title="Select"
+                    id="id_player0"
+                    name="player0">
+
+                    <!-- PLAYER NAME IF A PRIMARY ENTRY, OTHERWISE SELECT OPTION -->
+                    {% if enter_for_another %}
+
+                        <option selected disabled>Select...</option>
+
+                    {% else %}
+
+                        <option value="{{ player0.id }}"
+                            selected>{{ player0.name }}
+                        </option>
+
+                    {% endif %}
+
+                    <!-- SHOW OPTIONS -->
+                    {% for val,item in player0.name_choices %}
+
+                        <option value="{{ val }}"
+                            {% if our_form_row.name_selected == val %}
+                                selected
+                            {% endif %}
+                        >{{ item }}</option>
+
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+
+        <!-- PAYMENT CHOICES -->
+        <div class="col-md-3">
+            <div>
+                <select id="id_player0_payment"
+                    name="player0_payment"
+                    class="selectpicker payment-method"
+                    data-style="btn btn-warning"
+                >
+                    {% for val,item in player0.payment_choices %}
+                        <option value="{{ val }}">{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- DISCOUNT ALERT -->
+        <div class="col-md-1">
+            {% if discount %}
+                <span class="myHover"
+                    data-toggle="tooltip"
+                    title="{{ description }}"
+                    data-delay="100"
+                    data-placement="bottom">
+                    <i class="fas fa-tag"></i>
+                </span>
+            {% else %}
+                &nbsp;
+            {% endif %}
+        </div>
+
+        <!-- READ ONLY AMOUNT TO PAY NOW -->
+        <div class="col-md-2 text-right">
+            <input id="fee_0_now"
+                class="pay_now text-right"
+                type="text"
+                size="12"
+                readonly
+                style="border: none;"
+                value="{{ player0.entry_fee_you|cobalt_credits }} Now">
+        </div>
+
+        <!-- READ ONLY AMOUNT TO PAY LATER -->
+        <div class="col-md-2 text-right">
+            <input id="fee_0_later"
+                class="pay_later text-right"
+                type="text"
+                size="12"
+                readonly
+                style="border: none;"
+                value="">
+        </div>
+
+    </div>
+
+
+    <!-- NOW DO THE OTHER PLAYERS -->
+    {% for our_form_row in our_form %}
+        {% include "events/players/enter_event/enter_event_player_row.html" with row=our_form_row %}
+    {% endfor %}
+
+</div>
+
+<script>
+
+
+    // Doc Ready
+    $(document).ready(function(){
+
+        // show early discount etc msg but only once per congress
+        {% if alert_msg %}
+
+            var alert0 = "{{ alert_msg.0 }}";
+            var alert0_cookie = alert0.replace(/ /g, "-");
+
+            if (typeof $.cookie(alert0_cookie + '-{{ congress.id }}') === 'undefined') {
+                $.cookie(alert0_cookie+ '-{{ congress.id }}', 'set', {
+                    expires: 10000,
+                    domain: '',
+                    path: ''
+                });
+
+                swal.fire({
+                    title: "{{ alert_msg.0 }}",
+                    html: "{{ alert_msg.1 }}",
+                    icon: "success"
+                })
+            }
+
+        {% endif %}
+
+        // init tooltips
+        $(".myHover").tooltip();
+
+        // init selectpickers
+        $(".selectpicker").selectpicker();
+
+
+    });
+</script>

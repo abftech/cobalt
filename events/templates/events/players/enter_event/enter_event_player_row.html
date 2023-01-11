@@ -1,0 +1,121 @@
+{#------------------------------------------------------------------------------------#}
+{#                                                                                    #}
+{# Called to handle the player rows on the edit screen.                               #}
+{#                                                                                    #}
+{# This generates the rows (apart from the entering player) for the enter event       #}
+{# screen. Players are numbered from 1 up to 6. Players 5 and 6 are initially hidden. #}
+{#                                                                                    #}
+{# Player0 is the logged in player - not handled here                                 #}
+{#                                                                                    #}
+{#------------------------------------------------------------------------------------#}
+
+<div class="row bg-primary">
+
+    <!-- PLAYER NAME -->
+
+    <div class="col-md-4">
+
+        <!-- ALLOW ADD A PLAYER -->
+        {% if our_form_row.player_no > 3 %}
+            <div id="plus_{{ our_form_row.player_no }}" style="display: none;">
+                <a href="javascript:;" id="plus_sign_{{ our_form_row.player_no }}">
+                    <i class="fas fa-plus-circle display-4"></i>
+                </a>
+            </div>
+        {% endif %}
+
+        <!-- PLAYER CHOICE FIELD -->
+
+        <div id="div_id_player{{ our_form_row.player_no }}" class=""
+            {% if our_form_row.player_no > 3 %}style="display: none;"{% endif %}>
+            <div
+                {#            class="form-group"#}
+                id="div_id_player_sub_{{ our_form_row.player_no }}">
+
+                <select class="selectpicker cobalt-playerN"
+                    data-container="body"
+                    data-style="btn btn-info"
+                    title="Team Mate"
+                    name="player{{ our_form_row.player_no }}"
+                    id="id_player{{ our_form_row.player_no }}">
+                    <option selected disabled>Select...</option>
+                    {% for val,item in our_form_row.name_choices %}
+
+                        <option value="{{ val }}"
+                            {% if our_form_row.name_selected == val %}
+                                selected
+                            {% endif %}
+                        >{{ item }}</option>
+
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAYMENT CHOICES  -->
+    <div class="col-md-3">
+        <div class=""
+            id="id_player{{ our_form_row.player_no }}_paydiv"
+            {% if our_form_row.player_no > 3 %}
+                style="display: none;"
+            {% endif %}
+        >
+            <select id="id_player{{ our_form_row.player_no }}_payment"
+                name="player{{ our_form_row.player_no }}_payment"
+                class="payment-method selectpicker"
+                data-style="btn btn-info"
+                disabled
+            >
+
+                <!-- PLAYER 5 AND 6 SET TO FREE -->
+                {% if our_form_row.player_no > 3 %}
+
+                    <option value="free" selected>No Charge</option>
+
+                {% else %}
+
+                    <option selected disabled>Select...</option>
+                    {% for val,item in our_form_row.payment_choices %}
+
+                        <option value="{{ val }}" {% if our_form_row.payment_selected == val %} selected {% endif %}>
+
+                            {{ item }}</option>
+
+                    {% endfor %}
+
+                {% endif %}
+            </select>
+        </div>
+    </div>
+
+    <!-- ENTRY FEE AND DISCOUNT ALERT -->
+    <div class="col-md-1 text-right">
+        <span id="player{{ our_form_row.player_no }}_discount_alert">&nbsp;</span>
+    </div>
+
+    <!-- READ ONLY AMOUNT TO PAY NOW -->
+    <div class="col-md-2 text-right">
+        <input class="pay_now text-right"
+            id="fee_{{ our_form_row.player_no }}_now"
+            type="text"
+            size="12"
+            readonly
+            style="border: none; {% if our_form_row.player_no > 3 %}display: none;{% endif %}"
+            value=""
+        >
+    </div>
+
+    <!-- READ ONLY AMOUNT TO PAY LATER -->
+    <div class="col-md-2 text-right">
+        <input class="pay_later text-right"
+            id="fee_{{ our_form_row.player_no }}_later"
+            type="text"
+            size="12"
+            readonly
+            style="border: none; {% if our_form_row.player_no > 3 %}display: none;{% endif %}"
+            value=""
+        >
+    </div>
+
+</div>

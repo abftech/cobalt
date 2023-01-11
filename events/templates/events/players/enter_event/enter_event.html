@@ -74,7 +74,9 @@
                             <!-- MAIN ENTRY PART -->
                             <div
                                 id="id_players_form"
-                                hx-post="{% url "" %}"
+                                hx-post="{% url "events:enter_event_players_area_htmx" %}"
+                                hx-trigger="load"
+                                hx-vars="event_id:{{ event.id }},player0_id:{{ request.user.id }},enter_for_another:{{ enter_for_another }}"
                             ></div>
 
                             {% if event.allow_team_names %}

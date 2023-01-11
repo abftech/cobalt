@@ -1,5 +1,6 @@
 from django.urls import path
 
+import events.views.enter_event
 import events.views.global_admin
 from .views import congress_admin, ajax, congress_builder, views
 
@@ -28,12 +29,17 @@ urlpatterns = [
     ),
     path(
         "congress/event/enter/<int:congress_id>/<int:event_id>",
-        views.enter_event,
+        events.views.enter_event.enter_event,
         name="enter_event",
     ),
     path(
+        "congress/event/enter/enter-event-players-area-htmx",
+        events.views.enter_event.enter_event_players_area_htmx,
+        name="enter_event_players_area_htmx",
+    ),
+    path(
         "congress/event/enter/<int:congress_id>/<int:event_id>/<int:enter_for_another>",
-        views.enter_event,
+        events.views.enter_event.enter_event,
         name="enter_event_for_another",
     ),
     path(
