@@ -20,4 +20,5 @@ urlpatterns = [
         "system_number_lookup", views.system_number_lookup, name="system_number_lookup"
     ),
     path("masterpoints_search", views.masterpoints_search, name="masterpoints_search"),
+    path("abf-card-pdf", views.download_abf_card_pdf, name="abf_card"),
 ]

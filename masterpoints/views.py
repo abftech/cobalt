@@ -1,5 +1,6 @@
 import calendar
 import html
+import io
 from datetime import datetime, date
 from json import JSONDecodeError
 
@@ -7,8 +8,17 @@ import requests
 from dateutil.relativedelta import relativedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from django.shortcuts import render, redirect
+from django.template.loader import render_to_string
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import mm
+from reportlab.pdfgen import canvas
+from reportlab.platypus import Table, TableStyle, Image, Paragraph
+from xhtml2pdf import pisa
+
 from cobalt.settings import GLOBAL_MPSERVER
 from .factories import masterpoint_factory_creator, masterpoint_query_list
 
@@ -386,3 +396,226 @@ def search_mpc_users_by_name(first_name_search, last_name_search):
     return masterpoint_query_list(
         f"firstlastname_search_active/{first_name_search}/{last_name_search}"
     )
+
+
+def download_abf_card_pdf(request):
+    """
+    Downloads a PDF with basic information about this registered user
+    """
+
+    qry = f"{GLOBAL_MPSERVER}/mps/{request.user.system_number}"
+    # qry = f"{GLOBAL_MPSERVER}/mps/1218115"
+    try:
+        summary = masterpoint_query_local(qry)[0]
+    except IndexError:
+        return HttpResponse("User details not found", status=400)
+
+    club_number = _get_club_number(summary["HomeClubID"])
+
+    if not club_number:
+        return HttpResponse("Club details not found", status=400)
+
+    # File-like object
+    buffer = io.BytesIO()
+
+    # Create the PDF object
+    width, height = A4
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+
+    # expiry - 31st of next March
+    if datetime.now().month > 3:
+        expiry = f"31/03/{datetime.now().year + 1}"
+    else:
+        expiry = f"31/03/{datetime.now().year}"
+
+    # add data
+    pdf = _draw_membership_card(pdf, summary, width, height, expiry, club_number)
+
+    # Close it off
+    pdf.showPage()
+    pdf.save()
+
+    # rewind and return the file
+    buffer.seek(0)
+    return FileResponse(
+        buffer, filename=f"ABF Registration for {request.user.full_name}.pdf"
+    )
+
+
+def _get_club_number(club_id):
+    """
+    We get a club number like 74 from the query. The actual club number is a 4 digit
+    number starting with the code for the state, so 74 is really 2074.
+
+    The club id is unique so we just look for a match by adding the state
+
+    This function works that out
+    """
+
+    qry = f"{GLOBAL_MPSERVER}/clubDetails/3320"
+    club_details = masterpoint_query_local(qry)
+    print(club_details)
+
+    qry = f"{GLOBAL_MPSERVER}/club/169"
+    club_details = masterpoint_query_local(qry)
+    print(club_details)
+
+    # Go through the states in order of number of players
+    for state in [2, 4, 3, 6, 5, 1, 7, 8]:
+
+        # Create club_number
+        club_number = f"{state}{club_id:03}"
+
+        # Check if it exists
+        qry = f"{GLOBAL_MPSERVER}/clubDetails/{club_number}"
+        club_details = masterpoint_query_local(qry)
+        if len(club_details) > 0:
+            return club_number
+    return None
+
+
+def _draw_membership_card(pdf, summary, width, height, expiry, club_number):
+    """fiddly bits of formatting the card"""
+
+    # dimensions of credit card - this is the size we want
+    card_height_mm = 53.98
+    card_width_mm = 85.6
+
+    # page height in mm
+    height_mm = height / mm
+    width_mm = width / mm
+
+    # Draw borders of card
+    x_offset_mm = (width_mm - card_width_mm) / 2
+    y_offset_mm = 10
+
+    # work out corners
+    left = x_offset_mm * mm
+    right = (card_width_mm * mm) + left
+    top = height_mm * mm - y_offset_mm * mm
+    bottom = top - card_height_mm * mm
+
+    # Add ABF Logo
+    scaling = 0.12
+    pdf.drawInlineImage(
+        "cobalt/static/assets/img/abflogo.png",
+        left + 8,
+        top - 50,
+        640 * scaling,
+        351 * scaling,
+    )
+
+    # Add MyABF Logo
+    scaling = 0.05
+    pdf.drawInlineImage(
+        "cobalt/static/assets/img/abftechlogo.png",
+        left + 196,
+        top - 53,
+        960 * scaling,
+        540 * scaling,
+    )
+
+    # Write on the canvas
+    pdf.setFont("Helvetica", 18)
+    pdf.drawString(left + 94, top - 20, "Registration Card")
+    pdf.setFont("Helvetica", 8)
+    pdf.drawString(left + 165, top - 40, "issued by")
+    pdf.setFont("Times-Roman", 9)
+    pdf.drawString(left + 7, bottom + 3, "Australian Bridge Federation Incorporated")
+    pdf.setFont("Times-Roman", 6)
+    pdf.drawString(right - 60, bottom + 3, "ABN 70 053 651 666")
+    pdf.setFont("Helvetica", 15)
+    pdf.drawString(
+        45 * mm, 180 * mm, "Here is your ABF Registration card to print and keep."
+    )
+
+    # left
+    pdf.line(left, top, left, bottom)
+    # top
+    pdf.line(left, top, right, top)
+    # right
+    pdf.line(right, top, right, bottom)
+    # bottom
+    pdf.line(left, bottom, right, bottom)
+
+    # Top table
+    data = [
+        ["NAME", "CLUB"],
+        [f"{summary['GivenNames']} {summary['Surname']}", club_number],
+    ]
+
+    table = Table(
+        data,
+        colWidths=(60 * mm, 20 * mm),
+        style=[
+            ("GRID", (0, 0), (1, 1), 1, colors.black),
+            ("BACKGROUND", (0, 0), (1, 0), colors.lightgrey),
+            ("FONTNAME", (0, 0), (1, 1), "Times-Roman"),
+            ("TOPPADDING", (0, 0), (1, 0), 1),
+            ("TOPPADDING", (0, 1), (1, 1), 1),
+            ("BOTTOMPADDING", (0, 0), (1, 0), 0),
+            ("BOTTOMPADDING", (0, 1), (1, 1), 3),
+            ("FONTSIZE", (0, 0), (1, 0), 6),
+            ("FONTSIZE", (0, 1), (1, 1), 10),
+        ],
+    )
+
+    table.wrapOn(pdf, 0, 0)
+    table.drawOn(pdf, 65 * mm, top - 30 * mm)
+
+    # middle table
+    data = [
+        ["ABF NUMBER", "MASTERPOINTS RANK", "VALID TO"],
+        [summary["ABFNumber"], summary["RankName"], expiry],
+    ]
+
+    table = Table(
+        data,
+        colWidths=(20 * mm, 40 * mm, 20 * mm),
+        style=[
+            ("GRID", (0, 0), (2, 1), 1, colors.black),
+            ("BACKGROUND", (0, 0), (2, 0), colors.lightgrey),
+            ("FONTNAME", (0, 0), (2, 1), "Times-Roman"),
+            ("TOPPADDING", (0, 0), (2, 0), 1),
+            ("TOPPADDING", (0, 1), (2, 1), 1),
+            ("BOTTOMPADDING", (0, 0), (2, 0), 0),
+            ("BOTTOMPADDING", (0, 1), (2, 1), 3),
+            ("FONTSIZE", (0, 0), (2, 0), 6),
+            ("FONTSIZE", (0, 1), (2, 1), 10),
+        ],
+    )
+
+    table.wrapOn(pdf, 0, 0)
+    table.drawOn(pdf, 65 * mm, top - 40 * mm)
+
+    # bottom table
+    data = [
+        ["GOLD POINTS", "RED POINTS", "GREEN POINTS", "TOTAL POINTS"],
+        [
+            summary["TotalGold"],
+            summary["TotalRed"],
+            summary["TotalGreen"],
+            summary["TotalMPs"],
+        ],
+    ]
+
+    table = Table(
+        data,
+        colWidths=(20 * mm, 20 * mm, 20 * mm, 20 * mm),
+        style=[
+            ("GRID", (0, 0), (3, 1), 1, colors.black),
+            ("BACKGROUND", (0, 0), (3, 0), colors.lightgrey),
+            ("FONTNAME", (0, 0), (3, 1), "Times-Roman"),
+            ("TOPPADDING", (0, 0), (3, 0), 1),
+            ("TOPPADDING", (0, 1), (3, 1), 1),
+            ("BOTTOMPADDING", (0, 0), (3, 0), 0),
+            ("BOTTOMPADDING", (0, 1), (3, 1), 3),
+            ("FONTSIZE", (0, 0), (3, 0), 6),
+            ("FONTSIZE", (0, 1), (3, 1), 10),
+        ],
+    )
+
+    table.wrapOn(pdf, 0, 0)
+    table.drawOn(pdf, 65 * mm, top - 50 * mm)
+
+    return pdf
