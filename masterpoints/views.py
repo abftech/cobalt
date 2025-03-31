@@ -404,15 +404,14 @@ def download_abf_card_pdf(request):
     """
 
     qry = f"{GLOBAL_MPSERVER}/mps/{request.user.system_number}"
-    # qry = f"{GLOBAL_MPSERVER}/mps/1218115"
     try:
         summary = masterpoint_query_local(qry)[0]
     except IndexError:
         return HttpResponse("User details not found", status=400)
 
-    club_number = _get_club_number(summary["HomeClubID"])
+    club_name = _get_club_name(summary["HomeClubID"])
 
-    if not club_number:
+    if not club_name:
         return HttpResponse("Club details not found", status=400)
 
     # File-like object
@@ -429,7 +428,7 @@ def download_abf_card_pdf(request):
         expiry = f"31/03/{datetime.now().year}"
 
     # add data
-    pdf = _draw_membership_card(pdf, summary, width, height, expiry, club_number)
+    pdf = _draw_membership_card(pdf, summary, width, height, expiry, club_name)
 
     # Close it off
     pdf.showPage()
@@ -442,39 +441,19 @@ def download_abf_card_pdf(request):
     )
 
 
-def _get_club_number(club_id):
+def _get_club_name(club_id):
     """
-    We get a club number like 74 from the query. The actual club number is a 4 digit
-    number starting with the code for the state, so 74 is really 2074.
-
-    The club id is unique so we just look for a match by adding the state
-
-    This function works that out
+    Return the club name from the club_id
     """
 
-    qry = f"{GLOBAL_MPSERVER}/clubDetails/3320"
+    qry = f"{GLOBAL_MPSERVER}/club/{club_id}"
     club_details = masterpoint_query_local(qry)
     print(club_details)
 
-    qry = f"{GLOBAL_MPSERVER}/club/169"
-    club_details = masterpoint_query_local(qry)
-    print(club_details)
-
-    # Go through the states in order of number of players
-    for state in [2, 4, 3, 6, 5, 1, 7, 8]:
-
-        # Create club_number
-        club_number = f"{state}{club_id:03}"
-
-        # Check if it exists
-        qry = f"{GLOBAL_MPSERVER}/clubDetails/{club_number}"
-        club_details = masterpoint_query_local(qry)
-        if len(club_details) > 0:
-            return club_number
-    return None
+    return club_details[0]["ClubName"]
 
 
-def _draw_membership_card(pdf, summary, width, height, expiry, club_number):
+def _draw_membership_card(pdf, summary, width, height, expiry, club_name):
     """fiddly bits of formatting the card"""
 
     # dimensions of credit card - this is the size we want
@@ -496,11 +475,11 @@ def _draw_membership_card(pdf, summary, width, height, expiry, club_number):
     bottom = top - card_height_mm * mm
 
     # Add ABF Logo
-    scaling = 0.12
+    scaling = 0.06
     pdf.drawInlineImage(
         "cobalt/static/assets/img/abflogo.png",
         left + 8,
-        top - 50,
+        top - 24,
         640 * scaling,
         351 * scaling,
     )
@@ -509,17 +488,17 @@ def _draw_membership_card(pdf, summary, width, height, expiry, club_number):
     scaling = 0.05
     pdf.drawInlineImage(
         "cobalt/static/assets/img/abftechlogo.png",
-        left + 196,
-        top - 53,
+        left + 197,
+        top - 26,
         960 * scaling,
         540 * scaling,
     )
 
     # Write on the canvas
-    pdf.setFont("Helvetica", 18)
-    pdf.drawString(left + 94, top - 20, "Registration Card")
-    pdf.setFont("Helvetica", 8)
-    pdf.drawString(left + 165, top - 40, "issued by")
+    pdf.setFont("Helvetica", 19)
+    pdf.drawString(left + 52, top - 17, "Registration Card")
+    pdf.setFont("Helvetica", 6)
+    pdf.drawString(left + 173, top - 24, "issued by")
     pdf.setFont("Times-Roman", 9)
     pdf.drawString(left + 7, bottom + 3, "Australian Bridge Federation Incorporated")
     pdf.setFont("Times-Roman", 6)
@@ -538,15 +517,40 @@ def _draw_membership_card(pdf, summary, width, height, expiry, club_number):
     # bottom
     pdf.line(left, bottom, right, bottom)
 
-    # Top table
+    # Table 1 - name
     data = [
-        ["NAME", "CLUB"],
-        [f"{summary['GivenNames']} {summary['Surname']}", club_number],
+        ["NAME"],
+        [f"{summary['GivenNames']} {summary['Surname']}"],
     ]
 
     table = Table(
         data,
-        colWidths=(60 * mm, 20 * mm),
+        colWidths=(80 * mm),
+        style=[
+            ("GRID", (0, 0), (1, 1), 1, colors.black),
+            ("BACKGROUND", (0, 0), (1, 0), colors.lightgrey),
+            ("FONTNAME", (0, 0), (1, 1), "Times-Roman"),
+            ("TOPPADDING", (0, 0), (1, 0), 1),
+            ("TOPPADDING", (0, 1), (1, 1), 1),
+            ("BOTTOMPADDING", (0, 0), (1, 0), 0),
+            ("BOTTOMPADDING", (0, 1), (1, 1), 3),
+            ("FONTSIZE", (0, 0), (1, 0), 6),
+            ("FONTSIZE", (0, 1), (1, 1), 10),
+        ],
+    )
+
+    table.wrapOn(pdf, 0, 0)
+    table.drawOn(pdf, 65 * mm, top - 20 * mm)
+
+    # Table 2 - club
+    data = [
+        ["CLUB"],
+        [club_name],
+    ]
+
+    table = Table(
+        data,
+        colWidths=(80 * mm),
         style=[
             ("GRID", (0, 0), (1, 1), 1, colors.black),
             ("BACKGROUND", (0, 0), (1, 0), colors.lightgrey),
@@ -563,7 +567,7 @@ def _draw_membership_card(pdf, summary, width, height, expiry, club_number):
     table.wrapOn(pdf, 0, 0)
     table.drawOn(pdf, 65 * mm, top - 30 * mm)
 
-    # middle table
+    # Table 3 - ABF number, rank, valid to
     data = [
         ["ABF NUMBER", "MASTERPOINTS RANK", "VALID TO"],
         [summary["ABFNumber"], summary["RankName"], expiry],
@@ -588,7 +592,7 @@ def _draw_membership_card(pdf, summary, width, height, expiry, club_number):
     table.wrapOn(pdf, 0, 0)
     table.drawOn(pdf, 65 * mm, top - 40 * mm)
 
-    # bottom table
+    # Table 4 - points
     data = [
         ["GOLD POINTS", "RED POINTS", "GREEN POINTS", "TOTAL POINTS"],
         [
