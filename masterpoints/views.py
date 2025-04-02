@@ -403,7 +403,15 @@ def download_abf_card_pdf(request):
     Downloads a PDF with basic information about this registered user
     """
 
-    qry = f"{GLOBAL_MPSERVER}/mps/{request.user.system_number}"
+    # Get parameter if provided, otherwise use the logged in user
+    abf_number = request.GET.get("abf_number")
+
+    try:
+        system_number = abf_number or request.user.system_number
+    except AttributeError:
+        return HttpResponse("User details not found", status=400)
+
+    qry = f"{GLOBAL_MPSERVER}/mps/{system_number}"
     try:
         summary = masterpoint_query_local(qry)[0]
     except IndexError:
@@ -436,9 +444,7 @@ def download_abf_card_pdf(request):
 
     # rewind and return the file
     buffer.seek(0)
-    return FileResponse(
-        buffer, filename=f"ABF Registration for {request.user.full_name}.pdf"
-    )
+    return FileResponse(buffer, filename=f"ABF Registration for {system_number}.pdf")
 
 
 def _get_club_name(club_id):
@@ -623,3 +629,47 @@ def _draw_membership_card(pdf, summary, width, height, expiry, club_name):
     table.drawOn(pdf, 65 * mm, top - 50 * mm)
 
     return pdf
+
+
+def abf_registration_card(request):
+    """Logged out search for user to print a registration card"""
+
+    return render(request, "masterpoints/registration_card_logged_out.html")
+
+
+def abf_registration_card_htmx(request):
+    """Perform the user search and return the list"""
+
+    abf_number = request.POST.get("abf_number")
+    first_name = request.POST.get("first_name")
+    last_name = request.POST.get("last_name")
+
+    if abf_number:
+        matches = requests.get(f"{GLOBAL_MPSERVER}/mps/{abf_number}").json()
+        if len(matches) == 0:
+            return HttpResponse("<h2>No match found</h2>")
+    elif not first_name:  # last name only
+        matches = requests.get(f"{GLOBAL_MPSERVER}/lastname_search/{last_name}").json()
+    elif not last_name:  # first name only
+        matches = requests.get(
+            f"{GLOBAL_MPSERVER}/firstname_search/{first_name}"
+        ).json()
+    else:  # first and last names
+        matches = requests.get(
+            f"{GLOBAL_MPSERVER}/firstlastname_search/{first_name}/{last_name}"
+        ).json()
+
+    # Filter out inactive
+    active_matches = []
+    for match in matches:
+        if match["IsActive"] == "Y":
+            active_matches.append(match)
+
+    if len(active_matches) == 0:
+        return HttpResponse("<h2>No match found</h2>")
+
+    return render(
+        request,
+        "masterpoints/registration_card_logged_out_htmx.html",
+        {"matches": active_matches},
+    )

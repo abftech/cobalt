@@ -1,0 +1,67 @@
+{% extends 'base_logged_out.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+
+
+    <h1>Look Up Player</h1>
+
+    <form>
+        <table style="border: 0; margin: 0px auto;">
+            <tr>
+                <td>ABF Number</td>
+                <td>
+                    <input
+                        id="abf_number"
+                        name="abf_number"
+                        type="text"
+                        hx-post="{% url "masterpoints:abf_registration_card_htmx" %}"
+                        hx-target="#user_list"
+                        hx-trigger="keyup changed delay:100ms"
+                        hx-include="#first_name, #last_name"
+                        onclick="document.getElementById('first_name').value=''; document.getElementById('last_name').value='';document.getElementById('user_list').innerHTML='';"
+                    >
+                </td>
+            </tr>
+            <tr>
+                <td>Or</td>
+            </tr>
+            <tr>
+                <td>First Name</td>
+                <td>
+                    <input
+                        id="first_name"
+                        name="first_name"
+                        type="text"
+                        hx-post="{% url "masterpoints:abf_registration_card_htmx" %}"
+                        hx-target="#user_list"
+                        hx-trigger="keyup changed delay:100ms"
+                        hx-include="#last_name, #abf_number"
+                        onclick="document.getElementById('abf_number').value=''; document.getElementById('user_list').innerHTML='';"
+
+                    >
+                </td>
+            </tr>
+            <tr>
+                <td>Last Name</td>
+                <td>
+                    <input
+                        id="last_name"
+                        name="last_name"
+                        type="text"
+                        hx-post="{% url "masterpoints:abf_registration_card_htmx" %}"
+                        hx-target="#user_list"
+                        hx-trigger="keyup changed delay:100ms"
+                        hx-include="#first_name, #abf_number"
+                        onclick="document.getElementById('abf_number').value=''; document.getElementById('user_list').innerHTML='';"
+                    >
+                </td>
+            </tr>
+        </table>
+    </form>
+
+    <br>
+    <div id="user_list"></div>
+
+{% endblock %}

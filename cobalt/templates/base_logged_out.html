@@ -12,7 +12,7 @@
         <link href="{% static "assets/css/juliette.css" %}" rel="stylesheet" type="text/css">
         <link rel="stylesheet" href="{% static "assets/css/animate.4.0.0/animate.min.css" %}"/>
 
-
+        <script src="{% static "assets/packages/htmx-1.8.0/htmx.min.js" %}"></script>
 
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 
@@ -65,7 +65,7 @@
             <a href="https://www.abf.com.au/privacy/" style="margin-left: 30px">Privacy</a>
             <a href="{% url "support:cookies_logged_out" %}" style="margin-left: 30px">Cookies</a></a>
     </div>
-
+    {% include "utils/include_htmx.html" %}
 </body>
 {% block footer %}
 {% endblock %}
