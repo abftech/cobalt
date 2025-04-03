@@ -483,7 +483,7 @@ def _draw_membership_card(pdf, summary, width, height, expiry, club_name):
     # Add ABF Logo
     scaling = 0.06
     pdf.drawInlineImage(
-        "cobalt/static/assets/img/abflogo.png",
+        "cobalt/static/assets/img/ABFlogo.png",
         left + 8,
         top - 24,
         640 * scaling,
