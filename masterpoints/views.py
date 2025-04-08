@@ -644,6 +644,10 @@ def abf_registration_card_htmx(request):
     first_name = request.POST.get("first_name")
     last_name = request.POST.get("last_name")
 
+    # If no data, return nothing
+    if not abf_number and not first_name and not last_name:
+        return HttpResponse("")
+
     if abf_number:
         matches = requests.get(f"{GLOBAL_MPSERVER}/mps/{abf_number}").json()
         if len(matches) == 0:
