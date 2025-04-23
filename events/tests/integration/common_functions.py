@@ -115,6 +115,8 @@ def check_entry(
     """Helper function for entering an event. Check the entries.
 
     Args:
+        test_description:
+        test_name:
         test_instance(Klass): the calling class. We use some of its variables
         event(Event): event to enter
         player_list(list of lists):
@@ -129,6 +131,13 @@ def check_entry(
         event_entry_player = EventEntryPlayer.objects.filter(
             event_entry__event=event, player=player[0]
         ).first()
+
+        print("******************")
+        print(player)
+        print(player[0])
+        print(player[2])
+        print(event_entry_player)
+        print(event_entry_player.id)
 
         test_instance.manager.save_results(
             status=event_entry_player.payment_status == player[2],
@@ -146,6 +155,8 @@ def check_entry(
             subject_search="Event Entry",
             debug=False,
         )
+
+    # test_instance.manager.sleep()
 
     # Delete event entry for next time, use last event_entry_player
     event_entry_player.event_entry.delete()

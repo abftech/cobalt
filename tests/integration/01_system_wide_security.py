@@ -20,7 +20,7 @@ NON_AUTH_URLS = [
     "/dashboard/help",
     "/dashboard/logged-out",
     "/events/",
-    "congress-listing/",
+    "/events/congress-listing/",
     "/events/congress/get_all_congresses",
     "/events/congress/view/1",
     "/events/congress/view/1",
@@ -31,6 +31,8 @@ NON_AUTH_URLS = [
     "/support/contact-logged-out",
     "/support/cookies",
     "/support/guidelines",
+    "/support/acceptable-use-logged-out ",
+    "/support/cookies-logged-out ",
     "/view",
     "/summernote/editor/<id>/",  # TODO: Double check this one
     "/api/cobalt/keycheck/v1.0",
@@ -38,6 +40,8 @@ NON_AUTH_URLS = [
     "/api/docs/",
     "/api/openapi.json",
     "/accounts/unregistered-preferences/dummy",
+    "/masterpoints/abf-registration-card",
+    "/masterpoints/abf-registration-card-htmx",
     "/404",
     "/500",
 ]
