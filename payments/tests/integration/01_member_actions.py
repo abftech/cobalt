@@ -217,7 +217,7 @@ class MemberTransfer:
         # Select Fiona from recent list
 
         select = Select(self.manager.selenium_wait_for_clickable("id-cobalt-recent"))
-        select.select_by_value("11")
+        select.select_by_value("12")
 
         # Wait for refresh
         self.manager.selenium_wait_for_clickable("id_amount").send_keys("500")

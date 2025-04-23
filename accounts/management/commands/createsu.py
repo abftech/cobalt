@@ -59,16 +59,15 @@ class Command(BaseCommand):
             "pic_folder/abf.png",
         )
 
-        # COB-797
-        # self.create_initial_user(
-        #     "Mark",
-        #     "success@simulator.amazonses.com",
-        #     "620246",
-        #     "Mark",
-        #     "Guthrie",
-        #     "TBA",
-        #     "pic_folder/mark.jpg",
-        # )
+        self.create_initial_user(
+            "Mark",
+            "success@simulator.amazonses.com",
+            "620246",
+            "Mark",
+            "Guthrie",
+            "TBA",
+            "pic_folder/mark.jpg",
+        )
 
         self.create_initial_user(
             "518891",

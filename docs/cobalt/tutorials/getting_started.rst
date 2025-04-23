@@ -134,7 +134,7 @@ Create a file called something like cobalt_env.sh and add this to the file::
 
 Now you can source this file to add the variables to your environment::
 
-    $ . /path/to/my/file/cobalt_env.sh
+    $ . /path/to/my/file/cobalt.sh
 
 Step 3 - Configure the Database
 ===============================

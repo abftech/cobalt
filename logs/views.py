@@ -49,7 +49,7 @@ def log_event(user, severity, source, sub_source, message, request=None):
     # User may not be a string or have a __str__ function
     try:
         user = user[:200]
-    except TypeError:
+    except (KeyError, TypeError):
         user = "Unknown"
 
     # Validate

@@ -78,7 +78,8 @@ def member_search_ajax(request):
 
         homes = {int(mpc["ABFNumber"]): mpc["ClubName"] for mpc in mpc_members}
 
-        if request.is_ajax:
+        # is_ajax has been removed from Django
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
             if members.count() > 30:
                 msg = "Too many results (%s)" % members.count()
                 members = None
@@ -359,7 +360,8 @@ def member_detail_m2m_ajax(request):
     if request.method == "GET" and "member_id" in request.GET:
         member_id = request.GET.get("member_id")
         member = get_object_or_404(User, pk=member_id)
-        if request.is_ajax:
+        # is_ajax has been removed from Django
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
             global_org = settings.GLOBAL_ORG
             html = render_to_string(
                 template_name="accounts/search/member_ajax.html",
@@ -399,7 +401,8 @@ def member_details_ajax(request):
         if "member_id" in request.GET:
             member_id = request.GET.get("member_id")
             member = get_object_or_404(User, pk=member_id)
-            if request.is_ajax:
+            # is_ajax has been removed from Django
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
                 global_org = settings.GLOBAL_ORG
                 html = render_to_string(
                     template_name="accounts/search/member_details_ajax.html",
@@ -462,7 +465,8 @@ def search_ajax(request):
                 first_name__istartswith=search_first_name
             ).exclude(pk=request.user.id)
 
-        if request.is_ajax:
+        # is_ajax has been removed from Django
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
             if members.count() > 30:
                 msg = "Too many results (%s)" % members.count()
                 members = None

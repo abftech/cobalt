@@ -535,6 +535,9 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
         self.driver.find_element(By.ID, "id_password").send_keys(self.test_code)
         self.driver.find_element(By.CLASS_NAME, "btn").click()
 
+        # Wait for it
+        time.sleep(3)
+
     def _selenium_wait(self, wait_event, element_id, timeout):
         """Wait for something and return it"""
         try:
@@ -601,9 +604,9 @@ class CobaltTestManagerUnit(CobaltTestManagerAbstract):
                     class_name = re.search("^class (\\w+):", line)
                     if class_name:
                         print(f"  {class_name.group(1)} --> {test_file_as_python_path}")
-                        self.list_of_tests[
-                            class_name.group(1)
-                        ] = test_file_as_python_path
+                        self.list_of_tests[class_name.group(1)] = (
+                            test_file_as_python_path
+                        )
 
         self.rollback_transactions = True
         self.document_title = "Unit Testing Report"

@@ -4,7 +4,7 @@ pylint==2.15.6
 ipython
 radon==5.1.0
 termcolor==1.1.0
-selenium==4.6.0 
+selenium==4.31.0
 sphinx==4.5.0
 sphinx-book-theme==0.3.3
 #pydata-sphinx-theme==0.12.0
@@ -12,4 +12,4 @@ ipdb
 # pytest-django
 # pytest-html
 coverage==6.5.0
-PySimpleGUI==4.60.4
+# PySimpleGUI==4.60.4

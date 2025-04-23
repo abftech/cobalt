@@ -1,5 +1,6 @@
 import logging
 import xml
+from datetime import datetime
 
 from django.db.transaction import atomic
 from django.http import HttpResponse
@@ -7,7 +8,6 @@ from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.html import strip_tags
-from django.utils.datetime_safe import datetime
 
 from accounts.views.core import get_email_address_and_name_from_system_number
 from cobalt.settings import COBALT_HOSTNAME
