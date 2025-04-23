@@ -1,3 +1,4 @@
+# run pre-commit autoupdate to update versions in here
 repos:
 -   repo: https://github.com/psf/black
     rev: 25.1.0
