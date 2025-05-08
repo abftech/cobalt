@@ -1,4 +1,4 @@
-""" Cobalt Settings.py
+"""Cobalt Settings.py
 
 This is the single settings.py for all Cobalt environments.
 
@@ -157,7 +157,7 @@ XERO_TENANT_NAME = "17 Ways"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "ENGINE": "django.db.backends.postgresql",
         "NAME": RDS_DB_NAME,
         "USER": RDS_USERNAME,
         "PASSWORD": RDS_PASSWORD,
