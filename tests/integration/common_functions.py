@@ -29,7 +29,6 @@ def cobalt_htmx_user_search(
     system_number = manager.selenium_wait_for_clickable(
         "id_system_number" + search_id, 10
     )
-    print("Debug:", f"{system_number=}")
     system_number.click()
     system_number.send_keys(user_system_id)
 

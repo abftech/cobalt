@@ -1,9 +1,33 @@
 #!/bin/bash
 
-# about: runs integration tests. see code for parameters.
+# about: runs integration tests. --show --coverage --module [module]
 
-# Call with 1 parameter to show the web browser
-# Call with 2 parameters to generate coverage data
+# Get arguments
+SHOW=0
+COVERAGE=0
+MODULE=0
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -s|--show)
+      SHOW=1
+      shift # past argument
+      ;;
+    -c|--coverage)
+      COVERAGE=1
+      shift # past argument
+      ;;
+    -m|--module)
+      MODULE="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    -*|--*)
+      echo "Unknown option $1"
+      exit 1
+      ;;
+  esac
+done
 
 # Variables
 PORT=8088
@@ -20,7 +44,18 @@ pkill -TERM -f stripe
 # Kill old chromedrivers
 pkill -TERM -f chromedriver
 
-# Rebuild database
+# Get timestamp of most recent migration
+LAST_MIGRATION=$(ls -l -D "%Y-%m-%d=%H:%M" */migrations/*.py | sort -k6 | tail -1 | awk '{print $6}')
+
+# Get timestamp of database
+DATABASE_TIME=$(ls -l -D "%Y-%m-%d=%H:%M" ~/test.db | tail -1 | awk '{print $6}')
+
+# If there have been migrations since the database was created, then rebuild it
+if [[ "$LAST_MIGRATION" > "$DATABASE_TIME" ]]; then
+  cgit_dev_test_reload_db
+fi
+
+# Reload database
 cat << EOF > /tmp/drop_db
 \c postgres
 drop database IF EXISTS $RDS_DB_NAME;
@@ -30,18 +65,9 @@ EOF
 psql test </tmp/drop_db
 psql test < ~/test.db >/dev/null
 
-# Check if we are on WSL
-uname -r | grep Microsoft > /dev/null
-
-if [ $? -eq 0 ]
-then
-  utils/cgit/tools/test_manage_short.sh &
-
-else
-open . utils/cgit/tools/test_manage_short.terminal
-open . utils/cgit/tools/test_stripe_short.terminal
-fi
-
+# Start Stripe and Django in terminal windows
+open utils/cgit/tools/test_manage_short.terminal
+open utils/cgit/tools/test_stripe_short.terminal
 
 # Wait for port to be open
 echo "Waiting for Webserver to start..."
@@ -50,17 +76,38 @@ while ! nc -z 127.0.0.1 $PORT; do
 done
 echo "Starting..."
 
-# Call with 1 parameter to show the web browser
-# Call with 2 parameters to generate coverage data
-if [ $# -eq 2 ]
+# Build run command
+COMMAND=""
+
+if [ $COVERAGE -eq 1 ]
   then
-  coverage run -p ./manage.py run_tests_integration --base_url http://127.0.0.1:$PORT --headless true
-elif [ $# -eq 1 ]
-  then
-  ./manage.py run_tests_integration --base_url http://127.0.0.1:$PORT
-  else
-  ./manage.py run_tests_integration --base_url http://127.0.0.1:$PORT --headless true
+    COMMAND="coverage run -p"
 fi
+
+COMMAND="$COMMAND ./manage.py run_tests_integration --base_url http://127.0.0.1:$PORT"
+
+if [ $SHOW -ne 1 ]
+  then
+    COMMAND="$COMMAND --headless true"
+fi
+
+if [ "$MODULE" != "0" ]
+  then
+    COMMAND="$COMMAND --single_test $MODULE"
+fi
+
+# run it
+echo "Running: $COMMAND"
+$COMMAND
 
 # Stop the django server
 lsof -i tcp:$PORT | awk 'NR!=1 {print $2}' | xargs kill -SIGINT
+
+echo ""
+echo "Django server output is in /tmp/test_manager.txt"
+
+# Kill stripe if running
+pkill -TERM -f stripe
+
+# Close down Terminal
+osascript -e 'tell application "Terminal" to quit'

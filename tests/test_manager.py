@@ -482,12 +482,15 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
     approaches mentioned above.
     """
 
-    def __init__(self, app, browser, base_url, headless):
+    def __init__(self, app, browser, base_url, headless, single_test):
         """Set up basic environment for individual tests"""
 
         super().__init__(app)
 
         self.list_of_tests = LIST_OF_INTEGRATION_TESTS
+        if single_test:
+            self.list_of_tests = {single_test: LIST_OF_INTEGRATION_TESTS[single_test]}
+
         self.document_title = "Integration Testing Report"
         self.icon = "auto_stories"
 

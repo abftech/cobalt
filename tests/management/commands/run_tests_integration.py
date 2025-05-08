@@ -20,6 +20,10 @@ class Command(BaseCommand):
         parser.add_argument(
             "--headless", help="Specify an value to run browser in the background"
         )
+        parser.add_argument(
+            "--single_test",
+            help="Class name of a test to only run one test and not them all",
+        )
 
     def handle(self, *args, **options):
 
@@ -32,9 +36,12 @@ class Command(BaseCommand):
         browser = options["browser"]
         base_url = options["base_url"]
         headless = options["headless"]
+        single_test = options["single_test"]
 
         # create testManager to oversee things
-        manager = CobaltTestManagerIntegration(app, browser, base_url, headless)
+        manager = CobaltTestManagerIntegration(
+            app, browser, base_url, headless, single_test
+        )
         manager.run()
         #        if not manager.overall_success:
         with open("/tmp/test-output.html", "w") as html_file:
