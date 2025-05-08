@@ -174,3 +174,13 @@ img.cobalt-rounded {
     overflow: auto;
     white-space: nowrap;
 }
+
+/* logout style for Django > 4 */
+.cobalt-logout {
+    border: 0;
+    background: white;
+}
+.cobalt-logout:hover {
+    background-color: white;
+    border: 0;
+}

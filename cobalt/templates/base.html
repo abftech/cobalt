@@ -131,9 +131,9 @@ Environment: {{ COBALT_HOSTNAME }}
                     <ul class="nav">
 
                         <li class="nav-item
-                            {% if request.path|slice:":10" == "/dashboard" %}active{% endif %}
-                            {% if request.path == "/" %}active{% endif %}
-                            ">
+                                   {% if request.path|slice:":10" == "/dashboard" %}active{% endif %}
+                                   {% if request.path == "/" %}active{% endif %}
+                                  ">
                             <a class="nav-link" href="/dashboard">
                                 <i class="material-icons">dashboard</i>
                                 <p>Dashboard</p>
@@ -319,7 +319,12 @@ Environment: {{ COBALT_HOSTNAME }}
                                             <a class="dropdown-item" href="{% url "support:helpdesk_user_list" %}">Support Tickets</a>
                                         {% endif %}
                                         <div class="dropdown-divider"></div>
-                                        <a class="dropdown-item" href="/accounts/logout">Log out</a>
+                                        <span class="dropdown-item">
+                                            <form method="post" action="{% url "logout" %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="cobalt-logout">Log out</button>
+                                            </form>
+                                        </span>
                                     </div>
                                 </li>
                             </ul>
@@ -394,14 +399,14 @@ Environment: {{ COBALT_HOSTNAME }}
 
         {# Some people don't like perfect scrollbar. Default is not to use it #}
 
-        {% if request.user.windows_scrollbar %}
-            <script src="{% static "assets/js/material-dashboard.js" %}?v=2.1.1" type="text/javascript"></script>
-        {% else %}
-            <script src="{% static "assets/js/material-dashboard-noscroll.js" %}?v=2.1.1" type="text/javascript"></script>
-        {% endif %}
+            {% if request.user.windows_scrollbar %}
+                <script src="{% static "assets/js/material-dashboard.js" %}?v=2.1.1" type="text/javascript"></script>
+            {% else %}
+                <script src="{% static "assets/js/material-dashboard-noscroll.js" %}?v=2.1.1" type="text/javascript"></script>
+            {% endif %}
 
-        {% include "utils/include_htmx.html" %}
+            {% include "utils/include_htmx.html" %}
 
-    </body>
+        </body>
 
-</html>
+    </html>

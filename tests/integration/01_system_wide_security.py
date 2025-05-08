@@ -1,5 +1,6 @@
 import re
 import subprocess
+from time import sleep
 
 from tests.test_manager import CobaltTestManagerIntegration
 
@@ -116,3 +117,4 @@ class TestURLsRequireLogin:
             f"URLs expected to allow unauthorised access {len(NON_AUTH_URLS)}. "
             f"Errors {errors}",
         )
+        print("Done")
