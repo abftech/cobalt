@@ -1,4 +1,5 @@
 """Common functions used across all tests"""
+
 import time
 
 from selenium.common.exceptions import StaleElementReferenceException
@@ -25,7 +26,10 @@ def cobalt_htmx_user_search(
     manager.selenium_wait_for_clickable(search_button_id).click()
 
     # Wait for modal to appear and enter system number in
-    system_number = manager.selenium_wait_for_clickable("id_system_number" + search_id)
+    system_number = manager.selenium_wait_for_clickable(
+        "id_system_number" + search_id, 10
+    )
+    print("Debug:", f"{system_number=}")
     system_number.click()
     system_number.send_keys(user_system_id)
 

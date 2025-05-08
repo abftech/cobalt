@@ -9,6 +9,7 @@
 PORT=8088
 export RDS_DB_NAME=test
 export DUMMY_DATA_COUNT=1
+export DEBUG=OFF
 
 # Kill manage.py if running
 lsof -i tcp:$PORT | awk 'NR!=1 {print $2}' | xargs kill
