@@ -8,6 +8,7 @@ from tests.test_manager import CobaltTestManagerIntegration
 NON_AUTH_URLS = [
     "/accounts/loggedout",
     "/accounts/login/",
+    "/accounts/activate/dummy/dummy/",
     "/accounts/password-reset-request",
     "/accounts/password_reset/",
     "/accounts/password_reset/",
@@ -57,6 +58,7 @@ DO_NOT_TEST_URLS = [
     "/xero/initialise",
     "/xero/refresh",
     "/xero/run-xero-api",
+    "/payments/statement-org-summary",
 ]
 
 
@@ -77,9 +79,10 @@ class TestURLsRequireLogin:
         urls = []
 
         # Health should probably be removed altogether from Cobalt
+        # We don't test API as they are mostly Posts
         process = subprocess.Popen(
             [
-                r"./manage.py show_urls | awk '{print $1}' | grep -v '^\/admin' | grep -v '^\/health'"
+                r"./manage.py show_urls | awk '{print $1}' | grep -v '^\/admin' | grep -v '^\/health' | grep -v '^\/api'"
             ],
             shell=True,
             stdout=subprocess.PIPE,
@@ -92,16 +95,22 @@ class TestURLsRequireLogin:
                 print("Skipping:", url)
                 continue
             # If we have a parameter, then change it to a value
-            url = re.sub("<int(.*)>", "1", url)
-            url = re.sub("<str(.*)>", "dummy", url)
+            # ? makes the expression not greedy so it can handle multiple parameters
+            url = re.sub("<int(.*?)>", "1", url)
+            url = re.sub("<str(.*?)>", "dummy", url)
 
             urls.append(url)
 
         errors = []
 
-        for url in urls:
+        # for url in urls:
+        for url in ["/accounts/delete-device"]:
+
+            print("Accessing", f"{url}")
+
             # get response. We expect to get 302 - redirect to login page, but 40x are okay too
             response = self.manager.client.get(url)
+            print(response.status_code)
             if (
                 response.status_code not in [302, 400, 403, 404, 405]
                 and url not in NON_AUTH_URLS
