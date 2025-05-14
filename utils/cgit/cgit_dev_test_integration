@@ -1,16 +1,21 @@
 #!/bin/bash
 
-# about: runs integration tests. --show --coverage --module [module]
+# about: runs integration tests. --show --coverage --debug --module [module]
 
 # Get arguments
 SHOW=0
 COVERAGE=0
 MODULE=0
+DEBUG_WEB=0
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     -s|--show)
       SHOW=1
+      shift # past argument
+      ;;
+    -d|--debug)
+      DEBUG_WEB=1
       shift # past argument
       ;;
     -c|--coverage)
@@ -66,11 +71,17 @@ psql test </tmp/drop_db
 psql test < ~/test.db >/dev/null
 
 # Start Stripe and Django in terminal windows
-open utils/cgit/tools/test_manage_short.terminal
 open utils/cgit/tools/test_stripe_short.terminal
 
+# To debug we want to run pycharm so don't start the server here
+if [ "$DEBUG_WEB" == "0" ]; then
+  open utils/cgit/tools/test_manage_short.terminal
+  echo "Waiting for Webserver to start..."
+else
+  echo "Debugging enabled. Please start your webserver"
+fi
+
 # Wait for port to be open
-echo "Waiting for Webserver to start..."
 while ! nc -z 127.0.0.1 $PORT; do
   sleep 0.1
 done
@@ -102,6 +113,7 @@ $COMMAND
 
 # Stop the django server
 lsof -i tcp:$PORT | awk 'NR!=1 {print $2}' | xargs kill -SIGINT
+# Give it one second or will still be running when we close the terminal app
 sleep 1
 
 echo ""
@@ -112,3 +124,6 @@ pkill -TERM -f stripe
 
 # Close down Terminal
 osascript -e 'tell application "Terminal" to quit'
+
+# Show results
+open /tmp/test-output.html
