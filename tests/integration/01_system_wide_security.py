@@ -2,6 +2,8 @@ import re
 import subprocess
 from time import sleep
 
+import requests
+
 from tests.test_manager import CobaltTestManagerIntegration
 
 # URLs that do not require authentication
@@ -88,9 +90,10 @@ class TestURLsRequireLogin:
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
+
+        # Go through the list of URLs and format them to work
         for line in process.stdout.readlines():
             url = line.decode("utf-8").strip()
-            print("Testing", url)
             if url in DO_NOT_TEST_URLS:
                 print("Skipping:", url)
                 continue
@@ -101,19 +104,24 @@ class TestURLsRequireLogin:
 
             urls.append(url)
 
+        # Start with empty list of errors
         errors = []
 
-        # for url in urls:
-        for url in ["/accounts/delete-device"]:
+        # Go through URLs and test them
+        for url in urls:
 
             print("Accessing", f"{url}")
 
             # get response. We expect to get 302 - redirect to login page, but 40x are okay too
-            response = self.manager.client.get(url)
-            print(response.status_code)
+            response = requests.get(f"{self.manager.base_url}{url}")
+            print(f"---- {response.status_code}")
             if (
+                # Check for an invalid status code
                 response.status_code not in [302, 400, 403, 404, 405]
+                # check not a url we expect to not require auth
                 and url not in NON_AUTH_URLS
+                # Django 5 seems to return the url but not a redirect, so check if this is a login page
+                and response.url.find("/accounts/login/") == -1
             ):
                 errors.append(f"{url} - {response.status_code}")
 
