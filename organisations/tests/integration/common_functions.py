@@ -244,9 +244,7 @@ def access_club_menu(
     manager.driver.get(url)
 
     # Get club name
-    manager.selenium_wait_for("t_club_name")
     club_name = manager.driver.find_elements(By.ID, "t_club_name")
-    print(club_name)
 
     # Check for club
     ok = club_name[0].text == expected_club_name if len(club_name) > 0 else False

@@ -76,7 +76,6 @@ class ClubLevelAdmin:
             test_description=f"Go to the club menu page for {club_names[TRUMPS_ID]} "
             f"(org_id={TRUMPS_ID}) as Debbie (club secretary)",
         )
-        self.manager.sleep()
 
         # Debbie - Check Tabs
         expected_tabs = [
@@ -89,7 +88,7 @@ class ClubLevelAdmin:
             "id_tab_settings",
             "id_tab_finance",
             "id_tab_sessions",
-            #            "id_tab_forums",
+            "id_tab_contacts",
         ]
 
         club_menu_items(
@@ -121,7 +120,6 @@ class ClubLevelAdmin:
             search_button_id="id_search_button",
             user_system_id="104",
             search_id="",
-            debug=True,
         )
 
         # Check Eric is there
@@ -210,7 +208,7 @@ class ClubLevelAdmin:
             "id_tab_settings",
             "id_tab_finance",
             "id_tab_sessions",
-            #            "id_tab_forums",
+            "id_tab_contacts",
         ]
 
         club_menu_items(
@@ -348,7 +346,7 @@ class ClubLevelAdmin:
             "id_tab_settings",
             "id_tab_finance",
             "id_tab_sessions",
-            #           "id_tab_forums",
+            "id_tab_contacts",
         ]
 
         club_menu_items(
@@ -377,7 +375,7 @@ class ClubLevelAdmin:
             "id_tab_comms",
             "id_tab_access",
             "id_tab_settings",
-            #            "id_tab_forums",
+            "id_tab_contacts",
         ]
 
         club_menu_items(

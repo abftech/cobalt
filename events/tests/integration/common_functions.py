@@ -105,7 +105,7 @@ def enter_event(
     test_instance.manager.selenium_wait_for_clickable("id_checkout").click()
 
 
-def check_entry(
+def check_and_cleanup_entry(
     test_instance,
     event,
     test_name,
@@ -137,6 +137,7 @@ def check_entry(
         print(player[0])
         print(player[2])
         print(event_entry_player)
+        print(event_entry_player.payment_status)
         print(event_entry_player.id)
 
         test_instance.manager.save_results(
@@ -155,8 +156,6 @@ def check_entry(
             subject_search="Event Entry",
             debug=False,
         )
-
-    # test_instance.manager.sleep()
 
     # Delete event entry for next time, use last event_entry_player
     event_entry_player.event_entry.delete()
@@ -203,7 +202,9 @@ def enter_event_and_check(
     )
 
     # Check if it worked as expected
-    check_entry(test_instance, event, test_name, test_description, player_list)
+    check_and_cleanup_entry(
+        test_instance, event, test_name, test_description, player_list
+    )
 
     # Check balances
     _check_balances_are_correct(
@@ -254,4 +255,6 @@ def enter_event_then_pay_and_check(
 
     # Check if it worked as expected
     sleep(5)
-    check_entry(test_instance, event, test_name, test_description, player_list)
+    check_and_cleanup_entry(
+        test_instance, event, test_name, test_description, player_list
+    )

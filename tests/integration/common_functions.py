@@ -12,7 +12,6 @@ def cobalt_htmx_user_search(
     search_button_id: str,
     user_system_id: str,
     search_id="",
-    debug=False,
 ):
     """Drive Cobalt HTMX user search to add a user
 
@@ -30,14 +29,7 @@ def cobalt_htmx_user_search(
     system_number = manager.selenium_wait_for_clickable(
         f"id_system_number{search_id}", 10
     )
-    if debug:
-        print("#######")
-        print("#######")
-        print("#######")
-        print("#######")
-        print("#######")
-        print("#######")
-        print(system_number)
+
     system_number.click()
     system_number.send_keys(user_system_id)
 
