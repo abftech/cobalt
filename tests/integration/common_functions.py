@@ -28,11 +28,16 @@ def cobalt_htmx_user_search(
 
     # Wait for modal to appear and enter system number in
     system_number = manager.selenium_wait_for_clickable(
-        "id_system_number" + search_id, 10
+        f"id_system_number{search_id}", 10
     )
     if debug:
+        print("#######")
+        print("#######")
+        print("#######")
+        print("#######")
+        print("#######")
+        print("#######")
         print(system_number)
-        manager.sleep()
     system_number.click()
     system_number.send_keys(user_system_id)
 

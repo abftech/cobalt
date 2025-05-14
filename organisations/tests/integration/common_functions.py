@@ -1,6 +1,7 @@
 """
-    Common functions for organisations.
+Common functions for organisations.
 """
+
 import time
 from pprint import pprint
 
@@ -243,7 +244,9 @@ def access_club_menu(
     manager.driver.get(url)
 
     # Get club name
+    manager.selenium_wait_for("t_club_name")
     club_name = manager.driver.find_elements(By.ID, "t_club_name")
+    print(club_name)
 
     # Check for club
     ok = club_name[0].text == expected_club_name if len(club_name) > 0 else False
@@ -252,7 +255,7 @@ def access_club_menu(
     manager.save_results(
         status=new_ok,
         test_name=test_name,
-        output=f"Visited club menu for club_id={club_id} ({url}). Looked for club name '{expected_club_name}'. {ok}",
+        output=f"Visited club menu for club_id={club_id} ({url}). Looked for club name '{expected_club_name}'. Got '{club_name}'. {ok}",
         test_description=test_description,
     )
 

@@ -76,6 +76,7 @@ class ClubLevelAdmin:
             test_description=f"Go to the club menu page for {club_names[TRUMPS_ID]} "
             f"(org_id={TRUMPS_ID}) as Debbie (club secretary)",
         )
+        self.manager.sleep()
 
         # Debbie - Check Tabs
         expected_tabs = [
