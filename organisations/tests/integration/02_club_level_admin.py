@@ -120,6 +120,7 @@ class ClubLevelAdmin:
             search_button_id="id_search_button",
             user_system_id="104",
             search_id="",
+            debug=True,
         )
 
         # Check Eric is there
