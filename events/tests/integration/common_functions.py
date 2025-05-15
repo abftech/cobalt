@@ -132,14 +132,6 @@ def check_and_cleanup_entry(
             event_entry__event=event, player=player[0]
         ).first()
 
-        print("******************")
-        print(player)
-        print(player[0])
-        print(player[2])
-        print(event_entry_player)
-        print(event_entry_player.payment_status)
-        print(event_entry_player.id)
-
         test_instance.manager.save_results(
             status=event_entry_player.payment_status == player[2],
             output=f"Checked status of {player[0]} entry. Expected 'Paid', got '{event_entry_player.payment_status}'",

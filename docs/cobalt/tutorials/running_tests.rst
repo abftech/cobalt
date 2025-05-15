@@ -127,3 +127,8 @@ You can run::
 
 This will wait for you to start your IDE to run the tests instead of it starting another window.
 You need to point your Django server to the test database and run it on port 8088.
+
+You can also have the code pause allowing you to investigate it's state either from a web browser
+or by using `./manage.py shell_plus`. To do this add the following to your test::
+
+    self.manager.sleep()

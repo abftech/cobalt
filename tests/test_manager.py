@@ -16,6 +16,7 @@ from selenium.common.exceptions import (
     NoSuchElementException,
     StaleElementReferenceException,
 )
+from selenium.webdriver.support.select import Select
 from termcolor import colored
 from django.db import transaction
 from django.template.loader import render_to_string
@@ -49,8 +50,7 @@ LIST_OF_INTEGRATION_TESTS = {
     "FCMTokenUpdateAPITests": "api.tests.integration.02_fcm_token_tests",
     "FCMAPITests": "api.tests.integration.03_fcm_api_tests",
     "Registration": "accounts.tests.integration.01_registration",
-    # "MemberTransfer": "payments.tests.integration.01_member_actions",
-    "MemberTransfer": "payments.tests.integration.01_member_actions_temp",
+    "MemberTransfer": "payments.tests.integration.01_member_actions",
     "PaymentAPITests": "payments.tests.integration.02_payment_api_tests",
     "OrgHighLevelAdmin": "organisations.tests.integration.01_high_level_admin",
     "ClubLevelAdmin": "organisations.tests.integration.02_club_level_admin",
@@ -583,6 +583,34 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
             (By.ID, element_id), text
         )
         return self._selenium_wait(element_has_text, element_id, timeout=timeout)
+
+    def selenium_wait_for_select_and_pick_an_option(
+        self, element_id, choice_name, timeout=5
+    ):
+        """Wait for a select to appear and pick an option from it"""
+
+        # Get the item
+        element_clickable = expected_conditions.element_to_be_clickable(
+            (By.ID, element_id)
+        )
+
+        # wait for it to be clickable
+        self._selenium_wait(element_clickable, element_id, timeout=timeout)
+
+        # Create a select object for it
+        select = Select(self.driver.find_element(By.ID, element_id))
+
+        # Choose the value
+        try:
+            select.select_by_visible_text(choice_name)
+        except NoSuchElementException:
+            print(
+                f"You tried to select '{choice_name}' from the dropdown with id='{element_id}'"
+            )
+            print("This value does not exist")
+            print("Valid values are:")
+            for option in select.options:
+                print(option.text)
 
     def run(self):
 

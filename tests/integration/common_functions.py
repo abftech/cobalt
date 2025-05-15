@@ -30,13 +30,15 @@ def cobalt_htmx_user_search(
         f"id_system_number{search_id}", 10
     )
 
-    system_number.click()
+    try:
+        system_number.click()
+    except AttributeError:
+        print("############")
+        print("Couldn't find user in cobalt_htmx_user_search")
+        print("Sleeping so you can check the problem")
+        print("############")
+        manager.sleep()
     system_number.send_keys(user_system_id)
-
-    # # click on system number search
-    # manager.driver.find_element(By.ID,
-    #     f"id_button_system_number_search{search_id}"
-    # ).click()
 
     # Wait for search results and click ok
     manager.selenium_wait_for_clickable(f"id_cobalt_search_ok{search_id}").click()

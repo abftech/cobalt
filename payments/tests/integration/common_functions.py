@@ -63,7 +63,6 @@ def stripe_manual_payment_screen(manager: CobaltTestManagerIntegration):
 
     time.sleep(5)
 
-    #    manager.driver.switch_to.frame(2)
     manager.driver.switch_to.frame(manager.driver.find_element(By.TAG_NAME, "iframe"))
 
     manager.driver.find_element(By.NAME, "cardnumber").click()
