@@ -46,6 +46,7 @@ Content
 
         - :doc:`cobalt/tutorials/getting_started`
         - :doc:`cobalt/tutorials/aws_overview`
+        - :doc:`cobalt/tutorials/running_tests`
 
     .. container:: howto
 
