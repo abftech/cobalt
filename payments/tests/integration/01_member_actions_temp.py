@@ -5,6 +5,7 @@ import time
 from django.urls import reverse
 from selenium.webdriver.support.select import Select
 
+from accounts.models import User
 from notifications.tests.common_functions import check_email_sent
 from payments.views.core import get_balance
 from payments.models import MemberTransaction
@@ -73,6 +74,8 @@ class MemberTransfer:
             test_description="Looks at user object to see if auto top up has been enabled.",
         )
 
+        print(1, User.objects.filter(system_number=100).first().stripe_auto_confirmed)
+
         ##############################
 
         # Check auto top up amount
@@ -87,6 +90,8 @@ class MemberTransfer:
             test_description="Looks at user object to see that auto top up amount is set to expected value.",
         )
 
+        print(2, User.objects.filter(system_number=100).first().stripe_auto_confirmed)
+
         #############################
         # Trigger auto top up
         amt = 1000.0
@@ -98,7 +103,10 @@ class MemberTransfer:
         }
 
         url = reverse("payments:member_transfer")
+        print(3, User.objects.filter(system_number=100).first().stripe_auto_confirmed)
         response = self.client.post(url, view_data)
+
+        print(4, User.objects.filter(system_number=100).first().stripe_auto_confirmed)
 
         self.manager.save_results(
             status=response.status_code,
