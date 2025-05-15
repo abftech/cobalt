@@ -42,8 +42,18 @@ class Command(BaseCommand):
         manager = CobaltTestManagerIntegration(
             app, browser, base_url, headless, single_test
         )
+
+        # run tests
         manager.run()
-        #        if not manager.overall_success:
-        with open("/tmp/test-output.html", "w") as html_file:
+
+        # Create output
+        with open("/tmp/test-output.html", "w", encoding="utf-8") as html_file:
             html_file.write(manager.report_html())
-        os.system("utils/cgit/tools/open_report.sh")
+
+        # notify user
+        if manager.overall_success:
+            print("All tests passed\n")
+            print("Results are in /tmp/test-output.html\n")
+        else:
+            # We have errors, so show output
+            os.system("open /tmp/test-output.html")

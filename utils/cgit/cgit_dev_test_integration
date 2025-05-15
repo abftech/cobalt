@@ -124,6 +124,3 @@ pkill -TERM -f stripe
 
 # Close down Terminal
 osascript -e 'tell application "Terminal" to quit'
-
-# Show results
-open /tmp/test-output.html

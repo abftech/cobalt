@@ -108,7 +108,7 @@ class ClubMembers:
         # Click Save
         self.manager.selenium_wait_for("t_mpc_import_save").click()
 
-        ok = bool(self.manager.selenium_wait_for_text("Import Complete", "members"))
+        ok = bool(self.manager.selenium_wait_for_text("Import Complete", "members", 20))
 
         self.manager.save_results(
             status=ok,

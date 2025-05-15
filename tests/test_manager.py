@@ -56,7 +56,7 @@ LIST_OF_INTEGRATION_TESTS = {
     "ClubSettings": "organisations.tests.integration.03_club_settings",
     "ClubMembers": "organisations.tests.integration.04_club_members",
     "ClubCongress": "organisations.tests.integration.06_congress_setup",
-    # "Sessions": "club_sessions.tests.integration.01_sessions",
+    "Sessions": "club_sessions.tests.integration.01_sessions",
 }
 
 

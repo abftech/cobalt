@@ -5,7 +5,7 @@ ipython
 radon==5.1.0
 termcolor==1.1.0
 selenium==4.31.0
-sphinx==4.5.0
+sphinx==8.2.3
 sphinx-book-theme==0.3.3
 #pydata-sphinx-theme==0.12.0
 ipdb
@@ -13,3 +13,4 @@ ipdb
 # pytest-html
 coverage==6.5.0
 # PySimpleGUI==4.60.4
+standard-imghdr==3.13.0
