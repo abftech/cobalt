@@ -115,8 +115,6 @@ class TestURLsRequireLogin:
             # get response. We expect to get 302 - redirect to login page, but 40x are okay too
             response = requests.get(f"{self.manager.base_url}{url}")
 
-            print(response.status_code, response.url)
-
             if not (
                 # We are okay if we get a redirect or not found code
                 response.status_code in {302, 400, 403, 404, 405}
