@@ -293,10 +293,10 @@ class MemberTransfer:
         desc = "Trigger Auto"
 
         # enter amount
-        self.manager.selenium_wait_for("id_amount").send_keys(amt)
+        self.manager.selenium_wait_for_clickable("id_amount").send_keys(amt)
 
         # enter description
-        self.manager.selenium_wait_for("id_description").send_keys(desc)
+        self.manager.selenium_wait_for_clickable("id_description").send_keys(desc)
 
         # submit
         self.manager.selenium_wait_for_clickable("cobalt-button").click()
