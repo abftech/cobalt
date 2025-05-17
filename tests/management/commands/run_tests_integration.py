@@ -18,7 +18,7 @@ class Command(BaseCommand):
             "--base_url", help="Base url for server e.g. http://127.0.0.1:8088"
         )
         parser.add_argument(
-            "--headless", help="Specify an value to run browser in the background"
+            "--headless", help="Specify any value to run browser in the background"
         )
         parser.add_argument(
             "--single_test",
