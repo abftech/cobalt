@@ -508,7 +508,12 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
         # Create Selenium client
         if browser == "chrome":
             options = ChromeOptions()
-            # options.add_argument("--window-size=1920,1080")
+            # Prevent notifications - doesn't seem to do much
+            options.add_experimental_option(
+                "prefs", {"profile.default_content_setting_values.notifications": 2}
+            )
+            # Default timeout for waiting for things - 5 secs
+            options.timeouts = {"implicit": 5000}
             if headless:
                 options.headless = True
             self.driver = webdriver.Chrome(options=options)

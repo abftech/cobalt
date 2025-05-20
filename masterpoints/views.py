@@ -17,7 +17,6 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 from reportlab.platypus import Table, TableStyle, Image, Paragraph
-from xhtml2pdf import pisa
 
 from cobalt.settings import GLOBAL_MPSERVER
 from .factories import masterpoint_factory_creator, masterpoint_query_list

@@ -93,6 +93,8 @@ manually and it is worth trying first if you have any problems::
 
     cgit_dev_test_reload_db
 
+Note, the database will go 'stale' after a week or so as the closing dates for events will be
+passed and tests will fail with nasty looking Selenium errors about items not being found.
 Selenium
 --------
 
