@@ -41,6 +41,9 @@ alias x='exit'
 # set environment variables
 \`cat /opt/elasticbeanstalk/deployment/env | awk '{print "export",\$1}'\`
 
+# This is now a json file
+\`cat /opt/elasticbeanstalk/deployment/cfn-metadata-cache.json | jq '.EbResource."AWS::ElasticBeanstalk::Ext".Parameters.EnvironmentVariables' | tr -d '"' | tr -d "," | tr -d "[" | tr -d "]" | awk '{print "export",\$1}'\`
+
 # Quotes are a problem so explicitly do something for those
 # Should be able to do this as one line, but I'm tired
 tmpfile=\$(mktemp /tmp/env.XXXXXX)
