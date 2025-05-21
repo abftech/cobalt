@@ -39,7 +39,7 @@ alias x='exit'
 . /var/app/venv/staging-LQM1lest/bin/activate
 
 # set environment variables
-# \`cat /opt/elasticbeanstalk/deployment/env | awk '{print "export",\$1}'\`
+\`cat /opt/elasticbeanstalk/deployment/env | awk '{print "export",\$1}'\`
 
 # This is now a json file
 \`cat /opt/elasticbeanstalk/deployment/cfn-metadata-cache.json | jq '.EbResource."AWS::ElasticBeanstalk::Ext".Parameters.EnvironmentVariables' | tr -d '"' | tr -d "," | tr -d "[" | tr -d "]" | awk '{print "export",\$1}'\`
