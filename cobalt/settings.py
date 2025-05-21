@@ -234,6 +234,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "django_summernote",
     "crispy_forms",
+    "crispy_bootstrap4",
     "widget_tweaks",
     "django_extensions",
     "django.contrib.admindocs",

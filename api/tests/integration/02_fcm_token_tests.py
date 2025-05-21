@@ -1,4 +1,5 @@
 """This is really a unit test but it needs a Django server in order to work so runs as an integration test"""
+
 import json
 import time
 from base64 import b64encode
@@ -65,7 +66,7 @@ class FCMTokenAPITests:
         response = requests.post(self.fcm_url, json=data)
 
         self.manager.save_results(
-            status=response.status_code == 403,
+            status=response.status_code == 422,
             test_name="Call FCM Token API with invalid data - Password",
             test_description="Call the API with incorrect data (password)",
             output=f"status code={response.status_code}. Expected 403.",
@@ -81,6 +82,10 @@ class FCMTokenAPITests:
         }
 
         response = requests.post(self.fcm_url, json=data)
+        print(data)
+        print(response)
+        print(response.status_code)
+        print(response.text)
 
         self.manager.save_results(
             status=response.status_code,

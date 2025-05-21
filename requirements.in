@@ -12,6 +12,11 @@
 #                                                                 #
 #    pip install -r requirements.txt                              #
 #                                                                 #
+# To remove all items from pip for testing changes to this file   #
+# you can run:                                                    #
+#                                                                 #
+# pip freeze | cut -d "@" -f1 | xargs pip uninstall -y            #
+#                                                                 #
 ###################################################################
 
 #####################
@@ -55,6 +60,7 @@ django-summernote==0.8.20.0
 
 # Crispy forms
 django-crispy-forms==2.4
+crispy-bootstrap4==2024.10
 
 # Django extensions
 django-extensions==4.1
@@ -84,6 +90,7 @@ django-ses==4.4.0
 
 # Django package to talk to Google FCM
 fcm-django==2.2.1
+# fcm-django==1.0.11
 
 ############################
 # Monitoring and tools     #
