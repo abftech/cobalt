@@ -33,16 +33,12 @@ certifi==2025.4.26
     # via
     #   requests
     #   selenium
-cffi==1.17.1
-    # via cryptography
 chardet==5.2.0
     # via reportlab
 charset-normalizer==3.4.2
     # via requests
 crispy-bootstrap4==2024.10
     # via -r requirements.in
-cryptography==45.0.2
-    # via pyjwt
 ddstable==0.2.0
     # via -r requirements.in
 django==5.2.1
@@ -77,11 +73,11 @@ django-loginas==0.3.11
     # via -r requirements.in
 django-ninja==1.4.1
     # via -r requirements.in
-django-otp==1.6.0
+django-otp==1.1.1
     # via -r requirements.in
 django-post-office @ git+https://github.com/abftech/django-post_office
     # via -r requirements.in
-django-ses==4.4.0
+django-ses==3.1.2
     # via -r requirements.in
 django-summernote==0.8.20.0
     # via -r requirements.in
@@ -89,9 +85,9 @@ django-widget-tweaks==1.5.0
     # via -r requirements.in
 essential-generators==1.0
     # via -r requirements.in
-fcm-django==2.2.1
+fcm-django==1.0.11
     # via -r requirements.in
-firebase-admin==6.8.0
+firebase-admin==5.4.0
     # via fcm-django
 geographiclib==1.52
     # via geopy
@@ -193,14 +189,10 @@ pyasn1==0.6.1
     #   rsa
 pyasn1-modules==0.4.2
     # via google-auth
-pycparser==2.22
-    # via cffi
 pydantic==2.11.4
     # via django-ninja
 pydantic-core==2.33.2
     # via pydantic
-pyjwt[crypto]==2.10.1
-    # via firebase-admin
 pyparsing==3.2.3
     # via httplib2
 pysocks==1.7.1
@@ -211,6 +203,7 @@ pytz==2019.3
     # via
     #   -r requirements.in
     #   django-post-office
+    #   django-ses
 reportlab==4.4.1
     # via -r requirements.in
 requests==2.32.3
@@ -241,8 +234,6 @@ sqlparse==0.5.3
     #   django-debug-toolbar
 stripe==12.1.0
     # via -r requirements.in
-swapper==1.4.0
-    # via fcm-django
 termcolor==3.1.0
     # via -r requirements.in
 trio==0.30.0
