@@ -144,7 +144,7 @@
     <!-- Include the refund function from the edit event entry screen for players -->
     {% include "events/common/edit_player.html" with event=event_entry_player.event_entry.event %}
 
-    <script src="{% static "assets/packages/sweetalert2.11/sweetalert2.js" %}"></script>
+    <script src="{% static "assets/packages/sweetalert2.11.21.2/sweetalert2.js" %}"></script>
 
     {% include "accounts/search/user_search_include_js_htmx.html" with search_id=event_entry_player.id %}
     <script>
