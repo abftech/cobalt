@@ -10,9 +10,9 @@ chmod 777 /var/log/cobalt.log
 # get recreated, so we need to edit the syslog file. This is unlikely to cause a problem
 # unless there is a major change to AWS Linux, but just in case we check that the file size
 # is exactly what we expect it to be before we change it
-FILE_SIZE=$(wc /etc/logrotate.d/syslog | awk '{print $3}')
-if [ "$FILE_SIZE" -eq 224 ]; then
-  sed -i '/sharedscripts/a create 0644' /etc/logrotate.d/syslog
+FILE_SIZE=$(wc /etc/logrotate.d/rsyslog | awk '{print $3}')
+if [ "$FILE_SIZE" -eq 226 ]; then
+  sed -i '/sharedscripts/a create 0644' /etc/logrotate.d/rsyslog
 fi
 
-chmod 644 /etc/logrotate.d/syslog
+chmod 644 /etc/logrotate.d/rsyslog

@@ -57,6 +57,7 @@ Content
         - :doc:`cobalt/how_to/adding_stripe`
         - :doc:`cobalt/how_to/adding_fcm`
         - :doc:`cobalt/how_to/adding_recaptcha`
+        - :doc:`cobalt/how_to/upgrade_elastic_beanstalk`
 
 
 .. container:: twocol
