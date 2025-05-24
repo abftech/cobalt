@@ -16,7 +16,7 @@
     <link href="{% static "payments/css/stripe-global.css" %}" rel="stylesheet"/>
 
     <!-- Must load Stripe js from their server to be PCI compliant -->
-    <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://js.stripe.com/basil/stripe.js"></script>
     <script type="text/javascript" src="{% static "payments/js/stripe-auto-script.js" %}" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
     <script src="{% static "assets/js/plugins/sweetalert2.js" %}"></script>
@@ -66,25 +66,25 @@
 
                                                 <label>
                                                     <input type="radio" name="cobalt-amount-radio" value="50"
-                                                        {% if topup == 50 %}checked{% endif %}>
+                                                           {% if topup == 50 %}checked{% endif %}>
                                                     <img width="60px" src="{% static "assets/img/50.png" %}">
                                                 </label>
 
                                                 <label>
                                                     <input type="radio" name="cobalt-amount-radio" value="100"
-                                                        {% if topup == 100 %}checked{% endif %}>
+                                                           {% if topup == 100 %}checked{% endif %}>
                                                     <img width="60px" src="{% static "assets/img/100.png" %}">
                                                 </label>
 
                                                 <label>
                                                     <input type="radio" name="cobalt-amount-radio" value="150"
-                                                        {% if topup == 150 %}checked{% endif %}>
+                                                           {% if topup == 150 %}checked{% endif %}>
                                                     <img width="60px" src="{% static "assets/img/150.png" %}">
                                                 </label>
 
                                                 <label>
                                                     <input type="radio" name="cobalt-amount-radio" value="200"
-                                                        {% if topup == 200 %}checked{% endif %}>
+                                                           {% if topup == 200 %}checked{% endif %}>
                                                     <img width="60px" src="{% static "assets/img/200.png" %}">
                                                 </label>
                                             </div>
