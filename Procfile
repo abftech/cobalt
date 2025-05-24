@@ -1,1 +1,1 @@
-web: gunicorn --bind :8000 --workers 3 --threads 2 cobalt.wsgi:application
+web: gunicorn --bind :8000 --workers 5 --threads 8 cobalt.wsgi:application
