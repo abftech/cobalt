@@ -9,6 +9,8 @@
 
 # Copy file system
 # We use rsync as it only copies changes
+echo "Starting rsync to copy files..."
+
 if ! rsync \
   -avzr \
   -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $SSH_KEY_FILE" \
