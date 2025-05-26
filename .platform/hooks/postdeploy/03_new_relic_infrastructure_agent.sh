@@ -11,8 +11,14 @@ COBALT_HOSTNAME=$(grep COBALT_HOSTNAME /opt/elasticbeanstalk/deployment/env | tr
 LICENSE=$(grep license_key "$CONFIG_FILE" | awk '{print $3}')
 
 echo "license_key: $LICENSE" > /etc/newrelic-infra.yml
+
 LOCAL_NAME=$(hostname | tr "." " " | awk '{print$1}')
-echo "override_hostname: $LOCAL_NAME.$COBALT_HOSTNAME" >> /etc/newrelic-infra.yml
+
+{
+echo "override_hostname: $LOCAL_NAME.$COBALT_HOSTNAME"
+echo "display_name: $LOCAL_NAME.$COBALT_HOSTNAME"
+echo "dns_hostname_resolution: false"
+} >> /etc/newrelic-infra.yml
 
 chmod 644 /etc/newrelic-infra.yml
 
