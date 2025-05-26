@@ -17,7 +17,7 @@ echo "override_hostname: $LOCAL_NAME.$COBALT_HOSTNAME" >> /etc/newrelic-infra.ym
 chmod 644 /etc/newrelic-infra.yml
 
 # Create the agent’s yum repository
-curl -o /etc/yum.repos.d/newrelic-infra.repo https://download.newrelic.com/infrastructure_agent/linux/yum/amazonlinux/2/x86_64/newrelic-infra.repo
+curl -o /etc/yum.repos.d/newrelic-infra.repo https://download.newrelic.com/infrastructure_agent/linux/yum/amazonlinux/2023/x86_64/newrelic-infra.repo
 # Update your yum cache
 yum -q makecache -y --disablerepo='*' --enablerepo='newrelic-infra'
 # Run the installation script
