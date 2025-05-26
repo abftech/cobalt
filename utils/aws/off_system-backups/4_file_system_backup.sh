@@ -20,6 +20,6 @@ then
 fi
 
 # Now create a compressed version of it with date attached
-tar -zcvf "$FILE_SYSTEM_DIRECTORY"/backup-$(date '+%Y-%m-%d').tar.gz "$FILE_SYSTEM_DIRECTORY"/cobalt_media
+tar -zcvf "$FILE_SYSTEM_DIRECTORY"/backup-$(date '+%Y-%m-%d').tar.gz "$FILE_SYSTEM_DIRECTORY"/cobalt-media
 
 # Keep 5 copies

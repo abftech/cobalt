@@ -17,7 +17,7 @@
 # Set AWS to allow us access
 if ! ./2_update_aws_firewall_rule.sh
 then
-  ./notify error "Error updating firewall rule"
+  ./notify.sh error "Error updating firewall rule"
   exit 1
 fi
 
@@ -31,7 +31,7 @@ fi
 # Backup file system
 if ! ./4_file_system_backup.sh
 then
-  ./notify error "Error backing up file system"
+  ./notify.sh error "Error backing up file system"
   exit 1
 fi
 
