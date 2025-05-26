@@ -10,15 +10,26 @@
 # Hard coded values               #
 ###################################
 
-# Temp file location
-ENV_FILE=/tmp/prod_env
-
-# Dump file location
-export DUMP_FILE=/tmp/cobalt_prod.dump
-
 # Turn off AWS pagination
 export AWS_PAGER=""
 
+# Location for backup files
+export BACKUP_DIR=~/abf_backup
+
+# Dump file location
+export DUMP_FILE=$BACKUP_DIR/cobalt_prod.dump
+
+# File system location
+export FILE_SYSTEM_DIRECTORY=$BACKUP_DIR/media
+
+# Create directories if not present
+mkdir -p $FILE_SYSTEM_DIRECTORY
+
+# Security
+export SSH_KEY_FILE=~/.ssh/cobalt.pem
+
+# Temp file location
+ENV_FILE=/tmp/prod_env
 ##################################
 # AWS dynamic values             #
 ##################################
@@ -76,5 +87,6 @@ echo "IP Address of $EB_ENV is $EC2_IP_ADDRESS"
 # Get local IP address
 echo "Getting your IPv4 address..."
 MY_IP=$(curl -4 ifconfig.co)
+export MY_IP
 
 echo "Your IP is $MY_IP"

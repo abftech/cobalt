@@ -2,9 +2,12 @@
 ##################################################################
 # Take an off system back up for MyABF                           #
 #                                                                #
-# This needs to be run from its own directory                    #
+# Requirements                                                   #
+# ============                                                   #
 #                                                                #
-# AWS token variables need to be set for this to work            #
+# 1. This needs to be run from its own directory                 #
+# 2. AWS token variables need to be set for this to work         #
+# 3. Credentials need to be found in ~/.ssh/cobalt.pem           #
 #                                                                #
 ##################################################################
 
@@ -14,15 +17,27 @@
 # Set AWS to allow us access
 if ! ./2_update_aws_firewall_rule.sh
 then
-  echo "Error updating firewall rule"
+  ./notify error "Error updating firewall rule"
   exit 1
 fi
 
-# Backup database
-if ! ./3_database_backup.sh
-then
-  echo "Error backing up database"
-  exit 1
-fi
+## Backup database
+#if ! ./3_database_backup.sh
+#then
+#  ./notify error "Error backing up database"
+#  exit 1
+#fi
 
 # Backup file system
+if ! ./4_file_system_backup.sh
+then
+  ./notify error "Error backing up file system"
+  exit 1
+fi
+
+
+# Test database
+
+# Copy off site
+
+# Notify success
