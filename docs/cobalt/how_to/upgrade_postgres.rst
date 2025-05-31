@@ -16,7 +16,7 @@ Test
 
 The Test database serves Test and UAT. Obviously do this one first.
 
-You can do this from the CLI, as it isn't that common, we'll show the AWS Console
+You can do this from the CLI, but as it isn't that common an activity, we'll show the AWS Console
 method here.
 
 Create New Database Server from Snapshot
@@ -47,9 +47,12 @@ You can go into the database and go to the **Logs and events** tab to see what h
 Upgrade Database Server
 -----------------------
 
+Wait for the database server to be restored and ready.
+
 If you go to the **Configuration** tab you will see the version of your database server.
 
 .. image:: ../../images/upgrade_postgres/5.png
+
 
 You can click **Modify** to upgrade the database.
 
@@ -74,7 +77,7 @@ You can see the whole timeline if you go back to **Logs and events**:
 Production
 ==========
 
-Production is very similar to Test or UAT but with time pressures. It is necessary to stop any updates
+Production is very similar to Test but with time pressures. It is necessary to stop any updates
 while the database is upgraded.
 
 .. note::
@@ -87,7 +90,7 @@ Practice
 
 You can practice the upgrade by doing all of the steps apart from maintenance mode and the cut over.
 
-This is a good idea to do, not just to check that it works, but to get a good idea of how long the
+This is a good idea to do, not just to check that it works, but to get an estimate of how long the
 outage window will need to be.
 
 Maintenance Mode
@@ -98,7 +101,8 @@ Start by putting the system into maintenance mode.
 ..note::
 
     There is currently a bug (June 2025) that means you need to do this through the Elastic Beanstalk settings
-    not the MyABF system option.
+    not the MyABF system option, if there are more than one Elastic Beanstalk systems set up. e.g.
+    **cobalt-production-green** and **cobalt-production-blue**.
 
 You can do this either by changing the environment variable `MAINTENANCE_MODE` to **ON** or by going into
 MyABF to **Admin** and **System Settings**.
@@ -116,5 +120,22 @@ Follow the same process as for Test above.
 Change Elastic Beanstalk Environment Variables
 ----------------------------------------------
 
-Update the variable RDS_HOSTNAME to be the name of the new server. You can do this from the UI.
+Update the Production Elastic Beanstalk environment to change the environment variable
+`RDS_HOSTNAME` to be the name of the new server. You can do this from the UI.
 
+Quick Checks
+------------
+
+Use an admin account to login to Production MyABF and check it looks okay.
+
+Remove Maintenance Mode
+-----------------------
+
+..note::
+
+    There is currently a bug (June 2025) that means you need to do this through the Elastic Beanstalk settings
+    not the MyABF system option, if there are more than one Elastic Beanstalk systems set up. e.g.
+    **cobalt-production-green** and **cobalt-production-blue**.
+
+You can do this either by changing the environment variable `MAINTENANCE_MODE` to **OFF** or by going into
+MyABF to **Admin** and **System Settings**.
