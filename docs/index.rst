@@ -38,69 +38,56 @@ The source code can be found on `Github <https://github.com/abftech/cobalt>`_.
 Content
 =======
 
-.. container:: twocol
+**Tutorials**
 
-    .. container:: tutorials
+- :doc:`cobalt/tutorials/getting_started`
+- :doc:`cobalt/tutorials/aws_overview`
+- :doc:`cobalt/tutorials/running_tests`
 
-        **Tutorials**
+**How To Guides**
 
-        - :doc:`cobalt/tutorials/getting_started`
-        - :doc:`cobalt/tutorials/aws_overview`
-        - :doc:`cobalt/tutorials/running_tests`
+- :doc:`cobalt/how_to/adding_email`
+- :doc:`cobalt/how_to/adding_sms`
+- :doc:`cobalt/how_to/adding_stripe`
+- :doc:`cobalt/how_to/adding_fcm`
+- :doc:`cobalt/how_to/adding_recaptcha`
+- :doc:`cobalt/how_to/upgrade_elastic_beanstalk`
+- :doc:`cobalt/how_to/upgrade_postgres`
 
-    .. container:: howto
+**Discussions**
 
-        **How To Guides**
+- :doc:`cobalt/discussion/development_overview`
+- :doc:`cobalt/discussion/design_overview`
+- :doc:`cobalt/discussion/cobalt_for_porkchops`
+- :doc:`cobalt/discussion/django_for_porkchops`
+- :doc:`cobalt/discussion/python_for_porkchops`
+- :doc:`cobalt/discussion/email_overview`
+- :doc:`cobalt/discussion/monitoring_overview`
+- :doc:`cobalt/discussion/testing`
+- :doc:`cobalt/discussion/backups_overview`
 
-        - :doc:`cobalt/how_to/adding_email`
-        - :doc:`cobalt/how_to/adding_sms`
-        - :doc:`cobalt/how_to/adding_stripe`
-        - :doc:`cobalt/how_to/adding_fcm`
-        - :doc:`cobalt/how_to/adding_recaptcha`
-        - :doc:`cobalt/how_to/upgrade_elastic_beanstalk`
+**Reference - General**
 
+- :doc:`cobalt/reference/cobalt_in_two_minutes`
+- :doc:`cobalt/reference/common_apis`
+- :doc:`cobalt/reference/test_data`
+- :doc:`cobalt/reference/snippets`
+- :doc:`cobalt/reference/environment_variables`
 
-.. container:: twocol
+**Reference - Applications**
 
-    .. container:: discussions
-
-        **Discussions**
-
-        - :doc:`cobalt/discussion/development_overview`
-        - :doc:`cobalt/discussion/design_overview`
-        - :doc:`cobalt/discussion/cobalt_for_porkchops`
-        - :doc:`cobalt/discussion/django_for_porkchops`
-        - :doc:`cobalt/discussion/python_for_porkchops`
-        - :doc:`cobalt/discussion/email_overview`
-        - :doc:`cobalt/discussion/monitoring_overview`
-        - :doc:`cobalt/discussion/testing`
-        - :doc:`cobalt/discussion/backups_overview`
-
-
-    .. container:: reference
-
-        **Reference - General**
-
-        - :doc:`cobalt/reference/cobalt_in_two_minutes`
-        - :doc:`cobalt/reference/common_apis`
-        - :doc:`cobalt/reference/test_data`
-        - :doc:`cobalt/reference/snippets`
-        - :doc:`cobalt/reference/environment_variables`
-
-        **Reference - Applications**
-
-        - :doc:`cobalt/reference/accounts`
-        - :doc:`cobalt/reference/api`
-        - :doc:`cobalt/reference/club_sessions`
-        - :doc:`cobalt/reference/events`
-        - :doc:`cobalt/reference/forums`
-        - :doc:`cobalt/reference/notifications`
-        - :doc:`cobalt/reference/organisations`
-        - :doc:`cobalt/reference/payments`
-        - :doc:`cobalt/reference/rbac`
-        - :doc:`cobalt/reference/results`
-        - :doc:`cobalt/reference/support`
-        - :doc:`cobalt/reference/utilities`
+- :doc:`cobalt/reference/accounts`
+- :doc:`cobalt/reference/api`
+- :doc:`cobalt/reference/club_sessions`
+- :doc:`cobalt/reference/events`
+- :doc:`cobalt/reference/forums`
+- :doc:`cobalt/reference/notifications`
+- :doc:`cobalt/reference/organisations`
+- :doc:`cobalt/reference/payments`
+- :doc:`cobalt/reference/rbac`
+- :doc:`cobalt/reference/results`
+- :doc:`cobalt/reference/support`
+- :doc:`cobalt/reference/utilities`
 
 
 
