@@ -71,3 +71,50 @@ You can see the whole timeline if you go back to **Logs and events**:
 
 .. image:: ../../images/upgrade_postgres/8.png
 
+Production
+==========
+
+Production is very similar to Test or UAT but with time pressures. It is necessary to stop any updates
+while the database is upgraded.
+
+.. note::
+
+    There are ways to upgrade with zero downtime but they add complexity and risk. A more experienced
+    RDS expert than the current author may wish to update this documentation.
+
+Practice
+--------
+
+You can practice the upgrade by doing all of the steps apart from maintenance mode and the cut over.
+
+This is a good idea to do, not just to check that it works, but to get a good idea of how long the
+outage window will need to be.
+
+Maintenance Mode
+----------------
+
+Start by putting the system into maintenance mode.
+
+..note::
+
+    There is currently a bug (June 2025) that means you need to do this through the Elastic Beanstalk settings
+    not the MyABF system option.
+
+You can do this either by changing the environment variable `MAINTENANCE_MODE` to **ON** or by going into
+MyABF to **Admin** and **System Settings**.
+
+Create New Database Server from Snapshot
+-----------------------------------------
+
+Follow the same process as for Test above.
+
+Upgrade Database Server
+-----------------------
+
+Follow the same process as for Test above.
+
+Change Elastic Beanstalk Environment Variables
+----------------------------------------------
+
+Update the variable RDS_HOSTNAME to be the name of the new server. You can do this from the UI.
+
