@@ -126,7 +126,7 @@ Update the Production Elastic Beanstalk environment to change the environment va
 Quick Checks
 ------------
 
-Use an admin account to login to Production MyABF and check it looks okay.
+Use an admin account to login to Production MyABF and check it looks okay.x`
 
 Remove Maintenance Mode
 -----------------------
