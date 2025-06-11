@@ -9,6 +9,8 @@
 ###################################
 # Hard coded values               #
 ###################################
+# AWS Name for the database - not the hostname
+DB_NAME=cobalt-test-pg17
 
 # Turn off AWS pagination
 export AWS_PAGER=""
@@ -90,3 +92,13 @@ MY_IP=$(curl -4 ifconfig.co)
 export MY_IP
 
 echo "Your IP is $MY_IP"
+
+####################################
+# Latest snapshot                  #
+####################################
+DB_SNAPSHOT=$(aws rds describe-db-snapshots \
+  --query="max_by(DBSnapshots, &SnapshotCreateTime).DBSnapshotIdentifier" --db-instance-identifier DB_NAME --output text)
+
+export DB_SNAPSHOT
+
+echo "Latest database snapshot for $DB_NAME is $DB_SNAPSHOT"
