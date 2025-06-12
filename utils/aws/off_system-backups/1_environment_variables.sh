@@ -10,7 +10,7 @@
 # Hard coded values               #
 ###################################
 # AWS Name for the database - not the hostname
-DB_NAME=cobalt-test-pg17
+DB_NAME=cobalt-production
 
 # Turn off AWS pagination
 export AWS_PAGER=""
@@ -32,6 +32,10 @@ export SSH_KEY_FILE=~/.ssh/cobalt.pem
 
 # Temp file location
 ENV_FILE=/tmp/prod_env
+
+# Temp DB instance - we create this to take the dump from so it doesn't change as we do the backup
+export TEMP_DB_SERVER=offsystem-temp
+
 ##################################
 # AWS dynamic values             #
 ##################################
@@ -55,6 +59,11 @@ export PGPASSWORD
 
 # Get the database server
 RDS_HOSTNAME=$(grep RDS_HOSTNAME $ENV_FILE | awk '{print $3}')
+
+# We will run up a new server from the latest snapshot, so change this name to be that
+# e.g. we get cobalt-production.fish.aws.com but we want tempdb.fish.aws.com
+
+RDS_HOSTNAME=$(echo "$RDS_HOSTNAME" | sed "s/$DB_NAME/$TEMP_DB_SERVER/")
 export RDS_HOSTNAME
 
 # Get the database name
@@ -97,7 +106,7 @@ echo "Your IP is $MY_IP"
 # Latest snapshot                  #
 ####################################
 DB_SNAPSHOT=$(aws rds describe-db-snapshots \
-  --query="max_by(DBSnapshots, &SnapshotCreateTime).DBSnapshotIdentifier" --db-instance-identifier DB_NAME --output text)
+  --query="max_by(DBSnapshots, &SnapshotCreateTime).DBSnapshotIdentifier" --db-instance-identifier $DB_NAME --output text)
 
 export DB_SNAPSHOT
 

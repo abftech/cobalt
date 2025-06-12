@@ -7,25 +7,29 @@
 #                                            #
 ##############################################
 
-# Dump file
-echo "Running pg_dump to extract the data..."
+echo "Building temporary DB Server from latest snapshot..."
+aws rds restore-db-instance-from-db-snapshot --db-instance-identifier "$TEMP_DB_SERVER" --db-snapshot-identifier "$DB_SNAPSHOT" --db-instance-class "db.t3.micro"
 
-# aws rds restore-db-instance-from-db-snapshot --db-instance-identifier testcli --db-snapshot-identifier rds:cobalt-test-pg17-2025-06-10-16-51 --db-instance-class "db.t3.micro"
-
-# aws rds describe-db-instances --db-instance-identifier testcli
-
-# Run pg_dump and check return code
-if ! pg_dump \
-             --exclude-table-data "public.notifications_abstractemail" \
-             --exclude-table-data "public.post_office_*" \
-             -h "$RDS_HOSTNAME" \
-             -p 5432 \
-             -d "$RDS_DB_NAME" \
-             -U "$RDS_USERNAME" \
-             -F c -b -v \
-             -f "$DUMP_FILE"
+echo "Waiting for it to be available..."
+if ! aws rds wait db-instance-available --db-instance-identifier "$TEMP_DB_SERVER"
 then
-  echo "Error running pg_dump"
+  ./notify.sh "Error waiting for temp db server to be available"
   exit 1
 fi
 
+# Dump file
+echo "Running pg_dump to extract the data..."
+
+# Run pg_dump and check return code
+if ! pg_dump -h "$RDS_HOSTNAME" -p 5432 -d "$RDS_DB_NAME" -U "$RDS_USERNAME" -F c -b -v -f "$DUMP_FILE" \
+             --exclude-table-data "public.notifications_abstractemail" \
+             --exclude-table-data "public.post_office_*"
+
+then
+  ./notify.sh "Error running pg_dump"
+  exit 1
+fi
+
+# Delete temp database
+echo "Deleting temp database $TEMP_DB_SERVER"
+aws rds delete-db-instance --db-instance-identifier "$TEMP_DB_SERVER" --skip-final-snapshot

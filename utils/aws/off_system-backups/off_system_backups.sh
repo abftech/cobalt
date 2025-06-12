@@ -21,12 +21,12 @@ then
   exit 1
 fi
 
-## Backup database
-#if ! ./3_database_backup.sh
-#then
-#  ./notify error "Error backing up database"
-#  exit 1
-#fi
+# Backup database
+if ! ./3_database_backup.sh
+then
+  ./notify.sh error "Error backing up database"
+  exit 1
+fi
 
 # Backup file system
 if ! ./4_file_system_backup.sh
