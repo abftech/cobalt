@@ -7,4 +7,5 @@
 
 # Placeholder
 
-echo "NOTIFY"
+echo "NOTIFY TODO"
+echo "$*"

@@ -12,24 +12,24 @@
 ##################################################################
 
 # Set up environment variables
-. ./1_environment_variables.sh
+. 01_environment_variables.sh
 
 # Set AWS to allow us access
-if ! ./2_update_aws_firewall_rule.sh
+if ! ./02_update_aws_firewall_rule.sh
 then
   ./notify.sh error "Error updating firewall rule"
   exit 1
 fi
 
 # Backup database
-if ! ./3_database_backup.sh
+if ! ./03_database_backup.sh
 then
   ./notify.sh error "Error backing up database"
   exit 1
 fi
 
 # Backup file system
-if ! ./4_file_system_backup.sh
+if ! ./04_file_system_backup.sh
 then
   ./notify.sh error "Error backing up file system"
   exit 1
