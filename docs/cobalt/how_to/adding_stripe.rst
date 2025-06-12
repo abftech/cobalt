@@ -20,6 +20,21 @@ Create an account with Stripe, you will need to use a unique email address, but 
 allow you to have as many test accounts as you like. You can then create an API key
 through Stripe's web site.
 
+Go to https://dashboard.stripe.com/test/apikeys
+
+Then add a webhook to Stripe:
+
+https://dashboard.stripe.com/webhooks
+
+We need two events to be sent:
+
+* payment_method.attached
+* charge.succeeded
+
+The webhook location is:
+
+https://<your environment>.myabf.com.au/payments/stripe-webhook
+
 Environment Variable
 ====================
 
