@@ -4,8 +4,6 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
-annotated-types==0.7.0
-    # via pydantic
 asgiref==3.8.1
     # via django
 attrs==25.3.0
@@ -71,7 +69,7 @@ django-health-check==3.18.3
     # via -r requirements.in
 django-loginas==0.3.11
     # via -r requirements.in
-django-ninja==1.4.1
+django-ninja==0.16.1
     # via -r requirements.in
 django-otp==1.1.1
     # via -r requirements.in
@@ -189,10 +187,8 @@ pyasn1==0.6.1
     #   rsa
 pyasn1-modules==0.4.2
     # via google-auth
-pydantic==2.11.4
+pydantic==1.8.2
     # via django-ninja
-pydantic-core==2.33.2
-    # via pydantic
 pyparsing==3.2.3
     # via httplib2
 pysocks==1.7.1
@@ -245,12 +241,8 @@ trio-websocket==0.12.2
 typing-extensions==4.13.2
     # via
     #   pydantic
-    #   pydantic-core
     #   selenium
     #   stripe
-    #   typing-inspection
-typing-inspection==0.4.0
-    # via pydantic
 uritemplate==4.1.1
     # via google-api-python-client
 urllib3[socks]==2.4.0

@@ -66,7 +66,7 @@ class FCMTokenAPITests:
         response = requests.post(self.fcm_url, json=data)
 
         self.manager.save_results(
-            status=response.status_code == 422,
+            status=response.status_code == 403,
             test_name="Call FCM Token API with invalid data - Password",
             test_description="Call the API with incorrect data (password)",
             output=f"status code={response.status_code}. Expected 403.",
@@ -74,6 +74,10 @@ class FCMTokenAPITests:
 
         # Valid data - login with system_number
         data = {
+            # Ninja 1.4.1 (quote rightly) wants the username to be a string
+            # and won't accept an int. Sticking with 0.16.1 until we confirm
+            # that the mobile client will work
+            # "username": f"{self.manager.alan.system_number}",
             "username": self.manager.alan.system_number,
             "password": self.manager.test_code,
             "fcm_token": "1234567890",
@@ -82,10 +86,6 @@ class FCMTokenAPITests:
         }
 
         response = requests.post(self.fcm_url, json=data)
-        print(data)
-        print(response)
-        print(response.status_code)
-        print(response.text)
 
         self.manager.save_results(
             status=response.status_code,

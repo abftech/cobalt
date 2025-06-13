@@ -133,7 +133,13 @@ django-otp==1.1.1
 ##########################
 
 # Django Ninja for API calls into Cobalt
-django-ninja==1.4.1
+# Cannot upgrade until the login from the mobile client using system number passes it as
+# a string. Ninja 1.4.1 (correctly) insists on this being a string and won't accept
+# an int.
+# TODO: Check if mobile app passes a string for system_number or if we can accept either
+# TODO: Until then don't upgrade ninja
+# django-ninja==1.4.1
+django-ninja==0.16.1
 
 # Six is only (currently) used by the API libraries
 six~=1.17.0
