@@ -1,4 +1,5 @@
-""" Script to sanitise prod data so we can use it for testing """
+"""Script to sanitise prod data so we can use it for testing"""
+
 from django.core.exceptions import SuspiciousOperation
 from post_office.models import Email, STATUS
 
@@ -9,7 +10,12 @@ from accounts.models import User
 from django.core.management.base import BaseCommand
 
 from events.models import Congress
-from organisations.models import MemberClubEmail
+from organisations.models import (
+    MemberClubEmail,
+    Visitor,
+    Organisation,
+    MemberClubDetails,
+)
 
 
 class Command(BaseCommand):
@@ -27,4 +33,7 @@ class Command(BaseCommand):
         print("Changing email addresses...")
         User.objects.all().update(email="a@b.com")
         MemberClubEmail.objects.all().update(email="a@b.com")
+        MemberClubDetails.objects.all().update(email="a@b.com")
+        Visitor.objects.all().update(email="a@b.com")
+        Organisation.objects.all().update(club_email="a@b.com")
         Congress.objects.all().update(contact_email="a@b.com")
