@@ -98,7 +98,7 @@ Maintenance Mode
 
 Start by putting the system into maintenance mode.
 
-..note::
+.. note::
 
     There is currently a bug (June 2025) that means you need to do this through the Elastic Beanstalk settings
     not the MyABF system option, if there are more than one Elastic Beanstalk systems set up. e.g.
@@ -106,6 +106,12 @@ Start by putting the system into maintenance mode.
 
 You can do this either by changing the environment variable `MAINTENANCE_MODE` to **ON** or by going into
 MyABF to **Admin** and **System Settings**.
+
+If you aren't logged in, you can go to https://myabf.com.au/accounts/login
+
+.. warning::
+    If you login as someone else to make sure it is working, you won't be able to logout. Use another browser
+    if you want to try this.
 
 Create New Database Server from Snapshot
 -----------------------------------------
@@ -126,12 +132,12 @@ Update the Production Elastic Beanstalk environment to change the environment va
 Quick Checks
 ------------
 
-Use an admin account to login to Production MyABF and check it looks okay.x`
+Use an admin account to login to Production MyABF and check it looks okay.
 
 Remove Maintenance Mode
 -----------------------
 
-..note::
+.. note::
 
     There is currently a bug (June 2025) that means you need to do this through the Elastic Beanstalk settings
     not the MyABF system option, if there are more than one Elastic Beanstalk systems set up. e.g.
