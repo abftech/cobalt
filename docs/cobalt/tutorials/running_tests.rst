@@ -54,6 +54,10 @@ Before you try to run the tests, make sure you have the latest Stripe CLI instal
 
     brew upgrade stripe/stripe-cli/stripe
 
+or, if you don't already have stripe installed::
+
+    brew install stripe/stripe-cli/stripe
+
 Also, if you haven't used it recently, you will need to log Stripe in::
 
     stripe login
