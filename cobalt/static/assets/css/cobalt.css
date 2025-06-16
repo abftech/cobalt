@@ -178,9 +178,9 @@ img.cobalt-rounded {
 /* logout style for Django > 4 */
 .cobalt-logout {
     border: 0;
-    background: white;
+    color:white;
+    cursor: pointer;
 }
 .cobalt-logout:hover {
-    background-color: white;
-    border: 0;
+    color: white !important;
 }

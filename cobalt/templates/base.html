@@ -319,12 +319,11 @@ Environment: {{ COBALT_HOSTNAME }}
                                             <a class="dropdown-item" href="{% url "support:helpdesk_user_list" %}">Support Tickets</a>
                                         {% endif %}
                                         <div class="dropdown-divider"></div>
-                                        <span class="dropdown-item">
-                                            <form method="post" action="{% url "logout" %}">
-                                                {% csrf_token %}
-                                                <button type="submit" class="cobalt-logout">Log out</button>
-                                            </form>
-                                        </span>
+                                        <form id="logout-form" method="post" action="{% url "logout" %}">
+                                            {% csrf_token %}
+                                            <a class="dropdown-item cobalt-logout" onclick="document.getElementById('logout-form').submit()">Log out</a>
+                                        </form>
+
                                     </div>
                                 </li>
                             </ul>
