@@ -29,4 +29,7 @@ yum -q makecache -y --disablerepo='*' --enablerepo='newrelic-infra'
 # Run the installation script
 yum install newrelic-infra -y
 
+# Set up log shipping
+cp .new_relic/logging.yaml /etc/newrelic-infra/logging.d/logging.yaml
+
 echo "Finished setting up the New Relic Infrastructure Agent."

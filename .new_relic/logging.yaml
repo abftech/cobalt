@@ -1,0 +1,13 @@
+# Log forwarder configuration file for New Relic
+# This needs to be installed in /etc/newrelic-infra/logging.d/
+logs:
+  # Cobalt log file - Only send errors
+  - name: cobalt
+    file: /var/log/cobalt.log
+    max_line_kb: 256
+    pattern: WARN|ERROR|CRITICAL
+
+  # Cobalt log file - Only send errors
+  - name: web.stdout.log
+    file: /var/log/web.stdout.log
+    max_line_kb: 256
