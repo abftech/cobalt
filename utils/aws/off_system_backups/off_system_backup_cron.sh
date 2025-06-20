@@ -10,7 +10,8 @@ echo "Starting off system backup cron" > $SESSION_LOG
 source ~/.bashrc
 
 # Get latest code
-git pull origin develop >> $SESSION_LOG 2>&1
+# git pull origin develop >> $SESSION_LOG 2>&1
+git pull origin remediation-part-3 >> $SESSION_LOG 2>&1
 
 # Install Pip packages
 pip install -r requirements.txt >> $SESSION_LOG 2>&1
