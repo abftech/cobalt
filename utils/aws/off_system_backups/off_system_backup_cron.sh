@@ -20,4 +20,4 @@ pip install -r requirements.txt >> $SESSION_LOG 2>&1
 cd utils/aws/off_system_backups || { echo "cd to utils/aws/off_system_backups failed" >> $SESSION_LOG; exit 1; }
 
 # Run it
-./off_system_backups>> $SESSION_LOG 2>&1
+./off_system_backups.sh>> $SESSION_LOG 2>&1
