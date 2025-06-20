@@ -6,6 +6,14 @@
 #                                            #
 ##############################################
 
+###############################
+# Colours for terminal output #
+###############################
+export RED='\033[0;31m'
+export BLUE='\033[0;34m'
+export YELLOW='\033[0;33m'
+export NC='\033[0m' # No Color
+
 ###################################
 # Hard coded values               #
 ###################################
@@ -41,17 +49,16 @@ export TEMP_DB_SERVER=offsystem-temp
 ##################################
 
 # Find the Elastic Beanstalk environment to use
-echo ""
-echo "Looking for name of Production Elastic Beanstalk environment..."
+printf "\nLooking for name of Production Elastic Beanstalk environment...\n"
 EB_ENV=$(eb list | grep cobalt-production)
 export EB_ENV
-echo "Found $EB_ENV"
+printf "Found ${YELLOW}$EB_ENV${NC}\n"
 
 # Get the environment variables
-echo "Downloading the environment variables..."
+printf "Downloading the environment variables...\n"
 eb printenv "$EB_ENV" > $ENV_FILE
 
-echo "Extracting the values needed..."
+printf "Extracting the values needed...\n"
 
 # Get the production password - store as environment variable for pg_dump
 PGPASSWORD=$(grep RDS_PASSWORD $ENV_FILE | awk '{print $3}')
@@ -75,7 +82,7 @@ RDS_USERNAME=$(grep RDS_USERNAME $ENV_FILE | awk '{print $3}')
 export RDS_USERNAME
 
 # Remove temp file
-echo "Deleting temp file..."
+printf "Deleting temp file...\n"
 rm $ENV_FILE
 
 ################################
@@ -85,29 +92,30 @@ rm $ENV_FILE
 ################################
 
 # Get an EC2 instance from the EB environment
-echo "Finding an EC2 instance..."
+printf "Finding an EC2 instance...\n"
 INSTANCE=$(eb list --verbose | grep "$EB_ENV" | awk 'NF>1{print $NF}' | tr -d "'" | tr -d "]" | tr -d "[")
-echo "Instance is $INSTANCE"
+printf "Instance is ${BLUE}$INSTANCE${NC}\n"
 
 # Get IP of instance
-echo "Getting the IP address of the instance..."
+printf "Getting the IP address of the instance...\n"
 EC2_IP_ADDRESS=$(aws ec2 describe-instances --instance-ids "$INSTANCE" | grep PublicIpAddress | head -1 | awk '{print $2}' | tr -d '",')
 export EC2_IP_ADDRESS
-echo "IP Address of $EB_ENV is $EC2_IP_ADDRESS"
+printf "IP Address of ${BLUE}$EB_ENV${NC} is ${YELLOW}$EC2_IP_ADDRESS${NC}\n"
 
 # Get local IP address
-echo "Getting your IPv4 address..."
-MY_IP=$(curl -4 ifconfig.co)
+printf "Getting your IPv4 address...\n"
+MY_IP=$(curl -4 ifconfig.co 2>/dev/null)
 export MY_IP
 
-echo "Your IP is $MY_IP"
+printf "Your IP is ${YELLOW}$MY_IP${NC}\n"
 
 ####################################
 # Latest snapshot                  #
 ####################################
+printf "Getting database snapshot name...\n"
 DB_SNAPSHOT=$(aws rds describe-db-snapshots \
   --query="max_by(DBSnapshots, &SnapshotCreateTime).DBSnapshotIdentifier" --db-instance-identifier $DB_NAME --output text)
 
 export DB_SNAPSHOT
 
-echo "Latest database snapshot for $DB_NAME is $DB_SNAPSHOT"
+printf "Latest database snapshot for ${RED}$DB_NAME${NC} is ${YELLOW}$DB_SNAPSHOT${NC}\n\n"

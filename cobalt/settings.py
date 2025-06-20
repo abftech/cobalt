@@ -350,10 +350,14 @@ STATIC_URL = "/static/"
 # append MD5 hash to filenames to prevent caching on version change
 STATICFILES_STORAGE = "utils.storage.ForgivingManifestStaticFilesStorage"
 
+# TODO: update environment variables in EB and delete the EFS code here
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 if "FILE_SYSTEM_ID" in os.environ:  # AWS EFS for media
     MEDIA_ROOT = "/cobalt-media"
 MEDIA_URL = "/media/"
+
+# Allow override of media root
+MEDIA_ROOT = set_value("MEDIA_ROOT_OVERRIDE", MEDIA_ROOT)
 
 LOGIN_REDIRECT_URL = "/dashboard"
 LOGOUT_REDIRECT_URL = "/"

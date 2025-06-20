@@ -14,6 +14,6 @@ if ! aws ec2 modify-security-group-rules \
     --group-id sg-e6b3fd98 \
     --security-group-rules SecurityGroupRuleId=sgr-0f0e494ea840a7a52,SecurityGroupRule="{Description='Off Sys Backup',IpProtocol=-1,CidrIpv4=$MY_IP/32}"
 then
-  echo "aws ec2 command failed"
+  ./notify.sh error "Error updating firewall rule"
   exit 1
 fi

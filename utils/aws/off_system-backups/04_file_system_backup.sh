@@ -17,11 +17,12 @@ if ! rsync \
    --progress \
    ec2-user@"$EC2_IP_ADDRESS":/cobalt-media "$FILE_SYSTEM_DIRECTORY"
 then
-  echo "Error running rsync"
+  ./notify.sh error "Error running rsync"
   exit 1
 fi
 
 # Now create a compressed version of it with date attached
 tar -zcvf "$FILE_SYSTEM_DIRECTORY"/backup-$(date '+%Y-%m-%d').tar.gz "$FILE_SYSTEM_DIRECTORY"/cobalt-media
 
-# Keep 5 copies
+# Keep 5 copies - delete the rest
+rm -f $(ls -1t "$FILE_SYSTEM_DIRECTORY"/backup*.tar.gz | tail -n +6)
