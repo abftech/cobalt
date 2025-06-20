@@ -216,6 +216,7 @@ Standard set up for Cobalt::
     # Open Source so we don't need git credentials to get the code
     git init
     git remote add origin https://github.com/abftech/cobalt.git
+    git config pull.rebase false
 
     # Use develop as our reference branch
     git checkout -b develop
