@@ -104,7 +104,7 @@ printf "IP Address of ${BLUE}$EB_ENV${NC} is ${YELLOW}$EC2_IP_ADDRESS${NC}\n"
 
 # Get local IP address
 printf "Getting your IPv4 address...\n"
-MY_IP=$(curl -4 ifconfig.co 2>/dev/null)
+MY_IP=$(curl ipinfo.io/ip)
 export MY_IP
 
 printf "Your IP is ${YELLOW}$MY_IP${NC}\n"

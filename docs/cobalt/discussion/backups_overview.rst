@@ -257,6 +257,11 @@ directory.::
 
 Exit the session and login again to re-run `.bashrc`.
 
+Now run::
+
+    eb init
+
+
 Setup Cron
 ----------
 
