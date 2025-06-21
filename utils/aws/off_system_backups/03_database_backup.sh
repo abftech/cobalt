@@ -1,11 +1,33 @@
 #!/usr/bin/env bash
-
 ##############################################
 # Off system backups                         #
 #                                            #
 # Handle database backup                     #
 #                                            #
 ##############################################
+
+# Check if the temp db is there, probably from an earlier problem
+EXISTING_INSTANCE=$(aws rds describe-db-instances \
+    --query 'DBInstances[*].[DBInstanceIdentifier]' \
+    --filters Name=db-instance-id,Values="$TEMP_DB_SERVER" \
+    --output text \
+    )
+
+if [ -z "$EXISTING_INSTANCE" ]
+then
+    printf "Temporary DB server $TEMP_DB_SERVER does not exist\n"
+else
+    printf "Temporary DB server ${YELLOW}$TEMP_DB_SERVER${NC}, already exists. Removing it.\n"
+    aws rds delete-db-instance --db-instance-identifier "$TEMP_DB_SERVER" --skip-final-snapshot
+
+    printf "Waiting for ${YELLOW}$TEMP_DB_SERVER${NC} to be deleted...\n"
+    if ! aws rds wait db-instance-deleted --db-instance-identifier "$TEMP_DB_SERVER"
+    then
+      ./notify.sh error "Error waiting for temp db server to be available"
+      exit 1
+    fi
+
+fi
 
 printf "Snapshot to use is ${YELLOW}$DB_SNAPSHOT${NC} and new database name is ${YELLOW}$TEMP_DB_SERVER${NC}\n"
 printf "Building temporary DB Server from latest snapshot...\n"
@@ -39,7 +61,7 @@ printf "Deleting temp database server ${YELLOW}$TEMP_DB_SERVER${NC}...\n"
 aws rds delete-db-instance --db-instance-identifier "$TEMP_DB_SERVER" --skip-final-snapshot
 
 # Now create a compressed version of it with date attached
-tar -zcvf "$BACKUP_DIR"/prod-db-$(date '+%Y-%m-%d').tar.gz "DUMP_FILE"
+tar -zcvf "$BACKUP_DIR"/prod-db-$(date '+%Y-%m-%d').tar.gz "$DUMP_FILE"
 
 # Keep 5 copies - delete the rest
 rm -f $(ls -1t "$BACKUP_DIR"/prod-db-*.tar.gz | tail -n +6)

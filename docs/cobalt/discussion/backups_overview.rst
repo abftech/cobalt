@@ -222,6 +222,17 @@ Standard set up for Cobalt::
     git checkout -b develop
     git pull origin develop
 
+SSH Key
+-------
+
+Rsync needs the ssh key for Cobalt. Copy this from your environment into LightSail, e.g.::
+
+    scp -i ~/.ssh/cobalt-lightsail.pem ~/.ssh/cobalt.pem ec2-user@3.106.143.77:/home/ec2-user/.ssh/cobalt.pem
+
+Then log back into the LightSail instance and change the permissions::
+
+    chmod 600 ~/.ssh/cobalt.pem
+
 AWS and EB CLI
 --------------
 
