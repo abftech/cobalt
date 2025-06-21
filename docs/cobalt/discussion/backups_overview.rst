@@ -37,13 +37,15 @@ Additional Off System Backups
 
 While it is unlikely that anything will go wrong with RDS itself, it is possible for other factors to
 affect our database. For example, failure to pay the bill would result in the account being shutdown or
-human error could cause the production database and all of its snapshots to be deleted when the intention was
-to remove UAT.
+human error could cause the production database and all of its snapshots to be deleted when the
+intention was to remove UAT.
 
-For this reason we have an off-system backup which runs daily. This is not without risk as it needs to access
-production data and systems in order to copy the data. It also requires maintenance and testing. The IT equivalent
-of the medical joke "The operation was successful, but the patient died" is "The backups worked perfectly, it
-was the restores that had problems." For that reason, as well as copying the data we also restore and test it
+For this reason we have an off-system backup which runs daily. This is not without risk as it
+needs to access production data and systems in order to copy the data. It also requires
+maintenance and testing. The IT equivalent of the medical joke "The operation was successful,
+but the patient died" is "The backups worked perfectly, it
+was the restores that had problems." For that reason, as well as copying the data we
+also restore and test it
 each time.
 
 As of 2025, the backup process takes a couple of hours. During that time many things could happen
@@ -155,9 +157,17 @@ Check you can connect to Postgres::
 
     postgres=#
 
-While you are in, create the user
+While you are working with Postgres, lets add a couple of other things::
 
-**COME BACK TO THIS***
+    sudo -u postgres createuser -s ec2-user
+    sudo -u postgres createdb ec2-user
+
+    sudo -u postgres psql
+        psql (17.5)
+        Type "help" for help.
+
+        postgres=# ALTER USER "ec2-user" WITH SUPERUSER;
+        postgres=# create user cobalt with encrypted password 'F1shcake';
 
 Install Python
 --------------
@@ -272,6 +282,21 @@ Now run::
 
     eb init
 
+Activation File
+---------------
+
+This one is a bit lazy, but it makes the off system backup structure match this author's
+development environment.
+
+Run::
+
+    cd # make sure you are in the home directory
+    mkdir bin; cd bin
+    cat << EOF > cobalt.sh
+    #!/usr/bin/env bash
+    source ~/.bashrc
+    EOF
+    chmod 755 cobalt.sh
 
 Setup Cron
 ----------
