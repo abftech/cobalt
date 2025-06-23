@@ -346,7 +346,7 @@ Mount it and ensure it is mounted every time::
     vi /etc/fstab
 
     # Add to end (previous lines look different, don't worry):
-    /dev/nvme1n1 /abf_backup/ xfs defaults,nofail 0 2
+    /dev/nvme1n1 /home/ec2-user/abf_backup/ xfs defaults,nofail 0 2
 
 Reboot your instance and check the file system gets mounted.
 

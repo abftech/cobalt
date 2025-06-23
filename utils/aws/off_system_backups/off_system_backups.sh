@@ -44,3 +44,4 @@ fi
 # Copy off site
 
 # Notify success
+./notify success "Off system backups were successful"

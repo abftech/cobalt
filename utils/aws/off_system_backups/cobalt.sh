@@ -12,4 +12,4 @@
 # Set up environment and change to directory
 cd
 # This will give errors for quotes, we can ignore this
-source bin/cobalt.sh
+source bin/cobalt.sh 2>/dev/null

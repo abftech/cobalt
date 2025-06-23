@@ -3,6 +3,7 @@
 # call this from cron to run the off system backups #
 #####################################################
 SESSION_LOG=/tmp/off_system_backups.log
+# This is also used by notifications/management/commands/off_system_backups_email.py
 
 echo "Starting off system backup cron" > $SESSION_LOG
 
