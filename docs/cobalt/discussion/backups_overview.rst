@@ -66,30 +66,25 @@ How It Works
 The code lives in `utils/aws/off_system_backups`. It can run pretty much anywhere, but needs
 a copy of the cobalt code. It needs to run after the RDS snapshot has been taken.
 
-Setting Up on LightSail
+Setting Up on Lightsail
 ========================
 
-Here are the steps to set up the off system backups on AWS LightSail. LightSail is an easy
+Here are the steps to set up the off system backups on AWS Lightsail. Lightsail is an easy
 way to set up an EC2 instance that you can access remotely.
 
-LightSail Instance
+Lightsail Instance
 ------------------
 
-1. Go to the AWS LightSail Console
+1. Go to the AWS Lightsail Console
 2. Create a new instance. Choose **Linux** -> **OS Only** -> **Amazon Linux 2023**.
 3. Choose **Dual Stack**.
 4. 2GB is probably enough.
 5. Give it a name and create it.
 
-Add Disk
---------
-
-Maybe...
-
 Connect Over SSH
 ----------------
 
-The LightSail web based client is pretty awful, you are better connecting over ssh so you
+The Lightsail web based client is pretty awful, you are better connecting over ssh so you
 can cut and paste easily.
 
 Go to your instance and into the **Connect** tab. Download the default key and move it to
@@ -173,7 +168,7 @@ Install Python
 --------------
 
 At the time of writing, we were using Python 3.13, but only 3.12 was easily available on
-LightSail. It is unlikely to make much difference for the off system backups.
+Lightsail. It is unlikely to make much difference for the off system backups.
 
 To see the available versions of python, run::
 
@@ -235,11 +230,11 @@ Standard set up for Cobalt::
 SSH Key
 -------
 
-Rsync needs the ssh key for Cobalt. Copy this from your environment into LightSail, e.g.::
+Rsync needs the ssh key for Cobalt. Copy this from your environment into Lightsail, e.g.::
 
     scp -i ~/.ssh/cobalt-lightsail.pem ~/.ssh/cobalt.pem ec2-user@3.106.143.77:/home/ec2-user/.ssh/cobalt.pem
 
-Then log back into the LightSail instance and change the permissions::
+Then log back into the Lightsail instance and change the permissions::
 
     chmod 600 ~/.ssh/cobalt.pem
 
@@ -297,6 +292,63 @@ Run::
     source ~/.bashrc
     EOF
     chmod 755 cobalt.sh
+
+Add Disk
+--------
+
+Lightsail doesn't come with much disk space so we need to add some more.
+
+From the Lightsail console select your instance go to **Storage** add some storage (256GB should be okay). Connect
+this to your instance.
+
+Now ssh into the machine and become root (sudo -s).
+
+Show the disks::
+
+    # lsblk
+    NAME          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+    nvme0n1       259:0    0   60G  0 disk
+    ├─nvme0n1p1   259:1    0   60G  0 part /
+    ├─nvme0n1p127 259:2    0    1M  0 part
+    └─nvme0n1p128 259:3    0   10M  0 part /boot/efi
+    nvme1n1       259:4    0  256G  0 disk
+
+Our new disk is the bottom one (256GB).
+
+It is an unformatted data disk::
+
+    # file -s /dev/nvme1n1
+    /dev/nvme1n1: data
+
+Format it::
+
+    # mkfs -t xfs /dev/nvme1n1
+    meta-data=/dev/nvme1n1           isize=512    agcount=16, agsize=4194304 blks
+             =                       sectsz=512   attr=2, projid32bit=1
+             =                       crc=1        finobt=1, sparse=1, rmapbt=0
+             =                       reflink=1    bigtime=1 inobtcount=1
+    data     =                       bsize=4096   blocks=67108864, imaxpct=25
+             =                       sunit=1      swidth=1 blks
+    naming   =version 2              bsize=4096   ascii-ci=0, ftype=1
+    log      =internal log           bsize=4096   blocks=32768, version=2
+             =                       sectsz=512   sunit=1 blks, lazy-count=1
+    realtime =none                   extsz=4096   blocks=0, rtextents=0
+
+Create mount point::
+
+    cd /home/ec2-user
+    mkdir abf_backup
+    chmod 777 abf_backup
+
+Mount it and ensure it is mounted every time::
+
+    mount /dev/nvme1n1 abf_backup/
+    vi /etc/fstab
+
+    # Add to end (previous lines look different, don't worry):
+    /dev/nvme1n1 /abf_backup/ xfs defaults,nofail 0 2
+
+Reboot your instance and check the file system gets mounted.
 
 Setup Cron
 ----------
