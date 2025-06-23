@@ -18,7 +18,7 @@ export NC='\033[0m' # No Color
 # Hard coded values               #
 ###################################
 # AWS Name for the database - not the hostname
-DB_NAME=cobalt-production
+DB_NAME=production-blue
 
 # Turn off AWS pagination
 export AWS_PAGER=""
@@ -50,7 +50,7 @@ export TEMP_DB_SERVER=offsystem-temp
 
 # Find the Elastic Beanstalk environment to use
 printf "\nLooking for name of Production Elastic Beanstalk environment...\n"
-EB_ENV=$(eb list | grep cobalt-production)
+EB_ENV=$(eb list | grep cobalt-production-green)
 export EB_ENV
 printf "Found ${YELLOW}$EB_ENV${NC}\n"
 
