@@ -60,6 +60,11 @@ Select the version you would like.
 
 .. image:: ../../images/upgrade_postgres/6.png
 
+.. note::
+
+    If you are on a very old version you may have to go through multiple steps to upgrade
+    to the latest version.
+
 You can leave everything else as it is and scroll to the bottom to click **Continue**.
 
 You will be taken to a confirmation screen. Select **Apply immediately** and then
@@ -132,7 +137,31 @@ Update the Production Elastic Beanstalk environment to change the environment va
 Quick Checks
 ------------
 
-Use an admin account to login to Production MyABF and check it looks okay.
+Use an admin account to login to Production MyABF and check it looks okay. Also run::
+
+    cgit_production_smoke_test
+
+You can compare the database tables by running a count before and after the upgrade. e.g.
+create a file called `/tmp/sql` and put these commands in it::
+
+    select table_name,
+    pg_size_pretty(pg_total_relation_size(quote_ident(table_name))),
+    pg_total_relation_size(quote_ident(table_name))
+    from information_schema.tables
+    where table_schema = 'public'
+    order by 3 desc;
+
+Before the upgrade, on a production node run::
+
+    ./manage.py dbshell < /tmp/sql > /tmp/tables_before
+
+After the upgrade run::
+
+    ./manage.py dbshell < /tmp/sql > /tmp/tables_after
+    diff /tmp/tables/before /tmp/tables/after
+
+You may get differences for email tables (SNS updates aren't blocked in Maintenance Mode)
+or for user logins.
 
 Remove Maintenance Mode
 -----------------------
