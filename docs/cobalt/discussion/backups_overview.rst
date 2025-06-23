@@ -339,6 +339,8 @@ Create mount point::
     cd /home/ec2-user
     mkdir abf_backup
     chmod 777 abf_backup
+    chown ec2-user abf_backup
+    chgrp ec2-user abf_backup
 
 Mount it and ensure it is mounted every time::
 
@@ -371,3 +373,7 @@ add a little time on to that. Currently (2025), the entry is::
     30 16 * * * <path to cobalt>/utils/aws/off_system_backups/off_system_backup_cron.sh
 
 
+Off System Restores
+===================
+
+TBA

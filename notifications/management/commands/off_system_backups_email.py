@@ -15,7 +15,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         # Positional arguments
 
-        parser.add_argument("--status", help="Success or Failure")
+        parser.add_argument("--status", help="success | error")
         parser.add_argument("--subject", help="High level message")
 
     def handle(self, *args, **options):
@@ -23,10 +23,13 @@ class Command(BaseCommand):
         status = options["status"]
         subject = options["subject"]
 
+        # make the email look like a name so it doesn't get filter by email clients
         if status == "success":
-            sender = "Backup Success<noreply@myabf.com.au>"
+            sender = "Backup Success<back.up@myabf.com.au>"
+            subject = f"✅ {subject}"
         else:
-            sender = "Backup Failed<noreply@myabf.com.au>"
+            sender = "Backup Failed<back.up@myabf.com.au>"
+            subject = f"❌ {subject}"
 
         tail = subprocess.run(["tail", "-100", SESSION_LOG], stdout=subprocess.PIPE)
         log_data = tail.stdout.decode("utf-8")
