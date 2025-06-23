@@ -25,11 +25,15 @@ then
 fi
 
 # Load the database
-printf "Loading the data, this will take a while...\n"
-if ! pg_restore -h localhost -p 5432 -U postgres -d $LOCAL_DB_NAME --no-owner --no-privileges --role=cobalt -v "$DUMP_FILE"
+printf "Loading the data into the local database...\n"
+# if ! pg_restore -h localhost -p 5432 -U postgres -d $LOCAL_DB_NAME --no-owner --no-privileges --role=cobalt -v "$DUMP_FILE"
+if ! pg_restore -d $LOCAL_DB_NAME --no-owner --no-privileges --role=cobalt -v "$DUMP_FILE"
 then
   ./notify.sh error "Error running pg_restore locally"
 fi
+
+# We have a dated copy of the db dump, so delete this one
+rm "$DUMP_FILE"
 
 ###############################################################################################
 # Sanitise the data - we do this through Cobalt.                                              #
@@ -41,3 +45,5 @@ fi
 
 # sanitise data
 ./manage.py sanitise_production_data_for_testing
+
+

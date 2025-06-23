@@ -60,12 +60,13 @@ fi
 printf "Deleting temp database server ${YELLOW}$TEMP_DB_SERVER${NC}...\n"
 aws rds delete-db-instance --db-instance-identifier "$TEMP_DB_SERVER" --skip-final-snapshot
 
-# Now create a compressed version of it with date attached
-if ! tar -zcvf "$BACKUP_DIR"/prod-db-$(date '+%Y-%m-%d').tar.gz "$DUMP_FILE"
+# There is no point compressing the back up, it stays the same size, so just copy it
+# The 05_check_database.sh will delete the backup when it finishes
+if ! cp "$DUMP_FILE" "$DUMP_FILE".$(date '+%Y-%m-%d')
 then
-  ./notify.sh error "Error compressing database file"
+  ./notify.sh error "Error moving database file"
   exit 1
 fi
 
 # Keep 5 copies - delete the rest
-rm -f $(ls -1t "$BACKUP_DIR"/prod-db-*.tar.gz | tail -n +6)
+rm -f $(ls -1t "$DUMP_FILE".* | tail -n +6)

@@ -263,6 +263,11 @@ You will need some other environment variables::
 
     export AWS_SES_CONFIGURATION_SET=cobalt-test
     export AWS_SES_REGION_ENDPOINT=email.ap-southeast-2.amazonaws.com
+    export RDS_DB_NAME=cobalt
+    export RDS_HOSTNAME=127.0.0.1
+    export RDS_PORT=5432
+    export RDS_USERNAME=cobalt
+    export RDS_PASSWORD=F1shcake
 
 You can also add activation of the virtual environment and changing into the
 directory.::
