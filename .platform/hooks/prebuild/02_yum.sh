@@ -3,8 +3,8 @@
 # This lets us connect to the file system (NFS/EFS)
 yum -y install amazon-efs-utils
 
-# Driver for Postgres
-yum -y install postgresql.x86_64
+# Driver for Postgres - don't seem to be needed by Django except for ./manage.py dbshell
+yum -y install postgresql17
 
 # Git
 yum -y install git
