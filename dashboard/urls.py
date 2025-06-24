@@ -4,7 +4,6 @@ from . import views
 app_name = "dashboard"  # pylint: disable=invalid-name
 
 urlpatterns = [
-    #    path("", views.home, name="home"),
     path("", views.dashboard, name="dashboard"),
     path("logged-out", views.logged_out, name="logged_out"),
     path("help", views.help, name="help"),

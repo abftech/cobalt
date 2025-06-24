@@ -177,9 +177,6 @@ MAINTENANCE_MODE = set_value("MAINTENANCE_MODE", "OFF")
 RECAPTCHA_SITE_KEY = set_value("RECAPTCHA_SITE_KEY")
 RECAPTCHA_SECRET_KEY = set_value("RECAPTCHA_SECRET_KEY")
 
-# Put a trailing slash if not provided
-APPEND_SLASH = True
-
 #########################################
 # Dynamic settings.                     #
 #########################################

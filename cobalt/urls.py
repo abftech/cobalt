@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.conf.urls.static import static
-from dashboard.views import logged_out, home, slug
+from dashboard.views import logged_out, home, slug, dashboard
 from django.conf import settings
 from django.urls import include, path
 from django_otp.admin import OTPAdminSite
@@ -26,6 +26,7 @@ urlpatterns = [
     path("admin_1234567/", include("loginas.urls")),
     path("admin_1234567/", admin.site.urls),
     path("", home, name="home"),
+    path("dashboard", dashboard),
     path("dashboard/", include("dashboard.urls")),
     path("api/", include("api.urls")),
     path("results/", include("results.urls", namespace="results")),
