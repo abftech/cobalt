@@ -3,6 +3,7 @@ from datetime import date, timedelta
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
+from django.db.models import Index
 from django.urls import reverse
 
 from accounts.models import User
@@ -90,7 +91,8 @@ def no_future(value):
 class Organisation(models.Model):
     """Many of these fields map to fields in the Masterpoints Database
     We don't worry about phone numbers and addresses for secretaries and MP secretaries
-    They seem to relate to sending letters to people. We keep the Venue address though."""
+    They seem to relate to sending letters to people. We keep the Venue address though.
+    """
 
     bsb_regex = RegexValidator(
         regex=r"^\d{6}$",
@@ -691,6 +693,11 @@ class MemberClubDetails(models.Model):
     class Meta:
         unique_together = ("club", "system_number")
         verbose_name_plural = "Member Club Details"
+        indexes = [
+            Index(fields=["email"]),
+            Index(fields=["email_hard_bounce"]),
+            Index(fields=["system_number"]),
+        ]
 
     @property
     def is_active_status(self):
