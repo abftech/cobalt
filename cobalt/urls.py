@@ -26,8 +26,9 @@ urlpatterns = [
     path("admin_1234567/", include("loginas.urls")),
     path("admin_1234567/", admin.site.urls),
     path("", home, name="home"),
-    # Allow /dashboard without trailing dash
+    # Allow /dashboard without trailing slash
     path("dashboard", dashboard),
+    # Main dashboard urls - will include trailing slash
     path("dashboard/", include("dashboard.urls")),
     path("api/", include("api.urls")),
     path("results/", include("results.urls", namespace="results")),
