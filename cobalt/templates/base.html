@@ -164,7 +164,7 @@ Environment: {{ COBALT_HOSTNAME }}
                         </li>
 
                         <li class="nav-item {% if request.path|slice:":13" == "/masterpoints" %}active{% endif %} ">
-                            <a class="nav-link" href="/masterpoints">
+                            <a class="nav-link" href="/masterpoints/">
                                 <i class="material-icons">call_made</i>
                                 <p>Masterpoints</p>
                             </a>
@@ -205,7 +205,7 @@ Environment: {{ COBALT_HOSTNAME }}
                         {% endif %}
 
                         <li class="nav-item {% if request.path|slice:":8" == "/support" %}active{% endif %} ">
-                            <a class="nav-link" href="/support">
+                            <a class="nav-link" href="/support/">
                                 <i class="material-icons">support_agent</i>
                                 <p>Support</p>
                             </a>
