@@ -157,6 +157,11 @@
                                                 <a href="javascript:void(0)" onclick='help("Entry Fee", "The standard member entry fee without discounts. This is the fee per player. For teams events this is the fee per player in a team of four.");'>help</a>
                                             </div>
                                         </div>
+                                    {% else %}
+                                        <!-- COMMENT IN CODE SAYS THIS IS REQUIRED, BUT SHOULD BE HIDDEN -->
+                                        <div style="display: none">
+                                            {{ form.member_entry_fee }}
+                                        </div>
                                     {% endif %}
 
                                     {% if not congress.members_only %}
@@ -178,6 +183,7 @@
                                                 <a href="javascript:void(0)" onclick='help("Entry Fee", "The standard entry fee without discounts. This is the fee per player. For teams events this is the fee per player in a team of four.");'>help</a>
                                             </div>
                                         </div>
+
                                     {% endif %}
 
                                     {% if congress.allow_early_payment_discount %}
