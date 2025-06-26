@@ -74,8 +74,12 @@
 
             $('#id_session_date').datetimepicker({
                 format: 'DD/MM/YYYY',
-                minDate: moment('{{ event.congress.start_date|date:"d/m/Y" }}', "DD/MM/YYYY"),
-                maxDate: moment('{{ event.congress.end_date|date:"d/m/Y" }}', "DD/MM/YYYY")
+                {% if event.congress.start_date %}
+                    minDate: moment('{{ event.congress.start_date|date:"d/m/Y" }}', "DD/MM/YYYY"),
+                {% endif %}
+                {% if event.congress.start_date %}
+                    maxDate: moment('{{ event.congress.end_date|date:"d/m/Y" }}', "DD/MM/YYYY"),
+                {% endif %}
             });
             $('#id_session_start').datetimepicker({
                 format: 'LT'
