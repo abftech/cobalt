@@ -68,15 +68,22 @@
                             </div>
                         </h1>
                     </div>
-                    <h2>{{ summary.ABFNumber }} - {{ summary.RankName }} Master</h2>
+                    <h2>{{ summary.ABFNumber }} - {{ summary.RankName }} Master
+
+{#                    Wedding anniversary message for Julie#}
+                        {% if summary.ABFNumber == 620254 %}
+                            Funk
+                        {% endif %}
+
+                    </h2>
                     <div>
                         <h3><i>{% if summary.IsActive %}Home club is {{ club }}{% else %}Used to play at
                             {{ club }}{% endif %}</i></h3>
                     </div>
                     <div>
                         Visit <a href="http://www.abfmasterpoints.com.au/myawards.asp?search=name&nomenu=n"
-                            target="_blank"><span
-                                style="color: white;"><u>The MasterPoints Centre</u></span></a> for official figures.
+                                 target="_blank"><span
+                            style="color: white;"><u>The MasterPoints Centre</u></span></a> for official figures.
                     </div>
                 </div>
 
@@ -147,8 +154,8 @@
                                                                         <div id="mpChart" class="ct-chart"></div>
                                                                     </div>
                                                                     <select class="selectpicker"
-                                                                        data-style="btn btn-success btn-sm cobalt-text-transform-off w-auto"
-                                                                        id="id_range">
+                                                                            data-style="btn btn-success btn-sm cobalt-text-transform-off w-auto"
+                                                                            id="id_range">
                                                                         <option value="">RANGE...</option>
                                                                         <option value="1">Last 12 Months</option>
                                                                         <option value="2">Last 2 Years</option>
@@ -178,27 +185,27 @@
                                                                                 <div class="form-group">
                                                                                     <label class="bmd-label-floating">{{ GLOBAL_ORG }} Number</label>
                                                                                     <input name="system_number" id="id_system_number" type="number"
-                                                                                        min="0" step="1" class="form-control search-item" value="">
+                                                                                           min="0" step="1" class="form-control search-item" value="">
                                                                                 </div>
                                                                             </div>
                                                                             <div class="col-md-12">
                                                                                 <div class="form-group">
                                                                                     <label class="bmd-label-floating">Last Name</label>
                                                                                     <input name="last_name" id="id_last_name" type="text"
-                                                                                        class="form-control search-item" value="">
+                                                                                           class="form-control search-item" value="">
                                                                                 </div>
                                                                             </div>
                                                                             <div class="col-md-12">
                                                                                 <div class="form-group">
                                                                                     <label class="bmd-label-floating">First Name</label>
                                                                                     <input name="first_name" id="id_first_name" type="text"
-                                                                                        class="form-control search-item" value="">
+                                                                                           class="form-control search-item" value="">
                                                                                 </div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="d-flex justify-content-center">
                                                                             <button id="button-submit" type="submit"
-                                                                                class="btn btn-primary center-text cobalt-save" disabled>Search
+                                                                                    class="btn btn-primary center-text cobalt-save" disabled>Search
                                                                             </button>
                                                                         </div>
                                                                         <div class="clearfix"></div>
