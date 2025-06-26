@@ -1,4 +1,4 @@
-""" values set in here are passed to every template """
+"""values set in here are passed to every template"""
 
 from django.conf import settings
 from notifications.views.user import get_notifications_for_user
@@ -53,4 +53,5 @@ def global_settings(request):
         "TBA_PLAYER": settings.TBA_PLAYER,
         "NEW_RELIC_APP_ID": settings.NEW_RELIC_APP_ID,
         "XERO_TENANT_NAME": settings.XERO_TENANT_NAME,
+        "MAINTENANCE_MODE": settings.MAINTENANCE_MODE,
     }

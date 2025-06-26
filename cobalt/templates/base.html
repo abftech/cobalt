@@ -83,7 +83,7 @@ Environment: {{ COBALT_HOSTNAME }}
     </head>
 
     <body>
-        {# login_as sets this variable so we how if this is a session controlled by an admin - show message if true #}
+        {# login_as sets this variable so we know if this is a session controlled by an admin - show message if true #}
         {% if is_impersonated_session %}
             <div class="main-panel">
                 <div class="container-fluid">
@@ -106,6 +106,9 @@ Environment: {{ COBALT_HOSTNAME }}
                     <div class="row justify-content-center">
                         <div class="btn btn-round text-white col-md-11" style="background-color: darkblue">
                             <h1>Production</h1>
+                            {% if MAINTENANCE_MODE == "ON" %}
+                                <h2>Maintenance Mode On</h2>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
