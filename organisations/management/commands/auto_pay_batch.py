@@ -185,7 +185,7 @@ class Command(BaseCommand):
             memberships = get_auto_pay_memberships_for_club(club)
 
             if not memberships:
-                logger.warning(f"No auto pay candiates for {club.name}")
+                logger.warning(f"No auto pay candidates for {club.name}")
                 continue
 
             # get the bridge credit payment method for the club (if any)
@@ -213,7 +213,9 @@ class Command(BaseCommand):
                 rbac_role=f"notifications.orgcomms.{club.id}.edit",
                 organisation=club,
                 batch_type=BatchID.BATCH_TYPE_COMMS,
-                batch_size=len(memberships),  # Changed to use len(memberships) for initial size
+                batch_size=len(
+                    memberships
+                ),  # Changed to use len(memberships) for initial size
                 description=f"Membership fee payment for {club.name}",
                 complete=False,
             )

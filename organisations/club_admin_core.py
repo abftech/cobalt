@@ -238,13 +238,15 @@ def get_membership_details_for_club(club, exclude_id=None):
     today = timezone.now().date()
     fees_and_due_dates = {
         f"{mt.id}": {
-            "annual_fee": str(float(mt.annual_fee))
-            if club.full_club_admin and mt.annual_fee
-            else "0",
+            "annual_fee": (
+                str(float(mt.annual_fee))
+                if club.full_club_admin and mt.annual_fee
+                else "0"
+            ),
             "due_date": (today + timedelta(mt.grace_period_days)).strftime("%d/%m/%Y"),
-            "end_date": ""
-            if mt.does_not_renew
-            else club.current_end_date.strftime("%d/%m/%Y"),
+            "end_date": (
+                "" if mt.does_not_renew else club.current_end_date.strftime("%d/%m/%Y")
+            ),
             "perpetual": "Y" if mt.does_not_renew else "N",
         }
         for mt in membership_types
@@ -330,9 +332,9 @@ def get_club_options_for_user(user):
             club_options.append(missing_options)
             options_dict[membership.club] = missing_options
         else:
-            options_dict[
-                membership.club
-            ].membership_status = membership.get_membership_status_display()
+            options_dict[membership.club].membership_status = (
+                membership.get_membership_status_display()
+            )
 
     return club_options
 
@@ -671,15 +673,15 @@ def _augment_member_details(member_qs, sort_option="last_desc"):
         player.system_number: {
             "first_name": player.first_name,
             "last_name": player.last_name,
-            "user_type": f"{GLOBAL_TITLE} User"
-            if type(player) is User
-            else "Unregistered User",
+            "user_type": (
+                f"{GLOBAL_TITLE} User" if type(player) is User else "Unregistered User"
+            ),
             "user_or_unreg_id": player.id,
             "user_or_unreg": player,
             "user_email": player.email if type(player) is User else None,
-            "internal": False
-            if type(player) is User
-            else player.internal_system_number,
+            "internal": (
+                False if type(player) is User else player.internal_system_number
+            ),
         }
         for player in chain(users, unreg_users)
     }
@@ -822,7 +824,8 @@ def get_club_member_list_email_match(
 
 
 
-    Note that this only searches on the member's email, not the email in the user record"""
+    Note that this only searches on the member's email, not the email in the user record
+    """
 
     members = MemberClubDetails.objects.filter(club=club)
 
@@ -869,7 +872,8 @@ def get_club_member_list_for_emails(
     Returns:
         list: list of (system numbers, email)
 
-    Note that this only searches on the member's email, not the email in the user record"""
+    Note that this only searches on the member's email, not the email in the user record
+    """
 
     members = MemberClubDetails.objects
 
@@ -926,7 +930,8 @@ def get_club_contact_list_email_match(
 ):
     """Return a list of system numbers of club contacts, matching on email address
 
-    Note that this only searches on the member's email, not the email in the user record"""
+    Note that this only searches on the member's email, not the email in the user record
+    """
 
     qs = MemberClubDetails.objects.filter(
         club=club,
@@ -994,15 +999,19 @@ def _augment_contact_details(club, contact_qs, sort_option="last_desc"):
         player.system_number: {
             "first_name": player.first_name,
             "last_name": player.last_name,
-            "user_type": f"{GLOBAL_TITLE} User"
-            if type(player) is User
-            else (
-                "Contact Only" if player.internal_system_number else "Unregistered User"
+            "user_type": (
+                f"{GLOBAL_TITLE} User"
+                if type(player) is User
+                else (
+                    "Contact Only"
+                    if player.internal_system_number
+                    else "Unregistered User"
+                )
             ),
             "user_or_unreg_id": player.id,
-            "internal": False
-            if type(player) is User
-            else player.internal_system_number,
+            "internal": (
+                False if type(player) is User else player.internal_system_number
+            ),
             "blocking_membership": player.system_number in blocking_system_numbers,
         }
         for player in chain(users, unreg_users)
@@ -1145,7 +1154,9 @@ def has_club_email_bounced(email):
 def set_club_email_bounced(email, email_hard_bounce_reason, email_hard_bounce_date):
     """Set bounce information for all occurances of a club email address"""
 
-    MemberClubDetails.objects.filter(email=email,).update(
+    MemberClubDetails.objects.filter(
+        email=email,
+    ).update(
         email_hard_bounce=True,
         email_hard_bounce_reason=email_hard_bounce_reason,
         email_hard_bounce_date=email_hard_bounce_date,
@@ -1155,7 +1166,9 @@ def set_club_email_bounced(email, email_hard_bounce_reason, email_hard_bounce_da
 def clear_club_email_bounced(email):
     """Clear bounce information for all occurances of a club email address"""
 
-    MemberClubDetails.objects.filter(email=email,).update(
+    MemberClubDetails.objects.filter(
+        email=email,
+    ).update(
         email_hard_bounce=False,
         email_hard_bounce_reason=None,
         email_hard_bounce_date=None,
@@ -1586,9 +1599,9 @@ def add_member(
         last_modified_by=requester,
         membership_type=membership_type,
         fee=fee if fee is not None else 0,
-        start_date=start_date
-        if start_date
-        else (today if club.full_club_admin else None),
+        start_date=(
+            start_date if start_date else (today if club.full_club_admin else None)
+        ),
     )
     new_membership.due_date = (
         due_date
@@ -2433,9 +2446,9 @@ def _format_renewal_notice_email(
         if renewal_parameters.club_template.box_colour:
             context["box_colour"] = renewal_parameters.club_template.box_colour
         if renewal_parameters.club_template.box_font_colour:
-            context[
-                "box_font_colour"
-            ] = renewal_parameters.club_template.box_font_colour
+            context["box_font_colour"] = (
+                renewal_parameters.club_template.box_font_colour
+            )
         if renewal_parameters.club_template.reply_to:
             context["reply_to"] = renewal_parameters.club_template.reply_to
         if renewal_parameters.club_template.from_name:
@@ -2499,9 +2512,9 @@ def send_renewal_notice(
         context=context,
         batch_id=this_batch_id,
         batch_size=this_batch_id.batch_size if this_batch_id else 1,
-        apply_default_template_for_club=member_details.club
-        if renewal_parameters.club_template is None
-        else None,
+        apply_default_template_for_club=(
+            member_details.club if renewal_parameters.club_template is None else None
+        ),
     )
 
     return (True, None)
@@ -2909,14 +2922,11 @@ def switch_to_full_club_admin(club, requester):
 
                 # default approach is starting a year earlier than end unless this
                 # is before the current year start
-                candidate_start_date = (
-                    date(
-                        membership.end_date.year - 1,
-                        membership.end_date.month,
-                        membership.end_date.day,
-                    )
-                    + timedelta(days=1)
-                )
+                candidate_start_date = date(
+                    membership.end_date.year - 1,
+                    membership.end_date.month,
+                    membership.end_date.day,
+                ) + timedelta(days=1)
 
                 if candidate_start_date < club_year_start:
                     if club_year_start <= membership.end_date:
@@ -3177,7 +3187,7 @@ def convert_contact_to_member(
 
     payment_success, payment_message = _process_membership_payment(
         club,
-        (type(new_user_or_unreg) == User),
+        isinstance(new_user_or_unreg, User),
         new_membership,
         payment_method,
         "New membership",
@@ -3206,7 +3216,7 @@ def convert_contact_to_member(
         message,
     )
 
-    if type(new_user_or_unreg) == User:
+    if isinstance(new_user_or_unreg, User):
         share_user_data_with_clubs(
             new_user_or_unreg,
             this_membership=member_details,
@@ -3575,9 +3585,9 @@ def get_members_for_renewal(
 
     player_dict = {
         player.system_number: {
-            "user_type": f"{GLOBAL_TITLE} User"
-            if type(player) is User
-            else "Unregistered User",
+            "user_type": (
+                f"{GLOBAL_TITLE} User" if type(player) is User else "Unregistered User"
+            ),
             "user_or_unreg": player,
             "user_email": player.email if type(player) is User else None,
             "allow_auto_pay": (
@@ -3766,9 +3776,11 @@ def get_outstanding_memberships(club, sort_option="name_asc"):
             "first_name": player.first_name,
             "last_name": player.last_name,
             "user_or_unreg": player,
-            "user_type": f"{GLOBAL_TITLE} User"
-            if type(player) == User
-            else "Unregistered User",
+            "user_type": (
+                f"{GLOBAL_TITLE} User"
+                if isinstance(player, User)
+                else "Unregistered User"
+            ),
             "allow_auto_pay": (
                 (player.system_number not in system_numbers_blocking_auto_pay)
                 and (type(player) is User)
@@ -3789,7 +3801,7 @@ def get_outstanding_memberships(club, sort_option="name_asc"):
                 # No auto pay, so sort last
                 membership.auto_pay_sort_date = date(2100, 1, 3)
             else:
-                if type(membership.user_or_unreg) == User:
+                if isinstance(membership.user_or_unreg, User):
                     if membership.allow_auto_pay:
                         add_to_total("auto_pay_fees", membership.fee)
                         membership.auto_pay_sort_date = membership.auto_pay_date
@@ -3802,7 +3814,7 @@ def get_outstanding_memberships(club, sort_option="name_asc"):
             if membership.system_number in club_email_dict:
                 membership.club_email = club_email_dict[membership.system_number]
             else:
-                if type(membership.user_or_unreg) == User:
+                if isinstance(membership.user_or_unreg, User):
                     membership.club_email = membership.user_or_unreg.email
                 else:
                     membership.club_email = None
@@ -3904,6 +3916,7 @@ def get_auto_pay_memberships_for_club(club, date=None):
     member_details_qs = MemberClubDetails.objects.filter(
         club=club, system_number__in=system_numbers
     )
+
     member_detail_dict = {
         member_details.system_number: member_details
         for member_details in member_details_qs

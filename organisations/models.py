@@ -390,8 +390,8 @@ class MembershipType(models.Model):
 class MemberMembershipType(models.Model):
     """
     This links members to a club membership.
-    Note that a player can have multiple records for an organistaion, but they
-    should be non-overlapping in time. Only the most recent determies the overall
+    Note that a player can have multiple records for an organisation, but they
+    should be non-overlapping in time. Only the most recent determines the overall
     membership status for the person.
     """
 
@@ -425,7 +425,7 @@ class MemberMembershipType(models.Model):
     """ Date at which an automatic Bridge Credit payment will be attempted """
 
     due_date = models.DateField("Payment due date", blank=True, null=True, default=None)
-    """ Date by which payment is due, none if paid, otherwise typically paid_unitl_date plus a grace period """
+    """ Date by which payment is due, none if paid, otherwise typically paid_until_date plus a grace period """
 
     fee = models.DecimalField(
         "Fee",
@@ -583,7 +583,7 @@ class MemberClubDetails(models.Model):
     will have a MemberClubDetails record regardless of whether they are registered or unregistered
     in My ABF, and regardless of whether their is a club specific email.
 
-    latest+membership and membership_status are programatically set, not determined at runtime,
+    latest+membership and membership_status are programmatically set, not determined at runtime,
     to allow database queries to use these attributes efficiently.
 
     Note that some fields are duplicates of fields in the User model. This is to allow members
