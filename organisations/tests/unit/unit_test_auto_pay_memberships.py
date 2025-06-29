@@ -12,11 +12,16 @@ from organisations.models import (
     MemberClubDetails,
 )
 from organisations.views.admin import add_club_defaults
-from payments.models import MemberTransaction, OrganisationTransaction
+from payments.models import (
+    MemberTransaction,
+    OrganisationTransaction,
+    StripeTransaction,
+)
 
 from tests.test_manager import CobaltTestManagerIntegration
 
 from organisations.management.commands.auto_pay_batch import Command
+from utils.models import Lock
 
 
 def _user_set_up_helper(user, club, membership_type, auto_top_up):
@@ -48,26 +53,11 @@ def _user_set_up_helper(user, club, membership_type, auto_top_up):
     member_club_details.save()
 
 
-def _test_outcome_helper(manager, test_name, user, club, amount):
+def _test_outcome_helper(manager, test_name, user, club, amount, expect_stripe):
     """helper to check the status"""
 
     # check what happened
     last_member_tran = MemberTransaction.objects.last()
-    print("####")
-    print("####")
-    print("####")
-    print("####")
-    print("####")
-    print("####")
-    print("####")
-    print("####")
-    print("####")
-    print("####")
-    print("####")
-    print(last_member_tran)
-    print(last_member_tran.amount)
-    print(last_member_tran.member)
-    print(amount)
     last_org_tran = OrganisationTransaction.objects.last()
     member_membership = MemberMembershipType.objects.filter(
         system_number=user.system_number
@@ -75,13 +65,13 @@ def _test_outcome_helper(manager, test_name, user, club, amount):
 
     pay_status = (
         last_member_tran.member == user
-        and last_member_tran.amount == amount
+        and float(last_member_tran.amount) == -amount
         and last_member_tran.organisation == club
         and last_org_tran.organisation == club
-        and last_org_tran.amount == amount
+        and float(last_org_tran.amount) == amount
         and last_org_tran.member == user
     )
-    member_status = member_membership.membership_state == "Cur"
+    member_status = member_membership.membership_state == "CUR"
 
     output = f"""
     Payment status: {pay_status}. Member status: {member_status}.
@@ -92,7 +82,7 @@ def _test_outcome_helper(manager, test_name, user, club, amount):
     Found: {last_org_tran.organisation=}. Expected: {club=}.
     Found: {last_org_tran.amount=}. Expected: {amount=}.
     Found: {last_org_tran.member=}. Expected: {user=}.
-
+    Found: {member_membership.membership_state}. Expected: CUR.
     """
 
     manager.save_results(
@@ -102,9 +92,23 @@ def _test_outcome_helper(manager, test_name, user, club, amount):
         output=output,
     )
 
+    # Check Stripe
+    stripe_trans = StripeTransaction.objects.last()
+    if expect_stripe:
+        status = stripe_trans.member == user
+    else:
+        status = not stripe_trans or stripe_trans.member != user
+
+    manager.save_results(
+        status=status,
+        test_name=f"Auto Pay Membership batch. {test_name}. Stripe Transaction",
+        test_description="Check for Stripe transaction",
+        output=f"Stripe transaction is {stripe_trans}",
+    )
+
 
 class AutoPayMembershipsTests:
-    """Unit tests for auto paying membership fees"""
+    """Unit tests for auto-paying membership fees"""
 
     def __init__(self, manager: CobaltTestManagerIntegration):
         self.manager = manager
@@ -127,7 +131,13 @@ class AutoPayMembershipsTests:
 
         # Set up users
         _user_set_up_helper(
-            self.manager.alan, self.club, self.membership_type, auto_top_up=True
+            self.manager.alan, self.club, self.membership_type, auto_top_up=False
+        )
+        _user_set_up_helper(
+            self.manager.betty, self.club, self.membership_type, auto_top_up=True
+        )
+        _user_set_up_helper(
+            self.manager.colin, self.club, self.membership_type, auto_top_up=False
         )
 
     def test_01_sufficient_funds(self):
@@ -148,4 +158,29 @@ class AutoPayMembershipsTests:
             self.manager.alan,
             self.club,
             self.membership_type.annual_fee,
+            expect_stripe=False,
+        )
+
+    def test_02_auto_top_up(self):
+        """User has insufficient funds to pay - use auto top up"""
+
+        # Clear lock
+        Lock.objects.all().delete()
+
+        # Not enough money into account
+        MemberTransaction(
+            member=self.manager.betty, amount=10, balance=22, type="Transfer In"
+        ).save()
+
+        # Call directly, not through command line
+        auto_pay_batch = Command()
+        auto_pay_batch.handle()
+
+        _test_outcome_helper(
+            self.manager,
+            "Insufficient funds - auto top up.",
+            self.manager.betty,
+            self.club,
+            self.membership_type.annual_fee,
+            expect_stripe=True,
         )
