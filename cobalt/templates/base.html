@@ -73,7 +73,9 @@ Environment: {{ COBALT_HOSTNAME }}
         {# Standard Javascript libraries for all pages #}
         <script src="{% static "assets/js/cobalt-core.js" %}"></script>
         {# Note htmx needs to be loaded in the head to handle being loaded twice https://github.com/bigskysoftware/htmx/issues/854 #}
-        <script src="{% static "assets/packages/htmx-2.0.4/htmx.min.js" %}"></script>
+{#    HTMX v2 causes problems for bootstrap selectpickers #}
+{#        <script src="{% static "assets/packages/htmx-2.0.4/htmx.min.js" %}"></script>#}
+        <script src="{% static "assets/packages/htmx-1.8.0/htmx.min.js" %}"></script>
         <script src="{% static "assets/js/jquery-validation-1.19.2/jquery.validate.min.js" %}"></script>
         <script src="{% static "assets/js/jquery-validation-1.19.2/additional-methods.min.js" %}"></script>
 
