@@ -1,4 +1,4 @@
-"""Tests for the auto pay cron job for memberships"""
+"""Tests for the auto-pay cron job for memberships"""
 
 import datetime
 
@@ -33,6 +33,8 @@ def _user_set_up_helper(user, club, membership_type, auto_top_up):
     member_membership.fee = membership_type.annual_fee
     member_membership.last_modified_by = user
     member_membership.is_paid = False
+    member_membership.start_date = datetime.date.today() - datetime.timedelta(days=2)
+    member_membership.due_date = datetime.date.today() - datetime.timedelta(days=2)
     member_membership.auto_pay_date = datetime.date.today() - datetime.timedelta(days=2)
     member_membership.save()
 
@@ -41,6 +43,8 @@ def _user_set_up_helper(user, club, membership_type, auto_top_up):
         stripe.api_key = STRIPE_SECRET_KEY
         customer = stripe.Customer.create(name=user.full_name)
         user.stripe_customer_id = customer["id"]
+        user.stripe_auto_confirmed = "On"
+        user.auto_amount = 50
         user.save()
 
         # add card using test visa data
@@ -103,7 +107,7 @@ def _test_outcome_helper(manager, test_name, user, club, amount, expect_stripe):
         status=status,
         test_name=f"Auto Pay Membership batch. {test_name}. Stripe Transaction",
         test_description="Check for Stripe transaction",
-        output=f"Stripe transaction is {stripe_trans}",
+        output=f"Stripe transaction is {stripe_trans}. Stripe user is '{stripe_trans.member}'. Expected user is '{user}'. Expect Stripe is {expect_stripe}.",
     )
 
 
@@ -129,19 +133,13 @@ class AutoPayMembershipsTests:
         self.membership_type.membership_status = "Due"
         self.membership_type.save()
 
+    def test_01_sufficient_funds(self):
+        """User has funds to pay"""
+
         # Set up users
         _user_set_up_helper(
             self.manager.alan, self.club, self.membership_type, auto_top_up=False
         )
-        _user_set_up_helper(
-            self.manager.betty, self.club, self.membership_type, auto_top_up=True
-        )
-        _user_set_up_helper(
-            self.manager.colin, self.club, self.membership_type, auto_top_up=False
-        )
-
-    def test_01_sufficient_funds(self):
-        """User has funds to pay"""
 
         # Put enough money into account
         MemberTransaction(
@@ -167,9 +165,14 @@ class AutoPayMembershipsTests:
         # Clear lock
         Lock.objects.all().delete()
 
-        # Not enough money into account
+        # Set up user
+        _user_set_up_helper(
+            self.manager.betty, self.club, self.membership_type, auto_top_up=True
+        )
+
+        # Not enough money in account
         MemberTransaction(
-            member=self.manager.betty, amount=10, balance=22, type="Transfer In"
+            member=self.manager.betty, amount=10, balance=0, type="Transfer In"
         ).save()
 
         # Call directly, not through command line
@@ -183,4 +186,44 @@ class AutoPayMembershipsTests:
             self.club,
             self.membership_type.annual_fee,
             expect_stripe=True,
+        )
+
+    def test_03_insufficient_funds_no_top_up(self):
+        """User has insufficient funds to pay - no auto top up"""
+
+        # Clear lock
+        Lock.objects.all().delete()
+
+        # Set up user
+        _user_set_up_helper(
+            self.manager.colin, self.club, self.membership_type, auto_top_up=False
+        )
+
+        # Not enough money in account
+        MemberTransaction(
+            member=self.manager.colin, amount=10, balance=14.50, type="Transfer In"
+        ).save()
+
+        # Call directly, not through command line
+        auto_pay_batch = Command()
+        auto_pay_batch.handle()
+
+        # Check it failed
+        last_member_tran = MemberTransaction.objects.last()
+        last_org_tran = OrganisationTransaction.objects.last()
+        member_membership = MemberMembershipType.objects.filter(
+            system_number=self.manager.colin.system_number
+        ).first()
+
+        status = not (
+            last_member_tran.organisation == self.club
+            or last_org_tran.member == self.manager.colin
+            or member_membership.is_paid
+        )
+
+        self.manager.save_results(
+            status=status,
+            test_name="Auto Pay Membership batch. Insufficient funds. No auto top up",
+            test_description="Test the auto_pay_memberships script",
+            output=f"Last member tran org: {last_member_tran.organisation}. Last org tran: {last_org_tran.member}. Membership is Paid: {member_membership.is_paid}",
         )
