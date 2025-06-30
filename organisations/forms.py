@@ -835,11 +835,11 @@ class TemplateBannerForm(forms.ModelForm):
 
         image = Image.open(email_template.banner)
 
-        if image.mode != "RGB":
+        if image.mode not in ["RGB", "RGBA"]:
             image = image.convert("RGB")
 
         cropped_image = image.crop((x, y, w + x, h + y))
-        resized_image = cropped_image.resize((500, 200), PIL.Image.Resampling.LANCZOS)
+        resized_image = cropped_image.resize((500, 200), PIL.Image.Resampling.NEAREST)
         resized_image.save(email_template.banner.path)
 
         return email_template
