@@ -377,6 +377,27 @@ add a little time on to that. Currently (2025), the entry is::
     crontab -e
     30 16 * * * <path to cobalt>/utils/aws/off_system_backups/off_system_backup_cron.sh
 
+S3 and BackBlaze Setup
+======================
+
+We use two "AWS" profiles for S3 to copy files between AWS S3 and BackBlaze, which implements the same
+API. One profile is for S3, the other is for BackBlaze.
+
+Set up the two profiles::
+
+    aws configure --profile s3
+    aws configure --profile b2
+
+Put in the details for S3 and BackBlaze. You will need to create keys in both systems if you don't already have them.
+
+After this ~/.aws/config should look like, you will need to manually add the endpoint_url line::
+
+    [profile b2]
+    region = us-east-005
+    endpoint_url = https://s3.us-east-005.backblazeb2.com
+    [profile s3]
+    region = ap-southeast-2
+
 
 Off System Restores
 ===================
