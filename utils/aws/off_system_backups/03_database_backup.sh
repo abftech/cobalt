@@ -68,5 +68,5 @@ then
   exit 1
 fi
 
-# Keep 5 copies - delete the rest
-rm -f $(ls -1t "$DUMP_FILE".* | tail -n +6)
+# Keep 3 copies - delete the rest
+find "$BACKUP_DIR" -maxdepth 1 -mtime +3 -type f -delete

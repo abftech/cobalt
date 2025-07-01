@@ -24,5 +24,5 @@ fi
 # Now create a compressed version of it with date attached
 tar -zcvf "$FILE_SYSTEM_DIRECTORY"/backup-$(date '+%Y-%m-%d').tar.gz "$FILE_SYSTEM_DIRECTORY"/cobalt-media
 
-# Keep 5 copies - delete the rest
-rm -f $(ls -1t "$FILE_SYSTEM_DIRECTORY"/backup*.tar.gz | tail -n +6)
+# Keep 3 copies - delete the rest
+find "$FILE_SYSTEM_DIRECTORY" -maxdepth 1 -mtime +3 -type f -delete
