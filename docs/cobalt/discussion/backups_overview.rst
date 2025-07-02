@@ -154,9 +154,17 @@ Check you can connect to Postgres::
 
 While you are working with Postgres, lets add a couple of other things::
 
+    # Nasty legacy from some consultants
+    sudo yum install postgresql17-contrib
+
+    sudo -u postgres psql
+    psql (17.5)
+    Type "help" for help.
+
+    postgres=# create extension pg_trgm;
+
     # change authentication method for Postgres
     vi /var/lib/pgsql/data/pg_hba.conf
-
 
     # TYPE  DATABASE        USER            ADDRESS                 METHOD
 
