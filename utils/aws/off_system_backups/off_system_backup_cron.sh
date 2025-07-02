@@ -17,6 +17,9 @@ git pull origin remediation-part-3 >> $SESSION_LOG 2>&1
 # Install Pip packages
 pip install -r requirements.txt >> $SESSION_LOG 2>&1
 
+# Set up
+utils/aws/rebuild_test_database_subcommands.sh
+
 # Change directory
 cd utils/aws/off_system_backups || { echo "cd to utils/aws/off_system_backups failed" >> $SESSION_LOG; exit 1; }
 
