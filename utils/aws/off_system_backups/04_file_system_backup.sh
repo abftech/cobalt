@@ -21,6 +21,9 @@ then
   exit 1
 fi
 
+# Dedupe file system to save space
+../../tools/replace_duplicates_with_symlinks.sh "$FILE_SYSTEM_DIRECTORY"
+
 # Now create a compressed version of it with date attached
 tar -zcvf "$FILE_SYSTEM_DIRECTORY"/backup-$(date '+%Y-%m-%d').tar.gz "$FILE_SYSTEM_DIRECTORY"/cobalt-media
 

@@ -138,7 +138,7 @@ Now start it::
 
 If there are problems have a look at what the issue was::
 
-    systemctl status postgresql.service
+    systemctl status postgresql
 
 Once it is working, get it to start automatically::
 
@@ -153,6 +153,22 @@ Check you can connect to Postgres::
     postgres=#
 
 While you are working with Postgres, lets add a couple of other things::
+
+    # change authentication method for Postgres
+    vi /var/lib/pgsql/data/pg_hba.conf
+
+
+    # TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+    # "local" is for Unix domain socket connections only
+    local   all             all                                     trust
+    # IPv4 local connections:
+    host    all             all             127.0.0.1/32            trust
+    # IPv6 local connections:
+    host    all             all             ::1/128                 trust
+
+    sudo -u postgres psql
+    create user diamond with encrypted password 'F1shcake';
 
     sudo -u postgres createuser -s ec2-user
     sudo -u postgres createdb ec2-user
@@ -357,6 +373,13 @@ Mount it and ensure it is mounted every time::
 
 Reboot your instance and check the file system gets mounted.
 
+Install Other Packages
+-----------------------
+
+Run::
+
+    sudo yum install fdupes -y
+
 Setup Cron
 ----------
 
@@ -380,24 +403,27 @@ add a little time on to that. Currently (2025), the entry is::
 S3 and BackBlaze Setup
 ======================
 
-We use two "AWS" profiles for S3 to copy files between AWS S3 and BackBlaze, which implements the same
-API. One profile is for S3, the other is for BackBlaze.
+Login to BackBlaze (https://www.backblaze.com/) and create a new application key.
 
-Set up the two profiles::
+BackBlaze impersonates the AWS APIs so we use AWS commands to set it up.
 
-    aws configure --profile s3
-    aws configure --profile b2
+Set up the profile::
 
-Put in the details for S3 and BackBlaze. You will need to create keys in both systems if you don't already have them.
+    aws configure --profile backblaze
 
-After this ~/.aws/config should look like, you will need to manually add the endpoint_url line::
+Put in the BackBlaze keyID for AWS Access Key ID, and the BackBlaze applicationKey for AWS Secret Access Key.::
 
-    [profile b2]
-    region = us-east-005
-    endpoint_url = https://s3.us-east-005.backblazeb2.com
-    [profile s3]
-    region = ap-southeast-2
+    AWS Access Key ID [None]: ***************
+    AWS Secret Access Key [None]: **********************
+    Default region name [None]:
+    Default output format [None]:
 
+After this edit ~/.aws/config to add the region and endpoint_url::
+
+    [default]
+    [profile backblaze]
+        region = us-east-005
+        endpoint_url = https://s3.us-east-005.backblazeb2.com
 
 Off System Restores
 ===================
