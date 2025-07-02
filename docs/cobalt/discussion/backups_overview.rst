@@ -168,7 +168,7 @@ While you are working with Postgres, lets add a couple of other things::
     host    all             all             ::1/128                 trust
 
     sudo -u postgres psql
-    create user diamond with encrypted password 'F1shcake';
+    create user cobalt with encrypted password 'F1shcake';
 
     sudo -u postgres createuser -s ec2-user
     sudo -u postgres createdb ec2-user
@@ -179,6 +179,7 @@ While you are working with Postgres, lets add a couple of other things::
 
         postgres=# ALTER USER "ec2-user" WITH SUPERUSER;
         postgres=# create user cobalt with encrypted password 'F1shcake';
+        postgres=# create database cobalt with owner cobalt;
 
 Install Python
 --------------
