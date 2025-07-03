@@ -78,6 +78,9 @@ DNS
 
 Create a new DNS name to point to your environment. Just use the AWS Route 53 console for this.
 
+.. important::
+    If you change production, remember to change both myabf.com.au and www.myabf.com.au
+
 Testing
 ========
 

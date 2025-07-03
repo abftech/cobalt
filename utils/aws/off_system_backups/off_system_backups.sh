@@ -44,4 +44,4 @@ fi
 # Copy off site
 
 # Notify success
-./notify success "Off system backups were successful"
+./notify.sh success "Off system backups were successful"
