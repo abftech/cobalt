@@ -148,7 +148,7 @@
 
             // Initialise datatable - only show pagination if more than one page, sort in reverse date order, column 0
             $('#ticket_table').DataTable({
-                "order": [[1, "asc"]],
+                "order": [[2, "desc"]],
                 drawCallback: function (settings) {
                     const pagination = $(this).closest('.dataTables_wrapper').find('.dataTables_paginate');
                     pagination.toggle(this.api().page.info().pages > 1);
