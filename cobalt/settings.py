@@ -82,7 +82,7 @@ API_KEY_PREFIX = set_value("API_KEY_PREFIX", "API_")
 # Set up ADMINS list from string
 ADMINS = [
     ("Mark Guthrie", "m@rkguthrie.com"),
-    ("Julian Foster", "Julian.Foster@abf.com.au"),
+    # ("Julian Foster", "Julian.Foster@abf.com.au"),
 ]
 
 # COB-488 - require 2FA for Admin site access (Y or N)
