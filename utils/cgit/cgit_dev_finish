@@ -93,6 +93,9 @@ else
   exit
 fi
 
+echo "Putting you back onto $BRANCH"
+got checkout -b "$BRANCH"
+
 #echo "Deleting branch $BRANCH..."
 #echo ""
 #
