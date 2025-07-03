@@ -14,5 +14,8 @@ MESSAGE=$*
 # Set up environment
 . ./cobalt.sh
 
+# allow emails to be sent
+export DISABLE_PLAYPEN=ON
+
 # Send email
 ./manage.py off_system_backups_email --subject="$MESSAGE" --status="$STATUS"
