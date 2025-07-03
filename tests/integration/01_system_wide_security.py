@@ -1,5 +1,8 @@
 import re
 import subprocess
+from time import sleep
+
+import requests
 
 from tests.test_manager import CobaltTestManagerIntegration
 
@@ -7,10 +10,11 @@ from tests.test_manager import CobaltTestManagerIntegration
 NON_AUTH_URLS = [
     "/accounts/loggedout",
     "/accounts/login/",
+    "/accounts/activate/dummy/dummy/",
     "/accounts/password-reset-request",
     "/accounts/password_reset/",
-    "/accounts/password_reset/",
     "/accounts/password_reset/done/",
+    "/accounts/register/1/dummy",
     "/accounts/register",
     "/accounts/reset/<uidb64>/<token>/",
     "/accounts/reset/done/",
@@ -20,10 +24,11 @@ NON_AUTH_URLS = [
     "/dashboard/help",
     "/dashboard/logged-out",
     "/events/",
-    "congress-listing/",
+    "/events/congress-listing/dummy",
     "/events/congress/get_all_congresses",
     "/events/congress/view/1",
-    "/events/congress/view/1",
+    "/events/congress/view/1/1",
+    "/events/congress/event/view-event-entries/1/1",
     "/organisations/public-profile/1",
     "/summernote/upload_attachment/",
     "/support/acceptable-use",
@@ -31,6 +36,8 @@ NON_AUTH_URLS = [
     "/support/contact-logged-out",
     "/support/cookies",
     "/support/guidelines",
+    "/support/acceptable-use-logged-out",
+    "/support/cookies-logged-out",
     "/view",
     "/summernote/editor/<id>/",  # TODO: Double check this one
     "/api/cobalt/keycheck/v1.0",
@@ -38,6 +45,8 @@ NON_AUTH_URLS = [
     "/api/docs/",
     "/api/openapi.json",
     "/accounts/unregistered-preferences/dummy",
+    "/masterpoints/abf-registration-card",
+    "/masterpoints/abf-registration-card-htmx",
     "/404",
     "/500",
 ]
@@ -52,6 +61,7 @@ DO_NOT_TEST_URLS = [
     "/xero/initialise",
     "/xero/refresh",
     "/xero/run-xero-api",
+    "/payments/statement-org-summary",
 ]
 
 
@@ -69,37 +79,49 @@ class TestURLsRequireLogin:
         """It is easiest to use manage.py show_urls to get the URLs. We filter out
         the Django admin commands as we don't need to test Django here"""
 
-        urls = []
-
         # Health should probably be removed altogether from Cobalt
+        # We don't test API as they are mostly Posts
         process = subprocess.Popen(
             [
-                r"./manage.py show_urls | awk '{print $1}' | grep -v '^\/admin' | grep -v '^\/health'"
+                r"./manage.py show_urls | awk '{print $1}' | grep -v '^\/admin' | grep -v '^\/health' | grep -v '^\/api'"
             ],
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
+
+        urls = []
+        # Go through the list of URLs and format them to work
         for line in process.stdout.readlines():
             url = line.decode("utf-8").strip()
-            print("Testing", url)
             if url in DO_NOT_TEST_URLS:
-                print("Skipping:", url)
                 continue
             # If we have a parameter, then change it to a value
-            url = re.sub("<int(.*)>", "1", url)
-            url = re.sub("<str(.*)>", "dummy", url)
+            # ? makes the expression not greedy so it can handle multiple parameters
+            url = re.sub("<int(.*?)>", "1", url)
+            url = re.sub("<str(.*?)>", "dummy", url)
 
             urls.append(url)
 
+        # Start with empty list of errors
         errors = []
 
+        # Go through URLs and test them
         for url in urls:
+
+            if url in NON_AUTH_URLS:
+                continue
+
             # get response. We expect to get 302 - redirect to login page, but 40x are okay too
-            response = self.manager.client.get(url)
-            if (
-                response.status_code not in [302, 400, 403, 404, 405]
-                and url not in NON_AUTH_URLS
+            response = requests.get(f"{self.manager.base_url}{url}")
+
+            if not (
+                # We are okay if we get a redirect or not found code
+                response.status_code in {302, 400, 403, 404, 405}
+                # or if the url is the login page (since upgrade to Django 5)
+                or response.url.find("/accounts/login/") != -1
+                # or if the url is the logged out page
+                or response.url.find("http://127.0.0.1:8088/view") != -1
             ):
                 errors.append(f"{url} - {response.status_code}")
 

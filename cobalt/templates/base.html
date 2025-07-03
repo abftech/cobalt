@@ -54,7 +54,7 @@ Environment: {{ COBALT_HOSTNAME }}
 
         {# These can cause problems, for example in forums with Summernote so we allow them to be overridden #}
         {% block headerjs %}
-            <script src="{% static "assets/js/core/jquery-3.4.1.min.js" %}"></script>
+            <script src="{% static "assets/js/core/jquery-3.7.1.min.js" %}"></script>
             <script src="{% static "assets/js/core/popper.min.js" %}"></script>
             <script src="{% static "assets/js/plugins/jquery-ui.min.js" %}"></script>
             <script src="{% static "assets/js/plugins/perfect-scrollbar.jquery.min.js" %}"></script>
@@ -62,17 +62,19 @@ Environment: {{ COBALT_HOSTNAME }}
         {% endblock %}
 
         <!-- MAKE PRODUCTION DIFFERENT FOR ADMINS -->
-        {#        {% if user.id == 4 and COBALT_HOSTNAME == "myabf.com.au" %}#}
-        {#            <style>#}
-        {#                body{#}
-        {#                    background-color: yellow;#}
-        {#                }#}
-        {#            </style>#}
-        {#        {% endif %}#}
+        {% if user.id == 4 and COBALT_HOSTNAME == "myabf.com.au" %}
+            <style>
+                body{
+                    background-color: yellow;
+                }
+            </style>
+        {% endif %}
 
         {# Standard Javascript libraries for all pages #}
         <script src="{% static "assets/js/cobalt-core.js" %}"></script>
         {# Note htmx needs to be loaded in the head to handle being loaded twice https://github.com/bigskysoftware/htmx/issues/854 #}
+{#    HTMX v2 causes problems for bootstrap selectpickers #}
+{#        <script src="{% static "assets/packages/htmx-2.0.4/htmx.min.js" %}"></script>#}
         <script src="{% static "assets/packages/htmx-1.8.0/htmx.min.js" %}"></script>
         <script src="{% static "assets/js/jquery-validation-1.19.2/jquery.validate.min.js" %}"></script>
         <script src="{% static "assets/js/jquery-validation-1.19.2/additional-methods.min.js" %}"></script>
@@ -83,7 +85,7 @@ Environment: {{ COBALT_HOSTNAME }}
     </head>
 
     <body>
-        {# login_as sets this variable so we how if this is a session controlled by an admin - show message if true #}
+        {# login_as sets this variable so we know if this is a session controlled by an admin - show message if true #}
         {% if is_impersonated_session %}
             <div class="main-panel">
                 <div class="container-fluid">
@@ -106,6 +108,9 @@ Environment: {{ COBALT_HOSTNAME }}
                     <div class="row justify-content-center">
                         <div class="btn btn-round text-white col-md-11" style="background-color: darkblue">
                             <h1>Production</h1>
+                            {% if MAINTENANCE_MODE == "ON" %}
+                                <h2>Maintenance Mode On</h2>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -131,10 +136,10 @@ Environment: {{ COBALT_HOSTNAME }}
                     <ul class="nav">
 
                         <li class="nav-item
-                            {% if request.path|slice:":10" == "/dashboard" %}active{% endif %}
-                            {% if request.path == "/" %}active{% endif %}
-                            ">
-                            <a class="nav-link" href="/dashboard">
+                                   {% if request.path|slice:":10" == "/dashboard" %}active{% endif %}
+                                   {% if request.path == "/" %}active{% endif %}
+                                  ">
+                            <a class="nav-link" href="/dashboard/">
                                 <i class="material-icons">dashboard</i>
                                 <p>Dashboard</p>
                             </a>
@@ -143,28 +148,28 @@ Environment: {{ COBALT_HOSTNAME }}
                         <hr>
 
                         <li class="nav-item {% if request.path|slice:":7" == "/events" %}active{% endif %} ">
-                            <a class="nav-link" href="/events">
+                            <a class="nav-link" href="/events/">
                                 <i class="material-icons">event_note</i>
                                 <p>Calendar</p>
                             </a>
                         </li>
 
                         <li class="nav-item {% if request.path|slice:":8" == "/results" %}active{% endif %} ">
-                            <a class="nav-link" href="/results">
+                            <a class="nav-link" href="/results/">
                                 <i class="material-icons">content_paste</i>
                                 <p>Results</p>
                             </a>
                         </li>
 
                         <li class="nav-item {% if request.path|slice:":9" == "/payments" %}active{% endif %} ">
-                            <a class="nav-link" href="/payments">
+                            <a class="nav-link" href="/payments/">
                                 <i class="material-icons">account_balance</i>
                                 <p>Bridge Credits</p>
                             </a>
                         </li>
 
                         <li class="nav-item {% if request.path|slice:":13" == "/masterpoints" %}active{% endif %} ">
-                            <a class="nav-link" href="/masterpoints">
+                            <a class="nav-link" href="/masterpoints/">
                                 <i class="material-icons">call_made</i>
                                 <p>Masterpoints</p>
                             </a>
@@ -179,7 +184,7 @@ Environment: {{ COBALT_HOSTNAME }}
 
                         <li class="nav-item {% if request.path|slice:":7" == "/forums" %}active{% endif %} ">
 
-                            <a class="nav-link" href="/forums">
+                            <a class="nav-link" href="/forums/">
                                 <i class="material-icons">chat</i>
                                 <p>Forums</p>
                             </a>
@@ -205,7 +210,7 @@ Environment: {{ COBALT_HOSTNAME }}
                         {% endif %}
 
                         <li class="nav-item {% if request.path|slice:":8" == "/support" %}active{% endif %} ">
-                            <a class="nav-link" href="/support">
+                            <a class="nav-link" href="/support/">
                                 <i class="material-icons">support_agent</i>
                                 <p>Support</p>
                             </a>
@@ -319,7 +324,11 @@ Environment: {{ COBALT_HOSTNAME }}
                                             <a class="dropdown-item" href="{% url "support:helpdesk_user_list" %}">Support Tickets</a>
                                         {% endif %}
                                         <div class="dropdown-divider"></div>
-                                        <a class="dropdown-item" href="/accounts/logout">Log out</a>
+                                        <form id="logout-form" method="post" action="{% url "logout" %}">
+                                            {% csrf_token %}
+                                            <a class="dropdown-item cobalt-logout" onclick="document.getElementById('logout-form').submit()">Log out</a>
+                                        </form>
+
                                     </div>
                                 </li>
                             </ul>
@@ -394,14 +403,14 @@ Environment: {{ COBALT_HOSTNAME }}
 
         {# Some people don't like perfect scrollbar. Default is not to use it #}
 
-        {% if request.user.windows_scrollbar %}
-            <script src="{% static "assets/js/material-dashboard.js" %}?v=2.1.1" type="text/javascript"></script>
-        {% else %}
-            <script src="{% static "assets/js/material-dashboard-noscroll.js" %}?v=2.1.1" type="text/javascript"></script>
-        {% endif %}
+            {% if request.user.windows_scrollbar %}
+                <script src="{% static "assets/js/material-dashboard.js" %}?v=2.1.1" type="text/javascript"></script>
+            {% else %}
+                <script src="{% static "assets/js/material-dashboard-noscroll.js" %}?v=2.1.1" type="text/javascript"></script>
+            {% endif %}
 
-        {% include "utils/include_htmx.html" %}
+            {% include "utils/include_htmx.html" %}
 
-    </body>
+        </body>
 
-</html>
+    </html>

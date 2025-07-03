@@ -18,7 +18,11 @@ class Command(BaseCommand):
             "--base_url", help="Base url for server e.g. http://127.0.0.1:8088"
         )
         parser.add_argument(
-            "--headless", help="Specify an value to run browser in the background"
+            "--headless", help="Specify any value to run browser in the background"
+        )
+        parser.add_argument(
+            "--single_test",
+            help="Class name of a test to only run one test and not them all",
         )
 
     def handle(self, *args, **options):
@@ -32,11 +36,24 @@ class Command(BaseCommand):
         browser = options["browser"]
         base_url = options["base_url"]
         headless = options["headless"]
+        single_test = options["single_test"]
 
         # create testManager to oversee things
-        manager = CobaltTestManagerIntegration(app, browser, base_url, headless)
+        manager = CobaltTestManagerIntegration(
+            app, browser, base_url, headless, single_test
+        )
+
+        # run tests
         manager.run()
-        #        if not manager.overall_success:
-        with open("/tmp/test-output.html", "w") as html_file:
+
+        # Create output
+        with open("/tmp/test-output.html", "w", encoding="utf-8") as html_file:
             html_file.write(manager.report_html())
-        os.system("utils/cgit/tools/open_report.sh")
+
+        # notify user
+        if manager.overall_success:
+            print("All tests passed\n")
+            print("Results are in /tmp/test-output.html\n")
+        else:
+            # We have errors, so show output
+            os.system("open /tmp/test-output.html")

@@ -148,7 +148,7 @@
 
             // Initialise datatable - only show pagination if more than one page, sort in reverse date order, column 0
             $('#ticket_table').DataTable({
-                "order": [[1, "desc"]],
+                "order": [[1, "asc"]],
                 drawCallback: function (settings) {
                     const pagination = $(this).closest('.dataTables_wrapper').find('.dataTables_paginate');
                     pagination.toggle(this.api().page.info().pages > 1);
@@ -191,12 +191,12 @@
             });
 
             // handle clicking on a row - assumes row has one <a> link in it which is applied to all cells
-            $('tr').click(function () {
-                const href = $(this).find('a').attr('href');
-                if (typeof href !== 'undefined') {
-                    window.location = href;
-                }
-            });
+            {#$('tr').click(function () {#}
+            {#    const href = $(this).find('a').attr('href');#}
+            {#    if (typeof href !== 'undefined') {#}
+            {#        window.location = href;#}
+            {#    }#}
+            {#});#}
         });
     </script>
 

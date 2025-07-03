@@ -105,7 +105,7 @@ def enter_event(
     test_instance.manager.selenium_wait_for_clickable("id_checkout").click()
 
 
-def check_entry(
+def check_and_cleanup_entry(
     test_instance,
     event,
     test_name,
@@ -115,6 +115,8 @@ def check_entry(
     """Helper function for entering an event. Check the entries.
 
     Args:
+        test_description:
+        test_name:
         test_instance(Klass): the calling class. We use some of its variables
         event(Event): event to enter
         player_list(list of lists):
@@ -192,7 +194,9 @@ def enter_event_and_check(
     )
 
     # Check if it worked as expected
-    check_entry(test_instance, event, test_name, test_description, player_list)
+    check_and_cleanup_entry(
+        test_instance, event, test_name, test_description, player_list
+    )
 
     # Check balances
     _check_balances_are_correct(
@@ -243,4 +247,6 @@ def enter_event_then_pay_and_check(
 
     # Check if it worked as expected
     sleep(5)
-    check_entry(test_instance, event, test_name, test_description, player_list)
+    check_and_cleanup_entry(
+        test_instance, event, test_name, test_description, player_list
+    )

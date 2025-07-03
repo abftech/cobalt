@@ -37,7 +37,8 @@ def org_search_ajax(request):
         search_org_name = request.GET.get("orgname")
         orgs = Organisation.objects.filter(name__icontains=search_org_name)
 
-        if request.is_ajax:
+        # is_ajax has been removed from Django
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
             if orgs.count() > 30:
                 msg = "Too many results (%s)" % orgs.count()
                 orgs = None
@@ -72,7 +73,8 @@ def org_detail_ajax(request):
     if request.method == "GET" and "org_id" in request.GET:
         org_id = request.GET.get("org_id")
         org = get_object_or_404(Organisation, pk=org_id)
-        if request.is_ajax:
+        # is_ajax has been removed from Django
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
             html = render_to_string(
                 template_name="organisations/org_detail_ajax.html",
                 context={"org": org},

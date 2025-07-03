@@ -31,11 +31,13 @@ Pre-requisites
 
 Before you start you will need to install:
 
-- Python 3 (>3.5)
-- Pip
-- Virtualenv
-- Git
-- Postgres
+- Python
+- Git (should be there)
+- Postgres (postgres.app is easiest)
+- AWS CLI (brew install awscli)
+- Elastic Beanstalk CLI (brew install awsebcli)
+
+Pyenv is also recommended to handle multiple versions of Python.
 
 There are plenty of internet resources for this and they change with time, so we
 don't include instructions on this here. Once you have the pre-requisites installed,
@@ -65,7 +67,7 @@ Run these commands to create your project directory and initialise your virtual 
 We are calling the directory cobalt-project, but you can call it whatever you like::
 
     $ mkdir cobalt-project
-    $ virtualenv myenv   # specify -P python3.7 or similar if that is not your default
+    $ python -m venv myenv   # use pyenv to get the correct version of Python
     $ . ./myenv/bin/activate
     $ mkdir cobalt
     $ cd cobalt
@@ -134,7 +136,7 @@ Create a file called something like cobalt_env.sh and add this to the file::
 
 Now you can source this file to add the variables to your environment::
 
-    $ . /path/to/my/file/cobalt_env.sh
+    $ . /path/to/my/file/cobalt.sh
 
 Step 3 - Configure the Database
 ===============================

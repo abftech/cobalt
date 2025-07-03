@@ -15,7 +15,7 @@ from .models import Log
 
 
 def get_client_ip(request):
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    x_forwarded_for = request.headers.get("x-forwarded-for")
     if x_forwarded_for:
         return x_forwarded_for.split(",")[0]
     else:
@@ -49,7 +49,7 @@ def log_event(user, severity, source, sub_source, message, request=None):
     # User may not be a string or have a __str__ function
     try:
         user = user[:200]
-    except TypeError:
+    except (KeyError, TypeError):
         user = "Unknown"
 
     # Validate

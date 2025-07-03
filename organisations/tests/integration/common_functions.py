@@ -1,6 +1,7 @@
 """
-    Common functions for organisations.
+Common functions for organisations.
 """
+
 import time
 from pprint import pprint
 
@@ -252,7 +253,7 @@ def access_club_menu(
     manager.save_results(
         status=new_ok,
         test_name=test_name,
-        output=f"Visited club menu for club_id={club_id} ({url}). Looked for club name '{expected_club_name}'. {ok}",
+        output=f"Visited club menu for club_id={club_id} ({url}). Looked for club name '{expected_club_name}'. Got '{club_name}'. {ok}",
         test_description=test_description,
     )
 

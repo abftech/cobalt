@@ -13,6 +13,7 @@
 ./manage.py add_rbac_static_support
 ./manage.py add_rbac_static_club_sessions
 ./manage.py create_states
+./manage.py add_superadmin
 ./manage.py add_notifications_templates
 
 # If parameter core is passed then use the core files, not the user ones

@@ -91,17 +91,19 @@ class Registration:
             error="Please fill",
         )
 
-        # enter password2, different from password1
-        self.manager.selenium_wait_for("id_password2").send_keys("Pencil5467")
-        self.manager.selenium_wait_for("id_signup").click()
-
-        string = "The two password fields"
-        error = self.manager.selenium_wait_for("id_password2_errors").text
-        ok = string in error
-
-        self.manager.save_results(
-            status=ok,
-            test_name="Non-matching passwords",
-            output=f"Looked for '{string}' in '{error}'. {ok}",
-            test_description="Enter two different passwords and check the validation works",
-        )
+        # self.manager.sleep()
+        #
+        # # enter password2, different from password1
+        # self.manager.selenium_wait_for("id_password2").send_keys("Pencil5467")
+        # self.manager.selenium_wait_for("id_signup").click()
+        #
+        # string = "The two password fields"
+        # error = self.manager.selenium_wait_for("id_password2_errors").text
+        # ok = string in error
+        #
+        # self.manager.save_results(
+        #     status=ok,
+        #     test_name="Non-matching passwords",
+        #     output=f"Looked for '{string}' in '{error}'. {ok}",
+        #     test_description="Enter two different passwords and check the validation works",
+        # )

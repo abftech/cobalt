@@ -379,7 +379,7 @@ class EventModelTests:
 
         if (
             fee == ((ENTRY_FEE - EARLY_DISCOUNT) / 2) * (50 / 100)
-            and desc == "Youth+Early discount"
+            and desc == "Early+Youth discount"
         ):
             ok = True
         else:
@@ -391,7 +391,7 @@ class EventModelTests:
             test_description="Check the entry fee for a player in a pairs event with early entry discount and youth is "
             "half the total entry fee after deducting the discount then the youth discount taken off.",
             output=f"Checked event entry fee for {player}. Expected {((ENTRY_FEE - EARLY_DISCOUNT) / 2) * (50 / 100)}. "
-            f"Got {fee}. Expected description to be 'Youth+Early discount'. Got '{desc}'.",
+            f"Got {fee}. Expected description to be 'Early+Youth discount'. Got '{desc}'.",
         )
 
         # Remove Early discount

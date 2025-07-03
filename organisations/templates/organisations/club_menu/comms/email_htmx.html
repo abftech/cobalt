@@ -68,7 +68,7 @@
                                 hx-vars="club_id:{{ club.id }}">
                                 <option value="ALL" {% if type_selected == 'ALL' %}selected{% endif %}>All</option>
                                 {% for batch_type in batch_types %}
-                                    <option value="{{ batch_type.0 }}"{% if type_selected == batch_type.0 %}selected{% endif %}>{{ batch_type.1|title }}</option>
+                                    <option value="{{ batch_type.0 }}" {% if type_selected == batch_type.0 %}selected{% endif %}>{{ batch_type.1|title }}</option>
                                 {% endfor %}
                             </select>
 
@@ -152,10 +152,10 @@
                                                                 class="btn btn-sm btn-info"
                                                                 style="width: 80px;"
                                                                 _="on click
-                                                                js
-                                                                htmx.trigger('#hidden_recipients_{{ thing.id }}', 'doit');
-                                                                end
-                                                                "
+                                                                   js
+                                                                   htmx.trigger('#hidden_recipients_{{ thing.id }}', 'doit');
+                                                                   end
+                                                                  "
                                                             >
                                                                 {{ thing.batch_size|intcomma }}
                                                             </button>
@@ -215,16 +215,16 @@
                                         <div class="pagination">
                                             {% if things.has_previous %}
                                                 <a class="pagination-action"
-                                                    hx-post="{% url "organisations:club_menu_tab_comms_email_htmx" %}?page=1"
-                                                    hx-vars="club_id:{{ club.id }},page:1"
-                                                    hx-target="#id_panel_comms"
+                                                   hx-post="{% url "organisations:club_menu_tab_comms_email_htmx" %}?page=1"
+                                                   hx-vars="club_id:{{ club.id }},page:1"
+                                                   hx-target="#id_panel_comms"
                                                 >
                                                     <i class="fa fa-angle-double-left" aria-hidden="true"></i>
                                                 </a>
                                                 <a class="pagination-action"
-                                                    hx-post="{% url "organisations:club_menu_tab_comms_email_htmx" %}?page={{ things.previous_page_number }}"
-                                                    hx-vars="club_id:{{ club.id }},page:{{ things.previous_page_number }}"
-                                                    hx-target="#id_panel_comms"
+                                                   hx-post="{% url "organisations:club_menu_tab_comms_email_htmx" %}?page={{ things.previous_page_number }}"
+                                                   hx-vars="club_id:{{ club.id }},page:{{ things.previous_page_number }}"
+                                                   hx-target="#id_panel_comms"
                                                 >
                                                     <i class="fa fa-angle-left" aria-hidden="true"></i>
                                                 </a>
@@ -235,25 +235,25 @@
                                                     <span class="pagination-number pagination-current">{{ num }}</span>
                                                 {% elif num > things.number|add:'-3' and num < things.number|add:'3' %}
                                                     <a class="pagination-number"
-                                                        hx-post="{% url "organisations:club_menu_tab_comms_email_htmx" %}?page={{ num }}"
-                                                        hx-vars="club_id:{{ club.id }},page:{{ num }}"
-                                                        hx-target="#id_panel_comms">{{ num }}
+                                                       hx-post="{% url "organisations:club_menu_tab_comms_email_htmx" %}?page={{ num }}"
+                                                       hx-vars="club_id:{{ club.id }},page:{{ num }}"
+                                                       hx-target="#id_panel_comms">{{ num }}
                                                     </a>
                                                 {% endif %}
                                             {% endfor %}
 
                                             {% if things.has_next %}
                                                 <a class="pagination-action"
-                                                    hx-post="{% url "organisations:club_menu_tab_comms_email_htmx" %}?page={{ things.next_page_number }}"
-                                                    hx-vars="club_id:{{ club.id }},page:{{ things.next_page_number }}"
-                                                    hx-target="#id_panel_comms"
+                                                   hx-post="{% url "organisations:club_menu_tab_comms_email_htmx" %}?page={{ things.next_page_number }}"
+                                                   hx-vars="club_id:{{ club.id }},page:{{ things.next_page_number }}"
+                                                   hx-target="#id_panel_comms"
                                                 >
                                                     <i class="fa fa-angle-right" aria-hidden="true"></i>
                                                 </a>
                                                 <a class="pagination-action"
-                                                    hx-post="{% url "organisations:club_menu_tab_comms_email_htmx" %}?page={{ things.paginator.num_pages }}"
-                                                    hx-vars="club_id:{{ club.id }},page:{{ things.paginator.num_pages }}"
-                                                    hx-target="#id_panel_comms"
+                                                   hx-post="{% url "organisations:club_menu_tab_comms_email_htmx" %}?page={{ things.paginator.num_pages }}"
+                                                   hx-vars="club_id:{{ club.id }},page:{{ things.paginator.num_pages }}"
+                                                   hx-target="#id_panel_comms"
                                                 >
                                                     <i class="fa fa-angle-double-right" aria-hidden="true"></i>
                                                 </a>

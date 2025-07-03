@@ -28,12 +28,12 @@ REMOTE_HOSTNAME="cobalt-test.c97jawiow7ed.ap-southeast-2.rds.amazonaws.com"
 POSTGRES_USER="postgres"
 
 # Update the firewall rule so we can connect if local IP had changed
-IP=$(curl -s https://ident.me)
-echo "Local IP address is: $IP"
-
-aws ec2 modify-security-group-rules \
-   --group-id sg-e6b3fd98 \
-   --security-group-rules SecurityGroupRuleId=sgr-0c304f0cc65379e9c,SecurityGroupRule="{Description='Dynamic',IpProtocol=-1,CidrIpv4=$IP/32}"
+#IP=$(curl -s https://ident.me)
+#echo "Local IP address is: $IP"
+#
+#aws ec2 modify-security-group-rules \
+#   --group-id sg-e6b3fd98 \
+#   --security-group-rules SecurityGroupRuleId=sgr-0c304f0cc65379e9c,SecurityGroupRule="{Description='Dynamic',IpProtocol=-1,CidrIpv4=$IP/32}"
 
 # Dump database - requires firewall rule to be in place
 pg_dump --exclude-table-data "public.notifications_abstractemail" --exclude-table-data "public.post_office_*" -h $REMOTE_HOSTNAME -p 5432 -d $POSTGRES_DB -U $POSTGRES_USER -F c -b -v -f $DUMP_FILE

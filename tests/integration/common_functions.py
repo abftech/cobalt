@@ -1,4 +1,5 @@
 """Common functions used across all tests"""
+
 import time
 
 from selenium.common.exceptions import StaleElementReferenceException
@@ -25,14 +26,19 @@ def cobalt_htmx_user_search(
     manager.selenium_wait_for_clickable(search_button_id).click()
 
     # Wait for modal to appear and enter system number in
-    system_number = manager.selenium_wait_for_clickable("id_system_number" + search_id)
-    system_number.click()
-    system_number.send_keys(user_system_id)
+    system_number = manager.selenium_wait_for_clickable(
+        f"id_system_number{search_id}", 10
+    )
 
-    # # click on system number search
-    # manager.driver.find_element(By.ID,
-    #     f"id_button_system_number_search{search_id}"
-    # ).click()
+    try:
+        system_number.click()
+    except AttributeError:
+        print("############")
+        print("Couldn't find user in cobalt_htmx_user_search")
+        print("Sleeping so you can check the problem")
+        print("############")
+        manager.sleep()
+    system_number.send_keys(user_system_id)
 
     # Wait for search results and click ok
     manager.selenium_wait_for_clickable(f"id_cobalt_search_ok{search_id}").click()

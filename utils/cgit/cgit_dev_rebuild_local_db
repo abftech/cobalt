@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# about: full rebuild of the local development database
+
+# Variables
+export DUMMY_DATA_COUNT=20
+
+# Rebuild database
+cat << EOF > /tmp/drop_db
+\c postgres
+drop database IF EXISTS $RDS_DB_NAME;
+create database $RDS_DB_NAME with owner $CGIT_ENV;
+EOF
+
+psql </tmp/drop_db
+
+# build database using core test data directory
+utils/aws/rebuild_test_database_subcommands.sh core

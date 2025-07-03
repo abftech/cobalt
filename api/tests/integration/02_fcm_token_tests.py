@@ -1,4 +1,5 @@
 """This is really a unit test but it needs a Django server in order to work so runs as an integration test"""
+
 import json
 import time
 from base64 import b64encode
@@ -73,6 +74,10 @@ class FCMTokenAPITests:
 
         # Valid data - login with system_number
         data = {
+            # Ninja 1.4.1 (quote rightly) wants the username to be a string
+            # and won't accept an int. Sticking with 0.16.1 until we confirm
+            # that the mobile client will work
+            # "username": f"{self.manager.alan.system_number}",
             "username": self.manager.alan.system_number,
             "password": self.manager.test_code,
             "fcm_token": "1234567890",

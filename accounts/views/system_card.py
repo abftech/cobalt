@@ -333,6 +333,7 @@ def system_card_edit(request, system_card_name):
     )
 
 
+@login_required
 def create_pdf_system_card(request, system_card_name):
     """Generate a PDF of the system card"""
 

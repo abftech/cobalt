@@ -1,5 +1,6 @@
 import datetime
 
+import PIL
 import bleach
 from crispy_forms.helper import FormHelper
 from django import forms
@@ -157,9 +158,9 @@ class OrgForm(forms.ModelForm):
             )
             self.fields["default_secondary_payment_method"].choices = org_payment_types
             if instance.default_secondary_payment_method:
-                self.fields[
-                    "default_secondary_payment_method"
-                ].initial = instance.default_secondary_payment_method.id
+                self.fields["default_secondary_payment_method"].initial = (
+                    instance.default_secondary_payment_method.id
+                )
         else:
             # New org - remove option
             self.fields.pop("default_secondary_payment_method")
@@ -834,11 +835,11 @@ class TemplateBannerForm(forms.ModelForm):
 
         image = Image.open(email_template.banner)
 
-        if image.mode != "RGB":
+        if image.mode not in ["RGB", "RGBA"]:
             image = image.convert("RGB")
 
         cropped_image = image.crop((x, y, w + x, h + y))
-        resized_image = cropped_image.resize((500, 200), Image.ANTIALIAS)
+        resized_image = cropped_image.resize((500, 200), PIL.Image.Resampling.NEAREST)
         resized_image.save(email_template.banner.path)
 
         return email_template
@@ -966,9 +967,9 @@ class OrgDefaultSecondaryPaymentMethod(forms.ModelForm):
         self.fields["default_secondary_payment_method"].choices = our_payment_methods
         # Default value if set, or add Select... if not set
         if self.club.default_secondary_payment_method:
-            self.fields[
-                "default_secondary_payment_method"
-            ].initial = self.club.default_secondary_payment_method.id
+            self.fields["default_secondary_payment_method"].initial = (
+                self.club.default_secondary_payment_method.id
+            )
         else:
             self.fields["default_secondary_payment_method"].choices.insert(
                 0, (-1, "Select...")

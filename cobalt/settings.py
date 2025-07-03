@@ -1,4 +1,4 @@
-""" Cobalt Settings.py
+"""Cobalt Settings.py
 
 This is the single settings.py for all Cobalt environments.
 
@@ -80,8 +80,8 @@ API_KEY_PREFIX = set_value("API_KEY_PREFIX", "API_")
 
 # Set up ADMINS list from string
 ADMINS = [
-    ("Developer Name", "success@simulator.amazonses.com"),
-    #   ("Julian Foster", "julianrfoster@gmail.com"),
+    ("Mark Guthrie", "m@rkguthrie.com"),
+    # ("Julian Foster", "Julian.Foster@abf.com.au"),
 ]
 
 # COB-488 - require 2FA for Admin site access (Y or N)
@@ -156,7 +156,7 @@ XERO_TENANT_NAME = "17 Ways"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "ENGINE": "django.db.backends.postgresql",
         "NAME": RDS_DB_NAME,
         "USER": RDS_USERNAME,
         "PASSWORD": RDS_PASSWORD,
@@ -233,6 +233,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "django_summernote",
     "crispy_forms",
+    "crispy_bootstrap4",
     "widget_tweaks",
     "django_extensions",
     "django.contrib.admindocs",
@@ -348,10 +349,14 @@ STATIC_URL = "/static/"
 # append MD5 hash to filenames to prevent caching on version change
 STATICFILES_STORAGE = "utils.storage.ForgivingManifestStaticFilesStorage"
 
+# TODO: update environment variables in EB and delete the EFS code here
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 if "FILE_SYSTEM_ID" in os.environ:  # AWS EFS for media
     MEDIA_ROOT = "/cobalt-media"
 MEDIA_URL = "/media/"
+
+# Allow override of media root
+MEDIA_ROOT = set_value("MEDIA_ROOT_OVERRIDE", MEDIA_ROOT)
 
 LOGIN_REDIRECT_URL = "/dashboard"
 LOGOUT_REDIRECT_URL = "/"

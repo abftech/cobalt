@@ -74,15 +74,39 @@
 
             $('#id_session_date').datetimepicker({
                 format: 'DD/MM/YYYY',
-                minDate: moment('{{ event.congress.start_date|date:"d/m/Y" }}', "DD/MM/YYYY"),
-                maxDate: moment('{{ event.congress.end_date|date:"d/m/Y" }}', "DD/MM/YYYY")
+                {% if event.congress.start_date %}
+                    minDate: moment('{{ event.congress.start_date|date:"d/m/Y" }}', "DD/MM/YYYY"),
+                {% endif %}
+                {% if event.congress.start_date %}
+                    maxDate: moment('{{ event.congress.end_date|date:"d/m/Y" }}', "DD/MM/YYYY"),
+                {% endif %}
             });
             $('#id_session_start').datetimepicker({
-                format: 'LT'
+                format: 'HH:mm',
+                icons: {
+                    time: "fa fa-clock-o",
+                    date: "fa fa-calendar",
+                    up: "fa fa-arrow-up",
+                    down: "fa fa-arrow-down",
+                    previous: "fa fa-chevron-left",
+                    next: "fa fa-chevron-right",
+                    today: "fa fa-clock-o",
+                    clear: "fa fa-trash-o"
+                }
             });
             $('#id_session_end').datetimepicker({
-                format: 'LT',
-                useCurrent: false
+                format: 'HH:mm',
+                useCurrent: false,
+                icons: {
+                    time: "fa fa-clock-o",
+                    date: "fa fa-calendar",
+                    up: "fa fa-arrow-up",
+                    down: "fa fa-arrow-down",
+                    previous: "fa fa-chevron-left",
+                    next: "fa fa-chevron-right",
+                    today: "fa fa-clock-o",
+                    clear: "fa fa-trash-o"
+                }
             });
 
             $("#id_session_start").on("dp.change", function(e) {

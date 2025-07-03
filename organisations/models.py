@@ -3,6 +3,7 @@ from datetime import date, timedelta
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
+from django.db.models import Index
 from django.urls import reverse
 
 from accounts.models import User
@@ -90,7 +91,8 @@ def no_future(value):
 class Organisation(models.Model):
     """Many of these fields map to fields in the Masterpoints Database
     We don't worry about phone numbers and addresses for secretaries and MP secretaries
-    They seem to relate to sending letters to people. We keep the Venue address though."""
+    They seem to relate to sending letters to people. We keep the Venue address though.
+    """
 
     bsb_regex = RegexValidator(
         regex=r"^\d{6}$",
@@ -388,8 +390,8 @@ class MembershipType(models.Model):
 class MemberMembershipType(models.Model):
     """
     This links members to a club membership.
-    Note that a player can have multiple records for an organistaion, but they
-    should be non-overlapping in time. Only the most recent determies the overall
+    Note that a player can have multiple records for an organisation, but they
+    should be non-overlapping in time. Only the most recent determines the overall
     membership status for the person.
     """
 
@@ -423,7 +425,7 @@ class MemberMembershipType(models.Model):
     """ Date at which an automatic Bridge Credit payment will be attempted """
 
     due_date = models.DateField("Payment due date", blank=True, null=True, default=None)
-    """ Date by which payment is due, none if paid, otherwise typically paid_unitl_date plus a grace period """
+    """ Date by which payment is due, none if paid, otherwise typically paid_until_date plus a grace period """
 
     fee = models.DecimalField(
         "Fee",
@@ -581,7 +583,7 @@ class MemberClubDetails(models.Model):
     will have a MemberClubDetails record regardless of whether they are registered or unregistered
     in My ABF, and regardless of whether their is a club specific email.
 
-    latest+membership and membership_status are programatically set, not determined at runtime,
+    latest+membership and membership_status are programmatically set, not determined at runtime,
     to allow database queries to use these attributes efficiently.
 
     Note that some fields are duplicates of fields in the User model. This is to allow members
@@ -691,6 +693,11 @@ class MemberClubDetails(models.Model):
     class Meta:
         unique_together = ("club", "system_number")
         verbose_name_plural = "Member Club Details"
+        indexes = [
+            Index(fields=["email"]),
+            Index(fields=["email_hard_bounce"]),
+            Index(fields=["system_number"]),
+        ]
 
     @property
     def is_active_status(self):

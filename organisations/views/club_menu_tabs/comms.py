@@ -150,12 +150,14 @@ def email_htmx(request, club, message=None):
     )
 
 
+@check_club_menu_access(check_comms=True)
 def edit_inflight_batch_htmx(request):
     """Resume editing an incomplete batch"""
 
     return HttpResponse("Coming soon - Edit inflight batch")
 
 
+@check_club_menu_access(check_comms=True)
 def delete_inflight_batch_htmx(request):
 
     return HttpResponse("Coming soon - Delete inflight batch")
@@ -380,9 +382,9 @@ def email_send_htmx(request, club):
             for attachments_object in attachments_objects:
                 mime_type, _ = mimetypes.guess_type(attachments_object.filename())
                 if mime_type is None:
-                    attachments[
-                        attachments_object.filename()
-                    ] = attachments_object.attachment.path
+                    attachments[attachments_object.filename()] = (
+                        attachments_object.attachment.path
+                    )
                 else:
                     attachments[attachments_object.filename()] = {
                         "file": attachments_object.attachment.path,

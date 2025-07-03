@@ -10,7 +10,7 @@
         }
     </style>
 
-    <script src="{% static "assets/packages/htmx-1.8.0/htmx.min.js" %}"></script>
+    <script src="{% static "assets/packages/htmx-2.0.4/htmx.min.js" %}"></script>
 
     <div class="buttoncluster">
     </div>
@@ -54,11 +54,11 @@
                                         <td>{{ additional_email }}</td>
                                         <td>
                                             <div style="height: 20px; background-color: red"
-                                                hx-post="{% url "accounts:unregistered_settings" identifier=unregistered.identifier %}"
-                                                hx-vars="'block_email': '{{ additional_email }}'"
-                                                hx-trigger="click"
-                                                hx-target="#message"
-                                                _="on click remove me"
+                                                 hx-post="{% url "accounts:unregistered_settings" identifier=unregistered.identifier %}"
+                                                 hx-vars="'block_email': '{{ additional_email }}'"
+                                                 hx-trigger="click"
+                                                 hx-target="#message"
+                                                 _="on click remove me"
                                             >
                                                 Block</div>
                                         </td>

@@ -5,6 +5,7 @@ The entry point is club_menu() which loads the page menu.html
 Menu.html uses HTMX to load the tab pages e.g. tab_dashboard_htmx()
 
 """
+
 import datetime
 
 from django.contrib.auth.decorators import login_required
@@ -240,9 +241,6 @@ def tab_congress_htmx(request, club):
 @check_club_menu_access()
 def tab_sessions_htmx(request, club, message=""):
     """build the sessions tab in club menu"""
-
-    # JPG To Do - should not be loading all the time
-    print("********** LOADING SESSION TAB ****************")
 
     sessions = (
         Session.objects.filter(session_type__organisation=club)

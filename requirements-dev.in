@@ -1,0 +1,41 @@
+###################################################################
+# These are the tools needed for development,                     #
+# that are not required to be installed for operation             #
+#                                                                 #
+# This file is used to generate requirements-dev.txt              #
+#                                                                 #
+# To generate requirements-dev.txt, run:                          #
+#                                                                 #
+#     pip install pip-tools (if not installed)                    #
+#                                                                 #
+#     pip-compile -o requirements-dev.txt requirements-dev.in     #
+#                                                                 #
+# To instail it, run:                                             #
+#                                                                 #
+#    pip install -r requirements-txt.txt                          #
+#                                                                 #
+#                                                                 #
+# Only specify versions if you really need to, otherwise let pip  #
+# handle it for you.                                              #
+#                                                                 #
+###################################################################
+
+# saving to git. Make sure you run pre-commit install
+pre-commit
+
+# Tests
+coverage
+
+# Tools
+pylint
+ipython
+radon
+pip-tools
+
+# Documentation
+sphinx
+sphinx-book-theme
+standard-imghdr
+
+# Debugger
+ipdb

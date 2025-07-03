@@ -1,8 +1,6 @@
 #!/bin/bash
 
-. ~/Development/c2/myenv/bin/activate
-cd ~/Development/c2/cobalt
-. ~/Dropbox/bin/cobalt_env.sh
+. ~/bin/cobalt.sh
 utils/cgit/tools/explosion.sh
 cat utils/cgit/tools/test.txt
 sleep 1

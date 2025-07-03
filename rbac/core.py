@@ -1,12 +1,13 @@
-""" Role Based Access Control Core
+"""Role Based Access Control Core
 
-    This handles the core functions for role based security for Cobalt.
+This handles the core functions for role based security for Cobalt.
 
-    See `RBAC Overview`_ for more details.
+See `RBAC Overview`_ for more details.
 
-    .. _RBAC Overview:
-       ./rbac_overview.html
+.. _RBAC Overview:
+   ./rbac_overview.html
 """
+
 from django.db.models import Q
 
 from .models import (
@@ -228,7 +229,6 @@ def rbac_remove_admin_user_from_group(member, group):
 
 
 def rbac_add_role_to_group(group, app, model, action, rule_type, model_id=None):
-
     """Adds a role to an RBAC group
 
     Args:
@@ -281,6 +281,11 @@ def rbac_user_has_role_exact(member, role):
     Returns:
         string: "Allow", "Block", or None for no match
     """
+
+    # If user isn't logged in, they have no access
+    if member.is_anonymous:
+        return
+
     (app, model, model_instance, action) = role_to_parts(role)
     # we also match against an action of all. e.g. if the role is:
     #  forums.forum.5.create then we will also accept finding:

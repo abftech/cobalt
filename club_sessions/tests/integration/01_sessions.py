@@ -52,8 +52,6 @@ class Sessions:
         # # Connect to page
         self.manager.driver.get(session_url)
 
-        self.manager.sleep()
-
         self.manager.save_results(
             status=True,
             test_name="Load valid session file",

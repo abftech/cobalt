@@ -11,16 +11,25 @@ COBALT_HOSTNAME=$(grep COBALT_HOSTNAME /opt/elasticbeanstalk/deployment/env | tr
 LICENSE=$(grep license_key "$CONFIG_FILE" | awk '{print $3}')
 
 echo "license_key: $LICENSE" > /etc/newrelic-infra.yml
+
 LOCAL_NAME=$(hostname | tr "." " " | awk '{print$1}')
-echo "override_hostname: $LOCAL_NAME.$COBALT_HOSTNAME" >> /etc/newrelic-infra.yml
+
+{
+echo "override_hostname: $LOCAL_NAME.$COBALT_HOSTNAME"
+echo "display_name: $LOCAL_NAME.$COBALT_HOSTNAME"
+echo "dns_hostname_resolution: false"
+} >> /etc/newrelic-infra.yml
 
 chmod 644 /etc/newrelic-infra.yml
 
 # Create the agent’s yum repository
-curl -o /etc/yum.repos.d/newrelic-infra.repo https://download.newrelic.com/infrastructure_agent/linux/yum/amazonlinux/2/x86_64/newrelic-infra.repo
+curl -o /etc/yum.repos.d/newrelic-infra.repo https://download.newrelic.com/infrastructure_agent/linux/yum/amazonlinux/2023/x86_64/newrelic-infra.repo
 # Update your yum cache
 yum -q makecache -y --disablerepo='*' --enablerepo='newrelic-infra'
 # Run the installation script
 yum install newrelic-infra -y
+
+# Set up log shipping
+cp .new_relic/logging.yaml /etc/newrelic-infra/logging.d/logging.yaml
 
 echo "Finished setting up the New Relic Infrastructure Agent."

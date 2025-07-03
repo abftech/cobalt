@@ -1,6 +1,7 @@
 """
-    Common functions for accounts.
+Common functions for accounts.
 """
+
 import time
 
 from django.urls import reverse
@@ -46,6 +47,10 @@ def register_user(
     manager.driver.find_element(By.CLASS_NAME, "btn").click()
 
     # We won't get an email so just mark member as active
+
+    # Give it a second...
+    time.sleep(3)
+
     user = User.objects.filter(system_number=system_number).first()
     user.is_active = True
     user.save()

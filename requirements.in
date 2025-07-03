@@ -1,0 +1,186 @@
+###################################################################
+#                                                                 #
+# This file is used to generate requirements.txt                  #
+#                                                                 #
+# To generate requirements.txt, run:                              #
+#                                                                 #
+#     pip install pip-tools (if not installed)                    #
+#                                                                 #
+#     pip-compile -o requirements.txt requirements.in             #
+#                                                                 #
+# To instail it, run:                                             #
+#                                                                 #
+#    pip install -r requirements.txt                              #
+#                                                                 #
+# To remove all items from pip for testing changes to this file   #
+# you can run:                                                    #
+#                                                                 #
+# pip freeze | cut -d "@" -f1 | xargs pip uninstall -y            #
+#                                                                 #
+###################################################################
+
+#####################
+# Core modules      #
+#####################
+# Django
+Django==5.2.1
+
+# Postgres
+psycopg2-binary==2.9.10
+
+# Gunicorn - HTTP server
+gunicorn==23.0.0
+
+#################################
+# Third party essentials        #
+#################################
+
+# Stripe payments gateway
+stripe==12.1.0
+
+####################################
+# Django/Python standard libraries #
+####################################
+
+# Pytz - needs to be replaced
+pytz==2019.3
+
+# Humanize for templates
+humanize==4.12.3
+
+# Web requests - used for Masterpoints backend
+requests==2.32.3
+
+######################
+# Django packages    #
+######################
+
+# Summernote for rich text web entries
+django-summernote==0.8.20.0
+
+# Crispy forms
+django-crispy-forms==2.4
+crispy-bootstrap4==2024.10
+
+# Django extensions
+django-extensions==4.1
+
+# Widget tweaks
+django-widget-tweaks==1.5.0
+
+# Django filters
+django-filter==25.1
+
+# Django health check
+django_health_check==3.18.3
+
+#########################
+# Comms packages        #
+#########################
+
+# AWS
+boto3==1.38.20
+
+# django-post-office==3.6.1
+# We needed to fork Django post office to add unescape() and an import statement to the subject in models.py
+git+https://github.com/abftech/django-post_office
+
+# Django package to talk to AWS Simple Email Service, integrated with Django Post Office
+
+###############################################################################################
+# This package has database changes                                                           #
+# For the Blue/Green deployment to Production use the same version as is already installed    #
+# Upgrade after installation                                                                  #
+###############################################################################################
+# django-ses==4.4.0
+django-ses==3.1.2
+
+# Django package to talk to Google FCM
+
+###############################################################################################
+# This package has database changes                                                           #
+# For the Blue/Green deployment to Production use the same version as is already installed    #
+# Upgrade after installation                                                                  #
+###############################################################################################
+# fcm-django==2.2.1
+fcm-django==1.0.11
+
+############################
+# Monitoring and tools     #
+############################
+
+# Login-as lets admins see what a user sees
+django-loginas==0.3.11
+
+# Debug toolbar is used in pre-production environments only
+django-debug-toolbar==5.2.0
+
+# New Relic monitoring
+newrelic==10.12.0
+
+# MFA for the admin pages
+
+###############################################################################################
+# This package has database changes                                                           #
+# For the Blue/Green deployment to Production use the same version as is already installed    #
+# Upgrade after installation                                                                  #
+###############################################################################################
+# django-otp==1.6.0
+django-otp==1.1.1
+
+##########################
+# API Libraries          #
+##########################
+
+# Django Ninja for API calls into Cobalt
+# Cannot upgrade until the login from the mobile client using system number passes it as
+# a string. Ninja 1.4.1 (correctly) insists on this being a string and won't accept
+# an int.
+# TODO: Check if mobile app passes a string for system_number or if we can accept either
+# TODO: Until then don't upgrade ninja
+# django-ninja==1.4.1
+django-ninja==0.16.1
+
+# Six is only (currently) used by the API libraries
+six~=1.17.0
+
+##########################
+# Security               #
+##########################
+
+# Bleach - needs to be replaced with nh3
+bleach==3.3.0
+
+######################
+# I/O formatters     #
+######################
+
+# XLS Writer for XLS read/write
+xlsxwriter==3.2.3
+
+# Report lab for PDFs
+reportlab==4.4.1
+
+# XML transformation
+xmltodict==0.14.2
+
+###########################
+# Double Dummy Analysis   #
+###########################
+
+# Double Dummy library
+ddstable==0.2.0
+
+#########################
+# Misc                  #
+#########################
+geopy==2.4.1
+
+###############################################################################
+# Dev tools                                                                   #
+# Most of the dev tools are loaded through requirements-dev.txt but some      #
+# are referenced in the code and Django won't start if it can't find them.    #
+###############################################################################
+selenium==4.32.0
+termcolor==3.1.0
+essential_generators==1.0

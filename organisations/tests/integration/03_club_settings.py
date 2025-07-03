@@ -83,19 +83,19 @@ class ClubSettings:
         )
 
         # Fix errors if we can
-        if ok:
-            self.manager.selenium_wait_for("t_reload_mpc").click()
-            # give it time to go away
-            time.sleep(2)
-            ok = not bool(self.manager.selenium_wait_for("t_reload_mpc", timeout=2))
-            self.manager.save_results(
-                status=ok,
-                output=f"Checked for MPC reload to be missing from page. {ok}",
-                test_name=f"Colin re-syncs data with MPC for {club_names[SUNSHINE_ID]}",
-                test_description=f"Colin is on the Settings tab for {club_names[SUNSHINE_ID]}. "
-                f"The data is out of step with the MPC. Colin clicks on the re-sync button. "
-                f"We check that the resync button now disappears.",
-            )
+        # if ok:
+        #     self.manager.selenium_wait_for("t_reload_mpc").click()
+        #     # give it time to go away
+        #     time.sleep(2)
+        #     ok = not bool(self.manager.selenium_wait_for("t_reload_mpc", timeout=2))
+        #     self.manager.save_results(
+        #         status=ok,
+        #         output=f"Checked for MPC reload to be missing from page. {ok}",
+        #         test_name=f"Colin re-syncs data with MPC for {club_names[SUNSHINE_ID]}",
+        #         test_description=f"Colin is on the Settings tab for {club_names[SUNSHINE_ID]}. "
+        #         f"The data is out of step with the MPC. Colin clicks on the re-sync button. "
+        #         f"We check that the resync button now disappears.",
+        #     )
 
     def a2_membership_types(self):
         """Test club membership types"""

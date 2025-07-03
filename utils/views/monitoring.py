@@ -57,10 +57,10 @@ def _get_aws_environment():
 
     # Dictionary of hostname to environment prefix
     environment_map = {
-        "myabf.com.au": "cobalt-production",
-        "uat.myabf.com.au": "cobalt-uat",
-        "test.myabf.com.au": "cobalt-test",
-        "127.0.0.1:8000": "cobalt-test",
+        "myabf.com.au": "cobalt-production-green",
+        "uat.myabf.com.au": "cobalt-uat-yellow",
+        "cobalt-test-white.myabf.com.au": "cobalt-test-white",
+        "127.0.0.1:8000": "cobalt-test-white",
     }
 
     environment_prefix = environment_map.get(COBALT_HOSTNAME)
@@ -85,7 +85,7 @@ def _get_aws_environment():
     for environment in environments:
         if environment["EnvironmentName"].find(environment_prefix) >= 0:
             if aws_environment_name:
-                return False, "Error - duplicate environments found", {}
+                return False, None, "Error - duplicate environments found", {}
             aws_environment_name = environment["EnvironmentName"]
 
     if not aws_environment_name:

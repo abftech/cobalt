@@ -174,9 +174,9 @@
                                             </td>
                                             <td class="td-actions text-right">
                                                 <button type="button" id="toggle_team_mate_{{ team_mate.team_mate.id }}"
-                                                    data-toggle="tooltip"
-                                                    title="{% if team_mate.make_payments %}Stop {{ team_mate.team_mate.first_name }} from being able to use your money to enter you in an event{% else %}Allow {{ team_mate.team_mate.first_name }} to enter you in an event using your money{% endif %}"
-                                                    class="make_payments btn btn-info">
+                                                        data-toggle="tooltip"
+                                                        title="{% if team_mate.make_payments %}Stop {{ team_mate.team_mate.first_name }} from being able to use your money to enter you in an event{% else %}Allow {{ team_mate.team_mate.first_name }} to enter you in an event using your money{% endif %}"
+                                                        class="make_payments btn btn-info">
                                                     <i class="material-icons">
                                                         {% if team_mate.make_payments %}
                                                             money_off
@@ -186,9 +186,9 @@
                                                     </i>
                                                 </button>
                                                 <button type="button" id="delete_team_mate_{{ team_mate.team_mate.id }}"
-                                                    data-toggle="tooltip"
-                                                    class="btn btn-danger delete_team_mate"
-                                                    title="Remove {{ team_mate.team_mate.first_name }} as a team mate."
+                                                        data-toggle="tooltip"
+                                                        class="btn btn-danger delete_team_mate"
+                                                        title="Remove {{ team_mate.team_mate.first_name }} as a team mate."
                                                 >
                                                     <i class="material-icons">delete</i>
                                                 </button>
@@ -294,7 +294,7 @@
 {% block footer %}
     <script src="{% static "assets/js/plugins/moment.min.js" %}"></script>
     <script src="{% static "assets/js/plugins/bootstrap-datetimepicker.min.js" %}"></script>
-    <script src="{% static "assets/packages/sweetalert2.11/sweetalert2.js" %}"></script>
+    <script src="{% static "assets/packages/sweetalert2.11.21.2/sweetalert2.js" %}"></script>
 
     {% if tour %}
         {% include "accounts/profile/profile_tour.html" %}
@@ -423,17 +423,17 @@
         function addUser(member_id){
             $.get("{% url "accounts:add_team_mate_ajax" %}?member_id=" + member_id)
                 .done(response => {
-                msg = response['data']['message'];
-                if (msg == 'Success'){
-                    swal.fire({ title:"Team Mate Added", html: "Success. Added a new team mate", icon: "success"})
-                        .then((result) => {
-                        cobalt_form_data_changed = false;
-                        location.reload();
-                    });
-                } else {
-                    swal.fire({ title:"Error", html: msg, icon: "error"})
-                }
-            });
+                    msg = response['data']['message'];
+                    if (msg == 'Success'){
+                        swal.fire({ title:"Team Mate Added", html: "Success. Added a new team mate", icon: "success"})
+                            .then((result) => {
+                                cobalt_form_data_changed = false;
+                                location.reload();
+                            });
+                    } else {
+                        swal.fire({ title:"Error", html: msg, icon: "error"})
+                    }
+                });
         }
 
         // Generic member search popup ok button pressed
@@ -446,32 +446,32 @@
             $.get("{% url "accounts:toggle_team_mate_ajax" %}?member_id=" + member_id)
                 .done(response => {
 
-                var msg = response['data']['message'];
-                var first_name = response['data']['first_name'];
-                var icon = $("#toggle_team_mate_" + member_id)
-                var txt_field = $("#status_" + member_id)
+                    var msg = response['data']['message'];
+                    var first_name = response['data']['first_name'];
+                    var icon = $("#toggle_team_mate_" + member_id)
+                    var txt_field = $("#status_" + member_id)
 
-                if (msg == false){
+                    if (msg == false){
 
-                    txt_field.html("Team mate - basic");
-                    icon.html("<i class='material-icons'>attach_money</i>");
-                    var title = "Allow " + first_name + " to enter you in an event using your money";
+                        txt_field.html("Team mate - basic");
+                        icon.html("<i class='material-icons'>attach_money</i>");
+                        var title = "Allow " + first_name + " to enter you in an event using your money";
 
-                } else {
+                    } else {
 
-                    txt_field.html("Team Mate<a href='javascript:void(0);' onclick='help();'><i class='material-icons'>add_box</i></a>");
-                    icon.html("<i class='material-icons'>money_off</i>");
-                    var title = "Stop " + first_name + " from being able to enter you in an event using your money";
+                        txt_field.html("Team Mate<a href='javascript:void(0);' onclick='help();'><i class='material-icons'>add_box</i></a>");
+                        icon.html("<i class='material-icons'>money_off</i>");
+                        var title = "Stop " + first_name + " from being able to enter you in an event using your money";
 
-                }
+                    }
 
 
-                icon.attr('title', title);
-                icon.attr('data-original-title', title);
-                icon.tooltip('update');
-                icon.tooltip('show');
+                    icon.attr('title', title);
+                    icon.attr('data-original-title', title);
+                    icon.tooltip('update');
+                    icon.tooltip('show');
 
-            });
+                });
         }
 
         function deleteUser(member_id) {
@@ -487,16 +487,16 @@
                 if (result.value) {
                     $.get("{% url "accounts:delete_team_mate_ajax" %}?member_id=" + member_id)
                         .done(response => {
-                        msg = response['data']['message'];
-                        if (msg == 'Success'){
-                            swal.fire({ title:"Team Mate Removed", html: "Success. Team mate has been removed.", icon: "success"})
-                                .then((result) => {
-                                $('table#team_mate_table tr#div_for_' + member_id).remove();
-                            });
-                        } else {
-                            swal.fire({ title:"Error", html: msg, icon: "error"})
-                        }
-                    });
+                            msg = response['data']['message'];
+                            if (msg == 'Success'){
+                                swal.fire({ title:"Team Mate Removed", html: "Success. Team mate has been removed.", icon: "success"})
+                                    .then((result) => {
+                                        $('table#team_mate_table tr#div_for_' + member_id).remove();
+                                    });
+                            } else {
+                                swal.fire({ title:"Error", html: msg, icon: "error"})
+                            }
+                        });
                 }
             })
         }

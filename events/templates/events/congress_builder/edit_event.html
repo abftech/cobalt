@@ -158,7 +158,10 @@
                                             </div>
                                         </div>
                                     {% else %}
-                                        {{ form.member_entry_fee }}
+                                        <!-- COMMENT IN CODE SAYS THIS IS REQUIRED, BUT SHOULD BE HIDDEN -->
+                                        <div style="display: none">
+                                            {{ form.member_entry_fee }}
+                                        </div>
                                     {% endif %}
 
                                     {% if not congress.members_only %}
@@ -180,6 +183,7 @@
                                                 <a href="javascript:void(0)" onclick='help("Entry Fee", "The standard entry fee without discounts. This is the fee per player. For teams events this is the fee per player in a team of four.");'>help</a>
                                             </div>
                                         </div>
+
                                     {% endif %}
 
                                     {% if congress.allow_early_payment_discount %}
@@ -301,9 +305,9 @@
                     {% endif %}
 
                     <div class="row justify-content-center" id="categories_div"
-                        {% if not categories %}
-                            style="display: none;"
-                        {% endif %}
+                         {% if not categories %}
+                             style="display: none;"
+                         {% endif %}
                     >
                         <div class="card col-lg-9">
                             <div class="card-header card-header-info">
@@ -449,24 +453,24 @@
                     session_id = $('#session_list').val();
                     $.get("{% url "events:delete_session_ajax" %}?session_id=" + session_id)
                         .done(response => {
-                        msg = response['data']['message'];
-                        if (msg == 'Success') {
-                            swal.fire({
-                                title: "Session Deleted",
-                                html: "Success. Session deleted from congress.",
-                                icon: "success"
-                            })
-                                .then((result) => {
-                                location.reload();
-                            });
-                        } else {
-                            swal.fire({
-                                title: "Error",
-                                html: msg,
-                                icon: "error"
-                            });
-                        }
-                    });
+                            msg = response['data']['message'];
+                            if (msg == 'Success') {
+                                swal.fire({
+                                    title: "Session Deleted",
+                                    html: "Success. Session deleted from congress.",
+                                    icon: "success"
+                                })
+                                    .then((result) => {
+                                        location.reload();
+                                    });
+                            } else {
+                                swal.fire({
+                                    title: "Error",
+                                    html: msg,
+                                    icon: "error"
+                                });
+                            }
+                        });
                 }
             });
         }
@@ -475,17 +479,17 @@
             category_id = $('#categories_list').val();
             $.get("{% url "events:delete_category_ajax" %}?category_id=" + category_id + "&event_id={{ event.id|default_if_none:"dummy" }}")
                 .done(response => {
-                msg = response['data']['message'];
-                if (msg == 'Success') {
-                    location.reload();
-                } else {
-                    swal.fire({
-                        title: "Error",
-                        html: msg,
-                        icon: "error"
-                    });
-                }
-            });
+                    msg = response['data']['message'];
+                    if (msg == 'Success') {
+                        location.reload();
+                    } else {
+                        swal.fire({
+                            title: "Error",
+                            html: msg,
+                            icon: "error"
+                        });
+                    }
+                });
         }
 
         $(document).ready(function() {

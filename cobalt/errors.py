@@ -2,19 +2,7 @@ from django.shortcuts import render
 
 
 def not_found_404(request, exception=None):
-    print("404")
-    print(exception)
-    # try:
-    #     if "cobalt_error_msg" in exception:
-    #         print("ok")
-    #         error = exception["cobalt_error_msg"]
-    #     else:
-    #         error = None
-    # except Exception as e:
-    #     print(e)
-    error = None
-
-    return render(request, "errors/404.html", {"error": error})
+    return render(request, "errors/404.html", {}, status=404)
 
 
 def server_error_500(request):

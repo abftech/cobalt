@@ -1699,7 +1699,7 @@ def compose_email_multi_select_by_date(request, club, batch):
     else:
         messages.info(
             request,
-            f"{total_event_count} event{'' if total_event_count==1 else 's'} selected for the date range {start_date.strftime(date_format)} to {end_date.strftime(date_format)}",
+            f"{total_event_count} event{'' if total_event_count == 1 else 's'} selected for the date range {start_date.strftime(date_format)} to {end_date.strftime(date_format)}",
         )
 
     base_url = reverse(
@@ -1932,7 +1932,7 @@ def _updated_recipient_count(request, batch):
         batch.save()
 
     return HttpResponse(
-        f"{recipient_count if recipient_count else 'No'} recipient{'' if recipient_count==1 else 's'}"
+        f"{recipient_count if recipient_count else 'No'} recipient{'' if recipient_count == 1 else 's'}"
     )
 
 
@@ -2342,9 +2342,9 @@ def compose_email_content(request, club, batch):
         email_content_form.fields["subject"].initial = batch.description
 
         if hasattr(batch, "batchcontent"):
-            email_content_form.fields[
-                "email_body"
-            ].initial = batch.batchcontent.email_body
+            email_content_form.fields["email_body"].initial = (
+                batch.batchcontent.email_body
+            )
             ready_to_send = True
 
     return render(
@@ -2386,9 +2386,9 @@ def compose_email_content_preview_htmx(request, club, batch):
         else:
             event = get_object_or_404(Event, pk=activity.activity_id)
             congress = event.congress
-        context[
-            "title1"
-        ] = f"Message from {request.user.full_name} on behalf of {congress}"
+        context["title1"] = (
+            f"Message from {request.user.full_name} on behalf of {congress}"
+        )
         context["title2"] = batch.description
 
     elif batch.batch_type in [
@@ -2479,7 +2479,7 @@ def compose_email_content_send_htmx(request, club, batch):
         )
 
         if dispatched:
-            if "test" in request.POST:
+            if "test" in request.POST and request.POST["test"] == "test":
                 messages.success(
                     request,
                     f"Test message sent to {request.user.email}",
@@ -2550,9 +2550,9 @@ def _attachment_dict_for_batch(batch):
         for attachments_object in attachments_objects:
             mime_type, _ = mimetypes.guess_type(attachments_object.filename())
             if mime_type is None:
-                attachments[
-                    attachments_object.filename()
-                ] = attachments_object.attachment.path
+                attachments[attachments_object.filename()] = (
+                    attachments_object.attachment.path
+                )
             else:
                 attachments[attachments_object.filename()] = {
                     "file": attachments_object.attachment.path,
@@ -2642,9 +2642,9 @@ def _dispatch_batch(request, club, batch, attachments, test_user=None):
         else:
             event = get_object_or_404(Event, pk=activity.activity_id)
             congress = event.congress
-        context[
-            "title1"
-        ] = f"Message from {request.user.full_name} on behalf of {congress}"
+        context["title1"] = (
+            f"Message from {request.user.full_name} on behalf of {congress}"
+        )
         context["title2"] = batch.description
 
     elif batch.batch_type in [
@@ -2957,7 +2957,7 @@ def batch_queue_progress_htmx(request, batch_id_id):
     if queued == batch.batch_size:
         return _final_response("All queued")
     else:
-        return HttpResponse(f"{ queued / batch.batch_size:.0%} queued")
+        return HttpResponse(f"{queued / batch.batch_size:.0%} queued")
 
 
 def get_emails_sent_to_address(email_address, club, viewing_user, slice=20):

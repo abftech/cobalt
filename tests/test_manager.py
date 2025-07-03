@@ -1,3 +1,4 @@
+import contextlib
 import glob
 import importlib
 import inspect
@@ -15,6 +16,7 @@ from selenium.common.exceptions import (
     NoSuchElementException,
     StaleElementReferenceException,
 )
+from selenium.webdriver.support.select import Select
 from termcolor import colored
 from django.db import transaction
 from django.template.loader import render_to_string
@@ -55,7 +57,7 @@ LIST_OF_INTEGRATION_TESTS = {
     "ClubSettings": "organisations.tests.integration.03_club_settings",
     "ClubMembers": "organisations.tests.integration.04_club_members",
     "ClubCongress": "organisations.tests.integration.06_congress_setup",
-    # "Sessions": "club_sessions.tests.integration.01_sessions",
+    "Sessions": "club_sessions.tests.integration.01_sessions",
 }
 
 
@@ -161,11 +163,8 @@ class CobaltTestManagerAbstract(ABC):
         print(
             "\n\n------------------------------------------------------------------\n"
         )
-        try:
+        with contextlib.suppress(KeyboardInterrupt):
             time.sleep(duration)
-        except KeyboardInterrupt:
-            pass
-
         print("Continuing...")
 
     def save_results(self, status, test_name, test_description=None, output=None):
@@ -482,12 +481,15 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
     approaches mentioned above.
     """
 
-    def __init__(self, app, browser, base_url, headless):
+    def __init__(self, app, browser, base_url, headless, single_test):
         """Set up basic environment for individual tests"""
 
         super().__init__(app)
 
         self.list_of_tests = LIST_OF_INTEGRATION_TESTS
+        if single_test:
+            self.list_of_tests = {single_test: LIST_OF_INTEGRATION_TESTS[single_test]}
+
         self.document_title = "Integration Testing Report"
         self.icon = "auto_stories"
 
@@ -506,7 +508,12 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
         # Create Selenium client
         if browser == "chrome":
             options = ChromeOptions()
-            # options.add_argument("--window-size=1920,1080")
+            # Prevent notifications - doesn't seem to do much
+            options.add_experimental_option(
+                "prefs", {"profile.default_content_setting_values.notifications": 2}
+            )
+            # Default timeout for waiting for things - 5 secs
+            options.timeouts = {"implicit": 5000}
             if headless:
                 options.headless = True
             self.driver = webdriver.Chrome(options=options)
@@ -534,6 +541,9 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
         self.driver.find_element(By.ID, "id_username").send_keys(user.username)
         self.driver.find_element(By.ID, "id_password").send_keys(self.test_code)
         self.driver.find_element(By.CLASS_NAME, "btn").click()
+
+        # Wait for it
+        time.sleep(3)
 
     def _selenium_wait(self, wait_event, element_id, timeout):
         """Wait for something and return it"""
@@ -579,6 +589,34 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
         )
         return self._selenium_wait(element_has_text, element_id, timeout=timeout)
 
+    def selenium_wait_for_select_and_pick_an_option(
+        self, element_id, choice_name, timeout=5
+    ):
+        """Wait for a select to appear and pick an option from it"""
+
+        # Get the item
+        element_clickable = expected_conditions.element_to_be_clickable(
+            (By.ID, element_id)
+        )
+
+        # wait for it to be clickable
+        self._selenium_wait(element_clickable, element_id, timeout=timeout)
+
+        # Create a select object for it
+        select = Select(self.driver.find_element(By.ID, element_id))
+
+        # Choose the value
+        try:
+            select.select_by_visible_text(choice_name)
+        except NoSuchElementException:
+            print(
+                f"You tried to select '{choice_name}' from the dropdown with id='{element_id}'"
+            )
+            print("This value does not exist")
+            print("Valid values are:")
+            for option in select.options:
+                print(option.text)
+
     def run(self):
 
         super().run()
@@ -601,9 +639,9 @@ class CobaltTestManagerUnit(CobaltTestManagerAbstract):
                     class_name = re.search("^class (\\w+):", line)
                     if class_name:
                         print(f"  {class_name.group(1)} --> {test_file_as_python_path}")
-                        self.list_of_tests[
-                            class_name.group(1)
-                        ] = test_file_as_python_path
+                        self.list_of_tests[class_name.group(1)] = (
+                            test_file_as_python_path
+                        )
 
         self.rollback_transactions = True
         self.document_title = "Unit Testing Report"

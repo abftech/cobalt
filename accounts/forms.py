@@ -1,5 +1,6 @@
-""" Forms for Accounts App """
+"""Forms for Accounts App"""
 
+import PIL
 from PIL import Image
 import re
 import datetime
@@ -160,7 +161,7 @@ class PhotoUpdateForm(forms.ModelForm):
 
         image = Image.open(photo.pic)
         cropped_image = image.crop((x, y, w + x, h + y))
-        resized_image = cropped_image.resize((200, 200), Image.ANTIALIAS)
+        resized_image = cropped_image.resize((200, 200), PIL.Image.Resampling.LANCZOS)
         resized_image.save(photo.pic.path)
 
         return photo

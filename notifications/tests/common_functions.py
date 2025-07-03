@@ -31,7 +31,7 @@ def check_email_sent(
 
     try:
         last_email = Email.objects.order_by("-pk")[0].pk
-    except AttributeError:
+    except (AttributeError, IndexError):
         if debug:
             print("Email Check: No emails found at all - emails are empty")
         manager.save_results(
@@ -40,6 +40,7 @@ def check_email_sent(
             test_name=test_name,
             test_description=test_description,
         )
+        return
 
     # We can't use the ORM to filter emails, we need to call Django Post Office functions
     emails = Email.objects.filter(id__gt=last_email - email_count)

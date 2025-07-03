@@ -1,9 +1,9 @@
 {% load crispy_forms_filters %}
 
 <style>
-    input[type="file"] {
-        display: none;
-    }
+    {#input[type="file"] {#}
+    {#    display: none;#}
+    {#}#}
     .custom-file-upload {
         border: 1px solid #ccc;
         display: inline-block;
@@ -24,9 +24,9 @@
 
                 <div class="row">
                     <form id='form'
-                        hx-encoding='multipart/form-data'
-                        hx-post='{% url "organisations:club_menu_tab_members_upload_csv" %}'
-                        hx-target='#id_panel_members'
+                          hx-encoding='multipart/form-data'
+                          hx-post='{% url "organisations:club_menu_tab_members_upload_csv" %}'
+                          hx-target='#id_panel_members'
                     >
 
                         <div id="div_id_file_type" class="form-group row">
@@ -82,8 +82,8 @@
                                             {% if form.overwrite.value %}checked="Checked" {% endif %}
                                         >
                                         <span class="form-check-sign"
-                                            data-toggle="tooltip"
-                                            title="If selected existing values will be overwritten with uploaded non-blank values. If not selected new valid values will be added only where there is no current data. In neither case will current data be replaced by blanks."
+                                              data-toggle="tooltip"
+                                              title="If selected existing values will be overwritten with uploaded non-blank values. If not selected new valid values will be added only where there is no current data. In neither case will current data be replaced by blanks."
                                         >
                                             <span class="check"></span>
                                         </span>
@@ -93,25 +93,26 @@
                         </div>
 
                         <input type='file'
-                            accept=".csv"
-                            name='file'
-                            id="file-upload"
-                            class="form-control"
-                            onchange="$('#upload_pianola').show();"
+                               accept=".csv"
+                               name='file'
+                               id="file-upload"
+                               class="form-control"
+                               onchange="$('#upload_pianola').show();"
                         >
                         <br>
                         <button id="upload_pianola"
-                            style="display:none;"
-                            class="btn btn-sm btn-success"
-                            onclick="$('#upload_pianola_msg').show();
-                            $('#upload_pianola').hide();
-                            $('#file-upload').hide();
-                            $('#label-for-file-upload').hide();"
+                                style="display:none;"
+                                class="btn btn-sm btn-success"
+                                onclick="$('#upload_pianola_msg').show();
+                                         $('#progress').show();
+                                         $('#upload_pianola').hide();
+                                         $('#file-upload').hide();
+                                         $('#label-for-file-upload').hide();"
                         >Upload
                         </button>
 
                         <br>
-                        <progress id='progress' value='0' max='100'></progress>
+                        <progress id='progress' value='0' max='100' style="display: none"></progress>
 
                         <div id="upload_pianola_msg" style="display: none">
                             Working...

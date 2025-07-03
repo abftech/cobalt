@@ -7,7 +7,7 @@
     <link href="{% static "payments/css/stripe-global.css" %}" rel="stylesheet" />
 
     <!-- Must load Stripe js from their server to be PCI compliant -->
-    <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://js.stripe.com/basil/stripe.js"></script>
     <script type="text/javascript" src="{% static "payments/js/stripe-script.js" %}" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 {% endblock %}

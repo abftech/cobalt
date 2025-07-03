@@ -1,6 +1,7 @@
+from datetime import datetime
+
 import xmltodict
 from django.contrib.humanize.templatetags.humanize import ordinal
-from django.utils.datetime_safe import datetime
 
 from cobalt.settings import MEDIA_ROOT
 from results.models import ResultsFile, PlayerSummaryResult

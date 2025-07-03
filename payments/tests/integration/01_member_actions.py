@@ -42,6 +42,7 @@ class MemberTransfer:
         betty = self.manager.get_user(username="101")
         alan = self.manager.test_user  # shorthand
 
+        ##################################
         # Check Alan's balance before
 
         alan_expected_initial_balance = 400.0
@@ -54,8 +55,8 @@ class MemberTransfer:
         )
 
         #################################
-
         # Check Betty's balance before
+
         betty_expected_initial_balance = 404.44
         check_balance_for_user(
             manager=self.manager,
@@ -66,8 +67,8 @@ class MemberTransfer:
         )
 
         ################################
-
         # Transfer from Alan to Betty
+
         desc = "Al to Betty, test transfer"
         amt = 54.45
 
@@ -88,8 +89,8 @@ class MemberTransfer:
         )
 
         #############################
-
         # Test the view - actually do the transfer
+
         view_data = {
             "transfer_to": betty.id,
             "amount": amt,
@@ -113,7 +114,6 @@ class MemberTransfer:
             test_name="Check that Alan received an email for the transfer",
             test_description="Doing a transfer should generate an email to Alan to confirm it has gone through.",
             subject_search="Transfer to Betty Bunting",
-            #            body_search=f"You have transferred {amt}",
             email_to="Alan",
         )
 
@@ -126,7 +126,6 @@ class MemberTransfer:
         )
 
         #############################
-
         # Check after
 
         # Betty side
@@ -141,8 +140,8 @@ class MemberTransfer:
         )
 
         #############################
-
         # Alan side
+
         check_last_transaction_for_user(
             manager=self.manager,
             user=alan,
@@ -154,8 +153,8 @@ class MemberTransfer:
         )
 
         #############################
-
         # Check Alan's balance after
+
         check_balance_for_user(
             manager=self.manager,
             user=alan,
@@ -165,8 +164,8 @@ class MemberTransfer:
         )
 
         ##############################
-
         # Check Betty's balance after
+
         check_balance_for_user(
             manager=self.manager,
             user=betty,
@@ -174,8 +173,6 @@ class MemberTransfer:
             test_name="Execute member transfer - Alan to Betty. Betty balance",
             test_description="Check that Betty's balance after the transfer from Alan is correct.",
         )
-
-    ##############################
 
     def a2_member_transfer_with_insufficient_funds(self):
         """Member transfer action which triggers manual top up"""
@@ -215,9 +212,8 @@ class MemberTransfer:
         self.manager.driver.get(transfer_url)
 
         # Select Fiona from recent list
-
         select = Select(self.manager.selenium_wait_for_clickable("id-cobalt-recent"))
-        select.select_by_value("11")
+        select.select_by_value("12")
 
         # Wait for refresh
         self.manager.selenium_wait_for_clickable("id_amount").send_keys("500")
@@ -233,8 +229,9 @@ class MemberTransfer:
 
     def a3_member_auto_top_up_enable(self):
         """Enable auto top up"""
+
         alan = self.manager.alan
-        betty = self.manager.betty
+        fiona = self.manager.fiona
 
         # Log Alan in
         self.manager.login_user(alan)
@@ -254,10 +251,8 @@ class MemberTransfer:
         # Users seem to now be cached so we need to reload Alan again
         ################################
         alan = self.manager.get_user(username="100")
-        self.manager.login_user(alan)
 
         ##############################
-
         # Check auto top up
         test = alan.stripe_auto_confirmed == "On"
         self.manager.save_results(
@@ -268,7 +263,6 @@ class MemberTransfer:
         )
 
         ##############################
-
         # Check auto top up amount
         expected_amount = 100.0
 
@@ -281,69 +275,73 @@ class MemberTransfer:
             test_description="Looks at user object to see that auto top up amount is set to expected value.",
         )
 
-        #############################
-        # Trigger auto top up
+        # This one doesn't work through the form, use selenium
+
+        # Get url
+        url = self.manager.base_url + reverse("payments:member_transfer")
+
+        # Connect to page
+        self.manager.driver.get(url)
+
+        # select fiona to pay to
+        self.manager.selenium_wait_for_select_and_pick_an_option(
+            "id-cobalt-recent", "Fiona Freckle"
+        )
+
+        # values
         amt = 1000.0
         desc = "Trigger Auto"
-        view_data = {
-            "transfer_to": betty.id,
-            "amount": amt,
-            "description": desc,
-        }
 
-        url = reverse("payments:member_transfer")
-        response = self.client.post(url, view_data)
+        # enter amount
+        self.manager.selenium_wait_for_clickable("id_amount").send_keys(amt)
+
+        # enter description
+        self.manager.selenium_wait_for_clickable("id_description").send_keys(desc)
+
+        # submit
+        self.manager.selenium_wait_for_clickable("cobalt-button").click()
 
         self.manager.save_results(
-            status=response.status_code,
-            test_name="Manual transfer to trigger auto top up - Alan to Betty",
+            status=True,
+            test_name="Manual transfer to trigger auto top up - Alan to fiona",
             test_description="This transaction should trigger an auto top up event for Alan.",
         )
 
         #############################
-
         # Give Stripe time to call us back
         time.sleep(5)
 
         # Check after
 
-        # Betty side
-        betty_tran = (
-            MemberTransaction.objects.filter(member=betty)
+        # fiona side
+        fiona_tran = (
+            MemberTransaction.objects.filter(member=fiona)
             .order_by("-created_date")
             .first()
         )
 
-        if betty_tran.description == desc and float(betty_tran.amount) == amt:
+        if fiona_tran.description == desc and float(fiona_tran.amount) == amt:
             test_result = True
         else:
             test_result = False
 
-        result = f"Expected {amt} and '{desc}'. Got {betty_tran.amount} and '{betty_tran.description}'"
+        result = f"Expected {amt} and '{desc}'. Got {fiona_tran.amount} and '{fiona_tran.description}'"
 
         self.manager.save_results(
             status=test_result,
-            test_name="Member transfer triggering auto top up - Alan to Betty. Betty transaction",
+            test_name="Member transfer triggering auto top up - Alan to fiona. fiona transaction",
             output=result,
-            test_description="Check Betty's latest transaction is the transfer from Alan.",
+            test_description="Check fiona's latest transaction is the transfer from Alan.",
         )
 
         ############################
-
         alan_balance = get_balance(alan)
-
-        # alan side
-        # alan_tran = (
-        #     MemberTransaction.objects.filter(member=alan)
-        #     .order_by("-created_date")
-        #     .first()
-        # )
 
         test_result = alan_balance == 345.55
 
         self.manager.save_results(
             status=test_result,
-            test_name="Manual transfer triggering auto top up - Alan to Betty. Alan's balance",
-            output=f"Expected ${alan_balance}. Got ${alan_balance}",
-            test_description="tba",
+            test_name="Manual transfer triggering auto top up - Alan to fiona. Alan's balance",
+            output=f"Expected $345.55. Got ${alan_balance}",
+            test_description="Check Alan's balance is as expected",
         )
