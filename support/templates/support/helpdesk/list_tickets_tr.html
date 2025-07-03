@@ -6,39 +6,68 @@
 
 {% load cobalt_tags %}
 
-<tr>
+<tr onclick="window.location='{% url "support:helpdesk_edit" ticket_id=thing.id %}';">
     <td class="text-left {{ td_class }}"><a href="{% url "support:helpdesk_edit" ticket_id=thing.id %}">
         <span class="float-left material-icons {{ icon_colour }}">{{ icon }}</span>
     </a></td>
 
     <!-- DON'T SHOW ON SMALL SCREENS -->
     <td class="text-left {{  td_class }}">
-        <span class="d-none d-md-inline">{{ thing.severity }}</span>
+        <a href="{% url "support:helpdesk_edit" ticket_id=thing.id %}">
+            <span class="d-none d-md-inline">{{ thing.severity }}</span>
+        </a>
     </td>
 
     <!-- DON'T SHOW ON SMALL SCREENS -->
     <td class="text-right">
-        <span class="d-none d-md-inline">{{ thing.id }}</span>
+        <a href="{% url "support:helpdesk_edit" ticket_id=thing.id %}">
+            <span class="d-none d-md-inline">{{ thing.id }}</span>
+        </a>
     </td>
 
     <td class="text-left" title="{{ thing.created_date|timesince }} ago"
-        data-toggle="tooltip">{{ thing.created_date|cobalt_nice_datetime_short }}</td>
+        data-toggle="tooltip">
+        <a href="{% url "support:helpdesk_edit" ticket_id=thing.id %}">
+            {{ thing.created_date|cobalt_nice_datetime_short }}
+        </a>
+    </td>
 
-    <td class="text-left"><span class="d-none d-md-inline">{{ thing.status }}</span></td>
+    <td class="text-left">
+        <a href="{% url "support:helpdesk_edit" ticket_id=thing.id %}">
+            <span class="d-none d-md-inline">{{ thing.status }}</span>
+        </a>
+    </td>
 
     {% if thing.reported_by_user %}
         <td class="text-left">
-            <span class="d-md-none">{{ thing.reported_by_user.full_name }}</span>
-            <span class="d-none d-md-inline">{{ thing.reported_by_user }}</span>
+            <a href="{% url "support:helpdesk_edit" ticket_id=thing.id %}">
+                <span class="d-md-none">{{ thing.reported_by_user.full_name }}</span>
+                <span class="d-none d-md-inline">{{ thing.reported_by_user }}</span>
+            </a>
         </td>
     {% else %}
         <td class="text-left">
-            {{ thing.reported_by_name }}
-            <span class="d-none d-md-inline">({{ thing.reported_by_email }})</span>
+            <a href="{% url "support:helpdesk_edit" ticket_id=thing.id %}">
+                {{ thing.reported_by_name }}
+                <span class="d-none d-md-inline">({{ thing.reported_by_email }})</span>
+            </a>
         </td>
     {% endif %}
 
-    <td class="text-left">{{ thing.title }}</td>
-    <td class="text-left"><span class="d-none d-md-inline">{{ thing.incident_type }}</span></td>
-    <td class="text-left"><span class="d-none d-md-inline">{{ thing.assigned_to.first_name }}</span></td>
+    <td class="text-left">
+        <a href="{% url "support:helpdesk_edit" ticket_id=thing.id %}">
+            {{ thing.title }}
+        </a>
+    </td>
+    <td class="text-left">
+        <a href="{% url "support:helpdesk_edit" ticket_id=thing.id %}">
+            <span class="d-none d-md-inline">
+                {{ thing.incident_type }}</span>
+        </a>
+    </td>
+    <td class="text-left">
+        <a href="{% url "support:helpdesk_edit" ticket_id=thing.id %}">
+            <span class="d-none d-md-inline">{{ thing.assigned_to.first_name }}</span>
+        </a>
+    </td>
 </tr>
