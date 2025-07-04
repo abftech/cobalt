@@ -79,17 +79,4 @@ def server_error_500(request):
         to_emails, po_context, template="system - server error"
     )
 
-    # return standard message to caller
-    html = """
-<!doctype html>
-<html lang="en">
-<head>
-  <title>Server Error (500)</title>
-</head>
-<body>
-  <h1>Server Error (500)</h1><p></p>
-</body>
-</html>
-"""
-
-    return HttpResponse(html, status=500)
+    return render(request, "errors/500.html", status=500)
