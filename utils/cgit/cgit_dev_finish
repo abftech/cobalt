@@ -9,7 +9,7 @@ source utils/cgit/_cgit_include_vars
 BRANCH=$(git branch --show-current)
 
   # Check if release notes have been changed
-  if ! git diff --name-only "$BRANCH" develop | grep release_notes/release_notes.py >/dev/null
+  if ! git diff --name-only "$BRANCH" develop | grep utils/views/release_notes.py >/dev/null
   then
     echo ""
     echo "Release notes have not been changed."
