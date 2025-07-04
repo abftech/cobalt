@@ -91,7 +91,11 @@ def server_error_500(request):
         to_emails, po_context, template="system - server error"
     )
 
-    return render(request, "errors/500.html", status=500)
+    # Don't return status of 500 or it will trigger Django's own email sending
+    if request.user.is_authenticated:
+        return render(request, "errors/500.html")
+    else:
+        return render(request, "errors/logged_out_error_500.html")
 
 
 def generate_error_500(request):

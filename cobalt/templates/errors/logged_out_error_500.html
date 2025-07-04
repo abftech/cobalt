@@ -1,0 +1,16 @@
+{% extends 'base_logged_out.html' %}
+{% load static %}
+{% block title %} - An Error Occurred{% endblock %}
+
+{% block content %}
+    <div class="container d-flex justify-content-center">
+        <div class="card col-md-8">
+            <div class="card-header card-header-danger">
+                <h1>An Error Occurred</h1>
+            </div>
+            <div class="card-body">
+                <h2>Support have been notified of the error.</h2>
+            </div>
+        </div>
+    </div>
+{% endblock %}
