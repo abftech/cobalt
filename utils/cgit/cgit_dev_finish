@@ -94,7 +94,7 @@ else
 fi
 
 echo "Putting you back onto $BRANCH"
-got checkout "$BRANCH"
+git checkout "$BRANCH"
 
 #echo "Deleting branch $BRANCH..."
 #echo ""
