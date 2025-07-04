@@ -67,7 +67,9 @@ def server_error_500(request):
     error_value = f"{error_value}".replace("\n", "").replace("\r", "")
 
     # Get addresses to send to
-    to_emails = list(settings.ADMINS)
+    to_emails = []
+    for recipient in settings.ADMINS:
+        to_emails.append(recipient[1])
 
     # send email
     po_context = {
