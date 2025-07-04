@@ -2,6 +2,15 @@
 
 # about: deploy changes to UAT\n
 
+if [ "$BRANCH" != "develop" ]
+then
+  echo ""
+  echo "################################################################"
+  echo "# Warning: You are not on the develop branch. The branch that  #"
+  echo "# will be deployed to UAT is develop, not your current branch. #"
+  echo "################################################################"
+fi
+
 echo ""
 echo ""
 echo "Ready to Deploy to UAT."

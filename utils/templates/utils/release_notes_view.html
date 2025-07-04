@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %} - Release Notes{% endblock %}
+{% load cobalt_tags %}
+{% block content %}
+
+        <!-- BREADCRUMBS -->
+
+    <nav aria-label="breadcrumb" role="navigation">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url "rbac:admin_menu" %}">Admin</a></li>
+            <li class="breadcrumb-item"><a href="{% url "rbac:admin_menu" %}#it">IT</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Release Notes</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header card-header-success">
+            <h2>Release Notes</h2>
+        </div>
+        <div class="card-body">
+
+            <div class="container-fluid">
+
+        <!--WARN IF ON TEST SYSTEM -->
+                {% if COBALT_HOSTNAME == "test.myabf.com.au" %}
+                    <p class="fst-italic text-center">Release numbers are only applied when releasing to UAT.</p>
+                    <p class="fst-italic text-center">On Test the latest release number shown may not be accurate.</p>
+                {% endif %}
+
+        <!-- LOOP THROUGH RELEASE NOTES -->
+                {% for release_note in release_notes %}
+                    <div class="card mx-5 mt-5 col-md-6 mx-auto">
+
+                <!-- CHANGE COLOUR FOR LATEST NOTES -->
+                        {% if forloop.first %}
+                            <div class="card-header bg-primary text-white">
+                        {% else %}
+                            <div class="card-header bg-warning">
+                        {% endif %}
+
+                        <h3>Release {{ release_note.release }}</h3>
+                    </div>
+
+                    <div class="card-body">
+                        <ul>
+                            {% for note in release_note.notes %}
+                                <li>{{ note }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    </div>
+                {% endfor %}
+            </div>
+
+{% endblock %}

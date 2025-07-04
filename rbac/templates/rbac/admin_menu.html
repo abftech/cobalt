@@ -625,61 +625,70 @@
                                     <tbody>
                                         <tr>
                                             <td>
-                                                <a class="btn btn-sm btn-primary btn-block" href="{% url "logs:logs" %} ">Logs</a>
+                                                <a class="btn btn-sm btn-primary btn-block" href="{% url "utils:release_notes_view" %} ">Release Notes</a>
                                             </td>
                                             <td class="text-left pl-5">
-                                                View Application Logs
+                                                View Release Notes for this version
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td>
-                                                <a class="btn btn-sm btn-primary btn-block" href="{% url "utils:admin_system_activity" %} ">IT System Activity</a>
-                                            </td>
-                                            <td class="text-left pl-5">
-                                                View System Logs
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <a class="btn btn-sm btn-primary btn-block" href="{% url "utils:api_log_viewer" %} ">API Logs</a>
-                                            </td>
-                                            <td class="text-left pl-5">
-                                                View API Logs
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <a class="btn btn-sm btn-primary btn-block" href="{% url "utils:database_view" %}">Database Stats</a>
-                                            </td>
-                                            <td class="text-left pl-5">
-                                                View statistics on database
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <a class="btn btn-sm btn-primary btn-block" href="{% url "utils:recent_errors" %}">Recent Errors</a>
-                                            </td>
-                                            <td class="text-left pl-5">
-                                                View recent errors from error log
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <a class="btn btn-sm btn-primary btn-block" href="{% url "notifications:admin_send_test_fcm_message" %}">Send FCM Test</a>
-                                            </td>
-                                            <td class="text-left pl-5">
-                                                Send a test message to a mobile app
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                            <tr>
+                                                <td>
+                                                    <a class="btn btn-sm btn-primary btn-block" href="{% url "logs:logs" %} ">Logs</a>
+                                                </td>
+                                                <td class="text-left pl-5">
+                                                    View Application Logs
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <a class="btn btn-sm btn-primary btn-block" href="{% url "utils:admin_system_activity" %} ">IT System Activity</a>
+                                                </td>
+                                                <td class="text-left pl-5">
+                                                    View System Logs
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <a class="btn btn-sm btn-primary btn-block" href="{% url "utils:api_log_viewer" %} ">API Logs</a>
+                                                </td>
+                                                <td class="text-left pl-5">
+                                                    View API Logs
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <a class="btn btn-sm btn-primary btn-block" href="{% url "utils:database_view" %}">Database Stats</a>
+                                                </td>
+                                                <td class="text-left pl-5">
+                                                    View statistics on database
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <a class="btn btn-sm btn-primary btn-block" href="{% url "utils:recent_errors" %}">Recent Errors</a>
+                                                </td>
+                                                <td class="text-left pl-5">
+                                                    View recent errors from error log
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <a class="btn btn-sm btn-primary btn-block" href="{% url "notifications:admin_send_test_fcm_message" %}">Send FCM Test</a>
+                                                </td>
+                                                <td class="text-left pl-5">
+                                                    Send a test message to a mobile app
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
 {% endblock content %}
 

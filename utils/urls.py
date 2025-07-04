@@ -4,6 +4,7 @@ import utils.views.cobalt_batch
 import utils.views.general
 import utils.views.monitoring
 import utils.views.slugs
+from utils.views.release_notes import release_notes_view
 
 app_name = "utils"  # pylint: disable=invalid-name
 
@@ -73,6 +74,11 @@ urlpatterns = [
         "admin-manage-slugs",
         utils.views.slugs.admin_manage_slugs,
         name="admin_manage_slugs",
+    ),
+    path(
+        "release-notes-view",
+        release_notes_view,
+        name="release_notes_view",
     ),
     # path(
     #     "timeout",
