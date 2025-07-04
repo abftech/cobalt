@@ -1,0 +1,82 @@
+<!-- HEADLINE INFO -->
+
+<h2>{{ headline_1 }}</h2>
+<h2>{{ headline_2 }}</h2>
+
+<!--BOX-1 -->
+<div style="border: 2px solid grey; border-radius: 5px; padding: 20px;">
+
+    <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%; min-width: 100%;" width="100%">
+        <tr>
+            <td><b>Type:</b></td>
+            <td>{{ error_type }}</td>
+        </tr>
+
+        <tr>
+            <td><b>Value:</b></td>
+            <td>{{ value_str }}</td>
+        </tr>
+
+        <tr>
+            <td><b>User:</b></td>
+            <td><b>{{ user }}</b> - {{ user.full_name }}</td>
+        </tr>
+
+    </table>
+
+</div>
+<br>
+
+<!-- END BOX-1 -->
+
+
+<!--BOX-2 -->
+
+<div style="border: 2px solid grey; border-radius: 5px; padding: 20px;">
+
+    <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%; min-width: 100%;" width="100%">
+        <tr>
+            <td><b>Traceback</b></td>
+        </tr>
+        {% for traceback in traceback_list %}
+            <tr>
+                <td><pre>{{ traceback }}</pre>
+                </tr>
+        {% endfor %}
+    </table>
+
+</div>
+<br>
+
+<!-- END BOX-2 -->
+
+<!--BOX-3 -->
+
+<div style="border: 2px solid grey; border-radius: 5px; padding: 20px;">
+
+    <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%; min-width: 100%;" width="100%">
+        <tr>
+            <td colspan="2"><b>Details</b></td>
+        </tr>
+        <tr>
+            <td><b>POST</b></td>
+            <td>{{ request_post }}</td>
+        </tr>
+        <tr>
+            <td><b>GET</b></td>
+            <td>{{ request_get }}</td>
+        </tr>
+        <tr>
+            <td><b>PATH</b></td>
+            <td>{{ request_path }}</td>
+        </tr>
+        <tr>
+            <td><b>BODY</b></td>
+            <td>{{ details }}</td>
+        </tr>
+    </table>
+
+</div>
+<br>
+
+<!-- END BOX-3 -->

@@ -1,14 +1,16 @@
+import sys
+import traceback as traceback_lib
+
+from django.http import RawPostDataException, HttpResponse
 from django.shortcuts import render
+from django.template.loader import render_to_string
+
+from cobalt import settings
+from notifications.views.core import send_cobalt_email_with_template
 
 
 def not_found_404(request, exception=None):
     return render(request, "errors/404.html", {}, status=404)
-
-
-def server_error_500(request):
-    response = render(request, "errors/500.html")
-    response.status_code = 500
-    return response
 
 
 def permission_denied_403(request, exception):
@@ -17,3 +19,77 @@ def permission_denied_403(request, exception):
 
 def bad_request_400(request, exception):
     return render(request, "errors/500.html")
+
+
+def server_error_500(request):
+    """
+    Email the admins when a 500 error occurs
+    """
+
+    # Get the traceback info
+    error_type, error_value, traceback = sys.exc_info()
+
+    # Get further details of the traceback
+    traceback_list = traceback_lib.format_exception(error_type, error_value, traceback)
+
+    # Try to get the details
+    try:
+        details = f"BODY: {request.body}"
+    except RawPostDataException:
+        details = "BODY: UNAVAILABLE"
+
+    # Block post data for logins
+    if request.path == "/accounts/login":
+        request_post = "NOT LOGGED"
+        details = "NOT LOGGED"
+    else:
+        request_post = request.POST
+
+    # Django post office can't store objects, so we need to render the body of the email first
+    context = {
+        "user": request.user,
+        "error_type": f"{error_type}",
+        "value_str": error_value,
+        "traceback": traceback,
+        "traceback_list": traceback_list,
+        "request_post": request_post,
+        "request_get": request.GET,
+        "request_path": request.path,
+        "details": details,
+        "headline_1": traceback_list[-2],
+        "headline_2": traceback_list[-1],
+    }
+
+    # Turn into HTML
+    email_body = render_to_string("errors/server_error_500.html", context)
+
+    # django post office doesn't like new lines in subject
+    error_value = f"{error_value}".replace("\n", "").replace("\r", "")
+
+    # Get addresses to send to
+    to_emails = list(settings.ADMINS)
+
+    # send email
+    po_context = {
+        "title": f"Server Error - {error_value}",
+        "email_body": email_body,
+    }
+
+    send_cobalt_email_with_template(
+        to_emails, po_context, template="system - server error"
+    )
+
+    # return standard message to caller
+    html = """
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Server Error (500)</title>
+</head>
+<body>
+  <h1>Server Error (500)</h1><p></p>
+</body>
+</html>
+"""
+
+    return HttpResponse(html, status=500)

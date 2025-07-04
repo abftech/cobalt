@@ -31,6 +31,11 @@ SYSTEM_EMAIL_TEMPLATES = [
         "po_email_with_two_headings_flex.html",
         "System email with a heading and a sub-heading (flexible formatting)",
     ),
+    (
+        "server error",
+        "po_server_error.html",
+        "Server error template",
+    ),
 ]
 
 
