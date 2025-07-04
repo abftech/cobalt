@@ -92,3 +92,9 @@ def server_error_500(request):
     )
 
     return render(request, "errors/500.html", status=500)
+
+
+def generate_error_500(request):
+    """force a 500 error to test handling"""
+
+    print(1 / 0)

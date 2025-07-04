@@ -52,7 +52,7 @@ urlpatterns = [
     path("health/", include("health_check.urls")),
     path("admin/django-ses/", include("django_ses.urls")),
     path("404", errors.not_found_404),
-    path("500", errors.server_error_500),
+    path("500", errors.generate_error_500),
     # This is the slug option for Cobalt
     path("go/<str:slug_name>/", slug, name="slug"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
