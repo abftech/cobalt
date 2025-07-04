@@ -10,7 +10,7 @@ def release_notes_view(request):
             "notes": [
                 "Fix sort order on Helpdesk views",
                 "Add release notes",
-                "Improve server error 500 handling",
+                "Improved server error 500 handling",
             ],
         },
         {
