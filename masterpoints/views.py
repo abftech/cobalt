@@ -648,7 +648,12 @@ def abf_registration_card_htmx(request):
         return HttpResponse("")
 
     if abf_number:
-        matches = requests.get(f"{GLOBAL_MPSERVER}/mps/{abf_number}").json()
+
+        try:
+            matches = requests.get(f"{GLOBAL_MPSERVER}/mps/{abf_number}").json()
+        except JSONDecodeError:
+            return HttpResponse("<h2>No match found</h2>")
+
         if len(matches) == 0:
             return HttpResponse("<h2>No match found</h2>")
     elif not first_name:  # last name only
