@@ -32,6 +32,16 @@ def server_error_500(request):
     # Get further details of the traceback
     traceback_list = traceback_lib.format_exception(error_type, error_value, traceback)
 
+    try:
+        headline_1 = traceback_list[-2]
+    except IndexError:
+        headline_1 = "Not available"
+
+    try:
+        headline_2 = traceback_list[-1]
+    except IndexError:
+        headline_2 = "Not available"
+
     # Try to get the details
     try:
         details = f"BODY: {request.body}"
@@ -56,8 +66,8 @@ def server_error_500(request):
         "request_get": request.GET,
         "request_path": request.path,
         "details": details,
-        "headline_1": traceback_list[-2],
-        "headline_2": traceback_list[-1],
+        "headline_1": headline_1,
+        "headline_2": headline_2,
     }
 
     # Turn into HTML
