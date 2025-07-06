@@ -1,4 +1,5 @@
-""" Script to create cobalt test data """
+"""Script to create cobalt test data"""
+
 from django.core.exceptions import SuspiciousOperation
 
 from cobalt.settings import (
@@ -11,7 +12,7 @@ from cobalt.settings import (
 )
 from accounts.models import User
 from django.core.management.base import BaseCommand
-from accounts.management.commands.accounts_core import create_fake_user
+from accounts.management.commands.accounts_core import get_or_create_fake_user
 from forums.models import (
     Post,
     Comment1,
