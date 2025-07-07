@@ -22,4 +22,4 @@ psql test </tmp/drop_db
 
 
 
-# utils/aws/rebuild_test_database_subcommands.sh
+utils/aws/rebuild_test_database_subcommands.sh

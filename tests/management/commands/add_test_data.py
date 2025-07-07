@@ -28,6 +28,7 @@ bb                   , mark                      , 0
 
 import contextlib
 from django.core.exceptions import SuspiciousOperation
+from lxml.html.defs import frame_tags
 
 from cobalt.settings import (
     RBAC_EVERYONE,
@@ -53,26 +54,21 @@ DATA_DIR = "tests/test_data"
 CORE_DATA_DIR = "tests/test_data_core"
 
 
-def _handle_foreign_key(key, id_array, value, app, model, row):
-    """helper to deal with data that points to a foreign key"""
+def _get_instance_of_app_model(app, model):
+    """See if a app model combination is valid, returns an instance of the model or None"""
 
-    parts = key.split(".")
-    foreign_key = parts[1]
-    print(foreign_key)
-    foreign_key_app = parts[2]
-    foreign_key_model = parts[3]
-    try:
-        val = id_array[f"{foreign_key_app}.{foreign_key_model}"][value]
-    except KeyError:
-        print("\n\nError\n")
-        print(row)
-        print(f"Foreign key not found: {foreign_key_app}.{foreign_key_model}: {value}")
-        print(
-            f"Check that the file with {app}.{model} has id '{value}' and that it is loaded before this file.\n"
-        )
-        sys.exit()
+    exec_cmd = "module = import_module('%s.models')\ninstance = module.%s()" % (
+        app,
+        model,
+    )
+    # Set local array before we call the exec command and its value will change when returned
+    local_array = {}
 
-    return val
+    # Execute
+    exec(exec_cmd, globals(), local_array)
+
+    # Return what we got
+    return local_array["instance"]
 
 
 def _parse_csv(file):
@@ -151,35 +147,38 @@ def _parse_csv(file):
     return app.strip(), model.strip(), data, allow_dupes
 
 
-def _instance_creation_print_error_and_exit(app, model, csv):
+def _handle_not_found_error(app, model, csv):
+
     print("\n\nError\n")
     print(f"Failed to create instance of {app}.{model}")
     print(f"Processing file: {csv}\n")
-    frame_info = getframeinfo(currentframe())
+    frame_tags_info = getframeinfo(currentframe())
     print(
         "Error somewhere above: ",
-        frame_info.filename,
-        frame_info.lineno,
+        frame_tags_info.filename,
+        frame_tags_info.lineno,
         "\n",
     )
     sys.exit()
 
 
-def _get_instance_of_app_model(app, model):
-    """See if a app model combination is valid, returns an instance of the model or None"""
-
-    exec_cmd = "module = import_module('%s.models')\ninstance = module.%s()" % (
-        app,
-        model,
+def _print_error_and_exit(error, csv, key, value):
+    print("\n\nError\n")
+    print(error)
+    print()
+    print("Options are:")
+    print("  d.  exact date YYYMMDD")
+    print("  m.  exact time 24hr clock HH:MM")
+    print("  id. Link to foreign key")
+    print(
+        "  t.  relative date integer. Positive is in the past, negative in the future."
     )
-    # Set local array before we call the exec command and its value will change when returned
-    local_array = {}
-
-    # Execute
-    exec(exec_cmd, globals(), local_array)
-
-    # Return what we got
-    return local_array["instance"]
+    print()
+    print(f"CSV File: {csv}")
+    print(f"Heading: {key}")
+    print(f"Data: {value}")
+    print()
+    sys.exit()
 
 
 class Command(BaseCommand):
@@ -232,177 +231,173 @@ class Command(BaseCommand):
             self.accounts_user(app, model, data)
             return
 
-        dic = {}
-        this_array = None
+        # Pass dictionary of app models through process_csv_row to build it up
+        app_model_dic = {}
         for row in data:
-            dic = self.process_csv_row(
-                row, app, model, allow_dupes, this_array, csv, dic
-            )
+            self.process_csv_row(row, app, model, allow_dupes, csv, app_model_dic)
 
-        # Update id_array as these objects may be referenced later,
-        # e.g. if we create an event, that will be needed later to add an EventEntry
-        self.id_array[f"{app}.{model}"] = dic
+        # Add this app model dictionary to the global list for use later
+        self.id_array[f"{app}.{model}"] = app_model_dic
 
-    def process_csv_row(self, row, app, model, allow_dupes, this_array, csv, dic):
+    def process_csv_row(self, row, app, model, allow_dupes, csv, app_model_dic):
         """handles processing a single row of data from the CSV"""
 
-        print(row)
-        # see if already present
-        exec_cmd = (
-            "module = import_module('%s.models')\ninstance = module.%s.objects"
-            % (app, model)
+        # Get instance of app model - effectively an empty database row
+        instance = self._get_instance_from_db(row, app, model)
+
+        # Check and process instance
+        self._check_if_exists_or_add(
+            instance, allow_dupes, app, model, row, app_model_dic, csv
         )
 
-        for key, value in row.items():
-            if value and key != "id" and key[:2] != "d." and key[:2] != "m.":
-                if key[:3] == "id.":  # foreign key
+    def _check_if_exists_or_add(
+        self, instance, allow_dupes, app, model, row, app_model_dic, csv
+    ):
 
-                    parts = key.split(".")
+        if instance and not allow_dupes:
+            print(f"already present: {instance}")
+        else:
+            instance = self._add_row_to_db(app, model, row, csv)
 
-                    fkey = parts[1]
-                    fapp = parts[2]
-                    fmodel = parts[3]
-                    this_array = self.id_array
-                    exec_cmd += (
-                        f".filter({fkey}=this_array[f'{fapp}.{fmodel}']['{value}'])"
-                    )
-                elif key[:2] != "t.":  # exclude time
-                    exec_cmd2 = f"module = import_module(f'{app}.models')\nfield_type=module.{model}._meta.get_field('{key}').get_internal_type()"
-                    exec(exec_cmd2, globals())
-                    if field_type in ["CharField", "TextField"]:  # noqa: F821
-                        exec_cmd += f".filter({key}='{value}')"
-                    else:
-                        exec_cmd += f".filter({key}={value})"
-        exec_cmd += ".first()"
+        # add to dic if we have an id field
+        if "id" in row.keys():
+            app_model_dic[row["id"]] = instance
 
-        local_array = {"this_array": this_array}
-        try:
-            exec(exec_cmd, globals(), local_array)
-        except (KeyError, NameError) as exc:
-            print("\n\nError\n")
-            print(str(exc))
-            for block in self.id_array:
-                for key2, val2 in self.id_array[block].items():
-                    print(block, key2, val2)
-            print("\nStatement was:")
-            print(exec_cmd)
-            print(exc)
-            sys.exit()
-        instance = local_array["instance"]
-        print(instance)
+        return app_model_dic
 
-        return dic
+    def _add_row_to_db(self, app, model, row, csv):
 
-    def add_instance_to_db(self, app, model, csv, row):
-        """This function creates an entry in the database and handles the field level logic
-        to set the values
-        """
+        # See if this is a valid app model combination
+        app_model_instance = _get_instance_of_app_model(app, model)
 
-        # Get an instance of the db model asked for
-        instance = _get_instance_of_app_model(app, model)
+        if not app_model_instance:
+            # This will sys.exit()
+            _handle_not_found_error(app, model, csv)
 
-        # handle not found
-        if not instance:
-            _instance_creation_print_error_and_exit(app, model, csv)
-
-        # Go through the fields
+        # key is the field, value is what to put in it
         for key, value in row.items():
 
-            # Don't know what this code is doing - might be an Excel problem
+            # CSV can use ^ symbol to represent a comma
             with contextlib.suppress(AttributeError):
                 value = value.replace("^", ",")
 
-            # If the key is id then this a pointer to something that already exists,
-            # so no need to do anything
+            # id is assigned by Django, the id field in the CSV is what we refer to it as so skip
             if key == "id":
                 continue
 
-            # Foreign keys start with "id."
-            if key[:3] == "id.":
-                # This function will sys.exit if there are problems
-                foreign_key = _handle_foreign_key(
-                    key, self.id_array, value, app, model, row
+            # Foreign key
+            if len(key) > 3 and key[:3] == "id.":  # foreign key
+                foreign_key, foreign_key_value = self._handle_foreign_key(
+                    key, row, value, app, model
                 )
-                print(foreign_key)
-                setattr(instance, foreign_key, value)
-            else:
-                setattr(instance, key, value)
+                setattr(app_model_instance, foreign_key, foreign_key_value)
 
-            # first 2 characters can be an identifier specifying the type of field
-            # t. = datetime
-            # d. = date
-            # m. = time
-
-            field_type = key[:2]
-
-            if field_type == "d.":
+            # Relative date, X days ago or if negative X days in the future
+            elif key[:2] == "t.":
                 field = key[2:]
-                #                            dy, mt, yr = value.split("/")
-                val_str = f"{value}"
-                yr = val_str[:4]
-                mt = val_str[4:6]
-                dy = val_str[6:8]
-                print(yr, mt, dy)
-                this_date = make_aware(
-                    datetime.datetime(int(yr), int(mt), int(dy), 0, 0),
-                    TZ,
-                )
-                setattr(instance, field, this_date)
-            elif field_type == "m.":
-                field = key[2:]
-                dt = datetime.datetime.strptime(value, "%H:%M").time()
-                setattr(instance, field, dt)
-
-            elif field_type == "t.":
-                field = key[2:]
-                adjusted_date = now() - datetime.timedelta(days=int(value))
+                try:
+                    adjusted_date = now() - datetime.timedelta(days=int(value))
+                except ValueError:
+                    _print_error_and_exit(
+                        "Relative date (t.) is not an integer.", csv, key, value
+                    )
                 datetime_local = adjusted_date.astimezone(TZ)
-                setattr(instance, field, datetime_local)
-        instance.save()
-        print(f"Added: {instance}")
+                setattr(app_model_instance, field, datetime_local)
 
-        return instance
+            # Specific date YYYYMMDD
+            elif key[:2] == "d.":
+                field = key[2:]
+                val_str = f"{value}"
 
-    def get_instance_from_db(self, row, app, model, this_array):
-        """see if this data is already present"""
+                try:
+                    year = val_str[:4]
+                    month = val_str[4:6]
+                    day = val_str[6:8]
+                    this_date = make_aware(
+                        datetime.datetime(int(year), int(month), int(day), 0, 0),
+                        TZ,
+                    )
+                except ValueError:
+                    _print_error_and_exit(
+                        "Exact date (d.) is not in format YYYYMMDD.", csv, key, value
+                    )
+                setattr(app_model_instance, field, this_date)
+
+            # Time
+            elif key[:2] == "m.":
+                field = key[2:]
+                try:
+                    date_field = datetime.datetime.strptime(value, "%H:%M").time()
+                except ValueError:
+                    _print_error_and_exit(
+                        "Time (m.) is not in format HH:MM", csv, key, value
+                    )
+                setattr(app_model_instance, field, date_field)
+
+            # Any other normal field
+            else:
+                setattr(app_model_instance, key, value)
+
+        app_model_instance.save()
+        print(f"Added: {app_model_instance}")
+        return app_model_instance
+
+    def _get_instance_from_db(self, row, app, model):
+        """see if this data is already present. We go through the headings found in row and build a query
+        string to call using exec. We ignore the fields that aren't fieldnames - t. d. m. and id
+        For foreign keys (id.) we build a slightly different query.
+        """
 
         # build up a string of Python commands to execute
         exec_cmd = (
-            "module = import_module('%s.models')\ninstance = module.%s.objects"
-            % (app, model)
+            f"module = import_module('{app}.models')\ninstance = module.{model}.objects"
         )
 
+        # Go through each value - key is the field name, value is the data
         for key, value in row.items():
 
-            if value and key != "id" and key[:2] != "d." and key[:2] != "m.":
-                if key[:3] == "id.":  # foreign key
+            # Ignore unset values
+            if not value:
+                continue
 
-                    parts = key.split(".")
+            # Ignore fields that aren't field names
+            if key[:2] in ["id", "d.", "m.", "t."]:
+                continue
 
-                    fkey = parts[1]
-                    fapp = parts[2]
-                    fmodel = parts[3]
-                    this_array = self.id_array
-                    exec_cmd += (
-                        f".filter({fkey}=this_array[f'{fapp}.{fmodel}']['{value}'])"
-                    )
-                elif key[:2] != "t.":  # exclude time
-                    exec_cmd2 = f"module = import_module('{app}.models')\nfield_type=module.{model}._meta.get_field('{key}').get_internal_type()"
-                    exec(exec_cmd2, globals())
-                    if field_type in ["CharField", "TextField"]:  # noqa: F821
-                        exec_cmd += f".filter({key}='{value}')"
-                    else:
-                        exec_cmd += f".filter({key}={value})"
+            # Foreign key queries
+            if key[:3] == "id.":
+
+                parts = key.split(".")
+                foreign_key = parts[1]
+                foreign_key_app = parts[2]
+                foreign_key_model = parts[3]
+
+                exec_cmd += f".filter({foreign_key}=this_array[f'{foreign_key_app}.{foreign_key_model}']['{value}'])"
+
+            # The only other case is normal fields where the heading is the field name
+            else:
+                exec_cmd2 = f"module = import_module('{app}.models')\nfield_type=module.{model}._meta.get_field('{key}').get_internal_type()"
+                exec(exec_cmd2, globals())
+                if field_type in ["CharField", "TextField"]:  # noqa: F821
+                    exec_cmd += f".filter({key}='{value}')"
+                else:
+                    exec_cmd += f".filter({key}={value})"
+
+        # Complete the query by getting the first match
         exec_cmd += ".first()"
 
-        local_array = {"this_array": this_array}
+        # execute dynamic Python and pass in out local data
+        local_array = {"this_array": {}}
         try:
             exec(exec_cmd, globals(), local_array)
         except (KeyError, NameError) as exc:
             self.print_error_found_and_exit(exc, exec_cmd)
+
+        # Return the instance, should be an app model instance or None
         return local_array["instance"]
 
     def print_error_found_and_exit(self, exc, exec_cmd):
+        """This handles exceptions"""
         print("\n\nError\n")
         print(f"{exc}")
         for block in self.id_array:
@@ -448,3 +443,24 @@ class Command(BaseCommand):
 
         # Add the user dictionary to our id_array
         self.id_array["accounts.User"] = user_dic
+
+    def _handle_foreign_key(self, key, row, value, app, model):
+        """helper to deal with data that points to a foreign key"""
+        parts = key.split(".")
+        foreign_key = parts[1]
+        foreign_key_app = parts[2]
+        foreign_key_model = parts[3]
+        try:
+            field_value = self.id_array[f"{foreign_key_app}.{foreign_key_model}"][value]
+        except KeyError:
+            print("\n\nError\n")
+            print(row)
+            print(
+                f"Foreign key not found: {foreign_key_app}.{foreign_key_model}: {value}"
+            )
+            print(
+                f"Check that the file with {app}.{model} has id {value} and that it is loaded before this file.\n"
+            )
+            sys.exit()
+
+        return foreign_key, field_value
