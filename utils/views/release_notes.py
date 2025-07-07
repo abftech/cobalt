@@ -11,6 +11,7 @@ def release_notes_view(request):
                 "Fix sort order on Helpdesk views",
                 "Add release notes",
                 "Improved server error 500 handling",
+                "Improved script to add test data and fixed the date problems with the test data",
             ],
         },
         {
