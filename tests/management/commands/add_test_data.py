@@ -53,6 +53,28 @@ DATA_DIR = "tests/test_data"
 CORE_DATA_DIR = "tests/test_data_core"
 
 
+def _handle_foreign_key(key, id_array, value, app, model, row):
+    """helper to deal with data that points to a foreign key"""
+
+    parts = key.split(".")
+    foreign_key = parts[1]
+    print(foreign_key)
+    foreign_key_app = parts[2]
+    foreign_key_model = parts[3]
+    try:
+        val = id_array[f"{foreign_key_app}.{foreign_key_model}"][value]
+    except KeyError:
+        print("\n\nError\n")
+        print(row)
+        print(f"Foreign key not found: {foreign_key_app}.{foreign_key_model}: {value}")
+        print(
+            f"Check that the file with {app}.{model} has id '{value}' and that it is loaded before this file.\n"
+        )
+        sys.exit()
+
+    return val
+
+
 def _parse_csv(file):
     """
     try to sort out the mess Excel makes of CSV files.
@@ -143,7 +165,7 @@ def _instance_creation_print_error_and_exit(app, model, csv):
     sys.exit()
 
 
-def _validate_app_model(app, model):
+def _get_instance_of_app_model(app, model):
     """See if a app model combination is valid, returns an instance of the model or None"""
 
     exec_cmd = "module = import_module('%s.models')\ninstance = module.%s()" % (
@@ -225,26 +247,61 @@ class Command(BaseCommand):
         """handles processing a single row of data from the CSV"""
 
         print(row)
-
         # see if already present
-        instance = self.get_instance_from_db(row, app, model, this_array)
+        exec_cmd = (
+            "module = import_module('%s.models')\ninstance = module.%s.objects"
+            % (app, model)
+        )
 
-        if instance and not allow_dupes:
-            print(f"already present: {instance}")
-        else:
-            instance = self.add_instance_to_db(app, model, csv, row)
+        for key, value in row.items():
+            if value and key != "id" and key[:2] != "d." and key[:2] != "m.":
+                if key[:3] == "id.":  # foreign key
 
-        # add to dic if we have an id field
-        if "id" in row.keys():
-            dic[row["id"]] = instance
+                    parts = key.split(".")
+
+                    fkey = parts[1]
+                    fapp = parts[2]
+                    fmodel = parts[3]
+                    this_array = self.id_array
+                    exec_cmd += (
+                        f".filter({fkey}=this_array[f'{fapp}.{fmodel}']['{value}'])"
+                    )
+                elif key[:2] != "t.":  # exclude time
+                    exec_cmd2 = f"module = import_module(f'{app}.models')\nfield_type=module.{model}._meta.get_field('{key}').get_internal_type()"
+                    exec(exec_cmd2, globals())
+                    if field_type in ["CharField", "TextField"]:  # noqa: F821
+                        exec_cmd += f".filter({key}='{value}')"
+                    else:
+                        exec_cmd += f".filter({key}={value})"
+        exec_cmd += ".first()"
+
+        local_array = {"this_array": this_array}
+        try:
+            exec(exec_cmd, globals(), local_array)
+        except (KeyError, NameError) as exc:
+            print("\n\nError\n")
+            print(str(exc))
+            for block in self.id_array:
+                for key2, val2 in self.id_array[block].items():
+                    print(block, key2, val2)
+            print("\nStatement was:")
+            print(exec_cmd)
+            print(exc)
+            sys.exit()
+        instance = local_array["instance"]
+        print(instance)
 
         return dic
 
     def add_instance_to_db(self, app, model, csv, row):
+        """This function creates an entry in the database and handles the field level logic
+        to set the values
+        """
 
         # Get an instance of the db model asked for
-        instance = _validate_app_model(app, model)
+        instance = _get_instance_of_app_model(app, model)
 
+        # handle not found
         if not instance:
             _instance_creation_print_error_and_exit(app, model, csv)
 
@@ -255,31 +312,30 @@ class Command(BaseCommand):
             with contextlib.suppress(AttributeError):
                 value = value.replace("^", ",")
 
-            if key != "id" and key[:2] != "t.":
-                if len(key) > 3 and key[:3] == "id.":  # foreign key
-                    parts = key.split(".")
-                    fkey = parts[1]
-                    fapp = parts[2]
-                    fmodel = parts[3]
-                    try:
-                        val = self.id_array[f"{fapp}.{fmodel}"][value]
-                    except KeyError:
-                        print("\n\nError\n")
-                        print(row)
-                        print(f"Foreign key not found: {fapp}.{fmodel}: {value}")
-                        print(
-                            f"Check that the file with {app}.{model} has id {value} and that it is loaded before this file.\n"
-                        )
-                        sys.exit()
-                    setattr(instance, fkey, val)
-                else:
-                    setattr(instance, key, value)
-            if key[:2] == "t.":
-                field = key[2:]
-                adjusted_date = now() - datetime.timedelta(days=int(value))
-                datetime_local = adjusted_date.astimezone(TZ)
-                setattr(instance, field, datetime_local)
-            if key[:2] == "d.":
+            # If the key is id then this a pointer to something that already exists,
+            # so no need to do anything
+            if key == "id":
+                continue
+
+            # Foreign keys start with "id."
+            if key[:3] == "id.":
+                # This function will sys.exit if there are problems
+                foreign_key = _handle_foreign_key(
+                    key, self.id_array, value, app, model, row
+                )
+                print(foreign_key)
+                setattr(instance, foreign_key, value)
+            else:
+                setattr(instance, key, value)
+
+            # first 2 characters can be an identifier specifying the type of field
+            # t. = datetime
+            # d. = date
+            # m. = time
+
+            field_type = key[:2]
+
+            if field_type == "d.":
                 field = key[2:]
                 #                            dy, mt, yr = value.split("/")
                 val_str = f"{value}"
@@ -292,11 +348,16 @@ class Command(BaseCommand):
                     TZ,
                 )
                 setattr(instance, field, this_date)
-            if key[:2] == "m.":
+            elif field_type == "m.":
                 field = key[2:]
                 dt = datetime.datetime.strptime(value, "%H:%M").time()
                 setattr(instance, field, dt)
 
+            elif field_type == "t.":
+                field = key[2:]
+                adjusted_date = now() - datetime.timedelta(days=int(value))
+                datetime_local = adjusted_date.astimezone(TZ)
+                setattr(instance, field, datetime_local)
         instance.save()
         print(f"Added: {instance}")
 
@@ -343,7 +404,7 @@ class Command(BaseCommand):
 
     def print_error_found_and_exit(self, exc, exec_cmd):
         print("\n\nError\n")
-        print(exc)
+        print(f"{exc}")
         for block in self.id_array:
             for key2, val2 in self.id_array[block].items():
                 print(block, key2, val2)
