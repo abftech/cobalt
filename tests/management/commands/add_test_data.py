@@ -28,7 +28,6 @@ bb                   , mark                      , 0
 
 import contextlib
 from django.core.exceptions import SuspiciousOperation
-from lxml.html.defs import frame_tags
 
 from cobalt.settings import (
     RBAC_EVERYONE,
