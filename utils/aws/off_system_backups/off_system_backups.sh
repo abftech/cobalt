@@ -42,6 +42,10 @@ then
 fi
 
 # Copy off site
+if ! ./06_copy_off_site.sh
+then
+  exit 1
+fi
 
 # Notify success
 ./notify.sh success "Off system backups were successful"

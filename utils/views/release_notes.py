@@ -1,6 +1,8 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
 
+@login_required
 def release_notes_view(request):
     """show the release notes"""
 
