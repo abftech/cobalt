@@ -80,3 +80,100 @@ Change this section of cobalt/settings.py to an appropriate value::
     ...
     }
 
+Testing the Webhook
+===================
+
+In Test or UAT, you can test the webhook call back from AWS SES just by turning off the playpen setting,
+`DISABLE_PLAYPEN=ON`, and sending an email.
+
+If you want to test the webhook in a development environment, you can follow these steps.
+
+Webhook.site
+------------
+
+Go to https://webhook.site and create a temporary, free URL.
+
+.. image:: ../../images/email-setup/webhook.site.url.png
+ :width: 800
+ :alt: Webhook.site
+
+AWS Set Up
+----------
+
+Check what configuration set your development environment is pointing to.::
+
+    $ env | grep AWS_SES
+    AWS_SES_CONFIGURATION_SET=cobalt-dev
+
+In the AWS console see what Simple Notification Service (SNS) this points to.
+
+.. image:: ../../images/email-setup/ses-to-sns.png
+ :width: 800
+ :alt: SES
+
+|
+
+Follow the link to see the SNS topic.
+
+.. image:: ../../images/email-setup/sns-topic.png
+ :width: 800
+ :alt: SES
+
+|
+
+Go to the SNS Console and look at this topic.
+
+.. image:: ../../images/email-setup/SNS-topic-view.png
+ :width: 800
+ :alt: SNS
+
+|
+
+Delete any old subscriptions and add a new one.
+
+.. image:: ../../images/email-setup/sns-subscription.png
+ :width: 800
+ :alt: SNS
+
+Choose HTTPS and enter your endpoint::
+
+    https://webhook.site/<YOUR VALUE>/notifications/ses/event-webhook/
+
+Confirm Subscription
+---------------------
+
+Return to webhook.site and you should see a message on the left. The following
+screen shot shows several, but at this stage you should only have one.
+
+.. image:: ../../images/email-setup/webhook.site.png
+ :width: 800
+ :alt: Webhook.site
+
+This will have a URL in it that you need to visit to activate your subscription.
+
+Sending Emails
+--------------
+
+You can now send emails from your development environment.
+
+- DISABLE_PLAYPEN=ON
+- Set a real email address for a user
+- Send an email to that user from another user e.g. http://127.0.0.1:8000/notifications/member-to-member-email/<member-id>
+- Run the email batch job `./manage.py post_office_email_sender_cron`
+
+Postman
+-------
+
+When you send an email (or read it etc), the messages from SES will collect in webhook.site. You can use curl or other tools
+to send these into your development version of Cobalt.
+
+Postman (https://www.postman.com/downloads/) is good for this.
+
+
+.. image:: ../../images/email-setup/postman.png
+ :width: 800
+ :alt: Webhook.site
+
+You can paste your messages in Postman from webhook.site.
+
+The URL will be something like: `http://127.0.0.1:8000/notifications/ses/event-webhook/`
