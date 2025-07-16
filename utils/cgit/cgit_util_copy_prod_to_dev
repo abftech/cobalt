@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# about: Copy production database from backup or real time
+
+# Check if we are running off system backups locally or copying from latest
+echo ""
+echo "1. Copy latest off system backup (Old. Full including email)"
+echo "2. Take a new backup (Current. Full including email)"
+echo "3. Take a new backup faster (Current. Short, excludes emails)"
+echo ""
+echo -n "Option: "
+read OPTION
+
+if [ "$OPTION" = "3" ]
+then
+  cd utils/aws/off_system_backups || { echo "cd to utils/aws/off_system_backups failed"; exit 1; }
+  ./off_system_backups.sh no-email
+  exit
+fi
+
+if [ "$OPTION" = "2" ]
+then
+  cd utils/aws/off_system_backups || { echo "cd to utils/aws/off_system_backups failed"; exit 1; }
+  ./off_system_backups.sh
+  exit
+fi
+
+if [ "$OPTION" != "1" ]
+then
+  echo "Invalid option"
+  exit
+fi
+
+# Prevent pager output from AWS CLI
+export AWS_PAGER=""
+
+# Get ip address for Lightsail instance used for backups
+echo "Getting IP address for Lightsail..."
+IP=$(aws lightsail get-instance --instance-name off-system-backups --query 'instance.publicIpAddress' --output text)
+echo "IP is $IP"
+
+# Get latest database file
+echo "Getting latest database file..."
+DB_FILE=$(ssh -i ~/.ssh/cobalt-lightsail.pem ec2-user@"$IP" "ls -Art ~/abf_backup/cobalt_prod* | tail -n 1")
+echo "DB_FILE is $DB_FILE"
+
+# Copy file
+echo "Copying file..."
+scp -i ~/.ssh/cobalt-lightsail.pem ec2-user@"$IP":"$DB_FILE" /tmp/off_system_backup
+
+# Load the database
+echo "Loading database, dropping old DB..."
+cat << EOF > /tmp/drop_db_prod_copy
+\c postgres
+SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
+WHERE datname = 'prod_load';
+drop database IF EXISTS prod_load;
+create database prod_load with owner cobalt;
+EOF
+
+psql </tmp/drop_db_prod_copy
+
+# Load the database
+echo "Loading the data, this will take a while..."
+pg_restore -h localhost -p 5432 -U guthrie -d prod_load --no-owner --no-privileges --role=cobalt -v /tmp/off_system_backup
+
+#rm /tmp/off_system_backup
+
+# sanitise data
+./manage.py sanitise_production_data_for_testing
+
+# Copy file system
+echo ""
+echo ""
+echo "Database is ready. Continuing to copy file system"
+echo ""
+
+# Notify user who may not be watching
+osascript -e 'tell app "System Events" to display dialog "Database prod_load is ready"'
+
+# Get latest database file
+echo "Getting latest file system file..."
+FS_FILE=$(ssh -i ~/.ssh/cobalt-lightsail.pem ec2-user@"$IP" "ls -Art ~/abf_backup/media/*.gz | tail -n 1")
+echo "FS_FILE is $FS_FILE"
+
+# Copy file
+echo "Copying file..."
+scp -i ~/.ssh/cobalt-lightsail.pem ec2-user@"$IP":"$FS_FILE" /tmp/off_system_backup.tar.gz
+
+# unzip
+cd ~/abf_backup/media || exit
+gunzip /tmp/off_system_backup.tar.gz
+
+# rm /tmp/off_system_backup.tar.gz

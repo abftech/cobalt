@@ -12,6 +12,8 @@
 # 5. It requires Postgres to be available                        #
 # 6. It requires eb and aws CLIs to be set up and working        #
 #                                                                #
+# Add "no-email" to do a quicker copy excluding email tables     #
+#                                                                #
 ##################################################################
 
 # Set up environment variables
@@ -24,7 +26,7 @@ then
 fi
 
 # Backup database
-if ! ./03_database_backup.sh
+if ! ./03_database_backup.sh "$1"
 then
   exit 1
 fi
@@ -41,7 +43,13 @@ then
   exit 1
 fi
 
-# Copy off site
+# Copy off site if not running on a mac (development) - also skip the email if on dev
+UNAME=$(uname)
+if [ "$UNAME" != "Linux" ]
+then
+  exit
+fi
+
 if ! ./06_copy_off_site.sh
 then
   exit 1

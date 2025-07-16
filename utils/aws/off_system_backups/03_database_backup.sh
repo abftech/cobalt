@@ -6,6 +6,14 @@
 #                                            #
 ##############################################
 
+# Check if we want a short load excluding the big email tables
+if [ "$1" = "no-email" ]
+then
+  NO_EMAIL=1
+else
+  NO_EMAIL=0
+fi
+
 # Check if the temp db is there, probably from an earlier problem
 EXISTING_INSTANCE=$(aws rds describe-db-instances \
     --query 'DBInstances[*].[DBInstanceIdentifier]' \
@@ -45,15 +53,26 @@ printf "Running pg_dump to extract the data.\n"
 printf "Dump file is ${BLUE}$DUMP_FILE${NC}...\n"
 
 # Run pg_dump and check return code
-if ! pg_dump -h "$RDS_HOSTNAME" -p 5432 -d "$RDS_DB_NAME" -U "$RDS_USERNAME" -F c -b -v -f "$DUMP_FILE"
-
-# exclude big tables if you need this quickly. Also add \ at end of line above if you uncomment this
-#             --exclude-table-data "public.notifications_abstractemail" \
-#             --exclude-table-data "public.post_office_*"
-
+if [ "$NO_EMAIL" = "1" ]
 then
-  ./notify.sh error "Error running pg_dump"
-  exit 1
+    printf "Excluding email tables\n"
+    if ! pg_dump -h "$RDS_HOSTNAME" -p 5432 -d "$RDS_DB_NAME" -U "$RDS_USERNAME" -F c -b -v -f "$DUMP_FILE" \
+                 --exclude-table-data "public.notifications_abstractemail" \
+                 --exclude-table-data "public.post_office_*"
+    then
+      ./notify.sh error "Error running pg_dump with NO_EMAIL set"
+      exit 1
+    fi
+
+else
+
+    if ! pg_dump -h "$RDS_HOSTNAME" -p 5432 -d "$RDS_DB_NAME" -U "$RDS_USERNAME" -F c -b -v -f "$DUMP_FILE"
+    then
+      printf "Including all tables\n"
+      ./notify.sh error "Error running pg_dump"
+      exit 1
+    fi
+
 fi
 
 # Delete temp database - no need to wait for it to finish
