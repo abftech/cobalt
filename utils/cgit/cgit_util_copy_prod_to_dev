@@ -2,6 +2,8 @@
 
 # about: Copy production database from backup or real time
 
+#  TODO: This really needs a 4th option (or another script) - restore from the actual offsite backups on BackBlaze
+
 # Check if we are running off system backups locally or copying from latest
 echo ""
 echo "1. Copy latest off system backup (Old. Full including email)"
@@ -79,7 +81,7 @@ echo ""
 # Notify user who may not be watching
 osascript -e 'tell app "System Events" to display dialog "Database prod_load is ready"'
 
-# Get latest database file
+# Get latest file system file
 echo "Getting latest file system file..."
 FS_FILE=$(ssh -i ~/.ssh/cobalt-lightsail.pem ec2-user@"$IP" "ls -Art ~/abf_backup/media/*.gz | tail -n 1")
 echo "FS_FILE is $FS_FILE"
