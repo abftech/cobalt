@@ -6,7 +6,7 @@
 
 # Check if we are running off system backups locally or copying from latest
 echo ""
-echo "1. Copy latest off system backup (Old. Full including email)"
+echo "1. Copy latest off system backup from LightSail (Old. Full including email)"
 echo "2. Take a new backup (Current. Full including email)"
 echo "3. Take a new backup faster (Current. Short, excludes emails)"
 echo ""
@@ -78,7 +78,7 @@ echo ""
 echo "Database is ready. Continuing to copy file system"
 echo ""
 
-# Notify user who may not be watching
+# Notify user who may not be watching - mac only
 osascript -e 'tell app "System Events" to display dialog "Database prod_load is ready"'
 
 # Get latest file system file
