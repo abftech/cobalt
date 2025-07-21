@@ -14,6 +14,7 @@ def release_notes_view(request):
                 "Add release notes",
                 "Improved server error 500 handling",
                 "Documentation for email",
+                "Better handling for Masterpoint server being unavailable",
             ],
         },
         {

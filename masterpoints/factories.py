@@ -125,6 +125,7 @@ class MasterpointDB(MasterpointFactory):
             requests.exceptions.InvalidSchema,
             requests.exceptions.MissingSchema,
             requests.exceptions.ConnectionError,
+            requests.exceptions.JSONDecodeError,
             ConnectionError,
         ):
             r = []

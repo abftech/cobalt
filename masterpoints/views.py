@@ -657,23 +657,34 @@ def abf_registration_card_htmx(request):
         if len(matches) == 0:
             return HttpResponse("<h2>No match found</h2>")
     elif not first_name:  # last name only
-        matches = requests.get(f"{GLOBAL_MPSERVER}/lastname_search/{last_name}").json()
-    elif not last_name:  # first name only
-        matches = requests.get(
-            f"{GLOBAL_MPSERVER}/firstname_search/{first_name}"
-        ).json()
-    else:  # first and last names
-        matches = requests.get(
-            f"{GLOBAL_MPSERVER}/firstlastname_search/{first_name}/{last_name}"
-        ).json()
+        try:
+            matches = requests.get(
+                f"{GLOBAL_MPSERVER}/lastname_search/{last_name}"
+            ).json()
+        except JSONDecodeError:
+            return HttpResponse("<h2>Error loading data<h2>")
 
+    elif not last_name:  # first name only
+        try:
+            matches = requests.get(
+                f"{GLOBAL_MPSERVER}/firstname_search/{first_name}"
+            ).json()
+        except JSONDecodeError:
+            return HttpResponse("<h2>Error loading data<h2>")
+    else:  # first and last names
+        try:
+            matches = requests.get(
+                f"{GLOBAL_MPSERVER}/firstlastname_search/{first_name}/{last_name}"
+            ).json()
+        except JSONDecodeError:
+            return HttpResponse("<h2>Error loading data<h2>")
     # Filter out inactive
     active_matches = []
     for match in matches:
         if match["IsActive"] == "Y":
             active_matches.append(match)
 
-    if len(active_matches) == 0:
+    if not active_matches:
         return HttpResponse("<h2>No match found</h2>")
 
     return render(
