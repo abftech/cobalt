@@ -15,6 +15,7 @@ def release_notes_view(request):
                 "Improved server error 500 handling",
                 "Documentation for email",
                 "Better handling for Masterpoint server being unavailable",
+                "Minor cgit script changes",
             ],
         },
         {
