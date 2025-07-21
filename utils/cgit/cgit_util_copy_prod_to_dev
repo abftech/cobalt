@@ -70,6 +70,7 @@ pg_restore -h localhost -p 5432 -U guthrie -d prod_load --no-owner --no-privileg
 #rm /tmp/off_system_backup
 
 # sanitise data
+export RDS_DB_NAME=prod_load
 ./manage.py sanitise_production_data_for_testing
 
 # Copy file system
