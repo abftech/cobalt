@@ -6,3 +6,7 @@ BLUE='\033[0;34m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
+# Elastic Beanstalk environments
+COBALT_TEST=cobalt-test-white
+COBALT_UAT=cobalt-uat-orange
+COBALT_PRODUCTION=cobalt-production-blue
