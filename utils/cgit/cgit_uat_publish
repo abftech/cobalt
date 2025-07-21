@@ -2,6 +2,8 @@
 
 # about: deploy changes to UAT\n
 
+. utils/cgit/_cgit_include_vars
+
 if [ "$BRANCH" != "develop" ]
 then
   echo ""
@@ -67,7 +69,7 @@ echo ""
 echo "Creating release branch..."
 echo ""
 
-git checkout -b release/$RELEASE
+git checkout -b release/"$RELEASE"
 if [ $? -ne 0 ];then
   echo "There is a problem with the branch."
   echo "If you need to delete a local branch use: git branch -d release/$RELEASE"
@@ -83,7 +85,7 @@ echo ""
 echo "Pushing release branch to github..."
 echo ""
 
-git push origin release/$RELEASE
+git push origin release/"$RELEASE"
 if [ $? -ne 0 ];then
   exit 1
 fi
@@ -92,8 +94,8 @@ echo ""
 echo "Deploying to UAT server..."
 echo ""
 
-UATENV=`eb list | grep $CGIT_ENV-uat`
-UATNUM=`eb list | grep $CGIT_ENV-uat | wc | awk '{print $1}'`
+UATENV=`eb list | grep $COBALT_UAT`
+UATNUM=`eb list | grep $COBALT_UAT | wc | awk '{print $1}'`
 
 if [ "$UATNUM" = "1" ]
 then
