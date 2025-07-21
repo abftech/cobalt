@@ -37,7 +37,7 @@ sed -i -e "s#!!OTHERBRANCH!!#$NEW#g" /tmp/temp.html
 
 if [ $# -gt 2 ]
 then
-git diff $NEW $OLD --name-only | grep -Ev $4 | xargs git diff $NEW -- | diff2html -i stdin -s side --su open --htmlWrapperTemplate /tmp/temp.html
+git diff "$NEW" "$OLD" --name-only | grep -Ev "$4" | xargs git diff "$NEW" -- | diff2html -i stdin -s side --su open --htmlWrapperTemplate /tmp/temp.html
 else
-  git diff -w $NEW $OLD | diff2html -i stdin -s side --su open --htmlWrapperTemplate /tmp/temp.html
+  git diff -w "$NEW" "$OLD" | diff2html -i stdin -s side --su open --htmlWrapperTemplate /tmp/temp.html
 fi
