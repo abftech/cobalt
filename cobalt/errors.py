@@ -98,7 +98,7 @@ def server_error_500(request):
 
     # Log it
     Error500(
-        user=f"{request.user}"[:10], error=email_body, summary=error_value[:200]
+        user=f"{request.user}"[:100], error=email_body, summary=error_value[:200]
     ).save()
 
     # Don't return status of 500 or it will trigger Django's own email sending
