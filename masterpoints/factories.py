@@ -60,6 +60,20 @@ class MasterpointDB(MasterpointFactory):
     """Concrete implementation of a masterpoint factory using a database to get the data"""
 
     def get_masterpoints(self, system_number):
+        """
+        Retrieves the total masterpoints and rank for a given system number.
+
+        Looks up the masterpoints database for the provided system number and returns a dictionary
+        containing the total points and the rank name. If the system number is not found, returns
+        'Not found' for both fields.
+
+        Args:
+            system_number: The unique identifier for the user in the masterpoints system.
+
+        Returns:
+            dict: A dictionary with keys 'points' and 'rank' representing the user's masterpoints and rank.
+        """
+
         summary = masterpoint_query_row(f"mps/{system_number}")
         if summary:
             points = summary["TotalMPs"]

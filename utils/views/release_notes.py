@@ -8,6 +8,13 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.1.2",
+            "notes": [
+                "Update email address for error emails",
+                "Log 500 errors in a table",
+            ],
+        },
+        {
             "release": "6.1.1",
             "notes": [
                 "Fix sort order on Helpdesk views",

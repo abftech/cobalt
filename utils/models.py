@@ -1,8 +1,9 @@
-""" Utilities.
+"""Utilities.
 
-    This handles the models for general things such as batch processing.
+This handles the models for general things such as batch processing.
 
 """
+
 import re
 from datetime import timedelta
 
@@ -74,3 +75,15 @@ class Slug(models.Model):
 
     def __str__(self):
         return f"{self.slug} -> {self.redirect_path}"
+
+
+class Error500(models.Model):
+    """record system errors (500)"""
+
+    error_date_time = models.DateTimeField("Error Datetime", default=timezone.now)
+    user = models.CharField(max_length=100, blank=True, null=True)
+    summary = models.CharField(max_length=200, blank=True, null=True)
+    error = models.TextField()
+
+    def __str__(self):
+        return self.summary

@@ -6,7 +6,9 @@ from django.shortcuts import render
 from django.template.loader import render_to_string
 
 from cobalt import settings
+from cobalt.settings import SERVER_EMAIL
 from notifications.views.core import send_cobalt_email_with_template
+from utils.models import Error500
 
 
 def not_found_404(request, exception=None):
@@ -48,7 +50,7 @@ def server_error_500(request):
     except RawPostDataException:
         details = "BODY: UNAVAILABLE"
 
-    # Block post data for logins
+    # Block post data for logins - has password details
     if request.path == "/accounts/login":
         request_post = "NOT LOGGED"
         details = "NOT LOGGED"
@@ -88,8 +90,14 @@ def server_error_500(request):
     }
 
     send_cobalt_email_with_template(
-        to_emails, po_context, template="system - server error"
+        to_emails,
+        po_context,
+        template="system - server error",
+        sender=SERVER_EMAIL,
     )
+
+    # Log it
+    Error500(user=request.user[:10], error=email_body, summary=error_value[:200]).save()
 
     # Don't return status of 500 or it will trigger Django's own email sending
     if request.user.is_authenticated:
