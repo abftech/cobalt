@@ -8,6 +8,12 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.1.5",
+            "notes": [
+                "Added script to check code versions",
+            ],
+        },
+        {
             "release": "6.1.4",
             "notes": [
                 "Update email priority for error emails",

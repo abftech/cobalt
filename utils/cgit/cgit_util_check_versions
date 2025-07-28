@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# about: shows out of date software components
+
+PYTHON_VERSION='3.13'
+
+echo ""
+echo "#################"
+echo "# Python = $PYTHON_VERSION #"
+echo "#################"
+echo ""
+
+# Elastic Beanstalk
+echo "Elastic Beanstalk Platforms for Python $PYTHON_VERSION"
+echo "-------------------------------------------"
+echo ""
+aws elasticbeanstalk list-available-solution-stacks | jq -c '.SolutionStacks[]' | grep "Python $PYTHON_VERSION" | tr -d '"' | sort
+echo ""
+
+LATEST_EB_STRING=$(aws elasticbeanstalk list-available-solution-stacks | jq -c '.SolutionStacks[]' | grep "Python $PYTHON_VERSION" | tr -d '"' | sort | tail -1)
+
+# Get version number - may change format as versions evolve
+LATEST_EB_VERSION=$(echo "$LATEST_EB_STRING" | awk '{print $5}' | tr -d 'v')
+
+echo "Latest: $LATEST_EB_VERSION"
+echo ""
+
+# Go through environments and check versions
+for EB_ENV in $(eb list)
+do
+  # we get something like:
+  # Platform: arn:aws:elasticbeanstalk:ap-southeast-2::platform/Python 3.13 running on 64bit Amazon Linux 2023/4.5.2
+  # Strip first bit out to just get the platform name
+  PLATFORM_STRING=$(eb status "$EB_ENV" | grep Platform)
+  PLATFORM_NAME=$(cut -d "/" -f2- <<< "$PLATFORM_STRING")
+  PLATFORM_VERSION=$(echo "$PLATFORM_NAME" | awk -F'/' '{print $2}')
+  echo "$EB_ENV - running $PLATFORM_VERSION. Latest $LATEST_EB_VERSION."
+done
+
+# Packages
+echo ""
+echo "Checking for packages with security vulnerabilities"
+echo ""
+pip-audit -r requirements.in
+
+# Databases
+echo ""
+echo "#############"
+echo "# Databases #"
+echo "#############"
+printf "\nMost Recent Version of Postgres: "
+aws rds describe-db-engine-versions --engine postgres | jq -r ".DBEngineVersions[].EngineVersion" | sort | tail -1
+
+echo ""
+echo "Database Versions"
+echo "-----------------"
+echo ""
+aws rds describe-db-instances | jq  -r ".DBInstances[] | {DBInstanceIdentifier, EngineVersion}" | jq -j '.DBInstanceIdentifier," ", .EngineVersion, "\n"'
