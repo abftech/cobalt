@@ -8,6 +8,12 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.1.3",
+            "notes": [
+                "Update email address for error emails",
+            ],
+        },
+        {
             "release": "6.1.2",
             "notes": [
                 "Update email address for error emails",
