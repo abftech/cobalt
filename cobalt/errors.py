@@ -93,6 +93,8 @@ def server_error_500(request):
         to_emails,
         po_context,
         template="system - server error",
+        sender=SERVER_EMAIL,
+        priority="now",
     )
 
     # Log it
