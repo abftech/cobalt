@@ -54,6 +54,7 @@ Content
 - :doc:`cobalt/how_to/upgrade_elastic_beanstalk`
 - :doc:`cobalt/how_to/upgrade_postgres`
 - :doc:`cobalt/how_to/load_production_data_into_test`
+- :doc:`cobalt/how_to/managing_the_mobile_app`
 
 **Discussions**
 
