@@ -62,4 +62,56 @@ Android Studio
 
 Open the project in Android Studio.
 
-Go to Android Studio -> Settings -> Plugins and add Flutter.
+Go to **Android Studio** -> **Settings** -> **Plugins** and add Flutter.
+
+You may also need to enable Dart support. Got to **Android Studio** -> **Settings** ->
+**Languages and Frameworks** -> **Dart** and tick to enable it.
+
+You will also need to put in the SDK path: ~/Development/flutter/bin/cache/dart-sdk
+
+Updates
+-------
+
+If it hasn’t been touched for a while you will probably need to upgrade the package
+dependencies. These commands may help::
+
+    flutter pub upgrade
+    flutter pub outdated
+    flutter pub upgrade --major-versions
+
+Google Firebase Cloud Messaging
+===============================
+
+Existing Set Up
+---------------
+
+If you are using an existing FCM set up, then you just need the credentials.
+
+Mark Guthrie - *These can be copied from Google Drive*::
+
+    cp -r ~/Library/CloudStorage/GoogleDrive-us@gu3.au/My\ Drive/Work/ABF/MyABF/Bob/ .
+
+New Set Up
+----------
+
+If you are setting up a new FCM system and will be using it for Production, be aware
+that the release of the client code and server code need to be done together and there
+will likely be an outage as clients get updated.
+
+Go to the Firebase Console and create a new project. Call it whatever you like.
+
+Add iOS support and use the bundle ID: au.com.myabf.
+
+Click **Register App** and download GoogleService-info.plist. This needs to go into
+`iso/runner`.
+
+Go back to the console and choose **Add App* and add an Android app using the ID: au.com.abf.myabf.
+
+Download google-services.json. This needs to go into `android/app`.
+
+You will also need the server config file. In the Firebase Console, click on the settings wheel and
+go to settings and the Service Accounts tab. Generate a new key and download the file that is produced.
+This file needs to go in the location specified by the environment variable `GOOGLE_APPLICATION_CREDENTIALS`.
+
+
+
