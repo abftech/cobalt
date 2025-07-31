@@ -11,8 +11,10 @@ def release_notes_view(request):
             "release": "6.1.5",
             "notes": [
                 "Added script to check code versions",
+                "Fixed test data for memberships",
                 "Added tests for membership self payment",
                 "Fixed double payment bug for memberships",
+                "Changed database reload scripts to include membership data",
             ],
         },
         {
