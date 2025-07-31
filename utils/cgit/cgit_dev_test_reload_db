@@ -20,8 +20,8 @@ EOF
 
 psql </tmp/drop_db
 
-# build database using core test data directory
-utils/aws/rebuild_test_database_subcommands.sh core
+# build database using test data directory - not currently using core
+utils/aws/rebuild_test_database_subcommands.sh
 
 # Dump database for quick access
 pg_dump test > ~/test.db

@@ -131,8 +131,10 @@
                                                     , auto payment on {{ mmt.auto_pay_date }}
                                                 {% endif %}
                                                 <a
+                                                    id="t_initiate_payment"
                                                     class="btn btn-sm btn-success ml-2"
                                                     href="{% url 'organisations:club_admin_user_initiated_payment' mmt_id=mmt.id %}"
+                                                    _="on click toggle @disabled"
                                                 >
                                                     Pay now
                                                 </a>

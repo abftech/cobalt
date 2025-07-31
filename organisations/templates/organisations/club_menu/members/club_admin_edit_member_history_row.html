@@ -26,9 +26,9 @@
 
     {% if mmt.fee %}
         <td class="text-center
-            {% if not mmt.is_paid and forloop.counter0 <= current_index %}
-                text-danger
-            {% endif %}"
+                   {% if not mmt.is_paid and forloop.counter0 <= current_index %}
+                       text-danger
+                   {% endif %}"
         >
             {{ mmt.fee|cobalt_number }}
         </td>
@@ -51,6 +51,7 @@
     {% if member_admin and show_history %}
         <td>
             <button
+                id="t_manual_override_{{ member_details.system_number }}"
                 class="btn btn-sm btn-warning"
                 hx-post="{% url 'organisations:club_admin_edit_member_edit_mmt_htmx' %}"
                 hx-vars="club_id:{{ club.id }}, system_number:{{ member_details.system_number }}, mmt_id:{{ mmt.id }}"

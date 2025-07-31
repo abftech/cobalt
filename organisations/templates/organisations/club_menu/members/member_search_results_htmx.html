@@ -26,9 +26,9 @@
                         <td class="text-left">
                             {% if user.source == "member" %}
                                 <a href="javascript:void(0)"
-                                    hx-post="{% url 'organisations:club_admin_edit_member_htmx' %}"
-                                    hx-target="#id_panel_members"
-                                    hx-vars="club_id:{{ club_id }}, system_number: {{ user.system_number }}, save:'NO'"
+                                   hx-post="{% url 'organisations:club_admin_edit_member_htmx' %}"
+                                   hx-target="#id_panel_members"
+                                   hx-vars="club_id:{{ club_id }}, system_number: {{ user.system_number }}, save:'NO'"
                                 >
                             {% endif %}
                             {{ user.first_name }} {{ user.last_name }} ({{ user.system_number }})
@@ -42,51 +42,51 @@
                         <td class="text-left">
                             {% if user.source == "registered" %}
                                 <a href="javascript:void(0)"
-                                    onclick='user_type_help(
-                                    "Registered User",
-                                    "This user has registered with {{ GLOBAL_TITLE }}. " +
-                                    "They can enjoy all of the benefits of the system."
-                                    );'
+                                   onclick='user_type_help(
+                                            "Registered User",
+                                            "This user has registered with {{ GLOBAL_TITLE }}. " +
+                                            "They can enjoy all of the benefits of the system."
+                                            );'
                                 >
                                     <i class="material-icons text-info">info</i></a>
                                 Registered
                             {% endif %}
                             {% if user.source == "unregistered" %}
                                 <a href="javascript:void(0)"
-                                    onclick='user_type_help(
-                                    "Unregistered User",
-                                    "This user has not registered with {{ GLOBAL_TITLE }}. " +
-                                    "They can join any time themselves, or by being invited by an administrator."
-                                    );'
+                                   onclick='user_type_help(
+                                            "Unregistered User",
+                                            "This user has not registered with {{ GLOBAL_TITLE }}. " +
+                                            "They can join any time themselves, or by being invited by an administrator."
+                                            );'
                                 >
                                     <i class="material-icons text-info">info</i></a>
                                 Unregistered
                             {% endif %}
                             {% if user.source == "mpc" %}
                                 <a href="javascript:void(0)"
-                                    onclick='user_type_help(
-                                    "MasterPoint Centre (MPC) User",
-                                    "This user has not registered with {{ GLOBAL_TITLE }}. " +
-                                    "They are valid {{ GLOBAL_ORG }} members and can be added to the system."
-                                    );'
+                                   onclick='user_type_help(
+                                            "MasterPoint Centre (MPC) User",
+                                            "This user has not registered with {{ GLOBAL_TITLE }}. " +
+                                            "They are valid {{ GLOBAL_ORG }} members and can be added to the system."
+                                            );'
                                 >
                                     <i class="material-icons text-info">info</i></a>
                                 MPC
                             {% endif %}
                             {% if user.source == "member" %}
                                 <a href="javascript:void(0)"
-                                    onclick='user_type_help(
-                                    "Already A Member",
-                                    "This user is already a member of this club.");'
+                                   onclick='user_type_help(
+                                            "Already A Member",
+                                            "This user is already a member of this club.");'
                                 >
                                     <i class="material-icons text-info">info</i></a>
                                 Already a Member
                             {% endif %}
                             {% if user.source == "contact" %}
                                 <a href="javascript:void(0)"
-                                    onclick='user_type_help(
-                                    "Already A Contact",
-                                    "This user is already a contact of this club.");'
+                                   onclick='user_type_help(
+                                            "Already A Contact",
+                                            "This user is already a contact of this club.");'
                                 >
                                     <i class="material-icons text-info">info</i></a>
                                 Already a Contact
@@ -105,6 +105,7 @@
                             {% elif user.source == "registered" or user.source == "unregistered" or user.source == "mpc" %}
                                 <button
                                     class="btn btn-sm btn-primary"
+                                    id="t_user_search_result_{{ user.system_number }}"
                                     hx-post="{% url 'organisations:club_admin_add_member_htmx' %}"
                                     hx-target="#id_panel_members"
                                     hx-vars='{ "club_id": {{ club_id }}, "system_number": {{ user.system_number }} }'

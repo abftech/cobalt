@@ -2998,10 +2998,14 @@ def switch_to_full_club_admin(club, requester):
         # check that the status and the state match (either because it has been
         # changed here, or something else went wrong)
 
-        member_details = MemberClubDetails.objects.get(
+        member_details = MemberClubDetails.objects.filter(
             club=club,
             system_number=membership.system_number,
-        )
+        ).first()
+
+        # This may only be an issue for test data but you may not get a match
+        if not member_details:
+            return
 
         if member_details.membership_status != membership.membership_state:
             #  update the status on the details level

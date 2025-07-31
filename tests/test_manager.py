@@ -58,6 +58,7 @@ LIST_OF_INTEGRATION_TESTS = {
     "ClubMembers": "organisations.tests.integration.04_club_members",
     "ClubCongress": "organisations.tests.integration.06_congress_setup",
     "Sessions": "club_sessions.tests.integration.01_sessions",
+    "ClubMembership": "organisations.tests.integration.07_membership",
 }
 
 
@@ -616,6 +617,10 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
             print("Valid values are:")
             for option in select.options:
                 print(option.text)
+
+    def selenium_scroll_to_bottom(self):
+        """Scroll to bottom of screen - some things work better if in view"""
+        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
     def run(self):
 

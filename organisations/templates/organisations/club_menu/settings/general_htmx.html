@@ -103,6 +103,7 @@
                         <button
                             type="Save"
                             class="btn btn-sm btn-success cobalt-save"
+                            id="t_save_general_settings"
                         >
                             Save
                         </button>
@@ -114,9 +115,9 @@
             <div class="row">
                 <div class="col-md-6">
                     <div id="club-venues"
-                        hx-post="{% url "organisations:club_menu_tab_settings_venues_htmx" %}"
-                        hx-vars="club_id:{{ club.id }}"
-                        hx-trigger="load"
+                         hx-post="{% url "organisations:club_menu_tab_settings_venues_htmx" %}"
+                         hx-vars="club_id:{{ club.id }}"
+                         hx-trigger="load"
                     >
                     </div>
                 </div>

@@ -29,6 +29,9 @@ def setup_auto_top_up(manager: CobaltTestManagerIntegration, user: User = None):
     # Go to auto top up screen
     manager.driver.get(f"{manager.base_url}/payments/setup-autotopup")
 
+    # Works better on small screens if scrolled down
+    manager.selenium_scroll_to_bottom()
+
     # wait for iFrame to load the old fashioned way
     time.sleep(3)
 

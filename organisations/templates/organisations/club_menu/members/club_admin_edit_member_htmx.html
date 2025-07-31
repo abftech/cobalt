@@ -48,8 +48,8 @@
                     </div>
                     <div>
                         <span class="align-left text-white"
-                            _="on click toggle .d-none on #id_outstanding_debt"
-                            style="cursor: pointer"
+                              _="on click toggle .d-none on #id_outstanding_debt"
+                              style="cursor: pointer"
                         ><i class="material-icons">close</i></span>
                     </div>
                 </div>
@@ -114,6 +114,7 @@
                             </div>
                             <div class="col text-right">
                                 <button
+                                    id="t_show_details"
                                     class="btn btn-sm btn-info"
                                     hx-post="{% url 'organisations:club_admin_edit_member_htmx' %}"
                                     hx-vars="club_id:{{ club.id }}, system_number:{{ member_details.system_number }}, save: 'NO', edit: 'NO', show_history: {% if show_history %}'NO'{% else %}'YES'{% endif %}"
