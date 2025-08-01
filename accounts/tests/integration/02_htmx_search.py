@@ -6,13 +6,25 @@ from accounts.models import User
 from tests.test_manager import CobaltTestManagerIntegration
 
 
-def _inline_ff_helper(
-    test_name, manager, url, search_id, match_id, confirm_id, name_id, id_id
+def _search_ff_helper(
+    test_name,
+    manager,
+    url,
+    search_id,
+    match_id,
+    confirm_id,
+    name_id,
+    id_id,
+    modal_id=None,
 ):
     """helper to test inline forms for fiona freckle"""
 
     # Go to page
     manager.driver.get(url)
+
+    # If we are a modal then open it
+    if modal_id:
+        manager.selenium_wait_for_clickable(modal_id).click()
 
     # enter last name - first letters match both
     manager.selenium_wait_for_clickable(search_id).send_keys("fr")
@@ -68,7 +80,7 @@ class HTMXSearch:
 
     def a1_test_inline_callback_ff(self):
         """Test the inline callback - search for fiona freckle"""
-        _inline_ff_helper(
+        _search_ff_helper(
             "Inline exclude self",
             self.manager,
             self.url,
@@ -103,7 +115,7 @@ class HTMXSearch:
 
     def a3_test_inline_callback_include_self_ff(self):
         """Test the inline callback include self - search for fiona freckle"""
-        _inline_ff_helper(
+        _search_ff_helper(
             "Inline include self",
             self.manager,
             self.url,
@@ -134,4 +146,19 @@ class HTMXSearch:
             test_name="Inline include self - Search for self",
             output=f"Searched for last name admin. Got {aa}",
             test_description="Enter 'admin' into last_name field. Expect a match",
+        )
+
+    def a5_test_modal_ff(self):
+        """Test the modal popup"""
+
+        _search_ff_helper(
+            "Modal exclude self",
+            self.manager,
+            self.url,
+            "id_last_name_searchmodalCallback",
+            "id_htmx_search_match_modalCallback12",
+            "id_cobalt_search_okmodalCallback",
+            "modal-callback-name",
+            "modal-callback-id",
+            "id_search_button",
         )
