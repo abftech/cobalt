@@ -18,14 +18,14 @@ def cobalt_htmx_user_search(
     Args:
         manager: standard manager object
         search_button_id: id of the button to press to bring up the search
-        search_id: search id set for this user search
+        search_id: Optional field name required for some searches, if the form adds this on
         user_system_id: which user to add
     """
 
     # User Search button
     manager.selenium_wait_for_clickable(search_button_id).click()
 
-    # Wait for modal to appear and enter system number in
+    # Wait for modal to appear and enter system number
     system_number = manager.selenium_wait_for_clickable(
         f"id_system_number{search_id}", 10
     )

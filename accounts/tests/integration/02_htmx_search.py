@@ -3,6 +3,7 @@ from time import sleep
 from django.urls import reverse
 
 from accounts.models import User
+from tests.integration.common_functions import cobalt_htmx_user_search
 from tests.test_manager import CobaltTestManagerIntegration
 
 
@@ -64,6 +65,34 @@ def _search_ff_helper(
     )
 
 
+def _search_self_helper(
+    test_name, manager, url, expected_to_work, search_id, match_id, modal_id=None
+):
+    """Helper for searching for yourself"""
+
+    # Connect to page
+    manager.driver.get(url)
+
+    # If we are a modal then open it
+    if modal_id:
+        manager.selenium_wait_for_clickable(modal_id).click()
+
+    # enter own name - alan admin
+    manager.selenium_wait_for_clickable(search_id).send_keys("admin")
+
+    if expected_to_work:
+        aa = manager.selenium_wait_for_text("Alan", match_id)
+    else:
+        aa = manager.selenium_wait_for_text("No Matches", match_id)
+
+    manager.save_results(
+        status=aa,
+        test_name=f"{test_name} - Search for self",
+        output=f"Searched for last name admin. Got {aa}",
+        test_description=f"Enter 'admin' into last_name field. {expected_to_work=}",
+    )
+
+
 class HTMXSearch:
     """Tests for the HTMX Member search. We use a screen within tests for testing it"""
 
@@ -93,24 +122,15 @@ class HTMXSearch:
 
     def a2_test_inline_callback_aa(self):
         """Test inline callback, search for yourself - should not find you"""
-        # Connect to page
-        self.manager.driver.get(self.url)
 
-        # enter own name - alan
-        self.manager.selenium_wait_for_clickable(
-            "id_last_name_searchinline-callback"
-        ).send_keys("admin")
-
-        # Should get no match
-        aa = self.manager.selenium_wait_for_text(
-            "No Matches", "name-matchesinline-callback"
-        )
-
-        self.manager.save_results(
-            status=aa,
-            test_name="Inline exclude self - Search for self",
-            output=f"Searched for last name admin. Got {aa}",
-            test_description="Enter 'admin' into last_name field. Expect no match",
+        _search_self_helper(
+            "Inline exclude self",
+            self.manager,
+            self.url,
+            False,
+            "id_last_name_searchinline-callback",
+            "name-matchesinline-callback",
+            modal_id=None,
         )
 
     def a3_test_inline_callback_include_self_ff(self):
@@ -128,24 +148,14 @@ class HTMXSearch:
 
     def a4_test_inline_callback_include_self_aa(self):
         """Test inline callback, search for yourself - should now find you"""
-        # Connect to page
-        self.manager.driver.get(self.url)
 
-        # enter own name - alan
-        self.manager.selenium_wait_for_clickable(
-            "id_last_name_searchinline-callback-include-me"
-        ).send_keys("admin")
-
-        # Should get a match
-        aa = self.manager.selenium_wait_for_text(
-            "Alan", "id_htmx_search_match_inline-callback-include-me7"
-        )
-
-        self.manager.save_results(
-            status=aa,
-            test_name="Inline include self - Search for self",
-            output=f"Searched for last name admin. Got {aa}",
-            test_description="Enter 'admin' into last_name field. Expect a match",
+        _search_self_helper(
+            "Inline include self",
+            self.manager,
+            self.url,
+            True,
+            "id_last_name_searchinline-callback-include-me",
+            "id_htmx_search_match_inline-callback-include-me7",
         )
 
     def a5_test_modal_ff(self):
@@ -156,9 +166,68 @@ class HTMXSearch:
             self.manager,
             self.url,
             "id_last_name_searchmodalCallback",
-            "id_htmx_search_match_modalCallback12",
+            "id_htmx_search_match_modalCallback",
             "id_cobalt_search_okmodalCallback",
             "modal-callback-name",
             "modal-callback-id",
             "id_search_button",
+        )
+
+    def a6_test_modal_aa(self):
+        """Test modal, search for yourself - should not find you"""
+
+        _search_self_helper(
+            "Modal exclude self",
+            self.manager,
+            self.url,
+            False,
+            "id_last_name_searchmodalCallback",
+            "name-matchesmodalCallback",
+            modal_id="id_search_button",
+        )
+
+    def a7_test_modal_include_self_ff(self):
+        """Test the modal popup include self"""
+
+        _search_ff_helper(
+            "Modal include self",
+            self.manager,
+            self.url,
+            "id_last_name_searchmodalCallbackIncludeMe",
+            "id_htmx_search_match_modalCallbackIncludeMe",
+            "id_cobalt_search_okmodalCallbackIncludeMe",
+            "modal-callback-include-me-name",
+            "modal-callback-include-me-id",
+            "id_search_button_self",
+        )
+
+    def a8_test_modal_include_self_aa(self):
+        """Test modal, search for yourself - should now find you"""
+
+        _search_self_helper(
+            "Modal include self",
+            self.manager,
+            self.url,
+            True,
+            "id_last_name_searchmodalCallbackIncludeMe",
+            "id_htmx_search_match_modalCallbackIncludeMe7",
+            modal_id="id_search_button_self",
+        )
+
+    def b1_test_harness_search_by_system_number(self):
+        """Test of the function cobalt_htmx_user_search used by tests to
+        find a user by system number"""
+
+        # Go to page
+        self.manager.driver.get(self.url)
+
+        cobalt_htmx_user_search(
+            self.manager, "id_search_button_self", "103", "modalCallbackIncludeMe"
+        )
+
+        # no error means success
+        self.manager.save_results(
+            status=True,
+            test_name="Search by system number",
+            test_description="Call cobalt_htmx_user_search to search by system number",
         )

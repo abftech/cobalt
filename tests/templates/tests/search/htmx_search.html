@@ -66,6 +66,7 @@
             </div>
         </div>
 
+        <!-- Modal Callback -->
 
         <div class="card">
             <div class="card-header card-header-primary">
@@ -81,13 +82,15 @@
                         id will appear here
                     </span>
                 </div>
-                {% include "accounts/search/user_search_include_htmx.html" with search_id="modalCallback" include_me=True callback="modalCallback" %}
+                {% include "accounts/search/user_search_include_htmx.html" with search_id="modalCallback" include_me=False callback="modalCallback" %}
                     <!-- data-target should be #userSearchModal + search_id -->
                 <button id="id_search_button" type="button" class="btn btn-info" data-toggle="modal" data-target="#userSearchModalmodalCallback">
                     Modal Callback
                 </button>
             </div>
         </div>
+
+        <!-- Modal Callback include me -->
 
         <div class="card">
             <div class="card-header card-header-rose">
@@ -105,7 +108,7 @@
                 </div>
                 {% include "accounts/search/user_search_include_htmx.html" with search_id="modalCallbackIncludeMe" include_me=True callback="modalCallbackIncludeMe" %}
                     <!-- data-target should be #userSearchModal + search_id -->
-                <button id="id_search_button" type="button" class="btn btn-info" data-toggle="modal" data-target="#userSearchModalmodalCallbackIncludeMe">
+                <button id="id_search_button_self" type="button" class="btn btn-info" data-toggle="modal" data-target="#userSearchModalmodalCallbackIncludeMe">
                     Modal Callback Include Me
                 </button>
             </div>
