@@ -42,7 +42,7 @@ setup_test_environment()
 # For unit tests each test should stand alone, and they are dynamically found
 LIST_OF_INTEGRATION_TESTS = {
     "TestURLsRequireLogin": "tests.integration.01_system_wide_security",
-    # "HTMXSearch": "accounts.tests.integration.02_htmx_search",
+    "HTMXSearch": "accounts.tests.integration.02_htmx_search",
     "EventEntry": "events.tests.integration.01_user_event_entry",
     "APITests": "api.tests.integration.01_authorisation_tests",
     "SMSTests": "notifications.tests.integration.01_sms_tests",
@@ -546,8 +546,9 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
         # Wait for it
         time.sleep(3)
 
-    def _selenium_wait(self, wait_event, element_id, timeout):
+    def _selenium_wait(self, wait_event, wait_event_str, element_id, timeout):
         """Wait for something and return it"""
+
         try:
             ignored_exceptions = (
                 NoSuchElementException,
@@ -558,7 +559,23 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
             ).until(wait_event)
             return self.driver.find_element(By.ID, element_id)
         except TimeoutException:
-            print("***** Timeout Exception in _selenium_wait() *****")
+            print(
+                "****************************************************************************************************************************"
+            )
+            print(
+                "** Timeout Exception in _selenium_wait() - may be expected behaviour"
+            )
+            print(f"** Waited for '{element_id}'. Wait event was '{wait_event_str}'")
+            stack = inspect.stack()
+            calling_lineno = stack[2][0].f_lineno
+            calling_file = stack[2][0].f_code.co_filename
+            print(f"** We got here from {calling_file} at line {calling_lineno}.")
+            print(
+                f"** Consider adding self.manager.sleep() before you call wait_for* and checking that '{element_id}' is present"
+            )
+            print(
+                "****************************************************************************************************************************"
+            )
             return False
 
     def selenium_wait_for(self, element_id, timeout=5):
@@ -566,21 +583,30 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
         element_present = expected_conditions.presence_of_element_located(
             (By.ID, element_id)
         )
-        return self._selenium_wait(element_present, element_id, timeout=timeout)
+        return self._selenium_wait(
+            element_present, "wait for", element_id, timeout=timeout
+        )
 
     def selenium_wait_for_clickable(self, element_id, timeout=5):
         """Wait for element_id to be clickable and return it. E.g. if element is hidden."""
         element_clickable = expected_conditions.element_to_be_clickable(
             (By.ID, element_id)
         )
-        return self._selenium_wait(element_clickable, element_id, timeout=timeout)
+        return self._selenium_wait(
+            element_clickable, "wait for clickable", element_id, timeout=timeout
+        )
 
     def selenium_wait_for_clickable_by_name(self, element_name, timeout=5):
         """Wait for element_name to be clickable and return it."""
         element_clickable = expected_conditions.element_to_be_clickable(
             (By.NAME, element_name)
         )
-        return self._selenium_wait(element_clickable, element_name, timeout=timeout)
+        return self._selenium_wait(
+            element_clickable,
+            "wait for clickable by name",
+            element_name,
+            timeout=timeout,
+        )
 
     def selenium_wait_for_text(self, text, element_id, timeout=5):
         """Wait for text to appear in element_id."""
@@ -588,7 +614,9 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
         element_has_text = expected_conditions.text_to_be_present_in_element(
             (By.ID, element_id), text
         )
-        return self._selenium_wait(element_has_text, element_id, timeout=timeout)
+        return self._selenium_wait(
+            element_has_text, "wait for text", element_id, timeout=timeout
+        )
 
     def selenium_wait_for_select_and_pick_an_option(
         self, element_id, choice_name, timeout=5
@@ -601,7 +629,12 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
         )
 
         # wait for it to be clickable
-        self._selenium_wait(element_clickable, element_id, timeout=timeout)
+        self._selenium_wait(
+            element_clickable,
+            "wait for select and pick an option",
+            element_id,
+            timeout=timeout,
+        )
 
         # Create a select object for it
         select = Select(self.driver.find_element(By.ID, element_id))

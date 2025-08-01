@@ -1,7 +1,55 @@
+from time import sleep
+
 from django.urls import reverse
 
 from accounts.models import User
 from tests.test_manager import CobaltTestManagerIntegration
+
+
+def _inline_ff_helper(
+    test_name, manager, url, search_id, match_id, confirm_id, name_id, id_id
+):
+    """helper to test inline forms for fiona freckle"""
+
+    # Go to page
+    manager.driver.get(url)
+
+    # enter last name - first letters match both
+    manager.selenium_wait_for_clickable(search_id).send_keys("fr")
+
+    # Should get a match for both
+    ff = manager.selenium_wait_for_text("Fiona", f"{match_id}12")
+    finn = manager.selenium_wait_for_text("Finn", f"{match_id}33")
+
+    success = bool(ff and finn)
+    manager.save_results(
+        status=success,
+        test_name=f"{test_name} - Last Name both match",
+        output=f"{success}",
+        test_description="Enter 'fr' into last_name field. Expect to match on Fiona and Finn",
+    )
+
+    # click on Fiona to bring up confirm dialog
+    manager.selenium_wait_for_clickable(f"{match_id}{manager.fiona.id}").click()
+
+    # Click ok
+    manager.selenium_wait_for_clickable(confirm_id).click()
+
+    # Check fields update - once you pick someone it should update the fields on the screen
+    user_name = manager.selenium_wait_for(name_id)
+    user_id = manager.selenium_wait_for(id_id)
+
+    success = (
+        user_name.text == "Fiona Freckle".upper()
+        and int(user_id.text) == manager.fiona.id
+    )
+
+    manager.save_results(
+        status=success,
+        test_name=f"{test_name} - Click updates web page",
+        output=f"Expected user_name and user_id to be set. Looked for: 'FIONA FRECKLE' Found: '{user_name.text=}'. Looked for: '{manager.fiona.id=}' Found: {user_id.text=}",
+        test_description="After the search - click on name and check it is updated",
+    )
 
 
 class HTMXSearch:
@@ -15,56 +63,75 @@ class HTMXSearch:
         self.finn = User(first_name="Finn", last_name="Fredrick", system_number=9999999)
         self.finn.save()
 
-    def a1_test_inline(self):
-
         # Get url
-        url = self.manager.base_url + reverse("tests:htmx_search")
+        self.url = self.manager.base_url + reverse("tests:htmx_search")
 
+    def a1_test_inline_callback_ff(self):
+        """Test the inline callback - search for fiona freckle"""
+        _inline_ff_helper(
+            "Inline exclude self",
+            self.manager,
+            self.url,
+            "id_last_name_searchinline-callback",
+            "id_htmx_search_match_inline-callback",
+            "id_cobalt_search_okinline-callback",
+            "inline-callback-name",
+            "inline-callback-id",
+        )
+
+    def a2_test_inline_callback_aa(self):
+        """Test inline callback, search for yourself - should not find you"""
         # Connect to page
-        self.manager.driver.get(url)
+        self.manager.driver.get(self.url)
 
-        # enter name
+        # enter own name - alan
         self.manager.selenium_wait_for_clickable(
             "id_last_name_searchinline-callback"
-        ).send_keys("fr")
+        ).send_keys("admin")
 
-        # Should get a match for both
-        ff = self.manager.selenium_wait_for_text("Fiona", "name-matchesinline-callback")
-        finn = self.manager.selenium_wait_for_text(
-            "Finn", "name-matchesinline-callback"
+        # Should get no match
+        aa = self.manager.selenium_wait_for_text(
+            "No Matches", "name-matchesinline-callback"
         )
 
-        success = bool(ff and finn)
         self.manager.save_results(
-            status=success,
-            test_name="Last Name both match",
-            output=f"{success}",
-            test_description="Enter 'fr' into last_name field. Expect to match on Fiona and Finn",
+            status=aa,
+            test_name="Inline exclude self - Search for self",
+            output=f"Searched for last name admin. Got {aa}",
+            test_description="Enter 'admin' into last_name field. Expect no match",
         )
 
-        # THIS NEEDS WORK. NEED TO WORK OUT HOW TO FIND ELEMENTS. MATCHES EVEN AFTER THEY HAVE GONE.
+    def a3_test_inline_callback_include_self_ff(self):
+        """Test the inline callback include self - search for fiona freckle"""
+        _inline_ff_helper(
+            "Inline include self",
+            self.manager,
+            self.url,
+            "id_last_name_searchinline-callback-include-me",
+            "id_htmx_search_match_inline-callback-include-me",
+            "id_cobalt_search_okinline-callback-include-me",
+            "inline-callback-include-me-name",
+            "inline-callback-include-me-id",
+        )
 
-        # self.manager.selenium_wait_for_clickable("id_last_name_searchinline-callback").send_keys("ec")
-        #
-        # # Should get a match for only fiona
-        # ff = self.manager.selenium_wait_for_clickable("id_htmx_search_match_inline-callback11")
-        # finn = self.manager.selenium_wait_for_clickable("id_htmx_search_match_inline-callback32")
-        # finn2 = self.manager.selenium_wait_for_clickable("id_htmx_search_match_inline-callback3222")
-        #
-        # if ff and not finn:
-        #     success = True
-        # else:
-        #     success = False
-        #
-        # print(ff)
-        # print(finn)
-        # print(finn2)
-        #
-        # self.manager.save_results(
-        #     status=success,
-        #     test_name="Last Name one match",
-        #     output=f"{success}",
-        #     test_description="Enter 'frec' into last_name field. Expect to match on Fiona only",
-        # )
-        #
-        # self.manager.sleep()
+    def a4_test_inline_callback_include_self_aa(self):
+        """Test inline callback, search for yourself - should now find you"""
+        # Connect to page
+        self.manager.driver.get(self.url)
+
+        # enter own name - alan
+        self.manager.selenium_wait_for_clickable(
+            "id_last_name_searchinline-callback-include-me"
+        ).send_keys("admin")
+
+        # Should get a match
+        aa = self.manager.selenium_wait_for_text(
+            "Alan", "id_htmx_search_match_inline-callback-include-me7"
+        )
+
+        self.manager.save_results(
+            status=aa,
+            test_name="Inline include self - Search for self",
+            output=f"Searched for last name admin. Got {aa}",
+            test_description="Enter 'admin' into last_name field. Expect a match",
+        )
