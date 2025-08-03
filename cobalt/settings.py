@@ -580,6 +580,7 @@ FIREBASE_APP = initialize_app()
 
 # Check if we want to enable the debug toolbar
 DEBUG_TOOLBAR_ENABLED = set_value("DEBUG_TOOLBAR_ENABLED", False)
+DEBUG_TOOLBAR_ENABLED = DEBUG_TOOLBAR_ENABLED == "ON"
 if DEBUG and DEBUG_TOOLBAR_ENABLED:
     INSTALLED_APPS.append("debug_toolbar")
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")

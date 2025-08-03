@@ -2,6 +2,7 @@ from django.core.exceptions import SuspiciousOperation
 from django.core.management.base import BaseCommand
 
 from tests.simple_selenium_parser import simple_selenium_parser, command_lookup
+from tests.simple_selenium import SimpleSelenium
 
 ALLOWED_PRODUCTION_SCRIPTS = ["basic_smoke_test_production.txt"]
 
@@ -29,7 +30,9 @@ class Command(BaseCommand):
             action="store_true",
             help="List commands available for use in scripts",
         )
-        parser.add_argument("--password", help="password for user")
+        parser.add_argument(
+            "--password", help="password for user. Leave blank for default."
+        )
 
         # COB-789 - generalise userid
         parser.add_argument("--userid", help="user to run the test under")
@@ -58,12 +61,6 @@ class Command(BaseCommand):
         silent = options["silent"]
         list_commands = options["list"]
 
-        if list_commands:
-            return list_commands_helper()
-
-        if not base_url:
-            base_url = "https://test.myabf.com.au"
-
         # Be protective of production
         if (
             base_url in ["https://myabf.com.au", "https://www.myabf.com.au"]
@@ -72,6 +69,15 @@ class Command(BaseCommand):
             raise SuspiciousOperation(
                 "This script is not permitted to be run against production"
             )
+
+        if list_commands:
+            return list_commands_helper()
+
+        if not base_url:
+            base_url = "https://test.myabf.com.au"
+
+        if not password:
+            password = "F1shcake"
 
         simple_selenium_parser(
             script,
