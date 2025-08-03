@@ -6,35 +6,7 @@
 # Variables
 export RDS_DB_NAME=test
 
-echo "#########################################################################"
-echo "#                                                                       #"
-echo "# Reloading cached database...                                          #"
-echo "#                                                                       #"
-echo "# If you have changed models or static data config then you should      #"
-echo "# run cgit_dev_test_reload_db first, to update the cached version.      #"
-echo "#                                                                       #"
-echo "#########################################################################"
-
-# Get timestamp of most recent migration
-LAST_MIGRATION=$(ls -l -D "%Y-%m-%d=%H:%M" */migrations/*.py | sort -k6 | tail -1 | awk '{print $6}')
-
-# Get timestamp of database
-DATABASE_TIME=$(ls -l -D "%Y-%m-%d=%H:%M" ~/test.db | tail -1 | awk '{print $6}')
-
-# If there have been migrations since the database was created, then rebuild it
-if [[ "$LAST_MIGRATION" > "$DATABASE_TIME" ]]; then
-  cgit_dev_test_reload_db
-fi
-
-# Reload database
-cat << EOF > /tmp/drop_db
-\c postgres
-drop database IF EXISTS $RDS_DB_NAME;
-create database $RDS_DB_NAME with owner $CGIT_ENV;
-EOF
-
-psql test </tmp/drop_db
-psql test < ~/test.db >/dev/null
+_cgit_test_handle_db
 
 # Only run coverage if called by the wrapper script
 if [ $# -eq 1 ]

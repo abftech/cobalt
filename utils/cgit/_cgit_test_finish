@@ -1,0 +1,16 @@
+#!/bin/bash
+# Common code for stopping things for automated testing
+
+# Stop the django server
+lsof -i tcp:8088 | awk 'NR!=1 {print $2}' | xargs kill -SIGINT
+# Give it one second or will still be running when we close the terminal app
+sleep 1
+
+echo ""
+echo "Django server output is in /tmp/test_manager.txt"
+
+# Kill stripe if running
+pkill -TERM -f stripe
+
+# Close down Terminal
+osascript -e 'tell application "Terminal" to quit'

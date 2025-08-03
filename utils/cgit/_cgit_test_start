@@ -1,0 +1,66 @@
+#!/bin/bash
+# Common code for starting things for automated testing
+
+# Variables
+PORT=8088
+export RDS_DB_NAME=test
+export DUMMY_DATA_COUNT=1
+export DEBUG=OFF
+
+# Get arguments
+STRIPE=0
+DJANGO=0
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -s|--stripe)
+      STRIPE=1
+      shift # past argument
+      ;;
+    -d|--django)
+      DJANGO=1
+      shift # past argument
+      ;;
+    -*|--*)
+      echo "Unknown option $1"
+      exit 1
+      ;;
+  esac
+done
+
+# Kill manage.py if running
+lsof -i tcp:$PORT | awk 'NR!=1 {print $2}' | xargs kill
+
+# Kill stripe if running
+if [ "$STRIPE" == "1" ]; then
+  pkill -TERM -f stripe
+fi
+
+# Kill old chromedrivers
+pkill -TERM -f chromedriver
+
+# handle database
+_cgit_test_handle_db
+
+# Start Stripe and Django in terminal windows
+if [ "$STRIPE" == "1" ]; then
+  open utils/cgit/tools/test_stripe_short.terminal
+fi
+
+# To debug we want to run pycharm so don't start the server here
+if [ "$DJANGO" == "1" ]; then
+  open utils/cgit/tools/test_manage_short.terminal
+  echo "Waiting for Webserver to start..."
+else
+  echo "Debugging enabled. Please start your webserver"
+fi
+
+# Wait for port to be open
+while ! nc -z 127.0.0.1 $PORT; do
+  sleep 0.1
+done
+echo "Starting..."
+
+
+
+

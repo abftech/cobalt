@@ -8,12 +8,15 @@ command_lookup = {
     "enter_parameter": 'manager.enter_value_into_field_by_name("WORDS_3", WORDS_1)',
     "click": 'manager.press_by_text("WORDS_1")',
     "click_by_name": 'manager.press_by_name("WORDS_1")',
+    "click_by_id": 'manager.press_by_id("WORDS_1")',
     "find": 'manager.find_by_text("WORDS_1")',
+    "find_by_id": 'manager.find_by_id("WORDS_1")',
     "title": 'manager.set_title("WORDS_1")',
     "go": 'manager.go_to("WORDS_1")',
     "screenshot": 'manager.screenshot("WORDS_1")',
     "send_enter": 'manager.send_enter("WORDS_2")',
     "log": 'manager.add_message("WORDS_1", bold=True)',
+    "login": 'manager.login("WORDS_1")',
     "selectpicker": 'manager.selectpicker("WORDS_2", "WORDS_4")',
     "dropdown": 'manager.dropdown("WORDS_2", "WORDS_4")',
     "sleep": "manager.sleep(WORDS_1)",
@@ -24,8 +27,6 @@ def simple_selenium_parser(
     script_file, base_url, password, browser, show, silent, userid="userid-not-set"
 ):
     """translates a test script into code and runs it"""
-
-    # COB-789: added userid
 
     with open(f"tests/scripts/{script_file}") as in_file:
         script = in_file.readlines()
@@ -82,7 +83,11 @@ def run_commands(commands, base_url, password, browser, show, silent, userid):
     # be dereferenced as python variables in the exec
 
     manager = SimpleSelenium(
-        base_url=base_url, browser=browser, show=show, silent=silent
+        base_url=base_url,
+        browser=browser,
+        show=show,
+        silent=silent,
+        password=password,
     )
 
     for cmd_string in commands:

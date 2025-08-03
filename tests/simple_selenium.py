@@ -17,16 +17,18 @@ logger = logging.getLogger("cobalt")
 class SimpleSelenium:
     """high level commands to control selenium. Why this doesn't exist already, I have no idea"""
 
-    def __init__(self, base_url, browser, show, silent):
+    def __init__(self, base_url, browser, show, silent, password):
         """set up"""
 
         self.base_url = base_url
         self.silent = silent
+        self.default_password = password
 
         options = ChromeOptions()
         if not show:
-            options.add_argument("window-size=1200x600")
-            options.headless = True
+            options.add_argument("window-size=1600x800")
+            options.add_argument("--headless=new")
+            options.add_argument("--start-maximized")
 
         self.driver = webdriver.Chrome(options=options)
         url = f"{base_url}/accounts/login"
@@ -121,6 +123,8 @@ class SimpleSelenium:
         matching_element.click()
         self.add_message(f"Clicked on '{search_text}'")
 
+        self.screenshot(f"Clicked on {search_text}")
+
     def find_by_name(self, name):
         """find something with matching name"""
 
@@ -134,6 +138,19 @@ class SimpleSelenium:
 
         return match
 
+    def find_by_id(self, id):
+        """find something with matching id"""
+
+        try:
+            match = self.driver.find_element("id", id)
+        except NoSuchElementException:
+            self.add_message(f"Looked for item with id '{id}' but did not find it")
+            self.handle_fatal_error()
+
+        self.add_message(f"Looked for item with id '{id}' and found it")
+
+        return match
+
     def press_by_name(self, name):
         """find something with matching name and click it"""
 
@@ -141,11 +158,24 @@ class SimpleSelenium:
         matching_element.click()
         self.add_message(f"Clicked on '{name}'")
 
+        self.screenshot(f"Clicked on {name}")
+
+    def press_by_id(self, id):
+        """find something with matching id and click it"""
+
+        matching_element = self.find_by_id(id)
+        matching_element.click()
+        self.add_message(f"Clicked on '{id}'")
+
+        self.screenshot(f"Clicked on {id}")
+
     def go_to(self, location):
         """go to a relative path"""
         self.driver.get(f"{self.base_url}{location}")
         # We don't know if it works, but it should be easy enough to identify if it doesn't
         self.add_message(f"Went to '{location}'")
+
+        self.screenshot(f"Went to {location}")
 
     def send_enter(self, name):
         """send the enter key to an object"""
@@ -170,6 +200,27 @@ class SimpleSelenium:
         self.add_message(f"Found '{name}'")
 
         item.send_keys(value)
+
+        # Hide password
+        if name == "password":
+            value = "*********"
+
+        self.screenshot(f"Put '{value}' into '{name}'")
+
+    def enter_value_into_field_by_id(self, id, value):
+        """find a field by id and put a value in it. Can be a variable such as password"""
+
+        try:
+            item = self.driver.find_element("id", id)
+        except NoSuchElementException:
+            self.add_message(f"Couldn't find by name: {id}")
+            self.handle_fatal_error()
+
+        self.add_message(f"Found '{id}'")
+
+        item.send_keys(value)
+
+        self.screenshot(f"Put '{value}' into '{id}'")
 
     def screenshot(self, title):
         """grab a picture of the screen"""
@@ -212,7 +263,8 @@ class SimpleSelenium:
         self.add_message(f"Selected '{value}' from dropdown '{name}'")
 
     def sleep(self, seconds):
-        """sleep for a bit"""
+        """sleep for the specified number of seconds"""
+
         time.sleep(seconds)
         self.add_message(f"Slept for {seconds} second(s)")
 
@@ -220,3 +272,25 @@ class SimpleSelenium:
         """set the title for the page"""
 
         self.title = title
+
+    def login(self, username):
+        """login a user"""
+
+        # Go to login url
+        self.go_to("/accounts/login")
+
+        # Provide credentials
+        self.enter_value_into_field_by_name("username", username)
+        self.enter_value_into_field_by_name("password", self.default_password)
+
+        # Take a screenshot
+        self.screenshot("Logging in")
+
+        # Login
+        self.press_by_text("Login")
+
+        # Check we are logged in
+        self.find_by_text("Bridge Credits")
+
+        # Take a screenshot
+        self.screenshot("Logged in")

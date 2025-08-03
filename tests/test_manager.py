@@ -550,6 +550,12 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
         """Wait for something and return it"""
 
         try:
+            # Scroll to item
+            element = self.driver.find_element(By.ID, element_id)
+            self.driver.execute_script(
+                "window.scrollTo(0," + str(element.location["y"]) + ")"
+            )
+
             ignored_exceptions = (
                 NoSuchElementException,
                 StaleElementReferenceException,

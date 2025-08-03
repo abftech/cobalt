@@ -2,6 +2,8 @@ from django.core.exceptions import SuspiciousOperation
 from django.core.management.base import BaseCommand
 
 from tests.simple_selenium_parser import simple_selenium_parser, command_lookup
+
+# This import is required. Used in an exec()
 from tests.simple_selenium import SimpleSelenium
 
 ALLOWED_PRODUCTION_SCRIPTS = ["basic_smoke_test_production.txt"]

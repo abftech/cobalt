@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# about: runs smoke test
+# about: runs smoke tests
 
 # Variables
 PORT=8088
@@ -17,7 +17,7 @@ pkill -TERM -f chromedriver
 cat << EOF > /tmp/drop_db
 \c postgres
 drop database IF EXISTS $RDS_DB_NAME;
-create database $RDS_DB_NAME with owner $CGIT_ENV;
+create database $RDS_DB_NAME with owner cobalt;
 EOF
 
 psql test </tmp/drop_db
@@ -32,7 +32,14 @@ while ! nc -z 127.0.0.1 $PORT; do
 done
 echo "Starting..."
 
-./manage.py smoke_test --password=F1shcake --script=event_entry.txt --base_url=http://127.0.0.1:8088
+# Only run coverage if called by the wrapper script
+if [ $# -eq 1 ]
+then
+  coverage run -p /manage.py smoke_test --password=F1shcake --script=event_entry.txt --base_url=http://127.0.0.1:8088
+else
+  /manage.py smoke_test --password=F1shcake --script=event_entry.txt --base_url=http://127.0.0.1:8088
+
+fi
 
 # Stop the django server
 lsof -i tcp:$PORT | awk 'NR!=1 {print $2}' | xargs kill -SIGINT
