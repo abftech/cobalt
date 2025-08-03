@@ -32,7 +32,9 @@ def simple_selenium_parser(
         script = in_file.readlines()
 
     commands = build_commands(script)
-    run_commands(commands, base_url, password, browser, show, silent, userid)
+    run_commands(
+        commands, base_url, password, browser, show, silent, userid, script_file
+    )
 
 
 def build_commands(script):
@@ -74,13 +76,10 @@ def build_command_line(words):
     return cmd_string
 
 
-def run_commands(commands, base_url, password, browser, show, silent, userid):
+def run_commands(
+    commands, base_url, password, browser, show, silent, userid, script_file
+):
     """execute the commands"""
-
-    # COB-789: added userid. Note that userid and password are not explicitly referenced
-    # in this code. The commands are dynamically created from the test script and executed
-    # as python code. So if the test script uses "password" or "userid" as a literal they will
-    # be dereferenced as python variables in the exec
 
     manager = SimpleSelenium(
         base_url=base_url,
@@ -88,6 +87,7 @@ def run_commands(commands, base_url, password, browser, show, silent, userid):
         show=show,
         silent=silent,
         password=password,
+        script_file=script_file,
     )
 
     for cmd_string in commands:

@@ -1,8 +1,12 @@
+import glob
 import logging
+import os
+import shutil
 import sys
 import time
 import uuid
 import webbrowser
+from pathlib import Path
 
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
@@ -17,13 +21,28 @@ logger = logging.getLogger("cobalt")
 class SimpleSelenium:
     """high level commands to control selenium. Why this doesn't exist already, I have no idea"""
 
-    def __init__(self, base_url, browser, show, silent, password):
+    def __init__(self, base_url, browser, show, silent, password, script_file):
         """set up"""
 
         self.base_url = base_url
         self.silent = silent
         self.default_password = password
+        self.script_file = script_file
 
+        script_file_without_extension = self.script_file.split(".")[0]
+        self.output_directory = f"/tmp/smoke_test/{script_file_without_extension}"
+        self.output_file = f"{self.output_directory}/results.html"
+
+        # Create output directory if not already there
+        Path(self.output_directory).mkdir(parents=True, exist_ok=True)
+
+        # Empty output directory
+        # NOTE: If scripts get retired they will still have output in the directory
+        files = glob.glob(f"{self.output_directory}/*")
+        for file in files:
+            os.remove(file)
+
+        # Start chrome
         options = ChromeOptions()
         if not show:
             options.add_argument("window-size=1600x800")
@@ -71,18 +90,15 @@ class SimpleSelenium:
         )
 
         # Save page
-        with open("/tmp/simple_selenium_fail.html", "w") as html_file:
+        with open(self.output_file, "w") as html_file:
             print(html, file=html_file)
 
         # Open browser and leave
-        webbrowser.open("file:///tmp/simple_selenium_fail.html")
+        webbrowser.open(f"file://{self.output_file}")
         sys.exit(1)
 
-    def handle_finish(self):
+    def handle_finish(self, open_output=True):
         """report on how we went"""
-
-        if self.silent:
-            sys.exit(0)
 
         # Build HTML page
         html = render_to_string(
@@ -90,11 +106,15 @@ class SimpleSelenium:
         )
 
         # Save page
-        with open("/tmp/simple_selenium_success.html", "w") as html_file:
+        with open(self.output_file, "w") as html_file:
             print(html, file=html_file)
 
+        if self.silent:
+            sys.exit(0)
+
         # Open browser
-        webbrowser.open("file:///tmp/simple_selenium_success.html")
+        if open_output:
+            webbrowser.open(f"file://{self.output_file}")
 
     def find_by_text(self, search_text):
         """find something with matching text"""
@@ -225,7 +245,7 @@ class SimpleSelenium:
     def screenshot(self, title):
         """grab a picture of the screen"""
 
-        filename = f"/tmp/{uuid.uuid4()}.png"
+        filename = f"{self.output_directory}/{uuid.uuid4()}.png"
         self.driver.save_screenshot(filename)
         self.screenshots[filename] = title
 

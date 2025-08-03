@@ -2,37 +2,16 @@
 
 # about: runs smoke tests
 
+source utils/cgit/_cgit_include_vars
+
 # Variables
 PORT=8088
 export RDS_DB_NAME=test
 export DUMMY_DATA_COUNT=1
 
-# Kill manage.py if running
-lsof -i tcp:$PORT | awk 'NR!=1 {print $2}' | xargs kill
+_cgit_test_start --django
 
-# Kill old chromedrivers
-pkill -TERM -f chromedriver
-
-# Rebuild database
-cat << EOF > /tmp/drop_db
-\c postgres
-drop database IF EXISTS $RDS_DB_NAME;
-create database $RDS_DB_NAME with owner cobalt;
-EOF
-
-psql test </tmp/drop_db
-psql test < ~/test.db >/dev/null
-
-open . utils/cgit/tools/test_manage_short.terminal
-
-# Wait for port to be open
-echo "Waiting for Webserver to start..."
-while ! nc -z 127.0.0.1 $PORT; do
-  sleep 0.1
-done
-echo "Starting..."
-
-COMMAND="./manage.py smoke_test --base_url=http://127.0.0.1:8088 --show"
+COMMAND="./manage.py smoke_test --base_url=http://127.0.0.1:$PORT --show --silent"
 
 # Only run coverage if called by the wrapper script
 if [ $# -eq 1 ]
@@ -40,17 +19,40 @@ then
   COMMAND="coverage run -p $COMMAND"
 fi
 
-echo "Running tests in tests/scripts/test_suite"
+echo "Running tests in tests/scripts/test_suite..."
+echo ""
 
 # Keep score in a file
 rm -f /tmp/smoke_test_outcome.txt
 
+# Add start time as first row
+date +"%s" > /tmp/smoke_test_outcome.txt
+
+# Loop through the test files
 for FILE_AND_PATH in tests/scripts/test_suite/*; do
   FILE_NAME=$(basename "$FILE_AND_PATH")
-  echo "Processing file: $FILE_NAME"
+
+  # run command
   $COMMAND --script "test_suite/$FILE_NAME"
-  echo "$FILE_NAME $?" >> /tmp/smoke_test_outcome.txt
+
+  # get status
+  rc=$?
+
+  # Save outcome in file
+  echo "$FILE_NAME $rc" >> /tmp/smoke_test_outcome.txt
+
+  # Print to screen
+  printf "%-50s" "$FILE_NAME"
+  if [ "$rc" == "0" ]; then
+    printf "${YELLOW}Pass${NC}\n"
+  else
+    printf "${RED}Fail${NC}\n"
+  fi
 done
 
-# Stop the django server
-lsof -i tcp:$PORT | awk 'NR!=1 {print $2}' | xargs kill -SIGINT
+# Create summary HTML report
+
+./manage.py create_smoke_test_report
+
+# Tidy up
+_cgit_test_finish
