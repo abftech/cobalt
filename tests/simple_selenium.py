@@ -30,11 +30,13 @@ class SimpleSelenium:
         self.script_file = script_file
 
         script_file_without_extension = self.script_file.split(".")[0]
-        self.output_directory = f"/tmp/smoke_test/{script_file_without_extension}"
-        self.output_file = f"{self.output_directory}/results.html"
+        self.output_directory = (
+            f"/tmp/cobalt/smoke_test/{script_file_without_extension}"
+        )
+        self.output_file = f"{self.output_directory}/smoke-test-output.html"
 
         # Create output directory if not already there
-        Path(self.output_directory).mkdir(parents=True, exist_ok=True)
+        os.makedirs(self.output_directory)
 
         # Empty output directory
         # NOTE: If scripts get retired they will still have output in the directory
@@ -84,7 +86,7 @@ class SimpleSelenium:
             sys.exit(1)
 
         # Save a screenshot
-        self.driver.save_screenshot("/tmp/simple_selenium.png")
+        self.screenshot("Error")
 
         # Build HTML page
         html = render_to_string(

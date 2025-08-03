@@ -1,15 +1,31 @@
 #!/bin/bash
 
 # about: runs unit tests
-# Pass a parameter to include coverage output
+# Call with -c or --coverage to include coverage output
 
 # Variables
 export RDS_DB_NAME=test
 
+# Get arguments
+COVERAGE=0
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -c|--coverage)
+      COVERAGE=1
+      shift # past argument
+      ;;
+    -*|--*)
+      echo "Unknown option $1"
+      exit 1
+      ;;
+  esac
+done
+
 _cgit_test_handle_db
 
 # Only run coverage if called by the wrapper script
-if [ $# -eq 1 ]
+if [ $COVERAGE -eq 1 ]
 then
   coverage run -p ./manage.py run_tests_unit
 else

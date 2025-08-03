@@ -5,14 +5,17 @@
 # reset coverage
 coverage erase
 
-# pass 2 parameters to get the coverage output
-cgit_dev_test_unit with coverage
+# Unit Tests
+cgit_dev_test_unit --coverage
 
+# Integration Tests
 # Only seems to work if running in the foreground, add --show for now
 cgit_dev_test_integration --coverage --show
 
+# Smoke Tests
 cgit_dev_test_smoke --coverage
 
+# Create coverage
 coverage combine
 coverage html
 open htmlcov/index.html

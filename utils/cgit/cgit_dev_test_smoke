@@ -9,12 +9,27 @@ PORT=8088
 export RDS_DB_NAME=test
 export DUMMY_DATA_COUNT=1
 
+# Get arguments
+COVERAGE=0
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -c|--coverage)
+      COVERAGE=1
+      shift # past argument
+      ;;
+    -*|--*)
+      echo "Unknown option $1"
+      exit 1
+      ;;
+  esac
+done
+
 _cgit_test_start --django
 
-COMMAND="./manage.py smoke_test --base_url=http://127.0.0.1:$PORT --show --silent"
+COMMAND="./manage.py run_tests_smoke --base_url=http://127.0.0.1:$PORT --show --silent"
 
-# Only run coverage if called by the wrapper script
-if [ $# -eq 1 ]
+if [ $COVERAGE -eq 1 ]
 then
   COMMAND="coverage run -p $COMMAND"
 fi

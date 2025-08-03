@@ -46,14 +46,20 @@ class Command(BaseCommand):
         # run tests
         manager.run()
 
+        # file to store HTML output
+        output_file = "/tmp/cobalt/integration-test-output.html"
+
+        # make directory if not present
+        os.makedirs(os.path.dirname(output_file))
+
         # Create output
-        with open("/tmp/test-output.html", "w", encoding="utf-8") as html_file:
+        with open(output_file, "w", encoding="utf-8") as html_file:
             html_file.write(manager.report_html())
 
         # notify user
         if manager.overall_success:
             print("All tests passed\n")
-            print("Results are in /tmp/test-output.html\n")
+            print(f"Results are in {output_file}\n")
         else:
             # We have errors, so show output
             os.system("open /tmp/test-output.html")

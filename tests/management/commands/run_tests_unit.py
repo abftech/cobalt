@@ -25,6 +25,21 @@ class Command(BaseCommand):
         # create testManager to oversee things
         manager = CobaltTestManagerUnit(app)
         manager.run()
-        with open("/tmp/test-output.html", "w") as html_file:
+
+        # file to store HTML output
+        output_file = "/tmp/cobalt/unit-test-output.html"
+
+        # make directory if not present
+        os.makedirs(os.path.dirname(output_file))
+
+        # write to file
+        with open(output_file, "w") as html_file:
             html_file.write(manager.report_html())
-        os.system("utils/cgit/tools/open_report.sh")
+
+        # notify user
+        if manager.overall_success:
+            print("All tests passed\n")
+            print(f"Results are in {output_file}\n")
+        else:
+            # We have errors, so show output
+            os.system("open /tmp/test-output.html")
