@@ -58,7 +58,6 @@ class ClubMembers:
             "and confirm that we get there.",
         )
 
-        self.manager.sleep()
         ok = not bool(self.manager.selenium_wait_for("t_member_tab_add", timeout=5))
 
         self.manager.save_results(

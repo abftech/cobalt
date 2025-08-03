@@ -594,7 +594,23 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
             ).until(wait_event)
             return self.driver.find_element(By.ID, element_id)
         except TimeoutException:
-            print("***** Timeout Exception in _selenium_wait() *****")
+            print(
+                "****************************************************************************************************************************"
+            )
+            print(
+                "** Timeout Exception in _selenium_wait() - may be expected behaviour"
+            )
+            print(f"** Waited for '{element_id}'. Wait event was '{wait_event_str}'")
+            stack = inspect.stack()
+            calling_lineno = stack[2][0].f_lineno
+            calling_file = stack[2][0].f_code.co_filename
+            print(f"** We got here from {calling_file} at line {calling_lineno}.")
+            print(
+                f"** Consider adding self.manager.sleep() before you call wait_for* and checking that '{element_id}' is present"
+            )
+            print(
+                "****************************************************************************************************************************"
+            )
             return False
 
     def selenium_wait_for(self, element_id, timeout=5):

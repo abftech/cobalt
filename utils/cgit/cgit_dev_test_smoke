@@ -32,14 +32,25 @@ while ! nc -z 127.0.0.1 $PORT; do
 done
 echo "Starting..."
 
+COMMAND="./manage.py smoke_test --base_url=http://127.0.0.1:8088 --show"
+
 # Only run coverage if called by the wrapper script
 if [ $# -eq 1 ]
 then
-  coverage run -p /manage.py smoke_test --password=F1shcake --script=event_entry.txt --base_url=http://127.0.0.1:8088
-else
-  /manage.py smoke_test --password=F1shcake --script=event_entry.txt --base_url=http://127.0.0.1:8088
-
+  COMMAND="coverage run -p $COMMAND"
 fi
+
+echo "Running tests in tests/scripts/test_suite"
+
+# Keep score in a file
+rm -f /tmp/smoke_test_outcome.txt
+
+for FILE_AND_PATH in tests/scripts/test_suite/*; do
+  FILE_NAME=$(basename "$FILE_AND_PATH")
+  echo "Processing file: $FILE_NAME"
+  $COMMAND --script "test_suite/$FILE_NAME"
+  echo "$FILE_NAME $?" >> /tmp/smoke_test_outcome.txt
+done
 
 # Stop the django server
 lsof -i tcp:$PORT | awk 'NR!=1 {print $2}' | xargs kill -SIGINT
