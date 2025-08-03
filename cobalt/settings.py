@@ -17,6 +17,10 @@ import ast
 from django.contrib.messages import constants as messages
 from firebase_admin import initialize_app
 
+# Hide development server warning
+# https://docs.djangoproject.com/en/stable/ref/django-admin/#envvar-DJANGO_RUNSERVER_HIDE_WARNING
+os.environ["DJANGO_RUNSERVER_HIDE_WARNING"] = "true"
+
 
 ###########################################
 # function to set values from environment #

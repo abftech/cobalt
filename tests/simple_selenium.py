@@ -64,8 +64,6 @@ class SimpleSelenium:
 
     def add_message(self, message, link=None, bold=False):
         """Add a message to the report on progress"""
-        if self.silent:
-            return
 
         if bold:
             message = mark_safe(f"<b>--{message.upper()}--</b>")
@@ -73,6 +71,10 @@ class SimpleSelenium:
         self.messages.append(
             {"current_action": self.current_action, "message": message, "link": link}
         )
+
+        if self.silent:
+            return
+
         logger.info(message)
 
     def handle_fatal_error(self):

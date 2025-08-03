@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# about: runs unit and integration tests and produces coverage report
+# about: runs unit, integration and smoke tests and produces coverage report
 
 # reset coverage
 coverage erase
@@ -10,6 +10,9 @@ cgit_dev_test_unit with coverage
 
 # Only seems to work if running in the foreground, add --show for now
 cgit_dev_test_integration --coverage --show
+
+cgit_dev_test_smoke --coverage
+
 coverage combine
 coverage html
 open htmlcov/index.html
