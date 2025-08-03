@@ -582,6 +582,21 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
     #         )
     #         return False
 
+    def _selenium_wait(self, wait_event, element_id, timeout):
+        """Wait for something and return it"""
+        try:
+            ignored_exceptions = (
+                NoSuchElementException,
+                StaleElementReferenceException,
+            )
+            WebDriverWait(
+                self.driver, timeout, ignored_exceptions=ignored_exceptions
+            ).until(wait_event)
+            return self.driver.find_element(By.ID, element_id)
+        except TimeoutException:
+            print("***** Timeout Exception in _selenium_wait() *****")
+            return False
+
     def selenium_wait_for(self, element_id, timeout=5):
         """Wait for element_id to be on page and return it"""
         element_present = expected_conditions.presence_of_element_located(
