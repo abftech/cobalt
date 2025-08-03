@@ -582,7 +582,7 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
     #         )
     #         return False
 
-    def _selenium_wait(self, wait_event, element_id, timeout):
+    def _selenium_wait(self, wait_event, wait_event_str, element_id, timeout):
         """Wait for something and return it"""
         try:
             ignored_exceptions = (
