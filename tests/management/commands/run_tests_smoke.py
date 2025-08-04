@@ -49,7 +49,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--show",
             action="store_true",
-            help="Specify a value to run browser in the foreground",
+            help="Specify to run browser in the foreground",
         )
 
     def handle(self, *args, **options):

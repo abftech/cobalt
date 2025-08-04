@@ -18,7 +18,7 @@ cgit_dev_test_integration --coverage --show
 INTEGRATION_TEST_RESULTS=$?
 
 # Smoke Tests
-cgit_dev_test_smoke --coverage
+cgit_dev_test_smoke --coverage --silent
 SMOKE_TEST_RESULTS=$?
 
 # Create coverage

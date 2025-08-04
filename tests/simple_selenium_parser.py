@@ -1,5 +1,6 @@
 import re
 import shlex
+import sys
 
 from tests.simple_selenium import SimpleSelenium
 
@@ -40,9 +41,12 @@ def simple_selenium_parser(
 def build_commands(script):
     """does the string manipulation"""
     commands = []
-    for line in script:
+    for line_number, line in enumerate(script):
         line = line.strip()
+
         # Handle comments
+        if line[0] == "#":
+            continue
         comment = re.search("#", line)
         if comment:
             line = line[: comment.start()]
@@ -52,15 +56,18 @@ def build_commands(script):
 
         commands.append(f"manager.current_action='{line}'")
 
-        cmd_string = build_command_line(words)
+        cmd_string = build_command_line(words, line_number)
 
         if cmd_string:
             commands.append(cmd_string)
+        else:
+            print(f"Error parsing Line {line_number + 1}: {line}")
+            sys.exit(1)
 
     return commands
 
 
-def build_command_line(words):
+def build_command_line(words, line_number):
     """process a single command line"""
 
     # the first word is the keyword
@@ -68,6 +75,23 @@ def build_command_line(words):
 
     # Find a match or None from command_lookup
     cmd_string = command_lookup.get(key_word)
+
+    # validate command
+    if not cmd_string:
+        print(f"Unknown command {key_word} on line {line_number + 1}")
+        sys.exit(1)
+
+    # Check number of expected words
+    pattern = r"{}(\d+)".format(re.escape("WORDS_"))
+    matches = re.findall(pattern, cmd_string)
+    if matches:
+        # matches is a list of strings e.g. ['1', '3']
+        required = int(max(matches))
+        if len(words) != required + 1:
+            print(
+                f"Incorrect number of words on line {line_number + 1}. Expected {required} parameters for command '{key_word}'"
+            )
+            sys.exit(1)
 
     # Go through and replace the placeholders with the words from the command
     for index, word in enumerate(words[1:]):

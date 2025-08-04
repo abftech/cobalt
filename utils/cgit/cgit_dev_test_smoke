@@ -11,12 +11,23 @@ export DUMMY_DATA_COUNT=1
 
 # Get arguments
 COVERAGE=0
+SILENT=0
+MODULE=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     -c|--coverage)
       COVERAGE=1
       shift # past argument
+      ;;
+    -s|--silent)
+      SILENT=1
+      shift # past argument
+      ;;
+    -m|--module)
+      MODULE="$2"
+      shift # past argument
+      shift # past value
       ;;
     -*|--*)
       echo "Unknown option $1"
@@ -27,7 +38,11 @@ done
 
 _cgit_test_start --django
 
-COMMAND="./manage.py run_tests_smoke --base_url=http://127.0.0.1:$PORT --show --silent"
+COMMAND="./manage.py run_tests_smoke --base_url=http://127.0.0.1:$PORT --show"
+
+if [ $SILENT = 1 ]; then
+  COMMAND="$COMMAND --silent"
+fi
 
 if [ $COVERAGE -eq 1 ]
 then
@@ -43,8 +58,15 @@ rm -f /tmp/smoke_test_outcome.txt
 # Add start time as first row
 date +"%s" > /tmp/smoke_test_outcome.txt
 
+# Set FILE_LIST to a single file or all of them
+if [ "$MODULE" = "" ]; then
+  FILE_LIST=tests/scripts/test_suite/*
+else
+  FILE_LIST=$MODULE
+fi
+
 # Loop through the test files
-for FILE_AND_PATH in tests/scripts/test_suite/*; do
+for FILE_AND_PATH in $FILE_LIST; do
   FILE_NAME=$(basename "$FILE_AND_PATH")
 
   # run command

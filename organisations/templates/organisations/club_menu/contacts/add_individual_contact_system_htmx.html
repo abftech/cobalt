@@ -31,16 +31,16 @@
                                 {{ form.last_name.errors|striptags }}
                             </span>
                             <input type="text"
-                                id="id_last_name"
-                                name="last_name"
-                                class="form-control"
-                                hx-post="{% url 'organisations:club_menu_tab_members_add_contact_search_htmx' %}"
-                                hx-trigger="keyup changed delay:100ms"
-                                hx-target="#add-contact-search-results"
-                                hx-include="[id='id_first_name']"
-                                hx-vars="club_id: {{ club.id }}"
-                                value="{{ form.last_name.value }}"
-                                autofocus="autofocus"
+                                   id="id_last_name"
+                                   name="last_name"
+                                   class="form-control"
+                                   hx-post="{% url 'organisations:club_menu_tab_members_add_contact_search_htmx' %}"
+                                   hx-trigger="keyup changed delay:100ms"
+                                   hx-target="#add-contact-search-results"
+                                   hx-include="[id='id_first_name']"
+                                   hx-vars="club_id: {{ club.id }}"
+                                   value="{{ form.last_name.value }}"
+                                   autofocus="autofocus"
                             >
                         </div>
                     </div>
@@ -57,15 +57,15 @@
                                 {{ form.first_name.errors|striptags }}
                             </span>
                             <input type="text"
-                                id="id_first_name"
-                                name="first_name"
-                                class="form-control"
-                                hx-post="{% url 'organisations:club_menu_tab_members_add_contact_search_htmx' %}"
-                                hx-trigger="keyup changed delay:100ms"
-                                hx-target="#add-contact-search-results"
-                                hx-include="[id='id_last_name']"
-                                hx-vars="club_id: {{ club.id }}"
-                                value="{{ form.first_name.value }}"
+                                   id="id_first_name"
+                                   name="first_name"
+                                   class="form-control"
+                                   hx-post="{% url 'organisations:club_menu_tab_members_add_contact_search_htmx' %}"
+                                   hx-trigger="keyup changed delay:100ms"
+                                   hx-target="#add-contact-search-results"
+                                   hx-include="[id='id_last_name']"
+                                   hx-vars="club_id: {{ club.id }}"
+                                   value="{{ form.first_name.value }}"
                             >
                         </div>
                     </div>
@@ -74,6 +74,7 @@
                 <div class="row pb-2">
                     <div class="col text-right">
                         <button
+                            id="t_add_with_no_system_number"
                             type="Save"
                             class="btn btn-sm btn-success cobalt-save"
                         >

@@ -10,7 +10,7 @@ from pathlib import Path
 
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.common.keys import Keys
@@ -53,7 +53,8 @@ class SimpleSelenium:
         # Start chrome
         options = ChromeOptions()
         options.add_argument("window-size=1600x800")
-        options.add_argument("--headless=new")
+        if not show:
+            options.add_argument("--headless=new")
         options.add_argument("--start-maximized")
 
         # Prevent notifications and don't try to save credit cards
@@ -206,9 +207,13 @@ class SimpleSelenium:
         matching_element = self.find_by_text(search_text)
 
         # Wait for clickable
-        matching_element = WebDriverWait(self.driver, 10).until(
-            expected_conditions.element_to_be_clickable(matching_element)
-        )
+        try:
+            matching_element = WebDriverWait(self.driver, 10).until(
+                expected_conditions.element_to_be_clickable(matching_element)
+            )
+        except TimeoutException:
+            self.add_message(f"Waited for '{search_text}' to be clickable. Timed out.")
+            self.handle_fatal_error()
 
         matching_element.click()
         self.add_message(f"Clicked on '{search_text}'")
