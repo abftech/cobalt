@@ -509,10 +509,15 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
         # Create Selenium client
         if browser == "chrome":
             options = ChromeOptions()
-            # Prevent notifications - doesn't seem to do much
+            # Prevent notifications and don't try to save credit cards
             options.add_experimental_option(
-                "prefs", {"profile.default_content_setting_values.notifications": 2}
+                "prefs",
+                {
+                    "profile.default_content_setting_values.notifications": 2,
+                    "autofill.credit_card_enabled": False,
+                },
             )
+
             # Default timeout for waiting for things - 5 secs
             options.timeouts = {"implicit": 5000}
             if headless:

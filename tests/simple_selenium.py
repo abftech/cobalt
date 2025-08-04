@@ -52,10 +52,18 @@ class SimpleSelenium:
 
         # Start chrome
         options = ChromeOptions()
-        if not show:
-            options.add_argument("window-size=1600x800")
-            options.add_argument("--headless=new")
-            options.add_argument("--start-maximized")
+        options.add_argument("window-size=1600x800")
+        options.add_argument("--headless=new")
+        options.add_argument("--start-maximized")
+
+        # Prevent notifications and don't try to save credit cards
+        options.add_experimental_option(
+            "prefs",
+            {
+                "profile.default_content_setting_values.notifications": 2,
+                "autofill.credit_card_enabled": False,
+            },
+        )
 
         self.driver = webdriver.Chrome(options=options)
         url = f"{base_url}/accounts/login"
