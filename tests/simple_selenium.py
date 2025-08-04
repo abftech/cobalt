@@ -6,7 +6,6 @@ import sys
 import time
 import uuid
 import webbrowser
-from pathlib import Path
 
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
