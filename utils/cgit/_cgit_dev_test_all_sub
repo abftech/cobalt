@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# about: runs unit, integration and smoke tests and produces coverage report
+
+# Record start time
+START=$(date +%s)
+
+# reset coverage
+coverage erase
+
+# Unit Tests
+cgit_dev_test_unit --coverage
+UNIT_TEST_RESULTS=$?
+
+# Integration Tests
+# Only seems to work if running in the foreground, add --show for now
+cgit_dev_test_integration --coverage --show
+INTEGRATION_TEST_RESULTS=$?
+
+# Smoke Tests
+cgit_dev_test_smoke --coverage
+SMOKE_TEST_RESULTS=$?
+
+# Create coverage
+coverage combine
+coverage html
+coverage erase
+
+# Copy coverage to main directory
+mkdir -p /tmp/cobalt/coverage
+rm -r /tmp/cobalt/coverage/*
+cp -r htmlcov/ /tmp/cobalt/coverage/
+
+# Copy high level report and update status
+cp tests/templates/tests/cobalt_test_results.html /tmp/cobalt
+
+# Fill in parameters in report
+END=$(date +%s)
+ELAPSE=$((END-START))
+MINUTES=$((ELAPSE / 60))
+SECONDS=$((ELAPSE % 60))
+
+FORMAT_ELAPSE="$MINUTES minutes and $SECONDS seconds"
+
+RUNTIME=$(date)
+
+# Icons
+OVERALL_ICON_STATUS=$((UNIT_TEST_RESULTS + INTEGRATION_TEST_RESULTS + SMOKE_TEST_RESULTS))
+if [ $OVERALL_ICON_STATUS -eq 0 ]; then
+  OVERALL_ICON="check_circle"
+  COLOUR_OVERALL_ICON="blue"
+else
+  OVERALL_ICON="error"
+  COLOUR_OVERALL_ICON="red"
+fi
+
+# Unit tests
+if [ "$UNIT_TEST_RESULTS" -eq 0 ]; then
+  UNIT_TEST_ICON="check_circle"
+  COLOUR_UNIT_TEST_ICON="blue"
+else
+  UNIT_TEST_ICON="error"
+  COLOUR_UNIT_TEST_ICON="red"
+fi
+
+# Integration tests
+if [ "$INTEGRATION_TEST_RESULTS" -eq 0 ]; then
+  INTEGRATION_TEST_ICON="check_circle"
+  COLOUR_INTEGRATION_TEST_ICON="blue"
+else
+  INTEGRATION_TEST_ICON="error"
+  COLOUR_INTEGRATION_TEST_ICON="red"
+fi
+
+# Smoke tests
+if [ "$SMOKE_TEST_RESULTS" -eq 0 ]; then
+  SMOKE_TEST_ICON="check_circle"
+  COLOUR_SMOKE_TEST_ICON="blue"
+else
+  SMOKE_TEST_ICON="error"
+  COLOUR_SMOKE_TEST_ICON="red"
+fi
+
+sed -i -e "s/!!RUNTIME/$RUNTIME/g" /tmp/cobalt/cobalt_test_results.html
+sed -i -e "s/!!ELAPSE/$FORMAT_ELAPSE/g" /tmp/cobalt/cobalt_test_results.html
+sed -i -e "s/!!OVERALL_ICON/$OVERALL_ICON/g" /tmp/cobalt/cobalt_test_results.html
+sed -i -e "s/!!COLOUR_OVERALL_ICON/$COLOUR_OVERALL_ICON/g" /tmp/cobalt/cobalt_test_results.html
+sed -i -e "s/!!UNIT_TEST_ICON/$UNIT_TEST_ICON/g" /tmp/cobalt/cobalt_test_results.html
+sed -i -e "s/!!COLOUR_UNIT_TEST_ICON/$COLOUR_UNIT_TEST_ICON/g" /tmp/cobalt/cobalt_test_results.html
+sed -i -e "s/!!INTEGRATION_TEST_ICON/$INTEGRATION_TEST_ICON/g" /tmp/cobalt/cobalt_test_results.html
+sed -i -e "s/!!COLOUR_INTEGRATION_TEST_ICON/$COLOUR_INTEGRATION_TEST_ICON/g" /tmp/cobalt/cobalt_test_results.html
+sed -i -e "s/!!SMOKE_TEST_ICON/$SMOKE_TEST_ICON/g" /tmp/cobalt/cobalt_test_results.html
+sed -i -e "s/!!COLOUR_SMOKE_TEST_ICON/$COLOUR_SMOKE_TEST_ICON/g" /tmp/cobalt/cobalt_test_results.html
+
+open /tmp/cobalt/cobalt_test_results.html
