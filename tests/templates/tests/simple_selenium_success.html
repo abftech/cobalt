@@ -4,7 +4,8 @@
 
 {% block content %}
 
-    <h1 class="text-center pt-03" style="font-size: 70px">{{ data.title }} Worked</h1>
+    <h1 class="text-center pt-03" style="font-size: 70px">Smoke Test Worked</h1>
+    <h2 class="text-center pt-03" style="font-size: 60px">{{ data.script_file_without_extension_printable }}</h2>
     <div class="container">
 
         {% include "tests/simple_selenium_sub_results.html" with colour="primary" %}

@@ -71,3 +71,12 @@ done
 
 # Tidy up
 _cgit_test_finish
+
+# Exit code should be 1 if there are any errors
+# remove top line, get only the return code, search for any 1's
+tail -n +2 /tmp/smoke_test_outcome.txt | awk '{print $2}' | grep 1 >/dev/null
+if [ $? -eq 0 ]; then
+  exit 1
+else
+  exit 0
+fi

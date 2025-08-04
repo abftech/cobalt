@@ -1,5 +1,0 @@
-login Mark
-go /rbac/admin-menu
-click_by_id "id_tab_orgs"
-click "List Orgs"
-click "hello"

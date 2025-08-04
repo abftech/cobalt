@@ -4,27 +4,79 @@
         <h2>Actions Taken</h2>
     </div>
     <div class="card-body">
-        <table class="table table-condensed table-hover">
+        <table class="table table-condensed table-hover" style="width: 100%; table-layout: fixed;">
             <thead>
                 <tr>
-                    <th>Action</th>
-                    <th>Outcome</th>
+                    <th style="width: 40%">Action</th>
+                    <th style="width: 60%">Outcome</th>
                 </tr>
             </thead>
             <tbody>
-                {% for item in data.messages %}
+
+                {% for message_list in data.messages_summary %}
+
                     <tr>
-                        <td>{{ item.current_action }}</td>
+                        <td >{{ message_list.0.current_action }}</td>
                         <td>
-                            {% if item.link %}
-                                <a href="#{{ item.link }}">
+                            {% if message_list|length != 1 %}
+                                <span
+                                    id="show_button_{{ message_list.0.index }}"
+                                    class="btn btn-info btn-sm"
+                                    style="width: 30px; height: 30px"
+                                    _="on click show #details_{{ message_list.0.index }} with display
+                                       then show #hide_button_{{ message_list.0.index }} with display
+                                       then hide me with display"
+                                >
+                                    <span style="color: white;font-size: 15px;">+</span>
+                                </span>
                             {% endif %}
-                            {{ item.message }}
-                            {% if item.link %}
-                                </a>
+                            <button
+                                id="hide_button_{{ message_list.0.index }}"
+                                style="display: none; width: 30px; height: 30px"
+                                class="btn btn-info btn-sm"
+                                _="on click hide #details_{{ message_list.0.index }} with display
+                                   then show #show_button_{{ message_list.0.index }} with display
+                                   then hide me with display"
+                            >
+                                <span style="color: white;font-size: 15px;">-</span>
+                            </button>
+
+
+                            {% if message_list|length != 1 %}
+
+                                <div style="display: none" id="details_{{ message_list.0.index }}">
+                                    <table>
+                                        {% for item in message_list %}
+                                            <tr>
+                                                <td>
+                                                    {% if item.link %}
+                                                        <a href="#{{ item.link }}">
+                                                    {% endif %}
+                                                    {{ item.message }}
+                                                    {% if item.link %}
+                                                        </a>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+
+                                    </table>
+                                </div>
+
+                            {% else %}
+
+                                {% if message_list.0.link %}
+                                    <a href="#{{ message_list.0.link }}">
+                                {% endif %}
+                                {{ message_list.0.message }}
+                                {% if message_list.0.link %}
+                                    </a>
+                                {% endif %}
                             {% endif %}
+
                         </td>
                     </tr>
+
                 {% endfor %}
             </tbody>
         </table>

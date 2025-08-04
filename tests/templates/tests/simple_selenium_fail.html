@@ -1,22 +1,14 @@
 {% extends "tests/simple_selenium_base.html" %}
 
-{% block title %}Errors{% endblock %}
+{% block title %}Smoke Test Failed{% endblock %}
 
 {% block content %}
 
-    <h1 class="text-center pt-03" style="font-size: 70px">{{ data.title }} - Smoke Test Failed</h1>
+    <h1 class="text-center pt-03" style="font-size: 70px">Smoke Test Failed</h1>
+    <h2 class="text-center pt-03" style="font-size: 60px">{{ data.script_file_without_extension_printable }}</h2>
     <div class="container">
 
         {% include "tests/simple_selenium_sub_results.html" with colour="danger" %}
-
-        <div class="card">
-            <div class="card-header bg-info">
-                <h2>Final Screen</h2>
-            </div>
-            <div class="card-body text-center">
-                <img src="/tmp/simple_selenium.png" width="80%">
-            </div>
-        </div>
 
     </div>
 

@@ -33,18 +33,6 @@
                 <h3 class="text-center">Run at !!RUNTIME</h3>
                 <h3 class="text-center">Elapse: !!ELAPSE</h3>
 
-                {#  Overall Score  #}
-                <div class="container">
-                    <div class="row justify-content-center align-items-center">
-                        <div class="col-1">
-                            <i class="material-icons"
-                               style="color: blue;font-size: 95px;">
-                                !!OVERALL_ICON
-                            </i>
-                        </div>
-                    </div>
-                </div>
-
                 <h4 class="pt-4">Results</h4>
                 <div class="table-responsive col-md-9 mb-3">
                     <table class="table table-striped border-primary table-sm table-bordered">
@@ -62,8 +50,8 @@
                                     </a>
                                 </td>
                                 <td class="text-center">
-                                    <span class="material-icons" style="color: blue">
-                                        check_circle
+                                    <span class="material-icons" style="color: !!COLOUR_UNIT_TEST_ICON">
+                                        !!UNIT_TEST_ICON
                                     </span>
                                 </tr>
                                 <tr>
@@ -73,8 +61,8 @@
                                         </a>
                                     </td>
                                     <td class="text-center">
-                                        <span class="material-icons" style="color: blue">
-                                            check_circle
+                                        <span class="material-icons" style="color: !!COLOUR_INTEGRATION_TEST_ICON">
+                                            !!INTEGRATION_TEST_ICON
                                         </span>
                                     </tr>
                                     <tr>
@@ -84,8 +72,8 @@
                                             </a>
                                         </td>
                                         <td class="text-center">
-                                            <span class="material-icons" style="color: blue">
-                                                check_circle
+                                            <span class="material-icons" style="color: !!COLOUR_SMOKE_TEST_ICON">
+                                                !!SMOKE_TEST_ICON
                                             </span>
                                         </tr>
                                         <tr>

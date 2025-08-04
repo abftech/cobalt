@@ -14,6 +14,8 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.support.wait import WebDriverWait
 
 logger = logging.getLogger("cobalt")
 
@@ -29,9 +31,13 @@ class SimpleSelenium:
         self.default_password = password
         self.script_file = script_file
 
-        script_file_without_extension = self.script_file.split(".")[0]
+        self.script_file_without_extension = self.script_file.split(".")[0]
+        self.script_file_without_extension_printable = (
+            self.script_file_without_extension.split("/")[1]
+        )
+
         self.output_directory = (
-            f"/tmp/cobalt/smoke_test/{script_file_without_extension}"
+            f"/tmp/cobalt/smoke_test/{self.script_file_without_extension}"
         )
         self.output_file = f"{self.output_directory}/smoke-test-output.html"
 
@@ -56,6 +62,7 @@ class SimpleSelenium:
 
         # Store progress messages
         self.messages = []
+        self.messages_summary = []
         self.screenshots = {}
         self.current_action = "Starting"
         self.title = "Smoke Test"
@@ -79,14 +86,53 @@ class SimpleSelenium:
 
         logger.info(message)
 
+    def summarise_messages(self):
+        """Once we are done, we convert the list of messages into a list of lists so we can display it better
+
+        self.messages is a list of {"current_action": "str", "message": "str", "link": "str"}
+
+        self.messages_summary is list of lists e.g.
+
+        messages = [
+                        {"current_action": "login", "message": "Go to /accounts/login"},
+                        {"current_action": "login", "message": "Found username"},
+                        {"current_action": "sleep 5", "message": "slept for 5 seconds"},
+                    ]
+
+        messages_summary = [
+                        [
+                            {"current_action": "login", "message": "Go to /accounts/login"},
+                            {"current_action": "login", "message": "Found username"},
+                        ],
+                        [
+                            {"current_action": "sleep 5", "message": "slept for 5 seconds"},
+                        ]
+                    ]
+        """
+        # empty summary in case we get called more than once
+        self.messages_summary = []
+
+        last_action = "DUMMY VALUE"
+        row = []
+        for count, item in enumerate(self.messages, start=1):
+            # Add a counter for the template
+            item["index"] = count
+            if last_action != item["current_action"]:
+                if last_action != "DUMMY VALUE":
+                    self.messages_summary.append(row)
+                row = []
+                last_action = item["current_action"]
+            row.append(item)
+
+        self.messages_summary.append(row)
+
     def handle_fatal_error(self):
         """we have had a problem - show user and leave"""
 
-        if self.silent:
-            sys.exit(1)
-
         # Save a screenshot
         self.screenshot("Error")
+
+        self.summarise_messages()
 
         # Build HTML page
         html = render_to_string(
@@ -97,12 +143,18 @@ class SimpleSelenium:
         with open(self.output_file, "w") as html_file:
             print(html, file=html_file)
 
+        if self.silent:
+            sys.exit(1)
+
         # Open browser and leave
         webbrowser.open(f"file://{self.output_file}")
         sys.exit(1)
 
     def handle_finish(self, open_output=True):
         """report on how we went"""
+
+        # convert list of actions into a dictionary
+        self.summarise_messages()
 
         # Build HTML page
         html = render_to_string(
@@ -144,6 +196,12 @@ class SimpleSelenium:
         """find something with matching text and click it"""
 
         matching_element = self.find_by_text(search_text)
+
+        # Wait for clickable
+        matching_element = WebDriverWait(self.driver, 10).until(
+            expected_conditions.element_to_be_clickable(matching_element)
+        )
+
         matching_element.click()
         self.add_message(f"Clicked on '{search_text}'")
 
