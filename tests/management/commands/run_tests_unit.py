@@ -30,7 +30,7 @@ class Command(BaseCommand):
         output_file = "/tmp/cobalt/unit-test-output.html"
 
         # make directory if not present
-        os.makedirs(os.path.dirname(output_file))
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
         # write to file
         with open(output_file, "w") as html_file:

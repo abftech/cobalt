@@ -89,5 +89,9 @@ def create_smoke_test_report():
 
     report_html = render_to_string("tests/smoke_test_results.html", data)
 
-    with open("/tmp/test-output.html", "w", encoding="utf-8") as html_file:
+    with open(
+        "/tmp/cobalt/smoke_test/test_suite/smoke-test-output.html",
+        "w",
+        encoding="utf-8",
+    ) as html_file:
         html_file.write(report_html)

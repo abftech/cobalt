@@ -50,7 +50,7 @@ class Command(BaseCommand):
         output_file = "/tmp/cobalt/integration-test-output.html"
 
         # make directory if not present
-        os.makedirs(os.path.dirname(output_file))
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
         # Create output
         with open(output_file, "w", encoding="utf-8") as html_file:

@@ -36,7 +36,7 @@ class SimpleSelenium:
         self.output_file = f"{self.output_directory}/smoke-test-output.html"
 
         # Create output directory if not already there
-        os.makedirs(self.output_directory)
+        os.makedirs(self.output_directory, exist_ok=True)
 
         # Empty output directory
         # NOTE: If scripts get retired they will still have output in the directory
