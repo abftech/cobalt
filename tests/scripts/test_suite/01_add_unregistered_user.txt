@@ -1,12 +1,12 @@
 title "Add Unregistered User"
 login 100
 go /organisations/club-menu/13/1
-click_by_id id_tab_contacts
-click_by_id t_add_club_contact
-click_by_id t_contact_add_individual_with_sys
-click_by_id id_last_name
+click id_tab_contacts
+click t_add_club_contact
+click t_contact_add_individual_with_sys
+click id_last_name
 enter Scrooge into last_name
 enter Ebenezer into first_name
-click_by_id t_add_with_no_system_number
+click "Add with no ABF number"
 sleep 1
 screenshot "Added"

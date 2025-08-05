@@ -388,3 +388,107 @@ class SimpleSelenium:
 
         # Take a screenshot
         self.screenshot("Logged in")
+
+    def _super_click_by_id(self, identifier):
+        """try to get element by id"""
+
+        try:
+            match = self.driver.find_element("id", identifier)
+        except NoSuchElementException:
+            self.add_message(
+                f"Looked for item with id '{identifier}' but did not find it"
+            )
+            return False
+
+        self.add_message(f"Looked for item with id '{identifier}' and found it")
+
+        return match
+
+    def _super_click_by_name(self, identifier):
+        """try to get element by name"""
+
+        try:
+            match = self.driver.find_element("id", identifier)
+        except NoSuchElementException:
+            self.add_message(
+                f"Looked for item with name '{identifier}' but did not find it"
+            )
+            return False
+
+        self.add_message(f"Looked for item with name '{identifier}' and found it")
+
+        return match
+
+    def _super_click_by_text(self, identifier):
+        """try to get element by text"""
+
+        try:
+            match = self.driver.find_element(
+                "xpath", f"//*[contains(text(), '{identifier}')]"
+            )
+        except NoSuchElementException:
+            self.add_message(
+                f"Looked for item with text '{identifier}' but did not find it"
+            )
+            return False
+
+        self.add_message(f"Looked for item with text '{identifier}' and found it")
+
+        return match
+
+    def _super_click_get_element(self, identifier):
+        """Try to find identifier in multiple ways"""
+
+        # Try a couple of times in case things are slow
+
+        element = False
+        retry_count = 3
+        count = 0
+
+        while not element and count < retry_count:
+            count += 1
+
+            # Try by id
+            element = self._super_click_by_id(identifier)
+
+            if element:
+                return element
+
+            # Try by name
+            element = self._super_click_by_name(identifier)
+
+            if element:
+                return element
+
+            # Try by text on button/link
+            element = self._super_click_by_text(identifier)
+
+            if element:
+                return element
+
+            if count < retry_count:
+                self.add_message(
+                    f"Didn't find '{identifier}'. Sleeping before retrying", bold=True
+                )
+                time.sleep(1)
+
+        self.add_message(f"Unable to find a match for '{identifier}'", bold=True)
+        self.handle_fatal_error()
+
+    def super_click(self, identifier):
+        """Try to find identifier in multiple ways"""
+
+        element = self._super_click_get_element(identifier)
+
+        # Wait for clickable
+        try:
+            matching_element = WebDriverWait(self.driver, 10).until(
+                expected_conditions.element_to_be_clickable(element)
+            )
+        except TimeoutException:
+            self.add_message(
+                f"Found '{identifier}' but timed out waiting for it to be clickable."
+            )
+            self.handle_fatal_error()
+
+        matching_element.click()

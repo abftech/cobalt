@@ -7,9 +7,6 @@ from tests.simple_selenium import SimpleSelenium
 command_lookup = {
     "enter": 'manager.enter_value_into_field_by_name("WORDS_3", "WORDS_1")',
     "enter_parameter": 'manager.enter_value_into_field_by_name("WORDS_3", WORDS_1)',
-    "click": 'manager.press_by_text("WORDS_1")',
-    "click_by_name": 'manager.press_by_name("WORDS_1")',
-    "click_by_id": 'manager.press_by_id("WORDS_1")',
     "find": 'manager.find_by_text("WORDS_1")',
     "find_by_id": 'manager.find_by_id("WORDS_1")',
     "title": 'manager.set_title("WORDS_1")',
@@ -21,6 +18,7 @@ command_lookup = {
     "selectpicker": 'manager.selectpicker("WORDS_2", "WORDS_4")',
     "dropdown": 'manager.dropdown("WORDS_2", "WORDS_4")',
     "sleep": "manager.sleep(WORDS_1)",
+    "click": 'manager.super_click("WORDS_1")',
 }
 
 
