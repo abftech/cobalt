@@ -381,7 +381,7 @@ class SimpleSelenium:
         self.screenshot("Logging in")
 
         # Login
-        self.press_by_text("Login")
+        self.super_click("Login")
 
         # Check we are logged in
         self.find_by_text("Bridge Credits")
@@ -436,6 +436,21 @@ class SimpleSelenium:
 
         return match
 
+    def _super_click_by_value(self, identifier):
+        """try to get element by value"""
+
+        try:
+            match = self.driver.find_element("xpath", f"//input[@value='{identifier}']")
+        except NoSuchElementException:
+            self.add_message(
+                f"Looked for item with value '{identifier}' but did not find it"
+            )
+            return False
+
+        self.add_message(f"Looked for item with value '{identifier}' and found it")
+
+        return match
+
     def _super_click_get_element(self, identifier):
         """Try to find identifier in multiple ways"""
 
@@ -460,6 +475,12 @@ class SimpleSelenium:
             if element:
                 return element
 
+            # Try by value
+            element = self._super_click_by_value(identifier)
+
+            if element:
+                return element
+
             # Try by text on button/link
             element = self._super_click_by_text(identifier)
 
@@ -478,6 +499,7 @@ class SimpleSelenium:
     def super_click(self, identifier):
         """Try to find identifier in multiple ways"""
 
+        # get element, won't return if not found
         element = self._super_click_get_element(identifier)
 
         # Wait for clickable
