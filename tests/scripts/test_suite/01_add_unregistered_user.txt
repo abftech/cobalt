@@ -1,4 +1,4 @@
-title "Add Unregistered User"
+title "Add Unregistered User Ebenezer Scrooge as member of Payments Bridge Club"
 login 100
 go /organisations/club-menu/13/1
 click id_tab_contacts
