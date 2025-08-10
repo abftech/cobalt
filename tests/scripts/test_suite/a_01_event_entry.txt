@@ -1,0 +1,16 @@
+title "Event Entry"
+login Mark
+go /events
+click "Our Big Congress"
+click "Click here to jump to program..."
+go /events/congress/event/enter/1/2
+dropdown put "Alan Admin" in "player1"
+dropdown put "Debbie Dyson" in "player2"
+dropdown put "Iain Igloo" in "player3"
+click id_checkout
+find "Pending"
+find "Open Teams"
+screenshot "Event Entry Confirm"
+check_email_to "Alan"
+check_email_to_with_subject "Alan" "Event Entry - Our Big Congress"
+check_email_to_with_body "Alan" "Mark the Guthrie has entered you into"

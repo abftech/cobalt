@@ -19,6 +19,9 @@ command_lookup = {
     "dropdown": 'manager.dropdown("WORDS_2", "WORDS_4")',
     "sleep": "manager.sleep(WORDS_1)",
     "click": 'manager.super_click("WORDS_1")',
+    "check_email_to": 'manager.check_email_to("WORDS_1")',
+    "check_email_to_with_subject": 'manager.check_email_to_with_subject("WORDS_1", "WORDS_2")',
+    "check_email_to_with_body": 'manager.check_email_to_with_body("WORDS_1", "WORDS_2")',
 }
 
 

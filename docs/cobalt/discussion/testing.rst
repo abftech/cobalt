@@ -23,19 +23,28 @@ ABF instance of Cobalt (My ABF). Either of these can be used for testing, but ge
 normal user testing by the core team and UAT is used for a wider group of people. UAT is also a core
 part of the release process to check that releases will work in production.
 
-In addition there
-is a build server that can be used for automated testing.
+We have three types of automated tests, Unit tests, Integration tests and Smoke tests.
 
-We have two types of automated tests, Unit tests and Integration tests.
+**Unit Tests**
+    are shorter, isolated tests that check the internal workings of the code.
+    They do not need a Django server in order to run.
+**Integration Tests**
+    are developing stories. We start by creating a user in chapter 1, in chapter
+    4 we create a congress and in chapter 5 the user enters the congress.
+    Integration tests need both Stripe and a Django server in order to run.
+**Smoke Tests**
+    are basically the same as Integration Tests but rather than writing
+    code to build them, you write scripts. They shouldn't really be called
+    Smoke tests as they have evolved from their initial use.
 
-- **Unit Tests** are shorter, isolated tests that check the internal workings of the code
-- **Integration Tests** are developing stories. We start by creating a user in chapter 1, in chapter 4 we create a congress and in chapter 5 the user enters the congress.
-
-Both tests start with a basic database that has test data loaded.
+All tests start with a basic database that has test data loaded (this can be (re-)built by running
+`cgit_dev_test_reload_db`. This only needs to be run once. It builds the test database and then takes
+a dump of it which the other test scripts restore from each time they run.
 
 Unit tests can be run in any order and do not update the database (this is handled by the test harness,
-it just rolls back any changes).
-Integration tests do update the database and need to run in order.
+it just rolls back any changes after each individual test has run).
+
+Integration tests do update the database and need to run in order as do Smoke tests.
 
 Shockingly we have our own test harness, but more on that below.
 
@@ -60,10 +69,36 @@ User Testing
 Automated Testing - General
 ***************************
 
-To run the automated tests together you can use `cgit_dev_test_all`.
+Commands
+********
 
-This will run both types of test and also produce a coverage report. This is intended to be run
-as part of the development process.
+The main commands are:
+
+- **cgit_dev_test_reload_db**
+    rebuilds the test database and takes a backup for the other
+    scripts to run against. This should be automatically run by the other scripts
+    if they detect model changes.
+- **cgit_dev_test_all**
+    runs all tests. This is the standard command to run.
+    The commands below are used more when developing tests.
+- **cgit_dev_test_unit**
+    runs only the unit tests
+- **cgit_dev_test_integration**
+    runs only the integration tests. specify --module <classname> to run a
+    single test. You will often need to run more than one test as they build upon each other,
+    it is easier to comment out the tests you don't want in `tests/test_manager.py`
+- **cgit_dev_test_unit**
+    runs only the unit tests
+    To run the automated tests together you can use `cgit_dev_test_all`.
+
+`cgit_dev_test_all` is intended to be run
+as part of the development process and no production release should be performed if any tests
+are failing.
+
+Note, all of the sub-scripts to run tests take `--coverage` as a parameter to run with the package
+`coverage` but this only really makes sens when running all tests together from `cgit_dev_test_all`
+to work out how much of the code we are testing. You don't need to specify this when running
+`cgit_dev_test_all` as it handles this automatically.
 
 Automated Testing - Unit
 ========================
@@ -89,9 +124,31 @@ the model directly to confirm it was successful.
 
 You can run them with `cgit_dev_test_integration`.
 
-The easiest way to build new tests is to copy existing ones. Integration tests live in `<module>/tests/integration`.
+The easiest way to build new tests is to copy existing ones.
+Integration tests live in `<module>/tests/integration`.
 
 Integration tests must run in order so they are manually configured in `tests/test_manager.py`.
+
+Automated Testing - Smoke
+===============================
+
+The Smoke test framework makes developing tests much faster than integration tests
+but it is quite limited. Build smoke tests to test for simple things and integration
+tests for more complex things.
+
+If you have a situation that smoke tests can't cope with,
+consider extending the list of commands that the smoke test harness supports over switching
+to an integration test as this will then be available to use in other smoke tests.
+
+Smoke test scripts live in `tests/scripts/test_suite`.
+
+To list the available commands, you can run::
+
+    ./manage.py run_tests_smoke --list
+
+To run a single test you can run::
+
+    cgit_dev_test_smoke --module <filename>
 
 ********************
 Performance Testing

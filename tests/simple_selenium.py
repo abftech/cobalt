@@ -15,6 +15,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 
+from notifications.tests.common_functions import check_email_sent
+
 logger = logging.getLogger("cobalt")
 
 
@@ -513,3 +515,50 @@ class SimpleSelenium:
             self.handle_fatal_error()
 
         matching_element.click()
+
+    def check_email_to(self, sender):
+        """Check for an email sent to sender"""
+
+        status, message = check_email_sent(email_to=sender, save_results=False)
+
+        if not status:
+            self.add_message(
+                f"Looked for email sent to '{sender}'. Error was '{message}'"
+            )
+            self.handle_fatal_error()
+
+        self.add_message(message)
+
+    def check_email_to_with_subject(self, sender, subject):
+        """Check for an email sent to sender with subject"""
+
+        status, message = check_email_sent(
+            email_to=sender, subject_search=subject, save_results=False, email_count=20
+        )
+
+        if not status:
+            self.add_message(
+                f"Looked for email sent to '{sender}' with subject '{subject}'. Error was '{message}'"
+            )
+            self.handle_fatal_error()
+
+        self.add_message(message)
+
+    def check_email_to_with_body(self, sender, body_search):
+        """Check for an email sent to sender with specific string in body"""
+
+        status, message = check_email_sent(
+            email_to=sender,
+            body_search=body_search,
+            save_results=False,
+            email_count=20,
+            debug=True,
+        )
+
+        if not status:
+            self.add_message(
+                f"Looked for email sent to '{sender}' with body containing '{body_search}'. Error was '{message}'"
+            )
+            self.handle_fatal_error()
+
+        self.add_message(message)
