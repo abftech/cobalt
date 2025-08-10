@@ -13,7 +13,7 @@ TEST_FILE_PATH = "club_sessions/tests/test_files"
 TEST_FILE_OVERWRITE = "club_sessions_tests.csv"
 
 # Payments Bridge Club
-CLUB_ID = 13
+CLUB_ID = 14
 
 
 def _import_session_file(manager, file):
