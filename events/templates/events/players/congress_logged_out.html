@@ -19,216 +19,222 @@
         <br>
         <br>
         <button class="congresses"  disabled style="pointer-events:none;> <a href="#program">{{ congress.name }}</a>  </button>
-                                                                                            <br>
+        <br>
 
+        <div class="flex-container">
+            {% if congress.sponsors %}
+                <div>
+                    <h2>Sponsored by</h2>
+                    {{ congress.sponsors|safe }}
+                </div>
+            {% endif %}
 
-                                                                                            <div class="flex-container">
-                                                                                                                                       {% if congress.sponsors %}
-                                                                                                                                           <div>
-                                                                                                                                           <h2>Sponsored by</h2>
-                                                                                                                                           {{ congress.sponsors|safe }}
-                                                                                                                                           </div>
-                                                                                                                                       {% endif %}
+            {% if congress.latest_news %}
+                <div>
+                    <h2>Latest News</h2>
+                    {{ congress.latest_news|safe }}
+                </div>
+            {% endif %}
 
-                                                                                                                                       {% if congress.latest_news %}
-                                                                                                                                           <div>
-                                                                                                                                           <h2>Latest News</h2>
-                                                                                                                                           {{ congress.latest_news|safe }}
-                                                                                                                                           </div>
-                                                                                                                                       {% endif %}
+            {% if congress.people %}
+                <div>
+                    <h2>People</h2>
+                    {{ congress.people|safe }}
+                </div>
+            {% endif %}
 
-                                                                                                                                       {% if congress.results_url %}
-                                                                                                                                           <div>
-                                                                                                                                           <h2>People</h2>
-                                                                                                                                           <a href="{{ congress.results_url }}">
-                                                                                                                                                                                                   {{ congress.results_url|safe }}
-                                                                                                                                                                                                   </a>
-                                                                                                                                                                                                   </div>
-                                                                                                                                                                                               {% endif %}
-
-                                                                                                                                                                                               {% if congress.people %}
-                                                                                                                                                                                                   <div>
-                                                                                                                                                                                                   <h2>People</h2>
-                                                                                                                                                                                                   {{ congress.people|safe }}
-                                                                                                                                                                                                   </div>
-                                                                                                                                                                                               {% endif %}
-
-                                                                                                                                                                                               {% if congress.links %}
-                                                                                                                                                                                                   <div>
-                                                                                                                                                                                                   <h2>Links</h2>
-                                                                                                                                                                                                   {{ congress.links|safe }}
-                                                                                                                                                                                                   </div>
-                                                                                                                                                                                               {% endif %}
+            {% if congress.links %}
+                <div>
+                    <h2>Links</h2>
+                    {{ congress.links|safe }}
+                </div>
+            {% endif %}
 
 
 
-                                                                                                                                                                                               {% if bulletins %}
-                                                                                                                                                                                                   <div>
-                                                                                                                                                                                                   <a id="bulletins"></a>
-                                                                                                                                                                                                                                        <h2>Bulletins</h2>
-                                                                                                                                                                                                                                        <ul>
-                                                                                                                                                                                                                                        {% for bulletin in bulletins %}
-                                                                                                                                                                                                                                            <li><a href="{{ bulletin.document.url }}">{{ bulletin.description }}</a>
-                                                                                                                                                                                                                                                                                                         {% endfor %}
-                                                                                                                                                                                                                                                                                                         </ul>
-                                                                                                                                                                                                                                                                                                         </div>
-                                                                                                                                                                                                                                                                                                     {% endif %}
+            {% if bulletins %}
+                <div>
+                    <a id="bulletins"></a>
+                    <h2>Bulletins</h2>
+                    <ul>
+                        {% for bulletin in bulletins %}
+                            <li><a href="{{ bulletin.document.url }}">{{ bulletin.description }}</a>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
 
-                                                                                                                                                                                                                                                                                                     </div>
+        </div>
 
 
-                                                                                                                                                                                                                                                                                                     <div class="flex-container">
-                                                                                                                                                                                                                                                            <div style="width: 50%">
-                                                                                                                                                                                                                                                                                                                                                                                       <h2> GENERAL INFORMATION </h2>
+        <div class="flex-container">
+            <div style="width: 50%">
+                <h2> GENERAL INFORMATION </h2>
 
-                                                                                                                                                                                                                                                                                                                                                                                       <span style="text-align: left;">
-                                                                                                                                                                                                                                                                                                                                                  <p class="description">	{{ congress.general_info|safe}} </p>
-                                                                                                                                                                                                                                                                                                                                                     </span>
-                                                                                                                                                                                                                                                                                                                                                     </div>
+                <span style="text-align: left;">
+                    <p class="description">	{{ congress.general_info|safe}} </p>
+                </span>
+            </div>
 
-                                                                                                                                                                                                                                                                                                                                                     </div>
+        </div>
 
-                                                                                                                                                                                                                                                                                                                                                     {% if downloads %}
-                                                                                                                                                                                                                                                                                                                                                         <div class="flex-container">
-                                                                                                                                                                                                                                                                                                                                                <div style="width: 50%">
-                                                                                                                                                                                                                                                                                                                                                          <h2> DOWNLOADS </h2>
+        {% if congress.results_url %}
+            <div class="flex-container">
+                <div style="width: 50%">
+                    <h2> RESULTS </h2>
 
-                                                                                                                                                                                                                                                                                                                                                          <span style="text-align: left;">
-                                                                                                                                                                                                                                                                                                                                <p class="description">
+                    <span style="text-align: left;">
+                        <p class="description">
 
-                                                                                                                                                                                                                                                                                                                                   <ul>
-                                                                                                                                                                                                                                                                                                                                   {% for download in downloads %}
-                                                                                                                                                                                                                                                                                                                                       <li><a href="{{ download.document.url }}" target="_blank">{{ download.description }}</a>
-                                                                                                                                                                                                                                                                                                                                                                                 {% endfor %}
-                                                                                                                                                                                                                                                                                                                                                                                 </ul>
+                            <a href="{{ congress.results_url }}">{{ congress.results_url }}</a>
 
-                                                                                                                                                                                                                                                                                                                                                                                 </p>
-                                                                                                                                                                                                                                                                                                                                                                                 </span>
-                                                                                                                                                                                                                                                                                                                                                                                 </div>
-                                                                                                                                                                                                                                                                                                                                                                                 </div>
-                                                                                                                                                                                                                                                                                                                                                                             {% endif %}
+                        </p>
+                    </span>
+                </div>
+            </div>
+        {% endif %}
 
-                                                                                                                                                                                                                                                                                                                                                                             <!-- COB-780: Do not show venue details if an online event -->
-                                                                                                                                                                                                                                                                                                                                                                             {% if congress.get_congress_venue_type_display != "Online" %}
+                {% if downloads %}
+            <div class="flex-container">
+                <div style="width: 50%">
+                    <h2> DOWNLOADS </h2>
 
-                                                                                                                                                                                                                                                                                                                                                                                 {% if congress.venue_name %}
+                    <span style="text-align: left;">
+                        <p class="description">
 
-                                                                                                                                                                                                                                                                                                                                                                                     <div class="map-container">
-                                                                                                                                                                                                                                                                                                                                                                                            <div style="width: 80%">
-                                                                                                                                                                                                                                                                                                                                                                                         <h2>Location - {{ congress.venue_name }}</h2>
-                                                                                                                                                                                                                                                                                                                                                                                         {% if congress.venue_location %}
-                                                                                                                                                                                                                                                                                                                                                                                             <iframe
-                                                                                                                                                                                                                                                                                                                                                                                             width="100%"
-                                        height="450"
-                                        style="border:0"
-                                            loading="lazy"
-                                          allowfullscreen
-                                          referrerpolicy="no-referrer-when-downgrade"
-                                                                       src="https://www.google.com/maps/embed/v1/place?key=AIzaSyAAXnhnh7zL17kiLo59SnWbTiy4rwoi9VY
-                            &q={{ congress.venue_location }}">
-                                                             </iframe>
-                                                         {% endif %}
-                                                         </div>
+                            <ul>
+                                {% for download in downloads %}
+                                    <li><a href="{{ download.document.url }}" target="_blank">{{ download.description }}</a>
+                                {% endfor %}
+                            </ul>
 
-                                                         </div>
+                        </p>
+                    </span>
+                </div>
+            </div>
+        {% endif %}
 
-                                                     {% endif %}
+        <!-- COB-780: Do not show venue details if an online event -->
+        {% if congress.get_congress_venue_type_display != "Online" %}
 
-                                                     <div class="flex-container">
+            {% if congress.venue_name %}
 
-                                                                                                    {% if congress.venue_transport %}
-                                                                                                        <div>
-                                                                                                        <h2>Transport</h2>
-                                                                                                        <span style="text-align: left;">
-                                                                                                                                                               {{ congress.venue_transport|safe }}
-                                                                                                                                                               </span>
-                                                                                                                                                               </div>
-                                                                                                                                                           {% endif %}
+                <div class="map-container">
+                    <div style="width: 80%">
+                        <h2>Location - {{ congress.venue_name }}</h2>
+                        {% if congress.venue_location %}
+                            <iframe
+                                width="100%"
+                                height="450"
+                                style="border:0"
+                                loading="lazy"
+                                allowfullscreen
+                                referrerpolicy="no-referrer-when-downgrade"
+                                src="https://www.google.com/maps/embed/v1/place?key=AIzaSyAAXnhnh7zL17kiLo59SnWbTiy4rwoi9VY
+                                &q={{ congress.venue_location }}">
+                            </iframe>
+                        {% endif %}
+                    </div>
 
-                                                                                                                                                           {% if congress.venue_catering %}
-                                                                                                                                                               <div>
-                                                                                                                                                               <h2>Catering</h2>
-                                                                                                                                                               <span style="text-align: left;">
-                                                                                                                                                                                                                      {{ congress.venue_catering|safe }}
-                                                                                                                                                                                                                      </span>
-                                                                                                                                                                                                                      </div>
-                                                                                                                                                                                                                  {% endif %}
+                </div>
 
-                                                                                                                                                                                                                  {% if congress.venue_additional_info %}
-                                                                                                                                                                                                                      <div>
-                                                                                                                                                                                                                      <h2>Additional Information</h2>
-                                                                                                                                                                                                                      {{ congress.venue_additional_info|safe }}
-                                                                                                                                                                                                                      </div>
-                                                                                                                                                                                                                  {% endif %}
+            {% endif %}
 
-                                                                                                                                                                                                                  </div>
+            <div class="flex-container">
 
-                                                                                                                                                                                                                  <!-- END IF FOR NOT SHOWING IF ONLINE -->
-                                                                                                                                                                                                              {% else %}
+                {% if congress.venue_transport %}
+                    <div>
+                        <h2>Transport</h2>
+                        <span style="text-align: left;">
+                            {{ congress.venue_transport|safe }}
+                        </span>
+                    </div>
+                {% endif %}
 
-                                                                                                                                                                                                                  <div class="flex-container">
-                                                                                                                                                                                                                                                                 <div style="width: 50%">
-                                                                                                                                                                                                                                                                                                            <h2>This Congress is being held Online using
-                                                                                                                                                                                                                                                                                                            {{ congress.get_online_platform_display }}</h2>
-                                                                                                                                                                                                                                                                                                            </div>
-                                                                                                                                                                                                                                                                                                            </div>
+                {% if congress.venue_catering %}
+                    <div>
+                        <h2>Catering</h2>
+                        <span style="text-align: left;">
+                            {{ congress.venue_catering|safe }}
+                        </span>
+                    </div>
+                {% endif %}
 
-                                                                                                                                                                                                                                                                                                        {% endif %}
+                {% if congress.venue_additional_info %}
+                    <div>
+                        <h2>Additional Information</h2>
+                        {{ congress.venue_additional_info|safe }}
+                    </div>
+                {% endif %}
 
-                                                                                                                                                                                                                                                                                                        <div href="program" class="flex-container">
-                                                                                                                                                                                                                                                                                                                                                                  <a name="program"></a>
-                                                                                                                                                                                                                                                                                                                                                          <div style="width: 80%">
-                                                                                                                                                                                                                                                                                                                                                          <h2> PROGRAM </h2>
+            </div>
 
-                                                                                                                                                                                                                                                                                                                                                          {% if congress.members_only %}
-                                                                                                                                                                                                                                                                                                                                                              <p>
-                                                                                                                                                                                                                                                                                                                                                              <b>Note: Entry is restricted to members of {{ congress.congress_master.org }}.</b>
-                                                                                                                                                                                                                                                                                                                                                              </p>
-                                                                                                                                                                                                                                                                                                                                                          {% endif %}
+            <!-- END IF FOR NOT SHOWING IF ONLINE -->
+        {% else %}
 
-                                                                                                                                                                                                                                                                                                                                                          {% if includes_teams_event %}
-                                                                                                                                                                                                                                                                                                                                                              <p>
-                                                                                                                                                                                                                                                                                                                                                              <b>* For teams events Entry fee per player assumes a team of 4. Amounts will differ for teams of 5 or 6.</b>
-                                                                                                                                                                                                                                                                                                                                                              </p>
-                                                                                                                                                                                                                                                                                                                                                          {% endif %}
+            <div class="flex-container">
+                <div style="width: 50%">
+                    <h2>This Congress is being held Online using
+                        {{ congress.get_online_platform_display }}</h2>
+                </div>
+            </div>
 
-                                                                                                                                                                                                                                                                                                                                                          {% if not congress.members_only and not includes_teams_event %}
-                                                                                                                                                                                                                                                                                                                                                              <br>
-                                                                                                                                                                                                                                                                                                                                                          {% endif %}
+        {% endif %}
 
-                                                                                                                                                                                                                                                                                                                                                          <table class="program">
-                                                                                                                                                                                                                                                                                                                                         <tr>
-                                                                                                                                                                                                                                                                                                                                         <th>Event</th>
-                                                                                                                                                                                                                                                                                                                                         <th>Full entry fee per player</th>
-                                                                                                                                                                                                                                                                                                                                         <th>Day</th>
-                                                                                                                                                                                                                                                                                                                                         <th>Time</th>
-                                                                                                                                                                                                                                                                                                                                         <th>Total entries</th>
-                                                                                                                                                                                                                                                                                                                                         <th>Action</th>
-                                                                                                                                                                                                                                                                                                                                         </tr>
-                                                                                                                                                                                                                                                                                                                                         {% for program in program_list %}
-                                                                                                                                                                                                                                                                                                                                             <tr>
-                                                                                                                                                                                                                                                                                                                                             {{ program.event|safe }}
-                                                                                                                                                                                                                                                                                                                                             {{ program.day|safe }}
-                                                                                                                                                                                                                                                                                                                                             {{ program.time|safe }}
-                                                                                                                                                                                                                                                                                                                                             {{ program.entries_total|safe }}
-                                                                                                                                                                                                                                                                                                                                             {{ program.links|safe }}
-                                                                                                                                                                                                                                                                                                                                             </tr>
-                                                                                                                                                                                                                                                                                                                                         {% endfor %}
+        <div href="program" class="flex-container">
+            <a name="program"></a>
+            <div style="width: 80%">
+                <h2> PROGRAM </h2>
 
-                                                                                                                                                                                                                                                                                                                                         </table>
+                {% if congress.members_only %}
+                    <p>
+                        <b>Note: Entry is restricted to members of {{ congress.congress_master.org }}.</b>
+                    </p>
+                {% endif %}
 
-                                                                                                                                                                                                                                                                                                                                         <p>{{ congress.additional_info|safe }}</p>
+                {% if includes_teams_event %}
+                    <p>
+                        <b>* For teams events Entry fee per player assumes a team of 4. Amounts will differ for teams of 5 or 6.</b>
+                    </p>
+                {% endif %}
 
-                                                                                                                                                                                                                                                                                                                                         <!-- COB-548 -->
-                                                                                                                                                                                                                                                                                                                                         {% if congress.payment_method_bank_transfer and congress.bank_transfer_details %}
-                                                                                                                                                                                                                                                                                                                                             <h3>Bank Transfer Details</h3>
-                                                                                                                                                                                                                                                                                                                                             {{ congress.bank_transfer_details|safe }}
-                                                                                                                                                                                                                                                                                                                                         {% endif %}
+                {% if not congress.members_only and not includes_teams_event %}
+                    <br>
+                {% endif %}
 
-                                                                                                                                                                                                                                                                                                                                         </div>
+                <table class="program">
+                    <tr>
+                        <th>Event</th>
+                        <th>Full entry fee per player</th>
+                        <th>Day</th>
+                        <th>Time</th>
+                        <th>Total entries</th>
+                        <th>Action</th>
+                    </tr>
+                    {% for program in program_list %}
+                        <tr>
+                            {{ program.event|safe }}
+                            {{ program.day|safe }}
+                            {{ program.time|safe }}
+                            {{ program.entries_total|safe }}
+                            {{ program.links|safe }}
+                        </tr>
+                    {% endfor %}
 
-                                                                                                                                                                                                                                                                                                                                         </div>
+                </table>
 
-                                                                                                                                                                                                                                                                                                                                         <!-- end raw HTML if/else -->
-                                                                                                                                                                                                                                                                                                                                     {% endif %}
-                                                                                                                                                                                                                                                                                                                                 {% endblock %}
+                <p>{{ congress.additional_info|safe }}</p>
+
+                <!-- COB-548 -->
+                {% if congress.payment_method_bank_transfer and congress.bank_transfer_details %}
+                    <h3>Bank Transfer Details</h3>
+                    {{ congress.bank_transfer_details|safe }}
+                {% endif %}
+
+            </div>
+
+        </div>
+
+        <!-- end raw HTML if/else -->
+    {% endif %}
+{% endblock %}
