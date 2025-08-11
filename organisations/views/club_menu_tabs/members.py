@@ -173,7 +173,10 @@ def list_htmx(request: HttpRequest, club: Organisation, message: str = None):
         save_sort_order(sort_option)
 
     #  show former members
-    former_members = request.POST.get("former_members") == "on"
+    former_members = (
+        request.POST.get("former_members") == "on"
+        or request.GET.get("former_members") == "on"
+    )
 
     members = get_club_members(
         club,
@@ -185,6 +188,8 @@ def list_htmx(request: HttpRequest, club: Organisation, message: str = None):
     # pagination and params
     things = cobalt_paginator(request, members)
     searchparams = f"sort_by={sort_option}&"
+    if former_members:
+        searchparams = f"{searchparams}former_members=on&"
 
     total_members = len(members)
 
@@ -777,9 +782,9 @@ def un_reg_edit_htmx(request, club):
         # Set initial values for membership form
         #        club_membership_form.initial["home_club"] = membership.home_club
         if membership:
-            club_membership_form.initial[
-                "membership_type"
-            ] = membership.membership_type_id
+            club_membership_form.initial["membership_type"] = (
+                membership.membership_type_id
+            )
 
         # Set initial value for email if record exists
         if club_email_entry:
@@ -1680,7 +1685,7 @@ def club_admin_edit_member_htmx(request, club, message=None):
                 instance=simplified_membership,
                 full_club_admin=False,
                 club=club,
-                registered=member_details.user_type == f"{ GLOBAL_TITLE } User",
+                registered=member_details.user_type == f"{GLOBAL_TITLE} User",
             )
             forms_ok = forms_ok and smm_form.is_valid()
             forms_changed = forms_changed or smm_form.has_changed()
@@ -1779,7 +1784,7 @@ def club_admin_edit_member_htmx(request, club, message=None):
                 instance=simplified_membership,
                 initial=smm_initial_data,
                 club=club,
-                registered=(member_details.user_type == f"{ GLOBAL_TITLE } User"),
+                registered=(member_details.user_type == f"{GLOBAL_TITLE} User"),
             )
 
     # which recent activities should be shown?
