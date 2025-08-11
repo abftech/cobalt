@@ -166,6 +166,7 @@ class Congress(models.Model):
     )
     raw_html = models.TextField("Raw HTML", null=True, blank=True)
     people = models.TextField("People", null=True, blank=True, default=PEOPLE_DEFAULT)
+    results_url = models.CharField("Results URL", null=True, blank=True, max_length=200)
 
     general_info = models.TextField("General Information", null=True, blank=True)
     links = models.TextField("Links", null=True, blank=True)

@@ -1,5 +1,6 @@
-""" This file contains all of the code relating to an convener building
-    a congress or editing a congress. """
+"""This file contains all of the code relating to an convener building
+a congress or editing a congress."""
+
 from datetime import date
 from decimal import Decimal
 
@@ -356,6 +357,7 @@ def _create_congress_wizard_2_handle_form(form, congress):
     congress.general_info = form.cleaned_data["general_info"]
     congress.links = form.cleaned_data["links"]
     congress.people = form.cleaned_data["people"]
+    congress.results_url = form.cleaned_data["results_url"]
     congress.additional_info = form.cleaned_data["additional_info"]
     congress.contact_email = form.cleaned_data["contact_email"]
     congress.congress_venue_type = form.cleaned_data["congress_venue_type"]
@@ -502,19 +504,19 @@ def create_congress_wizard_5(request, step_list, congress):
         if congress.entry_open_date:
             initial["entry_open_date"] = congress.entry_open_date.strftime("%d/%m/%Y")
         if congress.automatic_refund_cutoff:
-            initial[
-                "automatic_refund_cutoff"
-            ] = congress.automatic_refund_cutoff.strftime("%d/%m/%Y")
+            initial["automatic_refund_cutoff"] = (
+                congress.automatic_refund_cutoff.strftime("%d/%m/%Y")
+            )
         if congress.entry_close_date:
             initial["entry_close_date"] = congress.entry_close_date.strftime("%d/%m/%Y")
         if congress.early_payment_discount_date:
-            initial[
-                "early_payment_discount_date"
-            ] = congress.early_payment_discount_date.strftime("%d/%m/%Y")
+            initial["early_payment_discount_date"] = (
+                congress.early_payment_discount_date.strftime("%d/%m/%Y")
+            )
         if congress.youth_payment_discount_date:
-            initial[
-                "youth_payment_discount_date"
-            ] = congress.youth_payment_discount_date.strftime("%d/%m/%Y")
+            initial["youth_payment_discount_date"] = (
+                congress.youth_payment_discount_date.strftime("%d/%m/%Y")
+            )
         if congress.senior_date:
             initial["senior_date"] = congress.senior_date.strftime("%d/%m/%Y")
         form = CongressForm(instance=congress, initial=initial)

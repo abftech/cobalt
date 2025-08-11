@@ -69,7 +69,7 @@
                                     <div class="col-12 col-md-6">
                                         <div class=text-center>
                                             <a href="mailto:{{ congress.contact_email }}?subject={{ congress.name }}"
-                                                target="_blank" style="text-transform: none;" class="btn btn-sm btn-rose">
+                                               target="_blank" style="text-transform: none;" class="btn btn-sm btn-rose">
                                                 <span style="font-size: 150%;">
                                                     Email Tournament Organiser
                                                 </span>
@@ -166,6 +166,25 @@
                                 </div>
                             {% endif %}
 
+                            <!-- RESULTS_URL -->
+
+                            {% if congress.results_url %}
+                                <div class="row">
+                                    <div class="card col-lg-10 mx-auto">
+                                        <div class="card-header card-header-success">
+                                            <h4 class="card-title">Results</h4>
+                                        </div>
+                                        <div class="card-body">
+                                            <a href="{{ congress.results_url }}" target="_blank">
+                                                {{ congress.results_url }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <br>
+                            {% endif %}
+
+
                             <!-- DOWNLOADS -->
 
                             {% if downloads %}
@@ -178,7 +197,7 @@
                                             <ul>
                                                 {% for download in downloads %}
                                                     <li><a href="{{ download.document.url }}"
-                                                        target="_blank">{{ download.description }}</a>
+                                                           target="_blank">{{ download.description }}</a>
                                                 {% endfor %}
                                             </ul>
                                         </div>
@@ -222,7 +241,7 @@
                                                     allowfullscreen
                                                     referrerpolicy="no-referrer-when-downgrade"
                                                     src="https://www.google.com/maps/embed/v1/place?key=AIzaSyAAXnhnh7zL17kiLo59SnWbTiy4rwoi9VY
-                                                    &q={{ congress.venue_location }}">
+                                                         &q={{ congress.venue_location }}">
                                                 </iframe>
                                             {% endif %}
                                         </div>
@@ -294,7 +313,7 @@
                                 <div class="col-lg-10 mx-auto" id="partnership-show">
                                     This congress is running a
                                     <button _="on click show #partnership then remove #partnership-show"
-                                        class="btn btn-sm btn-rose">
+                                            class="btn btn-sm btn-rose">
                                         Partnership Desk
                                     </button>
                                 </div>

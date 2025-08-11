@@ -46,6 +46,7 @@ class CongressForm(forms.ModelForm):
         self.fields["end_date"].label = False
         self.fields["date_string"].label = False
         self.fields["people"].label = False
+        self.fields["results_url"].label = False
         self.fields["general_info"].label = False
         self.fields["links"].label = False
         self.fields["venue_name"].label = False
@@ -88,6 +89,7 @@ class CongressForm(forms.ModelForm):
         self.fields["end_date"].required = False
         self.fields["date_string"].required = False
         self.fields["people"].required = False
+        self.fields["results_url"].required = False
         self.fields["sponsors"].required = False
         self.fields["general_info"].required = False
         self.fields["links"].required = False
@@ -254,6 +256,7 @@ class CongressForm(forms.ModelForm):
             "venue_additional_info",
             "additional_info",
             "people",
+            "results_url",
             "raw_html",
             "general_info",
             "links",
