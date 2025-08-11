@@ -190,15 +190,26 @@ def browser_errors(request):
 @login_required
 def global_search(request):
     """This handles the search bar that appears on every page. Also gets called from the search panel that
-    we show if a search is performed, to allow the user to reduce the range of the search"""
+    we show if a search is performed, to allow the user to reduce the range of the search
+    """
 
-    query = request.POST.get("search_string")
-    include_people = request.POST.get("include_people")
-    include_forums = request.POST.get("include_forums")
-    include_posts = request.POST.get("include_posts")
-    include_events = request.POST.get("include_events")
-    include_payments = request.POST.get("include_payments")
-    include_orgs = request.POST.get("include_orgs")
+    query = request.POST.get("search_string") or request.GET.get("search_string")
+    include_people = request.POST.get("include_people") or request.GET.get(
+        "include_people"
+    )
+    include_forums = request.POST.get("include_forums") or request.GET.get(
+        "include_forums"
+    )
+    include_posts = request.POST.get("include_posts") or request.GET.get(
+        "include_posts"
+    )
+    include_events = request.POST.get("include_events") or request.GET.get(
+        "include_events"
+    )
+    include_payments = request.POST.get("include_payments") or request.GET.get(
+        "include_payments"
+    )
+    include_orgs = request.POST.get("include_orgs") or request.GET.get("include_orgs")
 
     searchparams = ""
 
