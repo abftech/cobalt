@@ -8,6 +8,13 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.1.6",
+            "notes": [
+                "Many changes to smoke test harness",
+                "Small bug fixes - 1027, 1011",
+            ],
+        },
+        {
             "release": "6.1.5",
             "notes": [
                 "Added script to check code versions",
