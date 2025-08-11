@@ -8,6 +8,12 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.1.7",
+            "notes": [
+                "Added results_url to congresses",
+            ],
+        },
+        {
             "release": "6.1.6",
             "notes": [
                 "Many changes to smoke test harness",
