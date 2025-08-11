@@ -11,6 +11,7 @@ def release_notes_view(request):
             "release": "6.1.7",
             "notes": [
                 "Added results_url to congresses",
+                "Global search pagination issue",
             ],
         },
         {
