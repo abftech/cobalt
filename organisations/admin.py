@@ -175,6 +175,7 @@ class MemberClubDetailsAdmin(admin.ModelAdmin):
 
     autocomplete_fields = [
         "club",
+        "latest_membership",
     ]
 
 
