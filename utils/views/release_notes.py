@@ -12,6 +12,7 @@ def release_notes_view(request):
             "notes": [
                 "Added results_url to congresses",
                 "Global search pagination issue",
+                "System settings updates - update environment names",
             ],
         },
         {

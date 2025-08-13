@@ -57,8 +57,8 @@ def _get_aws_environment():
 
     # Dictionary of hostname to environment prefix
     environment_map = {
-        "myabf.com.au": "cobalt-production-green",
-        "uat.myabf.com.au": "cobalt-uat-yellow",
+        "myabf.com.au": "cobalt-production-blue",
+        "uat.myabf.com.au": "cobalt-uat-orange",
         "cobalt-test-white.myabf.com.au": "cobalt-test-white",
         "127.0.0.1:8000": "cobalt-test-white",
     }
