@@ -1,0 +1,36 @@
+{% load cobalt_tags %}
+<h4 class="col-md-8">
+    <div class="card card-profile">
+        <div class="card-header card-header-warning">
+            <h2 class="card-title">Unregistered User</h2>
+            <h3 class="card-title">{{ profile.full_name }}</h3>
+            <h4 class="card-title">{{ GLOBAL_ORG }} No. {{ profile.system_number }}</h4>
+            {% if summary.RankName %}
+                <h5>{{ summary.RankName }}: {{ summary.TotalMPs }} Masterpoints</h5>
+            {% endif %}
+            {% if member_of_clubs %}
+                {#  Use our data about club membership first, otherwise use MPC #}
+                {% for membership in member_of_clubs %}
+                    <h4>{{ membership.club }}</h4>
+                {% endfor %}
+
+            {% else %}
+                {% if summary.home_club %}
+                    {% if summary.IsActive %}
+                        <h4>Home Club: {{ summary.home_club }}</h4>
+                    {% else %}
+                        <h4>Used to play at: {{ summary.home_club }}</h4>
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <img id="cobalt-pic" class="cobalt-rounded text-center" style="height: 140px; width: 140px;" src="/media/pic_folder/default-avatar.png" />
+            <p class="card-description">
+                <br>
+                {{ profile.about|default_if_none:"" }}
+            </p>
+        </div>
+
+    </div>
+

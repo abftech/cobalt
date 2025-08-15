@@ -265,7 +265,14 @@ class SimpleSelenium:
         self.screenshot(f"Clicked on {id}")
 
     def go_to(self, location):
-        """go to a relative path"""
+        """go to a path"""
+
+        if location[0] != "/":
+            self.add_message(
+                "go command must start with /. Specify only the path. e.g. '/events'"
+            )
+            self.handle_fatal_error()
+
         self.driver.get(f"{self.base_url}{location}")
         # We don't know if it works, but it should be easy enough to identify if it doesn't
         self.add_message(f"Went to '{location}'")
@@ -283,39 +290,30 @@ class SimpleSelenium:
         item.send_keys(Keys.RETURN)
         self.add_message(f"Sent enter to '{name}'")
 
-    def enter_value_into_field_by_name(self, name, value):
-        """find a field by name and put a value in it. Can be a variable such as password"""
+    def enter_value_into_field(self, identifier, value):
+        """find a field and put a value in it. Can be a variable such as password"""
 
+        # get element, won't return if not found
+        element = self._super_click_get_element(identifier)
+
+        # Wait for clickable
         try:
-            item = self.driver.find_element("name", name)
-        except NoSuchElementException:
-            self.add_message(f"Couldn't find by name: {name}")
+            matching_element = WebDriverWait(self.driver, 10).until(
+                expected_conditions.element_to_be_clickable(element)
+            )
+        except TimeoutException:
+            self.add_message(
+                f"Found '{identifier}' but timed out waiting for it to be clickable."
+            )
             self.handle_fatal_error()
 
-        self.add_message(f"Found '{name}'")
-
-        item.send_keys(value)
+        matching_element.send_keys(value)
 
         # Hide password
-        if name == "password":
+        if identifier.find("password") >= 0:
             value = "*********"
 
-        self.screenshot(f"Put '{value}' into '{name}'")
-
-    def enter_value_into_field_by_id(self, id, value):
-        """find a field by id and put a value in it. Can be a variable such as password"""
-
-        try:
-            item = self.driver.find_element("id", id)
-        except NoSuchElementException:
-            self.add_message(f"Couldn't find by name: {id}")
-            self.handle_fatal_error()
-
-        self.add_message(f"Found '{id}'")
-
-        item.send_keys(value)
-
-        self.screenshot(f"Put '{value}' into '{id}'")
+        self.screenshot(f"Put '{value}' into '{identifier}'")
 
     def screenshot(self, title):
         """grab a picture of the screen"""

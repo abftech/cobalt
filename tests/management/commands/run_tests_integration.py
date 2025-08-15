@@ -62,4 +62,4 @@ class Command(BaseCommand):
             print(f"Results are in {output_file}\n")
         else:
             # We have errors, so show output
-            os.system("open /tmp/test-output.html")
+            os.system(f"open {output_file}")

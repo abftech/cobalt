@@ -70,7 +70,12 @@ for FILE_AND_PATH in $FILE_LIST; do
   FILE_NAME=$(basename "$FILE_AND_PATH")
 
   # run command
-  $COMMAND --script "test_suite/$FILE_NAME"
+  if [ "$MODULE" = "" ]; then
+    $COMMAND --script "test_suite/$FILE_NAME"
+  else
+    echo $COMMAND --script "test_suite/$FILE_AND_PATH"
+    $COMMAND --script "test_suite/$FILE_AND_PATH"
+  fi
 
   # get status
   rc=$?

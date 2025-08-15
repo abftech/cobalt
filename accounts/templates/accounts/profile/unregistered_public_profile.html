@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load cobalt_tags %}
+{% block title %} - {{ profile }}{% endblock %}
+{% block content %}
+
+    <div>
+        <div class="container-fluid">
+            <div class="row justify-content-center">
+
+                {% include "accounts/profile/unregistered_public_profile_header.html" %}
+
+            </div>
+            <div class="row justify-content-center">
+                <div class="py-2">
+                    {% if email_admin %}
+                        <a href="{% url "notifications:global_admin_view_emails" member_id=profile.id %}" class="btn btn-sm btn-danger">Email Admin</a>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+{% endblock %}

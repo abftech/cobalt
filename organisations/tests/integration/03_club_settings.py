@@ -119,8 +119,8 @@ class ClubSettings:
             f"He clicks on Membership Types.",
         )
 
-        # click on Standard !!!! Assumes Standard is pk=7, will fail if other data is added before
-        standard = self.manager.selenium_wait_for("id_membership-btn-10")
+        # click on Standard !!!! Assumes Standard is pk=12, will fail if other data is added before
+        standard = self.manager.selenium_wait_for("id_membership-btn-12")
 
         if not standard:
             self.manager.save_results(

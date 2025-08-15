@@ -1,0 +1,9 @@
+title "Set up an email blocked by AWS"
+go /accounts/register
+enter 75469 into id_username
+click id_first_name
+sleep 2
+enter a@wrong.email.zz into id_email
+enter F1shcake into id_password1
+enter F1shcake into id_password2
+sleep 999999

@@ -119,6 +119,11 @@ urlpatterns = [
         name="public_profile",
     ),
     path(
+        "unregistered_public-profile/<int:pk>/",
+        accounts.views.profile.unregistered_public_profile,
+        name="unregistered_public_profile",
+    ),
+    path(
         "add-team-mate",
         accounts.views.profile.add_team_mate_ajax,
         name="add_team_mate_ajax",

@@ -5,8 +5,8 @@ import sys
 from tests.simple_selenium import SimpleSelenium
 
 command_lookup = {
-    "enter": 'manager.enter_value_into_field_by_name("WORDS_3", "WORDS_1")',
-    "enter_parameter": 'manager.enter_value_into_field_by_name("WORDS_3", WORDS_1)',
+    "enter": 'manager.enter_value_into_field("WORDS_3", "WORDS_1")',
+    "enter_parameter": 'manager.enter_value_into_field("WORDS_3", WORDS_1)',
     "find": 'manager.find_by_text("WORDS_1")',
     "find_by_id": 'manager.find_by_id("WORDS_1")',
     "title": 'manager.set_title("WORDS_1")',

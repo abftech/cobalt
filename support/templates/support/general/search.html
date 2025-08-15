@@ -112,6 +112,11 @@
                                         <td><a href="{% url "accounts:public_profile" pk=thing.id %}">{{ thing.full_name }}</a></td>
                                         <td><a href="{% url "accounts:public_profile" pk=thing.id %}">{{ GLOBAL_ORG}} Number: {{ thing.system_number }}</a></td>
 
+                                    {% elif thing|get_class == 'UnregisteredUser' %}
+
+                                        <td><a href="{% url "accounts:unregistered_public_profile" pk=thing.id %}">{{ thing.full_name }}</a></td>
+                                        <td><a href="{% url "accounts:unregistered_public_profile" pk=thing.id %}">{{ GLOBAL_ORG}} Number: {{ thing.system_number }}</a></td>
+
                                     {% elif thing|get_class == 'Organisation' %}
 
                                         <td><a href="{% url "organisations:general_org_profile" org_id=thing.id %}">{{ thing }}</a></td>

@@ -147,6 +147,7 @@ def check_and_cleanup_entry(
             test_description=test_description,
             subject_search="Event Entry",
             debug=False,
+            email_count=20,
         )
 
     # Delete event entry for next time, use last event_entry_player

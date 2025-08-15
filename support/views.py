@@ -10,7 +10,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 
-from accounts.models import User
+from accounts.models import User, UnregisteredUser
 from cobalt.settings import (
     COBALT_HOSTNAME,
     RECAPTCHA_SITE_KEY,
@@ -233,9 +233,26 @@ def global_search(request):
                     | Q(last_name__icontains=query)
                     | Q(system_number__icontains=query)
                 )
+
+            # Also include unregistered users
+            if query.find(" ") >= 0:
+                first_name = query.split(" ")[0]
+                last_name = " ".join(query.split(" ")[1:])
+                unregistered = UnregisteredUser.objects.filter(
+                    Q(first_name__icontains=first_name)
+                    & Q(last_name__icontains=last_name)
+                )
+            else:
+                unregistered = UnregisteredUser.objects.filter(
+                    Q(first_name__icontains=query)
+                    | Q(last_name__icontains=query)
+                    | Q(system_number__icontains=query)
+                )
+
             searchparams += "include_people=1&"
         else:
             people = []
+            unregistered = []
 
         if include_posts:
             posts = Post.objects.filter(title__icontains=query)
@@ -270,7 +287,9 @@ def global_search(request):
             orgs = []
 
         # combine outputs
-        results = list(chain(people, posts, forums, events, payments, orgs))
+        results = list(
+            chain(people, unregistered, posts, forums, events, payments, orgs)
+        )
 
         # create paginator
         things = cobalt_paginator(request, results)

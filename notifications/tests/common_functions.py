@@ -68,7 +68,7 @@ def check_email_sent(
         debug,
     )
 
-    output += f"Result was '{ok}'"
+    output += f" Result was '{ok}'"
 
     if save_results:
         manager.save_results(
