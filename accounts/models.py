@@ -1,4 +1,5 @@
-""" Models for our definitions of a user within the system. """
+"""Models for our definitions of a user within the system."""
+
 import random
 import string
 from datetime import date
@@ -106,6 +107,7 @@ class User(AbstractUser):
         "Receive Payments Emails", default=True
     )
     receive_low_balance_emails = models.BooleanField(default=True)
+    receive_member_to_member_emails = models.BooleanField(default=True)
     windows_scrollbar = models.BooleanField(
         "Use Perfect Scrollbar on Windows", default=False
     )

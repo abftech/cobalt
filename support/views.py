@@ -18,7 +18,7 @@ from cobalt.settings import (
 )
 from events.models import Congress
 from forums.models import Post, Forum
-from organisations.models import Organisation
+from organisations.models import Organisation, MemberClubDetails
 from payments.models import MemberTransaction
 from rbac.core import rbac_user_has_role
 from utils.utils import cobalt_paginator
@@ -187,6 +187,26 @@ def browser_errors(request):
     return HttpResponse("ok")
 
 
+def _add_memberships_to_queryset(queryset):
+    """augments the queryset with membership data. Works for User or UnregisteredUser"""
+
+    # Get system numbers
+    system_numbers = queryset.values_list("system_number")
+    member_club_details = MemberClubDetails.objects.filter(
+        system_number__in=system_numbers
+    ).select_related("club")
+    lookup = {item.system_number: item for item in member_club_details}
+
+    # Append to queryset
+    for item in queryset:
+        if not hasattr(item, "member_club_details"):
+            item.member_club_details = []
+
+        item.member_club_details.append(lookup[item.system_number])
+
+    return queryset
+
+
 @login_required
 def global_search(request):
     """This handles the search bar that appears on every page. Also gets called from the search panel that
@@ -234,20 +254,26 @@ def global_search(request):
                     | Q(system_number__icontains=query)
                 )
 
+            # Augment with membership data
+            people = _add_memberships_to_queryset(people)
+
             # Also include unregistered users
             if query.find(" ") >= 0:
                 first_name = query.split(" ")[0]
                 last_name = " ".join(query.split(" ")[1:])
-                unregistered = UnregisteredUser.objects.filter(
+                unregistered = UnregisteredUser.all_objects.filter(
                     Q(first_name__icontains=first_name)
                     & Q(last_name__icontains=last_name)
                 )
             else:
-                unregistered = UnregisteredUser.objects.filter(
+                unregistered = UnregisteredUser.all_objects.filter(
                     Q(first_name__icontains=query)
                     | Q(last_name__icontains=query)
                     | Q(system_number__icontains=query)
                 )
+
+            # Augment with membership data
+            unregistered = _add_memberships_to_queryset(unregistered)
 
             searchparams += "include_people=1&"
         else:

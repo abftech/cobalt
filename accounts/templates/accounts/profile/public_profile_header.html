@@ -29,6 +29,15 @@
                 <br>
                 {{ profile.about|default_if_none:"" }}
             </p>
+
+            <!-- MEMBER TO MEMBER EMAIL -->
+            {% if profile.receive_member_to_member_emails %}
+                <a
+                    href="{% url "notifications:member_to_member_email" member_id=profile.id %}"
+                    class="btn btn-success btn-sm"
+                >Send Email</a>
+            {% endif %}
+
         </div>
 
         {% if email_admin  or payments_admin or events_admin or tickets %}

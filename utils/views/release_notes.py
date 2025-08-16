@@ -11,6 +11,8 @@ def release_notes_view(request):
             "release": "6.1.8",
             "notes": [
                 "Increase email_count for event entry tests",
+                "Extend global search to include Unregistered users",
+                "Add link to member email to user profile",
             ],
         },
         {

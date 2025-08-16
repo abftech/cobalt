@@ -1185,7 +1185,7 @@ def get_club_memberships_for_person(system_number):
     return MemberClubDetails.objects.filter(
         system_number=system_number,
         membership_status__in=MEMBERSHIP_STATES_ACTIVE,
-    )
+    ).select_related("club")
 
 
 def get_outstanding_membership_fees_for_user(user):

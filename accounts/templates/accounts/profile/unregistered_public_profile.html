@@ -11,15 +11,31 @@
 
                 {% include "accounts/profile/unregistered_public_profile_header.html" %}
 
-            </div>
-            <div class="row justify-content-center">
-                <div class="py-2">
-                    {% if email_admin %}
-                        <a href="{% url "notifications:global_admin_view_emails" member_id=profile.id %}" class="btn btn-sm btn-danger">Email Admin</a>
-                    {% endif %}
-                </div>
-            </div>
+            <!-- MEMBERSHIPS -->
+                <div class="card">
+                    <div class="card-header card-header-info">
+                        <h2>Memberships</h2>
+                    </div>
 
+                    <div class="card-body">
+                        <ul>
+                            {% for club_membership in member_of_clubs %}
+                                <li>
+                                    <a href="{% url "organisations:general_org_profile" org_id=club_membership.club.id %}">
+                                        {{ club_membership.club }}
+                                    </a>
+                                    - {{ club_membership.get_membership_status_display }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+            <!-- EMAIL -->
+                <div id="id_email_admin"></div>
+
+
+            </div>
         </div>
     </div>
 {% endblock %}

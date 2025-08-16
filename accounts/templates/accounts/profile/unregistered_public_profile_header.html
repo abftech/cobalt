@@ -2,11 +2,19 @@
 <h4 class="col-md-8">
     <div class="card card-profile">
         <div class="card-header card-header-warning">
-            <h2 class="card-title">Unregistered User</h2>
+            <h2 class="card-title">
+                {% if profile.internal_system_number %}
+                    Contact
+                {% else %}
+                    Unregistered User
+                {% endif %}
+            </h2>
             <h3 class="card-title">{{ profile.full_name }}</h3>
-            <h4 class="card-title">{{ GLOBAL_ORG }} No. {{ profile.system_number }}</h4>
-            {% if summary.RankName %}
-                <h5>{{ summary.RankName }}: {{ summary.TotalMPs }} Masterpoints</h5>
+            {% if not profile.internal_system_number %}
+                <h4 class="card-title">{{ GLOBAL_ORG }} No. {{ profile.system_number }}</h4>
+                {% if summary.RankName %}
+                    <h5>{{ summary.RankName }}: {{ summary.TotalMPs }} Masterpoints</h5>
+                {% endif %}
             {% endif %}
             {% if member_of_clubs %}
                 {#  Use our data about club membership first, otherwise use MPC #}

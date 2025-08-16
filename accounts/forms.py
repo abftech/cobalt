@@ -187,6 +187,7 @@ class UserSettingsForm(forms.ModelForm):
         fields = [
             "username",
             "receive_sms_results",
+            "receive_member_to_member_emails",
             "receive_email_results",
             "receive_sms_reminders",
             "receive_abf_newsletter",
