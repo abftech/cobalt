@@ -12,7 +12,7 @@
                 {% include "accounts/profile/unregistered_public_profile_header.html" %}
 
             <!-- MEMBERSHIPS -->
-                <div class="card">
+                <div class="card mt-5">
                     <div class="card-header card-header-info">
                         <h2>Memberships</h2>
                     </div>
@@ -32,7 +32,12 @@
                 </div>
 
             <!-- EMAIL -->
-                <div id="id_email_admin"></div>
+                <div id="id_email_admin"
+                     hx-post="{% url 'notifications:unregistered_user_email_admin_htmx' %}"
+                     hx-vars="user_id:{{ profile.id }}"
+                     hx-trigger="load"
+                >
+                </div>
 
 
             </div>

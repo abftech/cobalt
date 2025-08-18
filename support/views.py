@@ -1,3 +1,4 @@
+import contextlib
 import json
 from itertools import chain
 
@@ -192,9 +193,13 @@ def _add_memberships_to_queryset(queryset):
 
     # Get system numbers
     system_numbers = queryset.values_list("system_number")
+
+    # Get matching member_club_detail records - and also load the club info
     member_club_details = MemberClubDetails.objects.filter(
         system_number__in=system_numbers
     ).select_related("club")
+
+    # Turn into a dictionary
     lookup = {item.system_number: item for item in member_club_details}
 
     # Append to queryset
@@ -202,8 +207,8 @@ def _add_memberships_to_queryset(queryset):
         if not hasattr(item, "member_club_details"):
             item.member_club_details = []
 
-        item.member_club_details.append(lookup[item.system_number])
-
+        with contextlib.suppress(KeyError):
+            item.member_club_details.append(lookup[item.system_number])
     return queryset
 
 
