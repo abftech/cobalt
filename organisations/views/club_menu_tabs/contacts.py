@@ -17,6 +17,7 @@ from cobalt.settings import (
     GLOBAL_ORG,
     GLOBAL_TITLE,
 )
+from notifications.views.aws import aws_remove_email_block
 from organisations.club_admin_core import (
     add_contact_with_system_number,
     club_email_for_member,
@@ -836,3 +837,16 @@ def club_admin_report_all_csv(request, club_id):
         )
 
     return response
+
+
+def unregistered_user_email_club_remove_block_htmx(request):
+    """
+    This removes the block (or at least attempts to) and returns an HTMX fragment with
+    the outcome
+    """
+
+    email = request.POST.get("email")
+
+    message = aws_remove_email_block(email)
+
+    return HttpResponse(f"<span class='text-primary'><b>{message}</b></span>")

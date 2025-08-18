@@ -43,8 +43,22 @@
 {% if member_details.email_hard_bounce %}
     <div class="row pb-2">
         <div class="col-2"></div>
-        <div class="col-8 text-danger">
-            Warning - this email address bounced!
+        <div class="col-8 text-danger" id="ses_hard_bounce">
+            Warning - this email address bounced. We are no longer sending emails to this address.
+            If you are sure it is correct you can remove the block. Changing the email address
+            will automatically remove the block.
+            <br>
+
+            <button
+                id="id_aws_ses_remove_block"
+                hx-target="#ses_hard_bounce"
+                class="btn btn-sm btn-primary"
+                hx-post="{% url 'organisations:unregistered_user_email_club_remove_block_htmx' %}"
+                hx-vars="email:'{{ member_details.email }}'"
+                hx-trigger="click"
+            >
+                Remove Block
+            </button>
         </div>
     </div>
 {% endif %}

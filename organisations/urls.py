@@ -1003,4 +1003,9 @@ urlpatterns = [
         organisations.views.club_menu_tabs.members.email_unpaid,
         name="club_menu_tab_members_email_unpaid",
     ),
+    path(
+        "club-admin/contacts/unregistered-user-email-club-remove-block-htmx",
+        organisations.views.club_menu_tabs.contacts.unregistered_user_email_club_remove_block_htmx,
+        name="unregistered_user_email_club_remove_block_htmx",
+    ),
 ]
