@@ -59,6 +59,7 @@ LIST_OF_INTEGRATION_TESTS = {
     "ClubCongress": "organisations.tests.integration.06_congress_setup",
     "Sessions": "club_sessions.tests.integration.01_sessions",
     "ClubMembership": "organisations.tests.integration.07_membership",
+    "UserSearch": "accounts.tests.integration.03_user_search",
 }
 
 
@@ -658,6 +659,17 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
             element_has_text, "wait for text", element_id, timeout=timeout
         )
 
+    def selenium_find_text_on_page(self, text):
+        """Look for text anywhere."""
+
+        try:
+            return self.driver.find_element("xpath", f"//*[contains(text(), '{text}')]")
+        except NoSuchElementException:
+            try:
+                return self.driver.find_element("xpath", f"//input[@value='{text}']")
+            except NoSuchElementException:
+                return False
+
     def selenium_wait_for_select_and_pick_an_option(
         self, element_id, choice_name, timeout=5
     ):
@@ -699,6 +711,13 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
 
         super().run()
         self.driver.quit()
+
+    def htmx_post(self, url, data):
+        """post to an HTMX fragment and get the output. Returns a status and the body"""
+
+        headers = {"HTTP_HX-Request": "true"}
+        response = self.client.post(url, **headers, data=data)
+        return response.status_code, response.content
 
 
 class CobaltTestManagerUnit(CobaltTestManagerAbstract):

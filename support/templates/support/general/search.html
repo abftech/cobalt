@@ -115,7 +115,14 @@
 
                                     {% elif thing|get_class == 'User' %}
 
-                                        <td><a href="{% url "accounts:public_profile" pk=thing.id %}">{{ thing.full_name }}</a></td>
+                                        <td>
+                                            <a
+                                                href="{% url "accounts:public_profile" pk=thing.id %}"
+                                                id="t_search_link_{{ thing.id }}"
+                                            >
+                                                {{ thing.full_name }}
+                                            </a>
+                                        </td>
                                         <td>
                                             <a href="{% url "accounts:public_profile" pk=thing.id %}">
                                                 {{ GLOBAL_ORG}} Number: {{ thing.system_number }}
@@ -127,7 +134,14 @@
 
                                     {% elif thing|get_class == 'UnregisteredUser' %}
 
-                                        <td><a href="{% url "accounts:unregistered_public_profile" pk=thing.id %}">{{ thing.full_name }}</a></td>
+                                        <td>
+                                            <a
+                                                id="t_search_link_unreg_{{ thing.id }}"
+                                                class="t_unreg"
+                                                href="{% url "accounts:unregistered_public_profile" pk=thing.id %}">
+                                                {{ thing.full_name }}
+                                            </a>
+                                        </td>
                                         <td>
 
 {#                                        Contacts have an internal system number, Unregistered users don't #}

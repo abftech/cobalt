@@ -32,13 +32,14 @@
                 </div>
 
             <!-- EMAIL -->
-                <div id="id_email_admin"
-                     hx-post="{% url 'notifications:unregistered_user_email_admin_htmx' %}"
-                     hx-vars="user_id:{{ profile.id }}"
-                     hx-trigger="load"
-                >
-                </div>
-
+                {% if email_admin %}
+                    <div id="id_email_admin"
+                         hx-post="{% url 'notifications:unregistered_user_email_admin_htmx' %}"
+                         hx-vars="user_id:{{ profile.id }}"
+                         hx-trigger="load"
+                    >
+                    </div>
+                {% endif %}
 
             </div>
         </div>
