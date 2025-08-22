@@ -11,8 +11,11 @@ def release_notes_view(request):
             "release": "6.1.8",
             "notes": [
                 "Increase email_count for event entry tests",
-                "Extend global search to include Unregistered users",
+                "Extend global search to include Unregistered users and contacts",
+                "Add global admin ability to remove AWS email blocks for unregistered users and contacts",
+                "Add club admin ability to remove AWS email blocks for unregistered users and contacts",
                 "Add link to member email to user profile",
+                "Minor changes to test harness",
             ],
         },
         {
