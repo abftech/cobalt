@@ -2,7 +2,7 @@ from django.urls import reverse
 from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 
-from accounts.models import UnregisteredUser
+from accounts.models import UnregisteredUser, UserAdditionalInfo
 from organisations.club_admin_core import add_contact_with_system_number
 from organisations.models import Organisation, ClubMemberLog, MemberClubDetails
 from tests.test_manager import CobaltTestManagerIntegration
@@ -189,3 +189,20 @@ class UserSearch:
             test_name="Click link to go to public profile of contact",
             test_description="Click the link on the search results to view Horatio's public profile",
         )
+
+    def a4_user_email_block(self):
+        """add an email block and check we can remove it"""
+
+        # Add the block
+        alan_additional = UserAdditionalInfo.objects.filter(
+            user=self.manager.alan
+        ).first()
+        alan_additional.email_hard_bounce = True
+        alan_additional.save()
+
+        url = self.manager.base_url + reverse(
+            "accounts:public_profile", kwargs={"pk": self.manager.alan.id}
+        )
+        self.manager.driver.get(url)
+
+        self.manager.sleep()
