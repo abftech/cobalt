@@ -298,4 +298,9 @@ urlpatterns = [
         notifications.views.admin.unregistered_user_email_admin_remove_block_htmx,
         name="unregistered_user_email_admin_remove_block_htmx",
     ),
+    path(
+        "email-admin/registered_user_email_admin_remove_block_htmx",
+        notifications.views.admin.registered_user_email_admin_remove_block_htmx,
+        name="registered_user_email_admin_remove_block_htmx",
+    ),
 ]

@@ -9,7 +9,7 @@ from django.utils.safestring import SafeString
 from fcm_django.models import FCMDevice
 from post_office import mail as po_email
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User, UnregisteredUser, UserAdditionalInfo
 from cobalt.settings import (
     DEFAULT_FROM_EMAIL,
     GLOBAL_TITLE,
@@ -461,3 +461,26 @@ def unregistered_user_email_admin_remove_block_htmx(request):
     message = aws_remove_email_block(email)
 
     return unregistered_user_email_admin_htmx(request, message=message)
+
+
+@rbac_check_role("notifications.admin.view")
+def registered_user_email_admin_remove_block_htmx(request):
+    """part of registered user public profile to allow admins to handle email blocks etc.
+    This removes the block (or at least attempts to) and returns the htmx fragment to show
+    the user email details.
+    """
+
+    user_id = request.POST.get("user_id")
+    user = get_object_or_404(User, pk=user_id)
+    additional = UserAdditionalInfo.objects.filter(user=user).first()
+    if additional:
+        additional.email_hard_bounce = False
+        additional.email_hard_bounce_date = None
+        additional.email_hard_bounce_reason = None
+        additional.save()
+
+    message = aws_remove_email_block(user.email)
+
+    return HttpResponse(
+        f"<h4>Email block removed. Response from AWS was '{message}'</h4>"
+    )

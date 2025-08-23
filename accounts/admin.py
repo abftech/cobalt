@@ -75,6 +75,10 @@ class UserAdditionalInfoAdmin(admin.ModelAdmin):
         "user",
     ]
 
+    list_filter = [
+        "email_hard_bounce",
+    ]
+
 
 @admin.register(SystemCard)
 class SystemCardAdmin(admin.ModelAdmin):

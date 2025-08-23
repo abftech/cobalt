@@ -42,6 +42,7 @@
                                                 hx-target="#id_email_admin"
                                                 hx-post="{% url 'notifications:unregistered_user_email_admin_remove_block_htmx' %}"
                                                 hx-vars="user_id:{{ unreg.id }}, email:'{{ item.email }}'"
+                                                _="on click toggle @disabled"
                                             >
                                                 Remove
                                             </button>
