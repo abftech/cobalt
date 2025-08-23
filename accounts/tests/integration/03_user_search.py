@@ -203,6 +203,7 @@ class UserSearch:
         self.manager.driver.get(url)
 
         # despite Alan Admin's claim to be an uber admin, he shouldn't see the email info
+        # TODO: Add test
 
         # now login as a true global admin
         mark = User.objects.filter(username="Mark").first()
