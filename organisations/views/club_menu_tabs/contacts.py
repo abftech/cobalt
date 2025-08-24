@@ -839,6 +839,7 @@ def club_admin_report_all_csv(request, club_id):
     return response
 
 
+@login_required()
 def unregistered_user_email_club_remove_block_htmx(request):
     """
     This removes the block (or at least attempts to) and returns an HTMX fragment with
