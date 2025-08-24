@@ -1164,7 +1164,7 @@ def set_club_email_bounced(email, email_hard_bounce_reason, email_hard_bounce_da
 
 
 def clear_club_email_bounced(email):
-    """Clear bounce information for all occurances of a club email address"""
+    """Clear bounce information for all occurrences of a club email address"""
 
     MemberClubDetails.objects.filter(
         email=email,

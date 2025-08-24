@@ -11,25 +11,29 @@
 
                 {% include "accounts/profile/unregistered_public_profile_header.html" %}
 
+                {% if member_of_clubs %}
+
             <!-- MEMBERSHIPS -->
-                <div class="card mt-5">
-                    <div class="card-header card-header-info">
-                        <h2>Memberships</h2>
+                    <div class="card mt-5">
+                        <div class="card-header card-header-info">
+                            <h2>Memberships</h2>
+                        </div>
+
+                        <div class="card-body">
+                            <ul>
+                                {% for club_membership in member_of_clubs %}
+                                    <li>
+                                        <a href="{% url "organisations:general_org_profile" org_id=club_membership.club.id %}">
+                                            {{ club_membership.club }}
+                                        </a>
+                                        - {{ club_membership.get_membership_status_display }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
                     </div>
 
-                    <div class="card-body">
-                        <ul>
-                            {% for club_membership in member_of_clubs %}
-                                <li>
-                                    <a href="{% url "organisations:general_org_profile" org_id=club_membership.club.id %}">
-                                        {{ club_membership.club }}
-                                    </a>
-                                    - {{ club_membership.get_membership_status_display }}
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
+                {% endif %}
 
             <!-- EMAIL -->
                 {% if email_admin %}

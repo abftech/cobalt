@@ -16,6 +16,7 @@ from selenium.common.exceptions import (
     NoSuchElementException,
     StaleElementReferenceException,
 )
+from selenium.webdriver import Keys
 from selenium.webdriver.support.select import Select
 from termcolor import colored
 from django.db import transaction
@@ -649,6 +650,18 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
             timeout=timeout,
         )
 
+    def selenium_wait_for_clickable_by_class(self, element_class, timeout=5):
+        """Wait for element_class to be clickable and return it."""
+        element_clickable = expected_conditions.element_to_be_clickable(
+            (By.CLASS_NAME, element_class)
+        )
+        return self._selenium_wait(
+            element_clickable,
+            "wait for clickable by class",
+            element_class,
+            timeout=timeout,
+        )
+
     def selenium_wait_for_text(self, text, element_id, timeout=5):
         """Wait for text to appear in element_id."""
 
@@ -705,7 +718,12 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
 
     def selenium_scroll_to_bottom(self):
         """Scroll to bottom of screen - some things work better if in view"""
+
+        # Try scrolling by script
         self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+        # Also try using the end key
+        self.driver.find_element(By.TAG_NAME, "html").send_keys(Keys.END)
 
     def run(self):
 

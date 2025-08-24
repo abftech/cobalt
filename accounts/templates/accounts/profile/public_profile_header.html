@@ -57,6 +57,7 @@
 
                             <button
                                 class="btn btn-sm btn-primary"
+                                id="id_remove_block"
                                 hx-post="{% url 'notifications:registered_user_email_admin_remove_block_htmx' %}"
                                 hx-vars="'user_id':{{ profile.id }}"
                                 hx-target="#id_email_block"

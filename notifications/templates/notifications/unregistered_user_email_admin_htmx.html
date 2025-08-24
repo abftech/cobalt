@@ -38,7 +38,7 @@
                                     <td>
                                         {% if item.email_hard_bounce %}
                                             <button
-                                                class="btn btn-sm btn-primary"
+                                                class="btn btn-sm btn-primary t_remove_block_member"
                                                 hx-target="#id_email_admin"
                                                 hx-post="{% url 'notifications:unregistered_user_email_admin_remove_block_htmx' %}"
                                                 hx-vars="user_id:{{ unreg.id }}, email:'{{ item.email }}'"
@@ -86,7 +86,8 @@
                                     <td>
                                         {% if item.email_hard_bounce %}
                                             <button
-                                                class="btn btn-sm btn-primary"
+                                                class="btn btn-sm btn-primary t_remove_block_membership"
+                                                id="t_remove_block_membership"
                                                 hx-target="#id_email_admin"
                                                 hx-post="{% url 'notifications:unregistered_user_email_admin_remove_block_htmx' %}"
                                                 hx-vars="user_id:{{ unreg.id }}, email:'{{ item.email }}'"
