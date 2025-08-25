@@ -1,10 +1,11 @@
 from time import sleep
 
+from django.utils.timezone import now
 from post_office.models import Email
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 
-from events.models import EventEntryPlayer
+from events.models import EventEntryPlayer, Congress, CongressMaster, Event, Session
 from notifications.tests.common_functions import check_email_sent
 from payments.views.core import get_balance
 from payments.tests.integration.common_functions import stripe_manual_payment_screen
@@ -251,3 +252,38 @@ def enter_event_then_pay_and_check(
     check_and_cleanup_entry(
         test_instance, event, test_name, test_description, player_list
     )
+
+
+def test_create_congress(name, org):
+    """helper to create a congress"""
+
+    # Create congress master
+    congress_master = CongressMaster(name=name, org=org)
+    congress_master.save()
+
+    # Create congress
+    congress = Congress(
+        congress_master=congress_master,
+        start_date=now().date(),
+        end_date=now().date(),
+        name=name,
+        congress_type="club",
+    )
+
+    congress.save()
+
+    return congress
+
+
+def test_create_event(name, congress):
+    """helper to create an event in a congress"""
+
+    event = Event(congress=congress, event_name=name, entry_fee=10)
+    event.save()
+
+    session = Session(
+        event=event, session_date=now().date(), session_start=now().time()
+    )
+    session.save()
+
+    return event

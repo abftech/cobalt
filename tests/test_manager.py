@@ -61,6 +61,7 @@ LIST_OF_INTEGRATION_TESTS = {
     "Sessions": "club_sessions.tests.integration.01_sessions",
     "ClubMembership": "organisations.tests.integration.07_membership",
     "UserSearch": "accounts.tests.integration.03_user_search",
+    "AutoClose": "events.tests.integration.02_auto_close",
 }
 
 
