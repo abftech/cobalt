@@ -16,6 +16,8 @@ def release_notes_view(request):
                 "Add club admin ability to remove AWS email blocks for unregistered users and contacts",
                 "Add link to member email to user profile",
                 "Minor changes to test harness",
+                "More accurate error if viewing an unpublished congress",
+                "Fix bug where entry is left in cart if congress is auto closed",
             ],
         },
         {

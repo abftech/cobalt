@@ -245,7 +245,8 @@ def _get_event_entry_players_from_payload(route_payload):
     to Stripe so we when a payment is made we can find the corresponding entries.
 
     Note: These are the evententry_player records that were paid for, not the total entries.
-          There could be other entries in this that were paid for using a different method."""
+          There could be other entries in this that were paid for using a different method.
+    """
 
     return EventEntryPlayer.objects.filter(batch_id=route_payload)
 
@@ -851,7 +852,8 @@ def get_conveners_for_congress(congress):
 
 def convener_wishes_to_be_notified(congress, convener):
     """Checks with blocked notifications in Notifications to see if this convener wants to know about events that
-    happen or not. Currently it is binary (Yes, or No), later it could be extended to check for specific actions"""
+    happen or not. Currently it is binary (Yes, or No), later it could be extended to check for specific actions
+    """
 
     # Get any blocks in place for notifications
 
@@ -1072,6 +1074,12 @@ def fix_closed_congress(congress, actor):
         event_entry_player.payment_received = event_entry_player.entry_fee
         event_entry_player.payment_status = "Paid"
         event_entry_player.save()
+
+        # Also remove any basket items
+        BasketItem.objects.filter(
+            player=event_entry_player.player, event_entry=event_entry_player.event_entry
+        ).delete()
+
         # log it
         logger.info(action)
         EventLog(

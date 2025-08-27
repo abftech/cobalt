@@ -1,4 +1,5 @@
-""" This module has the views that are used by normal players """
+"""This module has the views that are used by normal players"""
+
 import calendar
 from datetime import datetime, date, timedelta
 from decimal import Decimal
@@ -357,7 +358,11 @@ def view_congress(request, congress_id, fullscreen=False):
         if congress.status != "Published":
             role = "events.org.%s.edit" % congress.congress_master.org.id
             if not rbac_user_has_role(request.user, role):
-                return rbac_forbidden(request, role)
+                return render(
+                    request,
+                    "events/players/congress_not_published.html",
+                    {"congress": congress},
+                )
     else:
         template = "events/players/congress_logged_out.html"
         master_template = "empty.html"
@@ -441,9 +446,9 @@ def view_congress(request, congress_id, fullscreen=False):
         )
         program["event_id"] = event.id
         program["event_name"] = event.event_name
-        program[
-            "entries_total"
-        ] = f"<td rowspan='{rows}'><span class='title'>{total_entries}</td>"
+        program["entries_total"] = (
+            f"<td rowspan='{rows}'><span class='title'>{total_entries}</td>"
+        )
         # day td
         first_row_for_event = True
         for day in days:
@@ -476,13 +481,13 @@ def view_congress(request, congress_id, fullscreen=False):
                     entry_fee += "*"
                     includes_teams_event = True
 
-                program[
-                    "event"
-                ] = f"<td rowspan='{rows}'><span class='title'>{event.event_name}</td><td rowspan='{rows}'><span class='title'>{entry_fee}</span></td>"
+                program["event"] = (
+                    f"<td rowspan='{rows}'><span class='title'>{event.event_name}</td><td rowspan='{rows}'><span class='title'>{entry_fee}</span></td>"
+                )
                 if program["entry"]:
-                    program[
-                        "links"
-                    ] = f"<td rowspan='{rows}'><a href='/events/congress/event/change-entry/{congress.id}/{event.id}' class='btn btn-block btn-sm btn-primary'>View Your Entry</a>"
+                    program["links"] = (
+                        f"<td rowspan='{rows}'><a href='/events/congress/event/change-entry/{congress.id}/{event.id}' class='btn btn-block btn-sm btn-primary'>View Your Entry</a>"
+                    )
                 else:
                     # See if taking entries
                     is_open, reason = event.is_open_with_reason()
@@ -491,20 +496,20 @@ def view_congress(request, congress_id, fullscreen=False):
 
                         if eligible_to_enter:
 
-                            program[
-                                "links"
-                            ] = f"<td rowspan='{rows}'><a href='/events/congress/event/enter/{congress.id}/{event.id}' class='btn btn-block btn-sm btn-success'>Enter</a>"
+                            program["links"] = (
+                                f"<td rowspan='{rows}'><a href='/events/congress/event/enter/{congress.id}/{event.id}' class='btn btn-block btn-sm btn-success'>Enter</a>"
+                            )
 
                         else:
 
-                            program[
-                                "links"
-                            ] = f"<td rowspan='{rows}'><button class='btn btn-block btn-sm btn-success' disabled>Enter</button>"
+                            program["links"] = (
+                                f"<td rowspan='{rows}'><button class='btn btn-block btn-sm btn-success' disabled>Enter</button>"
+                            )
 
                     else:
-                        program[
-                            "links"
-                        ] = f"<td rowspan='{rows}' class='text-center'>{reason}"
+                        program["links"] = (
+                            f"<td rowspan='{rows}' class='text-center'>{reason}"
+                        )
 
                 # Handle common parts of links
                 program["links"] += (
@@ -1514,7 +1519,8 @@ def third_party_checkout_entry(request, event_entry_id):
 
 def _third_party_checkout_entry_common(request, event_entry, event_entry_players):
     """Takes a list of event_entry_players (or a Queryset, as long as it is iterable and returns EventEntryPlayer)
-    for a single event_entry and handles the checkout process for this user to pay for them"""
+    for a single event_entry and handles the checkout process for this user to pay for them
+    """
 
     # Get this user's event_entry_player object for this event entry if there is one
     event_entry_players_me = EventEntryPlayer.objects.filter(
@@ -2057,7 +2063,6 @@ def show_congresses_for_club_htmx(request):
 
 @login_required()
 def get_other_entries_to_event_for_user_htmx(request, event_id, this_event_entry_id):
-
     """
     Get entries for this user in this event which don't include them.
     Required to allow a user to edit entries that they have made which are not their own.

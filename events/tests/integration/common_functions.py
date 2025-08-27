@@ -1,3 +1,4 @@
+from datetime import timedelta
 from time import sleep
 
 from django.utils.timezone import now
@@ -264,10 +265,11 @@ def test_create_congress(name, org):
     # Create congress
     congress = Congress(
         congress_master=congress_master,
-        start_date=now().date(),
-        end_date=now().date(),
+        start_date=(now() + timedelta(weeks=2)).date(),
+        end_date=(now() + timedelta(weeks=2)).date(),
         name=name,
         congress_type="club",
+        status="Published",
     )
 
     congress.save()
@@ -278,11 +280,15 @@ def test_create_congress(name, org):
 def test_create_event(name, congress):
     """helper to create an event in a congress"""
 
-    event = Event(congress=congress, event_name=name, entry_fee=10)
+    event = Event(
+        congress=congress, event_name=name, entry_fee=10, player_format="Individual"
+    )
     event.save()
 
     session = Session(
-        event=event, session_date=now().date(), session_start=now().time()
+        event=event,
+        session_date=(now() + timedelta(weeks=2)).date(),
+        session_start=(now() + timedelta(weeks=2)).time(),
     )
     session.save()
 
