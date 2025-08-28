@@ -16,6 +16,10 @@ Organisations Application
     information on how it works internally, you can find that in :doc:`./organisations_support`.
 
 
+.. note::
+    For information on different types of users which is relevant for using Organisations,
+    please see :doc:`./accounts`
+
 --------------
 Module Purpose
 --------------
@@ -54,7 +58,7 @@ Relationship to Members
 =======================
 
 Members are associated with a club through the
-MemberOrganisation model. A member can join more
+MemberClubDetails model. A member can join more
 than one club but can only have one "Home Club".
 Home Clubs are used for calculating fees payable
 to the higher state and national bodies by the clubs

@@ -18,6 +18,8 @@ def release_notes_view(request):
                 "Minor changes to test harness",
                 "More accurate error if viewing an unpublished congress",
                 "Fix bug where entry is left in cart if congress is auto closed",
+                "Fix Django admin view of MemberMembershipType",
+                "Update accounts documentation to include club memberships and contacts",
             ],
         },
         {

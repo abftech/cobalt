@@ -581,9 +581,9 @@ class MemberClubDetails(models.Model):
 
     Note that this is a different model to the previous MemberClubEmail model. All club members
     will have a MemberClubDetails record regardless of whether they are registered or unregistered
-    in My ABF, and regardless of whether their is a club specific email.
+    in My ABF, and regardless of whether there is a club specific email.
 
-    latest+membership and membership_status are programmatically set, not determined at runtime,
+    latest_membership and membership_status are programmatically set, not determined at runtime,
     to allow database queries to use these attributes efficiently.
 
     Note that some fields are duplicates of fields in the User model. This is to allow members

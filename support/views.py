@@ -212,6 +212,42 @@ def _add_memberships_to_queryset(queryset):
     return queryset
 
 
+def _global_search_people(query, searchparams, include_people):
+    """sub of global_search to handle people (Users, Unregistered users and contacts)"""
+
+    if not include_people:
+        return [], searchparams
+
+    # Handle splitting name in to first and second
+    if query.find(" ") >= 0:
+        first_name_search = query.split(" ")[0]
+        last_name_search = " ".join(query.split(" ")[1:])
+        q_string = Q(first_name__icontains=first_name_search) & Q(
+            last_name__icontains=last_name_search
+        )
+    else:
+        first_name_search = query
+        last_name_search = query
+        q_string = Q(first_name__icontains=first_name_search) | Q(
+            last_name__icontains=last_name_search
+        )
+
+    registered = User.objects.filter(q_string)
+    unregistered = UnregisteredUser.objects.filter(q_string)
+
+    # Augment with membership data
+    registered_with_memberships = _add_memberships_to_queryset(registered)
+    unregistered_with_memberships = _add_memberships_to_queryset(unregistered)
+
+    #
+
+    data = list(chain(registered_with_memberships, unregistered_with_memberships))
+
+    searchparams += "include_people=1&"
+
+    return data, searchparams
+
+
 @login_required
 def global_search(request):
     """This handles the search bar that appears on every page. Also gets called from the search panel that
@@ -243,66 +279,32 @@ def global_search(request):
         searchparams = f"search_string={query.replace(' ', '%20')}&"
 
         # Users
-        if include_people:
+        people, searchparams = _global_search_people(
+            query, searchparams, include_people
+        )
 
-            if query.find(" ") >= 0:
-                first_name = query.split(" ")[0]
-                last_name = " ".join(query.split(" ")[1:])
-                people = User.objects.filter(
-                    Q(first_name__icontains=first_name)
-                    & Q(last_name__icontains=last_name)
-                )
-            else:
-                people = User.objects.filter(
-                    Q(first_name__icontains=query)
-                    | Q(last_name__icontains=query)
-                    | Q(system_number__icontains=query)
-                )
-
-            # Augment with membership data
-            people = _add_memberships_to_queryset(people)
-
-            # Also include unregistered users
-            if query.find(" ") >= 0:
-                first_name = query.split(" ")[0]
-                last_name = " ".join(query.split(" ")[1:])
-                unregistered = UnregisteredUser.all_objects.filter(
-                    Q(first_name__icontains=first_name)
-                    & Q(last_name__icontains=last_name)
-                )
-            else:
-                unregistered = UnregisteredUser.all_objects.filter(
-                    Q(first_name__icontains=query)
-                    | Q(last_name__icontains=query)
-                    | Q(system_number__icontains=query)
-                )
-
-            # Augment with membership data
-            unregistered = _add_memberships_to_queryset(unregistered)
-
-            searchparams += "include_people=1&"
-        else:
-            people = []
-            unregistered = []
-
+        # Posts
         if include_posts:
             posts = Post.objects.filter(title__icontains=query)
             searchparams += "include_posts=1&"
         else:
             posts = []
 
+        # Forums
         if include_forums:
             forums = Forum.objects.filter(title__icontains=query)
             searchparams += "include_forums=1&"
         else:
             forums = []
 
+        # Events
         if include_events:
             events = Congress.objects.filter(name__icontains=query)
             searchparams += "include_events=1&"
         else:
             events = []
 
+        # payments
         if include_payments:
             payments = MemberTransaction.objects.filter(
                 description__icontains=query, member=request.user
@@ -311,6 +313,7 @@ def global_search(request):
         else:
             payments = []
 
+        # orgs
         if include_orgs:
             orgs = Organisation.objects.filter(name__icontains=query)
             searchparams += "include_orgs=1&"
@@ -318,9 +321,7 @@ def global_search(request):
             orgs = []
 
         # combine outputs
-        results = list(
-            chain(people, unregistered, posts, forums, events, payments, orgs)
-        )
+        results = list(chain(people, posts, forums, events, payments, orgs))
 
         # create paginator
         things = cobalt_paginator(request, results)
