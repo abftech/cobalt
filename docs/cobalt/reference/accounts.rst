@@ -153,9 +153,15 @@ of Accounts).
 Contacts
 ========
 
-Contacts are not handled by the Accounts module, they belong to Organisations.
+Contacts may or may not have ABF numbers and even if they do they may or may not
+have MyABF accounts.
 
-Contacts are linked to organisations through MemberClubDetails.
+If a club adds an existing User to their contacts then a MemberClubDetails record is
+created. If they add an ABF member who is not signed up for MyABF then an UnregisteredUser
+record will be created if it does not already exist, as well as the MemberClubDetails record.
+
+For contacts who do not have an ABF number, an UnregisteredUser record is created with a fake
+ABF number. The field `internal_system_number` on the UnregisteredUser is set to True.
 
 Models
 =============
@@ -212,7 +218,7 @@ Contact - User                              User,
                                             MemberClubDetails
 Contact - UnregisteredUser                  UnregisteredUser,
                                             MemberClubDetails
-Contact - User                              UnregisteredUser,
+Contact - No ABF Number                     UnregisteredUser,
                                             MemberClubDetails
 =========================================== ===========================  ========================
 

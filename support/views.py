@@ -212,11 +212,14 @@ def _add_memberships_to_queryset(queryset):
     return queryset
 
 
-def _global_search_people(query, searchparams, include_people):
+def _global_search_people(request, query, searchparams, include_people):
     """sub of global_search to handle people (Users, Unregistered users and contacts)"""
 
     if not include_people:
         return [], searchparams
+
+    # If this user is an email admin, then we include contacts
+    email_admin = bool(rbac_user_has_role(request.user, "notifications.admin.view"))
 
     # Handle splitting name in to first and second
     if query.find(" ") >= 0:
@@ -233,13 +236,17 @@ def _global_search_people(query, searchparams, include_people):
         )
 
     registered = User.objects.filter(q_string)
+
+    # Unregistered users holds both unregistered users and contacts who have fake system_numbers assigned
     unregistered = UnregisteredUser.objects.filter(q_string)
+
+    # Don't include contacts (have internal system numbers) unless an admin
+    if not email_admin:
+        unregistered = unregistered.exclude(internal_system_number=True)
 
     # Augment with membership data
     registered_with_memberships = _add_memberships_to_queryset(registered)
     unregistered_with_memberships = _add_memberships_to_queryset(unregistered)
-
-    #
 
     data = list(chain(registered_with_memberships, unregistered_with_memberships))
 
@@ -280,7 +287,7 @@ def global_search(request):
 
         # Users
         people, searchparams = _global_search_people(
-            query, searchparams, include_people
+            request, query, searchparams, include_people
         )
 
         # Posts

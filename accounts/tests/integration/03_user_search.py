@@ -10,6 +10,11 @@ from selenium.webdriver.common.by import By
 from accounts.models import UnregisteredUser, UserAdditionalInfo, User
 from cobalt.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION_NAME
 from organisations.models import Organisation, ClubMemberLog, MemberClubDetails
+from rbac.core import (
+    rbac_add_user_to_group,
+    rbac_get_group_by_name,
+    rbac_remove_user_from_group,
+)
 from tests.test_manager import CobaltTestManagerIntegration
 
 
@@ -213,7 +218,28 @@ class UserSearch:
             output=f"{unreg=} {membership_details=} {log_entry=} {ok=}",
         )
 
-        # Now try the search
+        # Now try the search - shouldn't work as Alan isn't an email admin so shouldn't get to see
+        # contacts
+        # Find the search field
+        search = self.manager.selenium_wait_for_clickable("search_string")
+
+        # put in Horatio and hit enter
+        search.send_keys("horat")
+        search.send_keys(Keys.RETURN)
+
+        # Look for expected text
+        horatio_text = self.manager.selenium_find_text_on_page("Horatio")
+
+        self.manager.save_results(
+            status=not horatio_text,
+            test_name="Search for contact by name as normal user",
+            test_description="Enter Horatio in search box and look for contact as a normal user. Should fail.",
+        )
+
+        # Upgrade alan to an admin
+        rbac_group = rbac_get_group_by_name("rbac.orgs.abf.abf_roles.email_view")
+        rbac_add_user_to_group(self.manager.alan, rbac_group)
+
         # Find the search field
         search = self.manager.selenium_wait_for_clickable("search_string")
 
@@ -230,6 +256,8 @@ class UserSearch:
             test_description="Enter Horatio in search box and check we find him",
         )
 
+        self.manager.sleep()
+
         # Click on link to go to profile
         self.manager.driver.find_element(By.CLASS_NAME, "t_unreg").click()
 
@@ -244,6 +272,9 @@ class UserSearch:
             test_name="Click link to go to public profile of contact",
             test_description="Click the link on the search results to view Horatio's public profile",
         )
+
+        # Downgrade Alan
+        rbac_remove_user_from_group(self.manager.alan, rbac_group)
 
     def a4_user_email_block(self):
         """add an email block and check we can remove it"""
