@@ -47,7 +47,7 @@ class Command(BaseCommand):
         }
 
         send_cobalt_email_with_template(
-            "m@rkguthrie.com",
+            "m@rkguthrie.au",
             context,
             priority="now",
             sender=sender,
