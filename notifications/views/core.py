@@ -360,9 +360,9 @@ def send_cobalt_email_with_template(
         logger.debug(f"Email is part of a large batch of {batch_size}")
 
     if reply_to:
-        headers["Reply-to"] = reply_to
+        headers["Reply-To"] = reply_to
     elif default_org_template and default_org_template.reply_to:
-        headers["Reply-to"] = default_org_template.reply_to
+        headers["Reply-To"] = default_org_template.reply_to
 
     this_sender = sender
     if this_sender is None:
