@@ -84,7 +84,7 @@ API_KEY_PREFIX = set_value("API_KEY_PREFIX", "API_")
 
 # Set up ADMINS list from string
 ADMINS = [
-    ("Mark Guthrie", "m@rkguthrie.com"),
+    ("Mark Guthrie", "m@rkguthrie.au"),
     # ("Julian Foster", "Julian.Foster@abf.com.au"),
 ]
 
