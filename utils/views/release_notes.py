@@ -8,7 +8,7 @@ def release_notes_view(request):
 
     release_notes = [
         {
-            "release": "6.1.8",
+            "release": "6.1.9",
             "notes": [
                 "Increase email_count for event entry tests",
                 "Extend global search to include Unregistered users and contacts",
@@ -20,6 +20,12 @@ def release_notes_view(request):
                 "Fix bug where entry is left in cart if congress is auto closed",
                 "Fix Django admin view of MemberMembershipType",
                 "Update accounts documentation to include club memberships and contacts",
+            ],
+        },
+        {
+            "release": "6.1.8",
+            "notes": [
+                "Fix reply_to bug after Django update",
             ],
         },
         {
