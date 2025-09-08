@@ -8,6 +8,12 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.1.8",
+            "notes": [
+                "Fix reply_to bug after Django update",
+            ],
+        },
+        {
             "release": "6.1.7",
             "notes": [
                 "Added results_url to congresses",
