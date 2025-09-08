@@ -278,6 +278,15 @@ class Congress(models.Model):
                 styles=BLEACH_ALLOWED_STYLES,
             )
 
+        if self.results_url and getattr(self, "_results_url_changed", True):
+            self.results_url = bleach.clean(
+                self.results_url,
+                strip=True,
+                tags=BLEACH_ALLOWED_TAGS,
+                attributes=BLEACH_ALLOWED_ATTRIBUTES,
+                styles=BLEACH_ALLOWED_STYLES,
+            )
+
         if self.venue_additional_info and getattr(
             self, "_venue_additional_info_changed", True
         ):

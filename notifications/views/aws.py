@@ -16,6 +16,30 @@ def debug(request):
     return HttpResponse()
 
 
+def aws_remove_email_block(email_address_to_remove):
+    """remove an AWS SES email block for an email address"""
+
+    # Create AWS API client
+    client = boto3.client(
+        "sesv2",
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        region_name=AWS_REGION_NAME,
+    )
+
+    try:
+        client.delete_suppressed_destination(EmailAddress=email_address_to_remove)
+        message = f"Email block removed for {email_address_to_remove}"
+
+        # Also remove from our internal list
+        remove_email_from_blocked_list(email_address_to_remove)
+
+    except Exception as exc:
+        message = exc.__str__()
+
+    return message
+
+
 @login_required()
 def admin_aws_suppression(request):
     """Manage AWS Email Suppression Lists. An email address gets put on a suppression list by AWS but we can remove

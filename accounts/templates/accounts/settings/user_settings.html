@@ -35,6 +35,24 @@
                                                     <div class="col-md-12">
                                                         <div class="form-check">
                                                             <div class="row justify-content-center">
+                                                                <span class="cobalt-form-error" id="id_receive_member_to_member_emails">{{ form.receive_member_to_member_emails.errors|striptags }}</span>
+                                                            </div>
+                                                            <label class="form-check-label">
+                                                                <input class="form-check-input" id="id_receive_member_to_member_emails" name="receive_member_to_member_emails" type="checkbox" {% if form.receive_member_to_member_emails.value %}checked="Checked"{% endif %}>
+                                                                Receive emails from other members
+                                                                <span class="form-check-sign">
+                                                                    <span class="check"></span>
+                                                                </span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <div class="col-md-12">
+                                                        <div class="form-check">
+                                                            <div class="row justify-content-center">
                                                                 <span class="cobalt-form-error" id="id_receive_email_errors">{{ form.receive_email.errors|striptags }}</span>
                                                             </div>
                                                             <label class="form-check-label">
@@ -289,14 +307,14 @@
                                     <div class="col-md-12">
                                         <button type="submit" class="btn btn-primary cobalt-save" disabled
                                             {# Hyperscript to remove disabled attribute if form changes #}
-                                            _="on change from closest <form/> remove @disabled"
+                                                _="on change from closest <form/> remove @disabled"
                                         >
-                                        Update Settings</button>
-                                    <div class="clearfix"></div>
-                                </div>
-                            </form>
+                                            Update Settings</button>
+                                        <div class="clearfix"></div>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-                    </div>
                     <!-- system notifications -->
 
                     <!-- <br>
@@ -344,135 +362,135 @@
           </div> -->
                     <!-- system notifications -->
 
-                </div>
-                <div class="col-md-4">
-                    <div class="card card-profile">
-                        <div class="card-body">
-                            <img id="cobalt-pic" class="cobalt-rounded text-center" style="height: 140px; width: 140px;" src="/media/{{ request.user.pic }}" />
-
-                            <h4 class="card-title">{{ request.user.full_name }}</h4>
-                            <p class="card-description">
-                                {{ request.user.about|default_if_none:"You haven't added anything yet. Visit Profile to change this." }}
-                            </p>
-                            <a href="{% url "accounts:user_profile" %}">Edit...</a>
-                        </div>
                     </div>
-                </div>
-
-                {% if is_developer %}
-                    <div class="col-md-8">
-                        <div class="card">
-                            <div class="card-header card-header-rose">
-                                <h2>Developer Settings</h2>
-                            </div>
-                            <div
-                                id="dev-settings"
-                                class="card-body"
-                                hx-post="{% url "accounts:developer_settings_htmx" %}"
-                                hx-trigger="load"
-                            >
-                            </div>
-                        </div>
-                    </div>
-                {% endif %}
-
-                {% if fcm_devices %}
-                    <div class="col-md-8">
-                        <div class="card">
-                            <div class="card-header card-header-rose">
-                                <h2>Mobile Devices</h2>
-                                <p>If you use the {{ GLOBAL_TITLE }} mobile app, then your devices will appear here.</p>
-                            </div>
+                    <div class="col-md-4">
+                        <div class="card card-profile">
                             <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-condensed table-hover">
-                                        <thead>
-                                            <tr class="text-primary">
-                                                <th>Device</th>
-                                                <th>Date Created</th>
-                                                <th>Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for fcm_device in fcm_devices %}
-                                                <tr>
-                                                    <td>{{ fcm_device.name }} ({{ fcm_device.type }})</td>
-                                                    <td>{{ fcm_device.date_created|cobalt_nice_datetime }}</td>
-                                                    <td>
-                                                        <button class="btn btn-sm btn-danger delete-device" id="delete-device-{{ fcm_device.id }}">Forget</button>
-                                                        <button
-                                                            class="btn btn-sm btn-info"
-                                                            hx-get="{% url "notifications:send_test_fcm_message" fcm_device_id=fcm_device.id %}"
-                                                            hx-target="#test-msg-{{ fcm_device.id }}"
-                                                        >Test</button>
-                                                        <div id="test-msg-{{ fcm_device.id }}">
+                                <img id="cobalt-pic" class="cobalt-rounded text-center" style="height: 140px; width: 140px;" src="/media/{{ request.user.pic }}" />
 
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
+                                <h4 class="card-title">{{ request.user.full_name }}</h4>
+                                <p class="card-description">
+                                    {{ request.user.about|default_if_none:"You haven't added anything yet. Visit Profile to change this." }}
+                                </p>
+                                <a href="{% url "accounts:user_profile" %}">Edit...</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if is_developer %}
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header card-header-rose">
+                                    <h2>Developer Settings</h2>
+                                </div>
+                                <div
+                                    id="dev-settings"
+                                    class="card-body"
+                                    hx-post="{% url "accounts:developer_settings_htmx" %}"
+                                    hx-trigger="load"
+                                >
                                 </div>
                             </div>
                         </div>
-                    </div>
-                {% endif %}
+                    {% endif %}
 
-                {% if sessions.length > 1 %}
-                    <div class="col-md-8">
-                        <div class="card">
-                            <div class="card-header card-header-warning">
-                                <h2>Sessions</h2>
-                                <p>When you log in on a device (computer, tablet, phone etc) a session
-                                    is created and a cookie stored in your browser.
-                                    If you forget to logout and would like to force the browser to be logged out, you
-                                    can delete the session from here.</p>
-                                <p>Unlike most modern websites, we do not track our users. The only information
-                                    that we keep about your sessions is the expiry date.</p>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-condensed table-hover">
-                                        <thead>
-                                            <tr class="text-primary">
-                                                <th>Session</th>
-                                                <th>Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for session in sessions %}
-                                                <tr>
-                                                    <td class="text-left">
-                                                        {% if request.session.session_key == session.session_key %}
-                                                            <span class="font-weight-bold">
-                                                                Session Token expires on {{ session.expire_date|cobalt_nice_datetime }} - This Session
-                                                            </span>
-                                                        {% else %}
-                                                            Session Token expires on {{ session.expire_date|cobalt_nice_datetime }}
-                                                        {% endif %}
-                                                    </td>
-                                                    <td>
-                                                        {% if request.session.session_key == session.session_key %}
-                                                            <button class="btn btn-sm btn-info" disabled>Delete</button>
-                                                        {% else %}
-                                                            <button id="{{ session.session_key }}" class="btn btn-sm btn-info delete-session">Delete</button>
-                                                        {% endif %}
-                                                    </td>
+                    {% if fcm_devices %}
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header card-header-rose">
+                                    <h2>Mobile Devices</h2>
+                                    <p>If you use the {{ GLOBAL_TITLE }} mobile app, then your devices will appear here.</p>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-condensed table-hover">
+                                            <thead>
+                                                <tr class="text-primary">
+                                                    <th>Device</th>
+                                                    <th>Date Created</th>
+                                                    <th>Action</th>
                                                 </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {% for fcm_device in fcm_devices %}
+                                                    <tr>
+                                                        <td>{{ fcm_device.name }} ({{ fcm_device.type }})</td>
+                                                        <td>{{ fcm_device.date_created|cobalt_nice_datetime }}</td>
+                                                        <td>
+                                                            <button class="btn btn-sm btn-danger delete-device" id="delete-device-{{ fcm_device.id }}">Forget</button>
+                                                            <button
+                                                                class="btn btn-sm btn-info"
+                                                                hx-get="{% url "notifications:send_test_fcm_message" fcm_device_id=fcm_device.id %}"
+                                                                hx-target="#test-msg-{{ fcm_device.id }}"
+                                                            >Test</button>
+                                                            <div id="test-msg-{{ fcm_device.id }}">
+
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                {% endif %}
+                    {% endif %}
+
+                    {% if sessions.length > 1 %}
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header card-header-warning">
+                                    <h2>Sessions</h2>
+                                    <p>When you log in on a device (computer, tablet, phone etc) a session
+                                        is created and a cookie stored in your browser.
+                                        If you forget to logout and would like to force the browser to be logged out, you
+                                        can delete the session from here.</p>
+                                    <p>Unlike most modern websites, we do not track our users. The only information
+                                        that we keep about your sessions is the expiry date.</p>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-condensed table-hover">
+                                            <thead>
+                                                <tr class="text-primary">
+                                                    <th>Session</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for session in sessions %}
+                                                    <tr>
+                                                        <td class="text-left">
+                                                            {% if request.session.session_key == session.session_key %}
+                                                                <span class="font-weight-bold">
+                                                                    Session Token expires on {{ session.expire_date|cobalt_nice_datetime }} - This Session
+                                                                </span>
+                                                            {% else %}
+                                                                Session Token expires on {{ session.expire_date|cobalt_nice_datetime }}
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            {% if request.session.session_key == session.session_key %}
+                                                                <button class="btn btn-sm btn-info" disabled>Delete</button>
+                                                            {% else %}
+                                                                <button id="{{ session.session_key }}" class="btn btn-sm btn-info delete-session">Delete</button>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
 
 
+                </div>
             </div>
         </div>
-    </div>
     </div>
 {% endblock %}
 {% block footer %}
@@ -492,16 +510,16 @@
                 if (result.value) {
                     $.get("{% url "accounts:delete_fcm_device_ajax" %}?device_id=" + device_id)
                         .done(response => {
-                        msg = response['data']['message'];
-                        if (msg == 'Success'){
-                            swal.fire({ title:"Device Removed", html: "Success. Device will no longer receive messages", icon: "success"})
-                                .then((result) => {
-                                location.reload();
-                            });
-                        } else {
-                            swal.fire({ title:"Error", html: msg, icon: "error"})
-                        }
-                    });
+                            msg = response['data']['message'];
+                            if (msg == 'Success'){
+                                swal.fire({ title:"Device Removed", html: "Success. Device will no longer receive messages", icon: "success"})
+                                    .then((result) => {
+                                        location.reload();
+                                    });
+                            } else {
+                                swal.fire({ title:"Error", html: msg, icon: "error"})
+                            }
+                        });
                 }
             })
         }
@@ -519,16 +537,16 @@
                 if (result.value) {
                     $.get("{% url "accounts:delete_session_token_ajax" %}?session_id=" + session_id)
                         .done(response => {
-                        msg = response['data']['message'];
-                        if (msg == 'Success'){
-                            swal.fire({ title:"Device Logged Out", html: "Success. If you use this device again you will need to log in.", icon: "success"})
-                                .then((result) => {
-                                location.reload();
-                            });
-                        } else {
-                            swal.fire({ title:"Error", html: msg, icon: "error"})
-                        }
-                    });
+                            msg = response['data']['message'];
+                            if (msg == 'Success'){
+                                swal.fire({ title:"Device Logged Out", html: "Success. If you use this device again you will need to log in.", icon: "success"})
+                                    .then((result) => {
+                                        location.reload();
+                                    });
+                            } else {
+                                swal.fire({ title:"Error", html: msg, icon: "error"})
+                            }
+                        });
                 }
             })
         }

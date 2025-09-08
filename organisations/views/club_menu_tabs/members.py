@@ -1678,6 +1678,7 @@ def club_admin_edit_member_htmx(request, club, message=None):
         form = MemberClubDetailsForm(request.POST, instance=member_details)
         forms_ok = form.is_valid()
         forms_changed = form.has_changed()
+        email_changed = "email" in form.changed_data
 
         if not club.full_club_admin:
             smm_form = MembershipRawEditForm(
@@ -1709,15 +1710,12 @@ def club_admin_edit_member_htmx(request, club, message=None):
                     form.save()
                     new_status = smm_form.cleaned_data["membership_state"]
 
-                    # JPG Debug
-                    print(
-                        f"Saving status {new_status}, current = {member_details.membership_status}"
-                    )
                     if member_details.membership_status != new_status:
                         member_details.previous_membership_status = (
                             member_details.membership_status
                         )
                         member_details.membership_status = new_status
+
                     member_details.save()
                 elif form.has_changed():
                     form.save()
@@ -1734,7 +1732,14 @@ def club_admin_edit_member_htmx(request, club, message=None):
                     club, system_number, request.user, "Member details changed"
                 )
 
-            # reload to ensure that the new state is reflected corrcetly
+            if email_changed:
+                # remove any blocks
+                member_details.email_hard_bounce = False
+                member_details.email_hard_bounce_reason = ""
+                member_details.email_hard_bounce_date = None
+                member_details.save()
+
+            # reload to ensure that the new state is reflected correctly
             request.POST = request.POST.copy()
             request.POST["save"] = "NO"
             request.POST["edit"] = "NO"

@@ -29,20 +29,44 @@
                 <br>
                 {{ profile.about|default_if_none:"" }}
             </p>
+
+            <!-- MEMBER TO MEMBER EMAIL -->
+            {% if profile.receive_member_to_member_emails %}
+                <a
+                    href="{% url "notifications:member_to_member_email" member_id=profile.id %}"
+                    class="btn btn-success btn-sm"
+                >Send Email</a>
+            {% endif %}
+
         </div>
 
-        {% if email_admin  or payments_admin or events_admin or tickets %}
+        {% if email_admin or payments_admin or events_admin or tickets %}
 
             {% if user_additional_info.email_hard_bounce %}
-                <div class="card col-10 mx-auto">
-                    <div class="card-header card-header-info">
-                        <h4>Email Bounced!!!</h4>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-danger">We are not sending emails to this address ({{ profile.email }})
-                            as we got a hard bounce when we last tried to send on {{ user_additional_info.email_hard_bounce_date|cobalt_nice_datetime }}.</p>
-                        <p>The reason returned was: {{ user_additional_info.email_hard_bounce_reason }}</p>
+                <div id="id_email_block">
+                    <div class="card col-10 mx-auto">
+                        <div class="card-header card-header-info">
+                            <h4>Email Bounced</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-danger">We are not sending emails to this address ({{ profile.email }})
+                                as we got a hard bounce when we last tried to send on {{ user_additional_info.email_hard_bounce_date|cobalt_nice_datetime }}.</p>
+                            <p>The reason returned was: {{ user_additional_info.email_hard_bounce_reason }}</p>
+                            <p>Correct the email address to remove the block or click below if you believe
+                                this is an error.</p>
 
+                            <button
+                                class="btn btn-sm btn-primary"
+                                id="id_remove_block"
+                                hx-post="{% url 'notifications:registered_user_email_admin_remove_block_htmx' %}"
+                                hx-vars="'user_id':{{ profile.id }}"
+                                hx-target="#id_email_block"
+                                _="on click toggle @disabled"
+                            >
+                                Remove Block
+                            </button>
+
+                        </div>
                     </div>
                 </div>
             {% endif %}

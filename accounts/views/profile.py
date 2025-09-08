@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 
 from accounts.forms import UserUpdateForm, BlurbUpdateForm, PhotoUpdateForm
-from accounts.models import UserAdditionalInfo, TeamMate, User
+from accounts.models import UserAdditionalInfo, TeamMate, User, UnregisteredUser
 from accounts.views.core import _check_duplicate_email
 from forums.models import Post, Comment1, Comment2
 from masterpoints.views import user_summary
@@ -70,7 +70,7 @@ def profile(request):
 
         updated_clubs = share_user_data_with_clubs(request.user)
         if updated_clubs:
-            feedback += f", {updated_clubs} club membership{'s' if updated_clubs>1 else ''} updated"
+            feedback += f", {updated_clubs} club membership{'s' if updated_clubs > 1 else ''} updated"
 
         messages.success(request, feedback, extra_tags="cobalt-message-success")
 
@@ -280,6 +280,39 @@ def picture_form_upload(request):
             print(photoform.errors)
 
     return redirect("accounts:user_profile")
+
+
+@login_required
+def unregistered_public_profile(request, pk):
+    """Public Profile form for unregistered users.
+
+    Args:
+        request - standard request object
+        pk - key of User
+
+    Returns:
+        HttpResponse
+    """
+
+    unreg_profile = get_object_or_404(UnregisteredUser, pk=pk)
+
+    summary = user_summary(unreg_profile.system_number)
+
+    email_admin = bool(rbac_user_has_role(request.user, "notifications.admin.view"))
+
+    # Get clubs
+    member_of_clubs = get_club_memberships_for_person(unreg_profile.system_number)
+
+    return render(
+        request,
+        "accounts/profile/unregistered_public_profile.html",
+        {
+            "profile": unreg_profile,
+            "summary": summary,
+            "email_admin": email_admin,
+            "member_of_clubs": member_of_clubs,
+        },
+    )
 
 
 @login_required

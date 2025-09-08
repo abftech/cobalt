@@ -14,7 +14,7 @@ def check_email_sent(
     email_to: str = None,
     subject_search: str = None,
     body_search: str = None,
-    email_count: int = 10,
+    email_count: int = 20,
     debug: bool = False,
     save_results: bool = True,
 ):
@@ -68,7 +68,7 @@ def check_email_sent(
         debug,
     )
 
-    output += f"Result was '{ok}'"
+    output += f" Result was '{ok}'"
 
     if save_results:
         manager.save_results(

@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseNotFound
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -218,6 +219,10 @@ def member_to_member_email(request, member_id):
     # TODO: Add in app notification
 
     member = get_object_or_404(User, pk=member_id)
+
+    # Shouldn't get here normally if this is disabled
+    if not member.receive_member_to_member_emails:
+        return HttpResponseNotFound("Member has disabled emails")
 
     form = MemberToMemberEmailForm(request.POST or None)
 

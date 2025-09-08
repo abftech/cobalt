@@ -14,7 +14,7 @@
 	<key>Bell</key>
 	<false/>
 	<key>CommandString</key>
-	<string>. ~/Development/c2/cobalt/utils/cgit/tools/test_stripe_short.sh</string>
+	<string> . ~/Development/c2/cobalt/utils/cgit/tools/test_stripe_short.sh</string>
 	<key>CursorColor</key>
 	<data>
 	YnBsaXN0MDDUAQIDBAUGBwpYJHZlcnNpb25ZJGFyY2hpdmVyVCR0b3BYJG9iamVjdHMS

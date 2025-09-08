@@ -1164,7 +1164,7 @@ def set_club_email_bounced(email, email_hard_bounce_reason, email_hard_bounce_da
 
 
 def clear_club_email_bounced(email):
-    """Clear bounce information for all occurances of a club email address"""
+    """Clear bounce information for all occurrences of a club email address"""
 
     MemberClubDetails.objects.filter(
         email=email,
@@ -1185,7 +1185,7 @@ def get_club_memberships_for_person(system_number):
     return MemberClubDetails.objects.filter(
         system_number=system_number,
         membership_status__in=MEMBERSHIP_STATES_ACTIVE,
-    )
+    ).select_related("club")
 
 
 def get_outstanding_membership_fees_for_user(user):

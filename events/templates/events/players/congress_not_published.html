@@ -1,0 +1,16 @@
+{#------------------------------------------------------------------------#}
+{#                                                                        #}
+{# Error page to show if a user tries to view an unpublished congress     #}
+{#                                                                        #}
+{#------------------------------------------------------------------------#}
+
+{% extends 'base.html' %}
+{% block title %} - Congress View{% endblock %}
+{% block content %}
+    <h2>{{ congress }} - Not Published</h2>
+    <p>The organiser of this event has not yet published it and you are do not have
+        access rights to view this before it is published.</p>
+    {% if congress.contact_email %}
+        <p>Please contact <a href="mailto:{{ congress.contact_email }}">{{ congress.contact_email }}</a>.</p>
+    {% endif %}
+{% endblock %}

@@ -53,6 +53,7 @@ class MemberMembershipTypeAdmin(admin.ModelAdmin):
     autocomplete_fields = [
         "membership_type",
         "last_modified_by",
+        "payment_method",
     ]
 
     search_fields = ["system_number"]

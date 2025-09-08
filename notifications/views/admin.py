@@ -9,7 +9,7 @@ from django.utils.safestring import SafeString
 from fcm_django.models import FCMDevice
 from post_office import mail as po_email
 
-from accounts.models import User
+from accounts.models import User, UnregisteredUser, UserAdditionalInfo
 from cobalt.settings import (
     DEFAULT_FROM_EMAIL,
     GLOBAL_TITLE,
@@ -22,7 +22,9 @@ from notifications.models import (
     RealtimeNotificationHeader,
     RealtimeNotification,
 )
+from notifications.views.aws import aws_remove_email_block
 from notifications.views.core import _cloudwatch_reader, send_fcm_message
+from organisations.models import MemberClubEmail, MemberClubDetails
 from rbac.core import rbac_user_has_role
 from rbac.decorators import rbac_check_role
 from rbac.views import rbac_forbidden
@@ -419,4 +421,66 @@ def admin_send_test_fcm_message(request):
 
     return render(
         request, "notifications/admin_send_test_fcm_message.html", {"message": message}
+    )
+
+
+@rbac_check_role("notifications.admin.view")
+def unregistered_user_email_admin_htmx(request, message=None):
+    """part of unregistered user public profile to allow admins to handle email blocks etc"""
+
+    unreg = get_object_or_404(UnregisteredUser, pk=request.POST.get("user_id"))
+
+    membership_emails = MemberClubEmail.objects.filter(
+        system_number=unreg.system_number
+    )
+    membership_details = MemberClubDetails.objects.filter(
+        system_number=unreg.system_number
+    )
+
+    return render(
+        request,
+        "notifications/unregistered_user_email_admin_htmx.html",
+        {
+            "unreg": unreg,
+            "membership_emails": membership_emails,
+            "membership_details": membership_details,
+            "message": message,
+        },
+    )
+
+
+@rbac_check_role("notifications.admin.view")
+def unregistered_user_email_admin_remove_block_htmx(request):
+    """part of unregistered user public profile to allow admins to handle email blocks etc.
+    This removes the block (or at least attempts to) and returns the htmx fragment to show
+    the user email details.
+    """
+
+    email = request.POST.get("email")
+
+    message = aws_remove_email_block(email)
+
+    return unregistered_user_email_admin_htmx(request, message=message)
+
+
+@rbac_check_role("notifications.admin.view")
+def registered_user_email_admin_remove_block_htmx(request):
+    """part of registered user public profile to allow admins to handle email blocks etc.
+    This removes the block (or at least attempts to) and returns the htmx fragment to show
+    the user email details.
+    """
+
+    user_id = request.POST.get("user_id")
+    user = get_object_or_404(User, pk=user_id)
+    additional = UserAdditionalInfo.objects.filter(user=user).first()
+    if additional:
+        additional.email_hard_bounce = False
+        additional.email_hard_bounce_date = None
+        additional.email_hard_bounce_reason = None
+        additional.save()
+
+    message = aws_remove_email_block(user.email)
+
+    return HttpResponse(
+        f"<h4>Email block removed. Response from AWS was '{message}'</h4>"
     )

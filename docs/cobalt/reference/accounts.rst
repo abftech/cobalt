@@ -99,7 +99,7 @@ We support three kinds of users:
 
 * **Users** - These are full users of Cobalt and have signed up themselves.
 * **UnregisteredUsers** - These are second class citizens used mainly by Organisations.
-* **Visitors** - These are not ABF Members and are supported only for completeness for clubs.
+* **Contacts** - These are not ABF Members and are supported only for completeness for clubs.
 
 -------------
 User Objects
@@ -150,9 +150,197 @@ handle Accounts informing them of users changing from Unregistered Users to
 Users (this is done effectively with a callback in the registration view
 of Accounts).
 
-Visitors
+Contacts
 ========
 
-Visitors are identified by their email address. They cannot see results
-or use the Cobalt website at all. We could consider emailing them
-the results though.
+Contacts may or may not have ABF numbers and even if they do they may or may not
+have MyABF accounts.
+
+If a club adds an existing User to their contacts then a MemberClubDetails record is
+created. If they add an ABF member who is not signed up for MyABF then an UnregisteredUser
+record will be created if it does not already exist, as well as the MemberClubDetails record.
+
+For contacts who do not have an ABF number, an UnregisteredUser record is created with a fake
+ABF number. The field `internal_system_number` on the UnregisteredUser is set to True.
+
+Models
+=============
+
+**User**
+    Standard Django user object, with system_number (ABF number). Used for people who have
+    signed up for MyABF.
+
+**UnregisteredUser**
+    Mimics the User object (similar properties). Used for people who are ABF members but have
+    not signed up. if they sign up, we delete the UnregisteredUser and replace with a User.
+
+**Contact**
+    Contacts are not explicitly defined. In order to find a contact you need to look for
+    a MemberClubDetails that has a membership_status of contact.
+
+**Organisation**
+    Usually a club.
+
+**MembershipType**
+    Definition of a membership for an organisation. Fees, etc.
+
+**MemberMembershipType**
+    Links a "user" to a membership type.
+
+    **NOTE: there is no foreign key relationship. The
+    link is done as a soft link using system_number**.
+
+**MemberClubDetails**
+    Links an organisation (calls it a club) to a system_number (no foreign key) and a latest
+    membership. Has a membership_status which can be "current", "lapsed" etc or "contact" to
+    identify contacts who are not members at all.
+
+**MemberClubOptions**
+    Holds some preferences for a User/Organisation combination.
+
+Relationships - Users and Organisations
+=======================================
+
+This section describes the model (database table) entries you should expect to find
+for different types of user.
+
+=========================================== ===========================  ========================
+User Type                                   Required                     Optional
+=========================================== ===========================  ========================
+Registered User                             User                         UserAdditionalInfo
+Registered User - with Club Memberships     User, MemberMembershipType,  UserAdditionalInfo
+                                            MemberClubDetails
+Unregistered User                           UnregisteredUser
+Unregistered User - with Club Memberships   UnregisteredUser,
+                                            MemberMembershipType,
+                                            MemberClubDetails
+Contact - User                              User,
+                                            MemberClubDetails
+Contact - UnregisteredUser                  UnregisteredUser,
+                                            MemberClubDetails
+Contact - No ABF Number                     UnregisteredUser,
+                                            MemberClubDetails
+=========================================== ===========================  ========================
+
+Note: Players can be members/contacts of multiple clubs.
+
+Membership Examples
+====================
+
+User
+----
+
+Using Fantasy Bridge Club, we add a User as a member.
+
+.. image:: ../../images/accounts_reference/user_1.png
+ :width: 600
+ :alt: Add Julian
+
+.. image:: ../../images/accounts_reference/user_2.png
+ :width: 600
+ :alt: Add Julian
+
+The user already existed and no change is made to that object.
+
+========================= ==================================
+Database Row              User
+========================= ==================================
+system_number             518891 (Julian Foster)
+========================= ==================================
+
+We now have a MemberMembershipType record:
+
+========================= ==================================
+Database Row              MemberMembershipType
+========================= ==================================
+system_number             518891 (Julian Foster)
+membership_type           Fantasy Bridge Club - Standard
+========================= ==================================
+
+And a MemberClubDetails record:
+
+========================= ==================================
+Database Row              MemberClubDetails
+========================= ==================================
+system_number             518891 (Julian Foster)
+latest_membership         Fantasy Bridge Club - Standard
+email
+membership_status         Due
+========================= ==================================
+
+If the club sets an email address here, it will be used instead of
+the email on the User record.
+
+Unregistered User
+-----------------
+
+Using Fantasy Bridge Club, we add a member who is not signed up for
+MyABF but is an ABF member.
+
+.. image:: ../../images/accounts_reference/unreg_1.png
+ :width: 600
+ :alt: Add Sean
+
+.. image:: ../../images/accounts_reference/unreg_2.png
+ :width: 600
+ :alt: Add Sean
+
+A new UnregisteredUser object is created.
+
+========================= ==================================
+Database Row              UnregisteredUser
+========================= ==================================
+system_number             1218115 (Sean Munley)
+internal_system_number    False
+========================= ==================================
+
+We now have a MemberMembershipType record:
+
+========================= ==================================
+Database Row              MemberMembershipType
+========================= ==================================
+system_number             1218115 (Sean Munley)
+membership_type           Fantasy Bridge Club - Standard
+========================= ==================================
+
+And a MemberClubDetails record:
+
+========================= ==================================
+Database Row              MemberClubDetails
+========================= ==================================
+system_number             1218115 (Sean Munley)
+latest_membership         Fantasy Bridge Club - Standard
+email                     email_address@nowhere.com
+membership_status         Due
+========================= ==================================
+
+Contact
+-----------------
+
+Using Fantasy Bridge Club, we add a contact who is not an ABF member.
+
+.. image:: ../../images/accounts_reference/contact_1.png
+ :width: 600
+ :alt: Add Contact
+
+
+A new UnregisteredUser object is created.
+
+========================= ==================================
+Database Row              UnregisteredUser
+========================= ==================================
+system_number             1000000004
+internal_system_number    True
+========================= ==================================
+
+We don't get a MemberMembershipType record, but we do
+get a MemberClubDetails record:
+
+========================= ==================================
+Database Row              MemberClubDetails
+========================= ==================================
+system_number             1000000004
+latest_membership         None
+email
+membership_status         Contact
+========================= ==================================

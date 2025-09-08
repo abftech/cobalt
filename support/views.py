@@ -1,3 +1,4 @@
+import contextlib
 import json
 from itertools import chain
 
@@ -10,7 +11,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 
-from accounts.models import User
+from accounts.models import User, UnregisteredUser
 from cobalt.settings import (
     COBALT_HOSTNAME,
     RECAPTCHA_SITE_KEY,
@@ -18,7 +19,7 @@ from cobalt.settings import (
 )
 from events.models import Congress
 from forums.models import Post, Forum
-from organisations.models import Organisation
+from organisations.models import Organisation, MemberClubDetails
 from payments.models import MemberTransaction
 from rbac.core import rbac_user_has_role
 from utils.utils import cobalt_paginator
@@ -187,6 +188,73 @@ def browser_errors(request):
     return HttpResponse("ok")
 
 
+def _add_memberships_to_queryset(queryset):
+    """augments the queryset with membership data. Works for User or UnregisteredUser"""
+
+    # Get system numbers
+    system_numbers = queryset.values_list("system_number")
+
+    # Get matching member_club_detail records - and also load the club info
+    member_club_details = MemberClubDetails.objects.filter(
+        system_number__in=system_numbers
+    ).select_related("club")
+
+    # Turn into a dictionary
+    lookup = {item.system_number: item for item in member_club_details}
+
+    # Append to queryset
+    for item in queryset:
+        if not hasattr(item, "member_club_details"):
+            item.member_club_details = []
+
+        with contextlib.suppress(KeyError):
+            item.member_club_details.append(lookup[item.system_number])
+    return queryset
+
+
+def _global_search_people(request, query, searchparams, include_people):
+    """sub of global_search to handle people (Users, Unregistered users and contacts)"""
+
+    if not include_people:
+        return [], searchparams
+
+    # If this user is an email admin, then we include contacts
+    email_admin = bool(rbac_user_has_role(request.user, "notifications.admin.view"))
+
+    # Handle splitting name in to first and second
+    if query.find(" ") >= 0:
+        first_name_search = query.split(" ")[0]
+        last_name_search = " ".join(query.split(" ")[1:])
+        q_string = Q(first_name__icontains=first_name_search) & Q(
+            last_name__icontains=last_name_search
+        )
+    else:
+        first_name_search = query
+        last_name_search = query
+        q_string = Q(first_name__icontains=first_name_search) | Q(
+            last_name__icontains=last_name_search
+        )
+
+    registered = User.objects.filter(q_string)
+
+    # Unregistered users holds both unregistered users and contacts who have fake system_numbers assigned
+    unregistered = UnregisteredUser.objects.filter(q_string)
+
+    # Don't include contacts (have internal system numbers) unless an admin
+    if not email_admin:
+        unregistered = unregistered.exclude(internal_system_number=True)
+
+    # Augment with membership data
+    registered_with_memberships = _add_memberships_to_queryset(registered)
+    unregistered_with_memberships = _add_memberships_to_queryset(unregistered)
+
+    data = list(chain(registered_with_memberships, unregistered_with_memberships))
+
+    searchparams += "include_people=1&"
+
+    return data, searchparams
+
+
 @login_required
 def global_search(request):
     """This handles the search bar that appears on every page. Also gets called from the search panel that
@@ -218,43 +286,32 @@ def global_search(request):
         searchparams = f"search_string={query.replace(' ', '%20')}&"
 
         # Users
-        if include_people:
+        people, searchparams = _global_search_people(
+            request, query, searchparams, include_people
+        )
 
-            if query.find(" ") >= 0:
-                first_name = query.split(" ")[0]
-                last_name = " ".join(query.split(" ")[1:])
-                people = User.objects.filter(
-                    Q(first_name__icontains=first_name)
-                    & Q(last_name__icontains=last_name)
-                )
-            else:
-                people = User.objects.filter(
-                    Q(first_name__icontains=query)
-                    | Q(last_name__icontains=query)
-                    | Q(system_number__icontains=query)
-                )
-            searchparams += "include_people=1&"
-        else:
-            people = []
-
+        # Posts
         if include_posts:
             posts = Post.objects.filter(title__icontains=query)
             searchparams += "include_posts=1&"
         else:
             posts = []
 
+        # Forums
         if include_forums:
             forums = Forum.objects.filter(title__icontains=query)
             searchparams += "include_forums=1&"
         else:
             forums = []
 
+        # Events
         if include_events:
             events = Congress.objects.filter(name__icontains=query)
             searchparams += "include_events=1&"
         else:
             events = []
 
+        # payments
         if include_payments:
             payments = MemberTransaction.objects.filter(
                 description__icontains=query, member=request.user
@@ -263,6 +320,7 @@ def global_search(request):
         else:
             payments = []
 
+        # orgs
         if include_orgs:
             orgs = Organisation.objects.filter(name__icontains=query)
             searchparams += "include_orgs=1&"
