@@ -14,7 +14,7 @@ then
   exit 1
 fi
 
-if ! aws s3 --profile backblaze cp $"$LATEST_FILE_SYSTEM" s3://abf-backups
+if ! aws s3 --profile backblaze cp $"$LATEST_FILE_SYSTEM" s3://abf-offsite-backups
 then
   ./notify.sh error "Error copying DB file to BackBlaze"
   exit 1
