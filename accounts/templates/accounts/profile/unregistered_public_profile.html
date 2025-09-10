@@ -38,8 +38,8 @@
             <!-- EMAIL -->
                 {% if email_admin %}
                     <div id="id_email_admin"
-                         hx-post="{% url 'notifications:unregistered_user_email_admin_htmx' %}"
-                         hx-vars="user_id:{{ profile.id }}"
+                         hx-post="{% url 'notifications:club_user_email_admin_htmx' %}"
+                         hx-vars="user_type:'unregistered',user_id:{{ profile.id }}"
                          hx-trigger="load"
                     >
                     </div>

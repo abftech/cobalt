@@ -40,7 +40,10 @@
         </div>
     </div>
 </div>
-{% if member_details.email_hard_bounce %}
+
+<!-- THIS IS CALLED FROM TWO PLACES. WE MAY GET CONTACT_DETAILS OR MEMBER_DETAILS, NEED TO CHECK BOTH FOR EMAILS -->
+
+{% if member_details.email_hard_bounce or contact_details.email_hard_bounce %}
     <div class="row pb-2">
         <div class="col-2"></div>
         <div class="col-8 text-danger" id="ses_hard_bounce">
@@ -54,7 +57,13 @@
                 hx-target="#ses_hard_bounce"
                 class="btn btn-sm btn-primary"
                 hx-post="{% url 'organisations:unregistered_user_email_club_remove_block_htmx' %}"
-                hx-vars="email:'{{ member_details.email }}'"
+
+                {% if member_details.email_hard_bounce %}
+                    hx-vars="email:'{{ member_details.email }}'"
+                {% else %}
+                    hx-vars="email:'{{ contact_details.email }}'"
+                {% endif %}
+
                 hx-trigger="click"
             >
                 Remove Block

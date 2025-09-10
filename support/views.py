@@ -200,15 +200,16 @@ def _add_memberships_to_queryset(queryset):
     ).select_related("club")
 
     # Turn into a dictionary
-    lookup = {item.system_number: item for item in member_club_details}
+    lookup = {}
+    for item in member_club_details:
+        if item.system_number not in lookup:
+            lookup[item.system_number] = []
+        lookup[item.system_number].append(item)
 
     # Append to queryset
     for item in queryset:
-        if not hasattr(item, "member_club_details"):
-            item.member_club_details = []
+        item.member_club_details = lookup[item.system_number]
 
-        with contextlib.suppress(KeyError):
-            item.member_club_details.append(lookup[item.system_number])
     return queryset
 
 
@@ -238,7 +239,7 @@ def _global_search_people(request, query, searchparams, include_people):
     registered = User.objects.filter(q_string)
 
     # Unregistered users holds both unregistered users and contacts who have fake system_numbers assigned
-    unregistered = UnregisteredUser.objects.filter(q_string)
+    unregistered = UnregisteredUser.all_objects.filter(q_string)
 
     # Don't include contacts (have internal system numbers) unless an admin
     if not email_admin:

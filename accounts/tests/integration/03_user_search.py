@@ -64,13 +64,20 @@ class UserSearch:
         self.manager = manager
         self.manager.login_user(self.manager.alan)
 
+        # Set up clubs
+        self.club = Organisation.objects.get(pk=10)
+        self.rival_club = Organisation.objects.get(pk=11)
+
         # Set alan's email address and a block
         self.manager.alan.email = "alan.admin@17ways.com.au"
         self.manager.alan.save()
         _block_email(self.manager.alan.email)
 
-        # Create users registered by Fantasy Bridge Club
-        self.club = Organisation.objects.get(pk=10)
+        # make him a member of 2 clubs - already is a member of Fantasy
+        MemberClubDetails(
+            club=self.rival_club,
+            system_number=self.manager.alan.system_number,
+        ).save()
 
         # Create Unregistered user
         self.unreg_user = UnregisteredUser()
@@ -83,7 +90,7 @@ class UserSearch:
         self.unreg_user.last_updated_by = self.manager.alan
         self.unreg_user.save()
 
-        # create a new member details record
+        # create 2 member detail records
         MemberClubDetails(
             club=self.club,
             system_number=123456789,
@@ -91,6 +98,14 @@ class UserSearch:
         ).save()
 
         _block_email("sherlock.balvenie@example.com")
+
+        MemberClubDetails(
+            club=self.rival_club,
+            system_number=123456789,
+            email="sherlock.balvenie@fake.com",
+        ).save()
+
+        _block_email("sherlock.balvenie@fake.com")
 
         # Create Contact
         self.contact = UnregisteredUser()
@@ -103,6 +118,7 @@ class UserSearch:
         self.contact.last_updated_by = self.manager.alan
         self.contact.save()
 
+        # Create 2 memberships
         MemberClubDetails(
             club=self.club,
             system_number=23456789,
@@ -111,6 +127,15 @@ class UserSearch:
         ).save()
 
         _block_email("david.attenborough@example.com")
+
+        MemberClubDetails(
+            club=self.rival_club,
+            system_number=23456789,
+            email="david.attenborough@fake.com",
+            membership_status=MemberClubDetails.MEMBERSHIP_STATUS_CONTACT,
+        ).save()
+
+        _block_email("david.attenborough@fake.com")
 
     def a1_user_search(self):
         """search for a user and check it matches"""
@@ -123,13 +148,25 @@ class UserSearch:
         search.send_keys(Keys.RETURN)
 
         # Look for expected text
-        alan_text = self.manager.selenium_find_text_on_page("Alan Admin")
-        alan_no = self.manager.selenium_find_text_on_page("ABF Number: 100")
+        alan_text = self.manager.selenium_find_text_in_link("Alan Admin")
+        alan_no = self.manager.selenium_find_text_in_link("ABF Number: 100")
 
         self.manager.save_results(
             status=alan_no and alan_text,
             test_name="Search for user by name",
             test_description="Enter Alan in search box and check we find him",
+        )
+
+        # Look for memberships
+        alan_member_1 = self.manager.selenium_find_text_in_link(
+            "Member of Fantasy Bridge Club"
+        )
+        alan_member_2 = self.manager.selenium_find_text_in_link("Rival Bridge Club")
+
+        self.manager.save_results(
+            status=alan_member_1 and alan_member_2,
+            test_name="Search for user by name - check memberships",
+            test_description="Enter Alan in search box and check we find him and his memberships",
         )
 
         # Click on link to go to profile
@@ -154,13 +191,27 @@ class UserSearch:
         search.send_keys(Keys.RETURN)
 
         # Look for expected text
-        sherlock_text = self.manager.selenium_find_text_on_page("Sherlock Balvenie")
-        sherlock_no = self.manager.selenium_find_text_on_page("ABF Number: 123456789")
+        sherlock_text = self.manager.selenium_find_text_in_link("Sherlock Balvenie")
+        sherlock_no = self.manager.selenium_find_text_in_link("ABF Number: 123456789")
 
         self.manager.save_results(
             status=sherlock_no and sherlock_text,
             test_name="Search for unregistered user by name",
             test_description="Enter Balvenie in search box and check we find him",
+        )
+
+        # Check memberships
+        sherlock_membership_1 = self.manager.selenium_find_text_in_link(
+            "Fantasy Bridge Club"
+        )
+        sherlock_membership_2 = self.manager.selenium_find_text_in_link(
+            "Rival Bridge Club"
+        )
+
+        self.manager.save_results(
+            status=sherlock_membership_1 and sherlock_membership_2,
+            test_name="Search for unregistered user by name and check memberships",
+            test_description="Enter Balvenie in search box and check we find him and memberships",
         )
 
         # Click on link to go to profile
@@ -228,10 +279,10 @@ class UserSearch:
         search.send_keys(Keys.RETURN)
 
         # Look for expected text
-        horatio_text = self.manager.selenium_find_text_on_page("Horatio")
+        horatio_text = self.manager.selenium_find_text_on_page("No Results Found")
 
         self.manager.save_results(
-            status=not horatio_text,
+            status=horatio_text,
             test_name="Search for contact by name as normal user",
             test_description="Enter Horatio in search box and look for contact as a normal user. Should fail.",
         )
@@ -256,8 +307,6 @@ class UserSearch:
             test_description="Enter Horatio in search box and check we find him",
         )
 
-        self.manager.sleep()
-
         # Click on link to go to profile
         self.manager.driver.find_element(By.CLASS_NAME, "t_unreg").click()
 
@@ -278,9 +327,6 @@ class UserSearch:
 
     def a4_user_email_block(self):
         """add an email block and check we can remove it"""
-
-        # Add the block
-        UserAdditionalInfo(user=self.manager.alan, email_hard_bounce=True).save()
 
         # Go to the profile
         url = self.manager.base_url + reverse(

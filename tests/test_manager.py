@@ -684,6 +684,14 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
             except NoSuchElementException:
                 return False
 
+    def selenium_find_text_in_link(self, text):
+        """Look for text in links <a></a>."""
+
+        try:
+            return self.driver.find_element(By.PARTIAL_LINK_TEXT, text)
+        except NoSuchElementException:
+            return False
+
     def selenium_wait_for_select_and_pick_an_option(
         self, element_id, choice_name, timeout=5
     ):

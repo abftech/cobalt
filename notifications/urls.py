@@ -289,14 +289,14 @@ urlpatterns = [
         name="batch_queue_progress_htmx",
     ),
     path(
-        "email-admin/unregistered_user_email_admin_htmx",
-        notifications.views.admin.unregistered_user_email_admin_htmx,
-        name="unregistered_user_email_admin_htmx",
+        "email-admin/club_user_email_admin_htmx",
+        notifications.views.admin.club_user_email_admin_htmx,
+        name="club_user_email_admin_htmx",
     ),
     path(
-        "email-admin/unregistered_user_email_admin_remove_block_htmx",
-        notifications.views.admin.unregistered_user_email_admin_remove_block_htmx,
-        name="unregistered_user_email_admin_remove_block_htmx",
+        "email-admin/club_user_email_admin_remove_block_htmx",
+        notifications.views.admin.club_user_email_admin_remove_block_htmx,
+        name="club_user_email_admin_remove_block_htmx",
     ),
     path(
         "email-admin/registered_user_email_admin_remove_block_htmx",

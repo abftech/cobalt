@@ -12,6 +12,19 @@
                 {% include "accounts/profile/public_profile_header.html" %}
 
             </div>
+
+
+            <!-- EMAIL -->
+            {% if email_admin %}
+                <div id="id_email_admin"
+                     class="row justify-content-center px-5"
+                     hx-post="{% url 'notifications:club_user_email_admin_htmx' %}"
+                     hx-vars="user_type:'user',user_id:{{ profile.id }}"
+                     hx-trigger="load"
+                >
+                </div>
+            {% endif %}
+
             <div class="row justify-content-center">
                 <div class="py-2">
                     {% if payments_admin %}

@@ -425,24 +425,28 @@ def admin_send_test_fcm_message(request):
 
 
 @rbac_check_role("notifications.admin.view")
-def unregistered_user_email_admin_htmx(request, message=None):
-    """part of unregistered user public profile to allow admins to handle email blocks etc"""
+def club_user_email_admin_htmx(request, message=None):
+    """part of registered and unregistered user public profile to allow admins to handle email blocks at the club level etc"""
 
-    unreg = get_object_or_404(UnregisteredUser, pk=request.POST.get("user_id"))
+    # See if we are processing a registered or unregistered user
+    user_type = request.POST.get("user_type")
+    user_id = request.POST.get("user_id")
 
-    membership_emails = MemberClubEmail.objects.filter(
-        system_number=unreg.system_number
-    )
+    if user_type == "user":
+        user = get_object_or_404(User, pk=user_id)
+    else:
+        user = get_object_or_404(UnregisteredUser, pk=user_id)
+
     membership_details = MemberClubDetails.objects.filter(
-        system_number=unreg.system_number
+        system_number=user.system_number
     )
 
     return render(
         request,
-        "notifications/unregistered_user_email_admin_htmx.html",
+        "notifications/club_user_email_admin_htmx.html",
         {
-            "unreg": unreg,
-            "membership_emails": membership_emails,
+            "user_type": user_type,
+            "user": user,
             "membership_details": membership_details,
             "message": message,
         },
@@ -450,17 +454,17 @@ def unregistered_user_email_admin_htmx(request, message=None):
 
 
 @rbac_check_role("notifications.admin.view")
-def unregistered_user_email_admin_remove_block_htmx(request):
-    """part of unregistered user public profile to allow admins to handle email blocks etc.
+def club_user_email_admin_remove_block_htmx(request):
+    """part of public profile to allow admins to handle email blocks at the club level.
     This removes the block (or at least attempts to) and returns the htmx fragment to show
-    the user email details.
+    the user email details. Called by both registered and unregistered profile views.
     """
 
     email = request.POST.get("email")
 
     message = aws_remove_email_block(email)
 
-    return unregistered_user_email_admin_htmx(request, message=message)
+    return club_user_email_admin_htmx(request, message=message)
 
 
 @rbac_check_role("notifications.admin.view")

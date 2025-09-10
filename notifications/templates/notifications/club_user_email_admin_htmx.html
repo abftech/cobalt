@@ -1,0 +1,69 @@
+{# Show Email details for club records - can be registered or unregistered user #}
+
+{% if message %}
+    <h4
+        class="text-primary"
+        _="on load go to the top of me">{{ message }}</h4>
+{% endif %}
+
+<div class="card mt-5">
+    <div class="card-header card-header-primary">
+        <h2>Club Email Records for {{ user }}</h2>
+    </div>
+    <div class="card-body">
+
+<!-- MemberClubDetails -->
+
+        <div class="card mt-5">
+            <div class="card-header card-header-warning">
+                <h3>Membership Detail Records</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="text-info">
+                            <tr>
+                                <th>ID</th>
+                                <th>Latest Membership</th>
+                                <th>Membership Status</th>
+                                <th>Club Email</th>
+                                <th>Bounce</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in membership_details %}
+                                <tr>
+                                    <td>{{ item.id }}</td>
+                                    {% if item.latest_membership %}
+                                        <td>{{ item.latest_membership.membership_type }}</td>
+                                    {% else %}
+                                        <td>-</td>
+                                    {% endif %}
+                                    <td>{{ item.get_membership_status_display }}</td>
+                                    <td>{{ item.email| default_if_none:"-" }}</td>
+                                    <td>
+                                        {% if item.email_hard_bounce %}
+                                            <button
+                                                class="btn btn-sm btn-primary t_remove_block_membership"
+                                                id="t_remove_block_membership"
+                                                hx-target="#id_email_admin"
+                                                hx-post="{% url 'notifications:club_user_email_admin_remove_block_htmx' %}"
+                                                hx-vars="user_id:{{ user.id }}, email:'{{ item.email }}',user_type:'{{ user_type }}'"
+                                            >
+                                                Remove
+                                            </button>
+                                        {% else %}
+                                            No
+                                        {% endif %}
+
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

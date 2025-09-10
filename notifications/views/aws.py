@@ -1,4 +1,5 @@
 import boto3
+import botocore
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -36,6 +37,10 @@ def aws_remove_email_block(email_address_to_remove):
 
     except Exception as exc:
         message = exc.__str__()
+        error_type = exc.__class__.__name__
+        if error_type == "NotFoundException":
+            message = "AWS does not have a block on that email address. Removing the block on our side."
+            remove_email_from_blocked_list(email_address_to_remove)
 
     return message
 
