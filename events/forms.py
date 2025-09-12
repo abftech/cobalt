@@ -362,7 +362,11 @@ class EventForm(forms.ModelForm):
             players_per_entry = 4
 
         instance.member_entry_fee = instance.member_entry_fee * players_per_entry
-        instance.entry_fee = instance.entry_fee * players_per_entry
+
+        # If we are a new congress (not saved yet) then this is okay, if not check for member_only
+        if instance.id and not instance.congress.members_only or not instance.id:
+            instance.entry_fee = instance.entry_fee * players_per_entry
+
         instance.entry_early_payment_discount = (
             instance.entry_early_payment_discount * players_per_entry
         )
