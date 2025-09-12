@@ -20,6 +20,7 @@ def release_notes_view(request):
                 "Fix bug where entry is left in cart if congress is auto closed",
                 "Fix Django admin view of MemberMembershipType",
                 "Update accounts documentation to include club memberships and contacts",
+                "Fix bug on entry fees for member only events",
             ],
         },
         {
