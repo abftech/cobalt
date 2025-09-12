@@ -29,9 +29,17 @@ from tests.test_manager import CobaltTestManagerIntegration
 
 EXPECTED_ENTRY_FEE = 100
 EXPECTED_MEMBER_ENTRY_FEE = 200
+EXPECTED_EARLY_ENTRY_DISCOUNT = 40
 
 
-def _change_data_and_check(congress, event, manager, test_name, check_member_fee=True):
+def _change_data_and_check(
+    congress,
+    event,
+    manager,
+    test_name,
+    check_member_fee=True,
+    check_early_discount=False,
+):
     """helper to test the form and the UI for data changes. We change the event type to trigger the code
     nothing else (especially entry fees) should be changed
     """
@@ -56,6 +64,10 @@ def _change_data_and_check(congress, event, manager, test_name, check_member_fee
         # set the fees
         event.entry_fee = EXPECTED_ENTRY_FEE
         event.member_entry_fee = EXPECTED_MEMBER_ENTRY_FEE
+
+        if congress.allow_early_payment_discount:
+            event.entry_early_payment_discount = EXPECTED_EARLY_ENTRY_DISCOUNT
+
         event.save()
 
         # Test the form
@@ -90,11 +102,17 @@ def _change_data_and_check(congress, event, manager, test_name, check_member_fee
         if check_member_fee:
             status = status and event.member_entry_fee == EXPECTED_MEMBER_ENTRY_FEE
 
+        if check_early_discount:
+            status = (
+                status
+                and event.entry_early_payment_discount == EXPECTED_EARLY_ENTRY_DISCOUNT
+            )
+
         manager.save_results(
             status=status,
             test_name=f"Edit event and check fees through form - {player_format} - {test_name}",
             test_description="Edit an event, through the form directly. Check the entry fees do not get corrupted.",
-            output=f"{check_member_fee=} {EXPECTED_ENTRY_FEE=} {event.entry_fee=} {EXPECTED_MEMBER_ENTRY_FEE=} {event.member_entry_fee=}",
+            output=f"{check_member_fee=} {check_early_discount=} {EXPECTED_ENTRY_FEE=} {event.entry_fee=} {EXPECTED_MEMBER_ENTRY_FEE=} {event.member_entry_fee=} {EXPECTED_EARLY_ENTRY_DISCOUNT=} {event.entry_early_payment_discount=}",
         )
 
         # Do it through the UI
@@ -119,11 +137,17 @@ def _change_data_and_check(congress, event, manager, test_name, check_member_fee
         if check_member_fee:
             status = status and event.member_entry_fee == EXPECTED_MEMBER_ENTRY_FEE
 
+        if check_early_discount:
+            status = (
+                status
+                and event.entry_early_payment_discount == EXPECTED_EARLY_ENTRY_DISCOUNT
+            )
+
         manager.save_results(
             status=status,
             test_name=f"Edit event and check fees - {player_format}- {test_name}",
             test_description="Edit an event, through the UI. Check the entry fees do not get corrupted.",
-            output=f"{check_member_fee=} {EXPECTED_ENTRY_FEE=} {event.entry_fee=} {EXPECTED_MEMBER_ENTRY_FEE=} {event.member_entry_fee=}",
+            output=f"{check_member_fee=} {check_early_discount=} {EXPECTED_ENTRY_FEE=} {event.entry_fee=} {EXPECTED_MEMBER_ENTRY_FEE=} {event.member_entry_fee=}  {EXPECTED_EARLY_ENTRY_DISCOUNT=} {event.entry_early_payment_discount=}",
         )
 
 
@@ -164,15 +188,52 @@ class MemberFees:
             check_member_fee=False,
         )
 
+        # Normal congress with early entry discount
+        self.congress.allow_early_payment_discount = True
+        self.congress.save()
+
+        _change_data_and_check(
+            self.congress,
+            self.event,
+            self.manager,
+            "Normal Congress with discount",
+            check_member_fee=False,
+            check_early_discount=True,
+        )
+
         # member rates
         self.congress.allow_member_entry_fee = True
+        self.congress.allow_early_payment_discount = False
         self.congress.save()
         _change_data_and_check(self.congress, self.event, self.manager, "Member fees")
 
+        # member rates with discounts
+        self.congress.allow_early_payment_discount = True
+        self.congress.save()
+        _change_data_and_check(
+            self.congress,
+            self.event,
+            self.manager,
+            "Member fees with discount",
+            check_early_discount=True,
+        )
+
         # member only
         self.congress.members_only = True
+        self.congress.allow_early_payment_discount = False
         self.congress.save()
         _change_data_and_check(self.congress, self.event, self.manager, "Member Only")
+
+        # member only with discounts
+        self.congress.allow_early_payment_discount = True
+        self.congress.save()
+        _change_data_and_check(
+            self.congress,
+            self.event,
+            self.manager,
+            "Member Only with discount",
+            check_early_discount=True,
+        )
 
     def zz_clean_up(self):
         self.event.delete()

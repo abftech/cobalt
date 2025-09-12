@@ -1,4 +1,4 @@
-""" The file has the code relating to a convener managing an existing event """
+"""The file has the code relating to a convener managing an existing event"""
 
 import csv
 from datetime import timedelta
@@ -195,8 +195,6 @@ def admin_event_summary(request, event_id):
         .order_by("first_created_date")
         .prefetch_related("evententryplayer_set__player")
     )
-
-    print(event_entries.query)
 
     # build summary
     total_received = Decimal(0.0)
@@ -1275,9 +1273,9 @@ def _admin_email_common(request, all_recipients, congress, event=None):
         batch_id = create_rbac_batch_id(
             f"events.org.{congress.congress_master.org.id}.view",
             organisation=congress.congress_master.org,
-            batch_type=BatchID.BATCH_TYPE_EVENT
-            if event
-            else BatchID.BATCH_TYPE_CONGRESS,
+            batch_type=(
+                BatchID.BATCH_TYPE_EVENT if event else BatchID.BATCH_TYPE_CONGRESS
+            ),
             batch_size=len(recipients),
             description=subject,
             complete=True,
@@ -2046,9 +2044,9 @@ def admin_event_offsystem_pp_batch(request, event_id):
                 today = dateformat.format(local_dt, "Y-m-d H:i:s")
 
                 response = HttpResponse(content_type="text/csv")
-                response[
-                    "Content-Disposition"
-                ] = 'attachment; filename="my-abf-to-pp.csv"'
+                response["Content-Disposition"] = (
+                    'attachment; filename="my-abf-to-pp.csv"'
+                )
 
                 writer = csv.writer(response)
                 writer.writerow(

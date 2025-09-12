@@ -83,7 +83,15 @@
                                     <td><a href="{% url "events:admin_event_summary" event_id=event.id %}">{{ event.event_name }}</a></td>
                                     <td>{{ event.event_type|default_if_none:"" }}</td>
                                     <td>{% if event.is_open %}Entries Open{% else %}Entries Closed{% endif %}</td>
-                                    <td class="text-right">{{ event.entry_fee|cobalt_number }}</td>
+
+                                    <!-- If members only congress then use that fee, not entry fee -->
+
+                                    {% if congress.members_only %}
+                                        <td class="text-right">{{ event.member_entry_fee|cobalt_number }}</td>
+                                    {% else %}
+                                        <td class="text-right">{{ event.entry_fee|cobalt_number }}</td>
+                                    {% endif %}
+
                                     <td class="text-right">{{ event.early_fee|cobalt_number }}</td>
                                     <td class="text-right">{{ event.entries }}</td>
                                     <td class="text-right">{{ event.tables }}</td>
