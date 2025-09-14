@@ -10,18 +10,19 @@ def release_notes_view(request):
         {
             "release": "6.1.9",
             "notes": [
-                "Increase email_count for event entry tests",
+                "DEV - Increase email_count for event entry tests",
                 "Extend global search to include Unregistered users and contacts",
                 "Add global admin ability to remove AWS email blocks for unregistered users and contacts",
                 "Add club admin ability to remove AWS email blocks for unregistered users and contacts",
                 "Add link to member email to user profile",
-                "Minor changes to test harness",
+                "DEV - Minor changes to test harness",
                 "More accurate error if viewing an unpublished congress",
                 "Fix bug where entry is left in cart if congress is auto closed",
                 "Fix Django admin view of MemberMembershipType",
                 "Update accounts documentation to include club memberships and contacts",
                 "Fix bug on entry fees for member only events",
-                "Update cgit_dev_rebuild_local_db to close active connections",
+                "DEV - Update cgit_dev_rebuild_local_db to close active connections",
+                "DEV - Improve stripe API checks for development",
             ],
         },
         {

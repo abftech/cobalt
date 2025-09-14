@@ -17,6 +17,12 @@ if [[ "$LAST_MIGRATION" > "$DATABASE_TIME" ]]; then
   cgit_dev_test_reload_db
 fi
 
+# Database goes stale after about a week so check for that too
+ONE_WEEK_AGO=$(date -v-7d +"%Y-%m-%d=%H:%M")
+if [[ "$ONE_WEEK_AGO" > "$DATABASE_TIME" ]]; then
+  cgit_dev_test_reload_db
+fi
+
 # Reload database
 cat << EOF > /tmp/drop_db
 \c postgres

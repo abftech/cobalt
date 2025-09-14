@@ -1,3 +1,5 @@
+from time import sleep
+
 from django.urls import reverse
 
 from accounts.models import TeamMate
@@ -6,6 +8,7 @@ from events.tests.integration.common_functions import (
     enter_event_and_check,
     enter_event_then_pay_and_check,
 )
+from payments.models import MemberTransaction, OrganisationTransaction
 from payments.views.core import update_account, get_balance
 from tests.test_manager import CobaltTestManagerIntegration
 
@@ -150,4 +153,36 @@ class EventEntry:
                 [self.manager.morris, "my-system-dollars", "Paid"],
                 [self.manager.natalie, "my-system-dollars", "Paid"],
             ],
+        )
+
+    def a3_cancel_entry(self):
+        """Test cancelling an entry and ensuring it works properly for COB-822"""
+
+        # We already have an entry and we are logged in as Keith
+        event = Event.objects.last()
+
+        # Go to event entry
+        self.manager.driver.get(
+            f"{self.manager.base_url}/events/congress/event/change-entry/{event.congress.id}/{event.id}"
+        )
+
+        # Cancel it
+        self.manager.selenium_wait_for_clickable("t_withdraw").click()
+
+        # Click confirm
+        self.manager.selenium_wait_for_clickable("t_confirm").click()
+
+        # Give it a sec
+        sleep(1)
+
+        # Check event_id is applied to transaction
+        last_tran = MemberTransaction.objects.last()
+        last_org_tran = OrganisationTransaction.objects.last()
+
+        self.manager.save_results(
+            status=last_tran.event_id == event.id
+            and last_org_tran.event_id == event.id,
+            test_name="Withdraw from event and check event_id is applied to transaction",
+            test_description="Check we add the event_id when a user withdraws",
+            output=f"{last_tran.event_id=} {last_org_tran.event_id=}",
         )

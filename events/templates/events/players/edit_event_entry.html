@@ -396,6 +396,7 @@
                 </div>
                 <div class="text-center">
                     <a href="{% url "events:delete_event_entry" event_entry_id=event_entry.id %}"
+                       id="t_withdraw"
                        class="btn btn-danger cobalt-save">
                         Withdraw
                         {% if event.player_format == "Pairs" %}

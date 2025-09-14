@@ -1380,6 +1380,7 @@ def _delete_event_entry_handle_post_refunds(request, event_entry, event_entry_pl
                 description=f"Refund for {event_entry.event}",
                 payment_type="Refund",
                 member=event_entry_player.paid_by,
+                event_id=event_entry.event.id,
             )
 
             # Log it

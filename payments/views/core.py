@@ -787,6 +787,7 @@ def update_account(
     other_member=None,
     organisation=None,
     session=None,
+    event_id=None,
 ):
     """Function to update a customer account by adding a transaction.
 
@@ -795,6 +796,7 @@ def update_account(
         amount (float): value (plus is a deduction, minus is a credit)
         description (str): to appear on statement
         payment_type (str): type of payment
+        event_id (int): event this is linked to
         stripe_transaction (StripeTransaction, optional): linked Stripe transaction
         other_member (User, optional): linked member
         organisation (organisations.models.Organisation, optional): linked organisation
@@ -804,9 +806,6 @@ def update_account(
         MemberTransaction
 
     """
-
-    # JPG TESTING - for COB-804 race condition testing
-    # time.sleep(2)
 
     # Get new balance
     balance = get_balance(member) + float(amount)
@@ -821,6 +820,7 @@ def update_account(
     act.balance = balance
     act.description = description
     act.type = payment_type
+    act.event_id = event_id
     if session:
         act.club_session_id = session.id
 
