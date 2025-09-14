@@ -8,6 +8,9 @@ export DUMMY_DATA_COUNT=20
 # Rebuild database
 cat << EOF > /tmp/drop_db
 \c postgres
+SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
+WHERE datname = '$RDS_DB_NAME';
 drop database IF EXISTS $RDS_DB_NAME;
 create database $RDS_DB_NAME with owner $CGIT_ENV;
 EOF

@@ -21,6 +21,7 @@ def release_notes_view(request):
                 "Fix Django admin view of MemberMembershipType",
                 "Update accounts documentation to include club memberships and contacts",
                 "Fix bug on entry fees for member only events",
+                "Update cgit_dev_rebuild_local_db to close active connections",
             ],
         },
         {
