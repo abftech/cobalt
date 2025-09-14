@@ -23,6 +23,7 @@ def release_notes_view(request):
                 "Fix bug on entry fees for member only events",
                 "DEV - Update cgit_dev_rebuild_local_db to close active connections",
                 "DEV - Improve stripe API checks for development",
+                "Add event id to cancelled event entries",
             ],
         },
         {
