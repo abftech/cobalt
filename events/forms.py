@@ -130,6 +130,7 @@ class CongressForm(forms.ModelForm):
         self.fields["congress_venue_type"].required = False
         self.fields["online_platform"].required = False
         self.fields["congress_master"].required = False
+        self.fields["allow_edit_of_old_congress"].required = False
 
     general_info = forms.CharField(
         widget=SummernoteInplaceWidget(

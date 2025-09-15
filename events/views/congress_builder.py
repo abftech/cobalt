@@ -333,7 +333,6 @@ def create_congress_wizard_2(request, step_list, congress):
     form.fields["people"].required = True
     form.fields["contact_email"].required = True
     form.fields["congress_master"].required = True
-    form.fields["allow_edit_of_old_congress"].required = True
 
     # we can have multiple matches, but it is unlikely
     slug = Slug.objects.filter(redirect_path=redirect_path).first()
