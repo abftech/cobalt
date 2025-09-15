@@ -24,6 +24,7 @@ def release_notes_view(request):
                 "DEV - Update cgit_dev_rebuild_local_db to close active connections",
                 "DEV - Improve stripe API checks for development",
                 "Add event id to cancelled event entries",
+                "Prevent editing of old congresses",
             ],
         },
         {
