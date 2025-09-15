@@ -14,7 +14,7 @@
 
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
-            rel="stylesheet">
+              rel="stylesheet">
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,7 +51,7 @@
 
                             {% if total_passing == total_length %}
                                 <i class="material-icons"
-                                    style="color: blue;font-size: 95px;">
+                                   style="color: blue;font-size: 95px;">
                                     check_circle
                                 </i>
 
@@ -123,8 +123,8 @@
                         <div class="card-header text-dark bg-warning">
                             <h2 class="pt-4" id="{{ calling_class }}">{{ calling_class }}
                                 <i class="material-icons hidden-doc"
-                                    id="showdoc_string_{{ calling_class }}"
-                                    style="color: grey; cursor: pointer;">add_circle</i>
+                                   id="showdoc_string_{{ calling_class }}"
+                                   style="color: grey; cursor: pointer;">add_circle</i>
                             </h2>
                             <div id="doc_string_{{ calling_class }}" style="display: none;">
                                 <p class="fst-italic">{{ class_docs|cobalt_dict_key:calling_class|safe }}</p>
@@ -162,8 +162,8 @@
                                                                     {# detailed description #}
 
                                                                     <div id="detail_{{ row.id }}"
-                                                                        style="display: none;"
-                                                                        class="p-3">
+                                                                         style="display: none;"
+                                                                         class="p-3">
                                                                         <div class="card">
                                                                             <div class="card-body pb-1">
                                                                                 <h5 class="card-title">Test Description</h5>
@@ -183,10 +183,10 @@
                                                                             {% if row.status == "Pass" %}
 
                                                                                 <i class="material-icons hidden-desc"
-                                                                                    id="show_{{ row.id }}"
-                                                                                    title="{% if row.error_desc %}Click to Show{% else %}No information{% endif %}"
-                                                                                    data-toggle="tooltip"
-                                                                                    style="color: blue; {% if row.error_desc %}cursor: pointer;{% endif %}">
+                                                                                   id="show_{{ row.id }}"
+                                                                                   title="{% if row.error_desc %}Click to Show{% else %}No information{% endif %}"
+                                                                                   data-toggle="tooltip"
+                                                                                   style="color: blue; {% if row.error_desc %}cursor: pointer;{% endif %}">
                                                                                     check_circle
                                                                                 </i>
 
@@ -202,9 +202,9 @@
 
                                                                         <td class="col-4">
                                                                             <span id="desc_{{ row.id }}"
-                                                                                {% if row.status == "Pass" %}
-                                                                                    style="display: none;"
-                                                                                {% endif %}
+                                                                                  {% if row.status == "Pass" %}
+                                                                                      style="display: none;"
+                                                                                  {% endif %}
                                                                             >
                                                                                 {{ row.error_desc|default_if_none:"" }}
                                                                             </span></td>
@@ -233,6 +233,28 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <script src="https://unpkg.com/@popperjs/core@2"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj" crossorigin="anonymous"></script>
+
+        <script>
+            // Get the button
+            let mybutton = document.getElementById("top_btn");
+
+            // When the user scrolls down 20px from the top of the document, show the button
+            window.onscroll = function() {scrollFunction()};
+
+            function scrollFunction() {
+                if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                    mybutton.style.display = "block";
+                } else {
+                    mybutton.style.display = "none";
+                }
+            }
+
+            // When the user clicks on the button, scroll to the top of the document
+            function topFunction() {
+                document.body.scrollTop = 0;
+                document.documentElement.scrollTop = 0;
+            }
+        </script>
 
         <script>
             $(document).ready(function(){

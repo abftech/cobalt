@@ -234,7 +234,7 @@ class UserSearch:
 
         # Create contact
         data = {
-            "club_id": 10,
+            "club_id": self.club.id,
             "save": "INTERNAL",
             "first_name": "Horatio",
             "last_name": "Nelson",
@@ -251,7 +251,7 @@ class UserSearch:
         )
 
         # Check contact is in logs
-        log_entry = ClubMemberLog.objects.last()
+        log_entry = ClubMemberLog.objects.latest("id")
 
         # Get membership record
         unreg = UnregisteredUser.all_objects.last()

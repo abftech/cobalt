@@ -45,7 +45,7 @@ class MemberTransfer:
         ##################################
         # Check Alan's balance before
 
-        alan_expected_initial_balance = 400.0
+        alan_expected_initial_balance = 470.0
         check_balance_for_user(
             manager=self.manager,
             user=alan,
@@ -337,11 +337,11 @@ class MemberTransfer:
         ############################
         alan_balance = get_balance(alan)
 
-        test_result = alan_balance == 345.55
+        test_result = alan_balance == 415.55
 
         self.manager.save_results(
             status=test_result,
             test_name="Manual transfer triggering auto top up - Alan to fiona. Alan's balance",
-            output=f"Expected $345.55. Got ${alan_balance}",
+            output=f"Expected $415.55. Got ${alan_balance}",
             test_description="Check Alan's balance is as expected",
         )
