@@ -1108,21 +1108,22 @@ def org_balance(organisation):
 ###################################
 # org_balance_at_date             #
 ###################################
-def org_balance_at_date(organisation, as_at_date):
-    """Returns org balance as at a specified date
+def org_balance_at_date(organisation, as_at_date, start_of_day_balance=False):
+    """Returns org balance as at the end of a specified date (unless flag is set)
 
     Args:
         organisation (organisations.models.Organisation): Organisation object
         as_at_date: date
+        start_of_day_balance: Boolean if set gets the balance at the start of the day
 
     Returns:
         float: balance
     """
 
-    # COB-772
     # for end date use 00:00 time on the next day
     end_datetime_raw = datetime.datetime.strptime(as_at_date, "%Y-%m-%d")
-    end_datetime_raw += datetime.timedelta(days=1)
+    if not start_of_day_balance:
+        end_datetime_raw += datetime.timedelta(days=1)
     end_datetime = timezone.make_aware(end_datetime_raw, pytz.timezone(TIME_ZONE))
 
     last_tran = (

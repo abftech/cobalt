@@ -1,13 +1,15 @@
 import datetime
 
+import pytz
 from django.db.models import Sum, Min
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import User
 from club_sessions.models import Session
-from cobalt.settings import GLOBAL_CURRENCY_SYMBOL, BRIDGE_CREDITS
+from cobalt.settings import GLOBAL_CURRENCY_SYMBOL, BRIDGE_CREDITS, TIME_ZONE
 from events.models import Event, Congress
 from notifications.views.core import send_cobalt_email_to_system_number
 from organisations.decorators import check_club_menu_access
@@ -23,6 +25,7 @@ from payments.models import (
     OrganisationTransaction,
     TRANSACTION_TYPE,
 )
+from payments.views.admin import settlement
 from payments.views.core import (
     update_account,
     update_organisation,
@@ -179,9 +182,9 @@ def _summary_by_events(request, club):
 
     event_names_dict = {}
     for event_name in event_names:
-        event_names_dict[
-            event_name["id"]
-        ] = f"{event_name['congress__name']} - {event_name['event_name']}"
+        event_names_dict[event_name["id"]] = (
+            f"{event_name['congress__name']} - {event_name['event_name']}"
+        )
 
     # Augment data
     for event_transaction in event_transactions:
@@ -769,9 +772,9 @@ def organisation_transactions_filtered_data(
         "hx_vars": f"club_id: {club.id}, show_filtered_data: 1, start_date: '{start_date}', end_date: '{end_date}', view_type_selector: '{view_type_selector}'",
     }
     if description_search:
-        hx_data[
-            "hx_vars"
-        ] = f"{hx_data['hx_vars']}, description_search: '{description_search}'"
+        hx_data["hx_vars"] = (
+            f"{hx_data['hx_vars']}, description_search: '{description_search}'"
+        )
 
     if view_type_selector == "all" or (
         view_type_selector == "txntype" and transaction_type == "all"
@@ -802,6 +805,17 @@ def organisation_transactions_filtered_data(
 
     elif view_type_selector == "txntype":
         return organisation_transactions_filtered_data_txntype(
+            request,
+            club,
+            start_date,
+            end_date,
+            description_search,
+            hx_data,
+            transaction_type,
+        )
+
+    elif view_type_selector == "movement":
+        return organisation_transactions_filtered_data_movement(
             request,
             club,
             start_date,
@@ -849,6 +863,65 @@ def organisation_transactions_filtered_data_txntype(
             "things": things,
             "organisation_transactions": organisation_transactions,
             "total_for_type": total_for_type,
+            "hx_target": hx_data["hx_target"],
+            "hx_post": hx_data["hx_post"],
+            "hx_vars": hx_data["hx_vars"],
+        },
+    )
+
+
+def organisation_transactions_filtered_data_movement(
+    request,
+    club,
+    start_date,
+    end_date,
+    description_search,
+    hx_data,
+    transaction_type,
+):
+    """handle the filter by movement option"""
+
+    end_datetime_raw = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+    end_datetime_raw += datetime.timedelta(days=1)
+    end_datetime = timezone.make_aware(end_datetime_raw, pytz.timezone(TIME_ZONE))
+    start_datetime_raw = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+    start_datetime = timezone.make_aware(start_datetime_raw, pytz.timezone(TIME_ZONE))
+
+    opening_balance = org_balance_at_date(club, start_date, start_of_day_balance=True)
+    closing_balance = org_balance_at_date(club, end_date)
+    base_query = (
+        OrganisationTransaction.objects.filter(organisation=club)
+        .filter(created_date__gte=start_datetime)
+        .filter(created_date__lt=end_datetime)
+    )
+    settlements = base_query.filter(type="Settlement").aggregate(total=Sum("amount"))
+    event_entries = base_query.filter(type="Entry to an event").aggregate(
+        total=Sum("amount")
+    )
+    club_sessions = base_query.filter(type="Club Payment").aggregate(
+        total=Sum("amount")
+    )
+    club_memberships = base_query.filter(type="Club Membership").aggregate(
+        total=Sum("amount")
+    )
+    other_adjustments = base_query.exclude(
+        type__in=["Settlement", "Entry to an event", "Club Payment", "Club Membership"]
+    ).aggregate(total=Sum("amount"))
+
+    return render(
+        request,
+        "organisations/club_menu/finance/organisation_transactions_filtered_data_movement_htmx.html",
+        {
+            "club": club,
+            "opening_balance": opening_balance,
+            "closing_balance": closing_balance,
+            "settlements": settlements["total"] or 0,
+            "event_entries": event_entries["total"] or 0,
+            "club_sessions": club_sessions["total"] or 0,
+            "club_memberships": club_memberships["total"] or 0,
+            "other_adjustments": other_adjustments["total"] or 0,
+            "start_date": start_date,
+            "end_date": end_date,
             "hx_target": hx_data["hx_target"],
             "hx_post": hx_data["hx_post"],
             "hx_vars": hx_data["hx_vars"],

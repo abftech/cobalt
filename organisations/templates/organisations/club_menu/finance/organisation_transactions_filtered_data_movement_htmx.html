@@ -1,0 +1,85 @@
+{#------------------------------------------------------------------------#}
+{#                                                                        #}
+{# show org movement report for date range                                #}
+{#                                                                        #}
+{#------------------------------------------------------------------------#}
+{% load cobalt_tags %}
+
+<div class="table-responsive col-md-8">
+    <table class="table table-condensed table-hover">
+        <thead class="text-info">
+            <tr>
+                <th class="text-left">Type</th>
+                <th class="text-left">Date</th>
+                <th class="text-right">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="text-left"><b>Opening Balance</b></td>
+                <td class="text-left">{{ start_date }}</td>
+                <td class="text-right">{{ opening_balance|cobalt_currency_colour }}</td>
+            </tr>
+            <tr>
+                <td class="text-left">Settlements</td>
+                <td class="text-left">&nbsp;</td>
+                <td class="text-right">
+                    {% if settlements == 0 %}
+                        -
+                    {% else %}
+                        {{ settlements|cobalt_currency_colour }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td class="text-left">Event Entries</td>
+                <td class="text-left">&nbsp;</td>
+                <td class="text-right">
+                    {% if event_entries == 0 %}
+                        -
+                    {% else %}
+                        {{ event_entries|cobalt_currency_colour }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td class="text-left">Club Sessions</td>
+                <td class="text-left">&nbsp;</td>
+                <td class="text-right">
+                    {% if club_sessions == 0 %}
+                        -
+                    {% else %}
+                        {{ club_sessions|cobalt_currency_colour }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td class="text-left">Club Memberships</td>
+                <td class="text-left">&nbsp;</td>
+                <td class="text-right">
+                    {% if club_memberships == 0 %}
+                        -
+                    {% else %}
+                        {{ club_memberships|cobalt_currency_colour }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td class="text-left">Other Adjustments</td>
+                <td class="text-left">&nbsp;</td>
+                <td class="text-right">
+                    {% if other_adjustments == 0 %}
+                        -
+                    {% else %}
+                        {{ other_adjustments|cobalt_currency_colour }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td class="text-left"><b>Closing Balance</b></td>
+                <td class="text-left">{{ end_date }}</td>
+                <td class="text-right">{{ closing_balance|cobalt_currency_colour }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
