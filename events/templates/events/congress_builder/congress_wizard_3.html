@@ -16,6 +16,10 @@
                     <h2>Venue Information</h2>
                 </div>
                 <div class="card-body">
+
+                        <!--ERRORS -->
+                    <h3 style="color: red">{{ form.non_field_errors.as_text }}</h3>
+
                     <!-- IF ONLINE EVENT DON'T SHOW EDIT PAGE -->
 
                     {% if congress.get_congress_venue_type_display == "Online" %}
@@ -56,7 +60,7 @@
                                     </div>
                                     <div class="col-2 justify-content-center align-self-center">
                                         <a href="javascript:void(0)"
-                                            onclick='help("Venue Location", "The latitude and longitude of the venue. <br><br>You can use the lookup button to search for this. If the lookup button does not work for you then you can open another window and search in there. Find your location in Google Maps and right click on it. Choose <b>Whats Here</b> and it will show you the coordinates.");'>help</a>
+                                           onclick='help("Venue Location", "The latitude and longitude of the venue. <br><br>You can use the lookup button to search for this. If the lookup button does not work for you then you can open another window and search in there. Find your location in Google Maps and right click on it. Choose <b>Whats Here</b> and it will show you the coordinates.");'>help</a>
                                     </div>
                                 </div>
 
@@ -70,7 +74,7 @@
                                         allowfullscreen
                                         referrerpolicy="no-referrer-when-downgrade"
                                         src="https://www.google.com/maps/embed/v1/place?key=AIzaSyAAXnhnh7zL17kiLo59SnWbTiy4rwoi9VY
-                                        &q={{ congress.venue_location }}">
+                                             &q={{ congress.venue_location }}">
                                     </iframe>
                                 </div>
 
@@ -149,16 +153,16 @@
                     preConfirm: (login) => {
                         return fetch(`/utils/geo-location/${login}`)
                             .then(response => {
-                            if (!response.ok) {
-                                throw new Error(response.statusText)
-                            }
-                            return response.json()
-                        })
+                                if (!response.ok) {
+                                    throw new Error(response.statusText)
+                                }
+                                return response.json()
+                            })
                             .catch(error => {
-                            Swal.showValidationMessage(
-                                `Request failed: ${error}`
-                            )
-                        })
+                                Swal.showValidationMessage(
+                                    `Request failed: ${error}`
+                                )
+                            })
                     },
                     allowOutsideClick: () => !Swal.isLoading()
                 }).then((result) => {

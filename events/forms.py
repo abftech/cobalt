@@ -1,8 +1,11 @@
+from datetime import timedelta
 from decimal import Decimal
 
 import bleach
 from django import forms
 from django.core.exceptions import ValidationError
+from django.utils.timezone import now
+
 from .models import (
     Congress,
     Event,
@@ -32,6 +35,9 @@ class CongressForm(forms.ModelForm):
 
         # Get allowed congress masters as parameter
         congress_masters = kwargs.pop("congress_masters", [])
+
+        # See if this user is an admin
+        self.events_admin = kwargs.pop("events_admin", False)
         super().__init__(*args, **kwargs)
 
         # Modify congress master if passed
@@ -81,6 +87,7 @@ class CongressForm(forms.ModelForm):
         self.fields["congress_venue_type"].label = False
         self.fields["online_platform"].label = False
         self.fields["congress_master"].label = False
+        self.fields["allow_edit_of_old_congress"].label = False
 
         # mark fields as optional
         self.fields["name"].required = False
@@ -221,6 +228,27 @@ class CongressForm(forms.ModelForm):
         )
     )
 
+    def clean(self):
+        """Check if congress can be edited"""
+
+        # clean the data
+        cleaned_data = super().clean()
+
+        # Allow admins to do anything
+        if self.events_admin:
+            return cleaned_data
+
+        # Get the congress instance
+        instance = super(CongressForm, self).save(commit=False)
+
+        # Don't allow edits if more than 15 weeks since start unless flag is set
+        if (
+            instance.start_date < (now() - timedelta(weeks=15)).date()
+            and not instance.allow_edit_of_old_congress
+        ):
+            raise ValidationError("Congress is in the past. Edits are not allowed.")
+        return cleaned_data
+
     def clean_allow_youth_payment_discount(self):
         if self.cleaned_data["allow_youth_payment_discount"] and (
             self.cleaned_data.get("youth_payment_discount_date", None) is None
@@ -285,6 +313,7 @@ class CongressForm(forms.ModelForm):
             "contact_email",
             "congress_venue_type",
             "online_platform",
+            "allow_edit_of_old_congress",
         )
 
 
@@ -334,6 +363,24 @@ class EventForm(forms.ModelForm):
             "allow_team_names",
             "list_priority_order",
         )
+
+    def clean(self):
+        """Check if congress can be edited"""
+
+        # clean the data
+        cleaned_data = super().clean()
+
+        # Get Event instance
+        instance = super(EventForm, self).save(commit=False)
+
+        # If we don't have an id (Event is new) or start_date of congress is within 15 weeks or flag is set,
+        # then allow editing
+        if instance.id and (
+            instance.congress.start_date < (now() - timedelta(weeks=15)).date()
+            and not instance.congress.allow_edit_of_old_congress
+        ):
+            raise ValidationError("Congress is in the past. Edits are not allowed.")
+        return cleaned_data
 
     def clean_entry_early_payment_discount(self):
         data = self.cleaned_data["entry_early_payment_discount"]

@@ -208,8 +208,10 @@ def _add_memberships_to_queryset(queryset):
 
     # Append to queryset
     for item in queryset:
-        item.member_club_details = lookup[item.system_number]
-
+        try:
+            item.member_club_details = lookup[item.system_number]
+        except KeyError:
+            print(f"Key error looking up {item.system_number}")
     return queryset
 
 

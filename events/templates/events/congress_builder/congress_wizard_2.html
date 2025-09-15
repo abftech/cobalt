@@ -36,6 +36,9 @@
                         </div>
                         <br>
 
+                        <!--ERRORS -->
+                        <h3 style="color: red">{{ form.non_field_errors.as_text }}</h3>
+
                         <!-- SLUG EDITOR -->
                         {% include "events/congress_builder/congress_wizard_2_slug_htmx.html" %}
 
@@ -215,6 +218,27 @@
                                     <a href="javascript:void(0)" onclick='help("Results URL", "Link to the results page for this congress.");'>help</a>
                                 </div>
                             </div>
+
+                            <!-- allow_edit_of_old_congress by admins -->
+
+                            {% if events_admin %}
+
+                                <div class="row">
+                                    <div class="col-2">
+                                        Allow Editing of Old Congress
+                                    </div>
+                                    <div class="col-8">
+                                        <div id="div_id_allow_edit_of_old_congress" class="form-group float-left">
+                                            <span class="cobalt-form-error" id="id_allow_edit_of_old_congress_errors">{{ form.allow_edit_of_old_congress.errors|striptags }}</span>
+                                            {% render_field form.allow_edit_of_old_congress class+="form-control" %}
+                                        </div>
+                                    </div>
+                                    <div class="col-2 justify-content-center align-self-center">
+                                        <a href="javascript:void(0)" onclick='help("Allow Editing of Old Congress", "If this is ticked then the congress can still be edited even 15 weeks after the start date.");'>help</a>
+                                    </div>
+                                </div>
+
+                            {% endif %}
 
                             <hr>
 

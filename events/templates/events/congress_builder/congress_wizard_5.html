@@ -18,6 +18,10 @@
 
                 <!-- General Options -->
                 <div class="card-body">
+
+                    <!--ERRORS -->
+                    <h3 style="color: red">{{ form.non_field_errors.as_text }}</h3>
+
                     <div class="container">
                         <h3>Congress Dates: {{ congress.date_string }}</h3>
                         <form method="POST">

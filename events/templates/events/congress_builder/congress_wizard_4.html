@@ -16,6 +16,10 @@
                     <h2>Sponsors</h2>
                 </div>
                 <div class="card-body">
+
+                    <!--ERRORS -->
+                    <h3 style="color: red">{{ form.non_field_errors.as_text }}</h3>
+
                     <div class="container">
                         <form method="POST">
                             {% csrf_token %}

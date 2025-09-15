@@ -233,6 +233,10 @@ class Congress(models.Model):
     # a convener can continue to chase up any missing money
     do_not_auto_close_congress = models.BooleanField(default=False)
 
+    # We block editing a congress if it more than a few months old to stop people from
+    # using last years congress for this year. This can be overridden
+    allow_edit_of_old_congress = models.BooleanField(default=False)
+
     class Meta:
         verbose_name_plural = "Congresses"
 

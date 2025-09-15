@@ -283,6 +283,9 @@ def create_congress_wizard_1(request, step_list):
 def create_congress_wizard_2(request, step_list, congress):
     """wizard step 2 - general"""
 
+    # See if this user is an admin for events - allows them to edit the congress even if closed
+    events_admin = bool(rbac_user_has_role(request.user, "events.global.view"))
+
     # Get the path to this event for the slug (which may or may not exist). Slugs are used so conveners can
     # send links to myabf/huntershill rather than myabf/events/6567
     redirect_path = f"events/congress/view/{congress.id}"
@@ -293,6 +296,8 @@ def create_congress_wizard_2(request, step_list, congress):
             congress_masters=CongressMaster.objects.filter(
                 org=congress.congress_master.org
             ),
+            events_admin=events_admin,
+            instance=congress,
         )
         if form.is_valid():
             # Extra validation if already published
@@ -327,16 +332,19 @@ def create_congress_wizard_2(request, step_list, congress):
     form.fields["people"].required = True
     form.fields["contact_email"].required = True
     form.fields["congress_master"].required = True
+    form.fields["allow_edit_of_old_congress"].required = True
 
     # we can have multiple matches, but it is unlikely
     slug = Slug.objects.filter(redirect_path=redirect_path).first()
 
     # slug_text starts as the registered slug or blank but gets changed by the HTMX calls
     slug_text = slug.slug if slug else ""
+
     return render(
         request,
         "events/congress_builder/congress_wizard_2.html",
         {
+            "events_admin": events_admin,
             "form": form,
             "step_list": step_list,
             "congress": congress,
@@ -372,7 +380,7 @@ def create_congress_wizard_3(request, step_list, congress):
     """wizard step 3 - venue"""
 
     if request.method == "POST":
-        form = CongressForm(request.POST)
+        form = CongressForm(request.POST, instance=congress)
         if form.is_valid():
             congress.venue_name = form.cleaned_data["venue_name"]
             congress.venue_location = form.cleaned_data["venue_location"]
@@ -404,7 +412,7 @@ def create_congress_wizard_4(request, step_list, congress):
     """wizard step 3 - sponsor"""
 
     if request.method == "POST":
-        form = CongressForm(request.POST)
+        form = CongressForm(request.POST, instance=congress)
         if form.is_valid():
             congress.sponsors = form.cleaned_data["sponsors"]
             congress.save()
@@ -428,7 +436,7 @@ def create_congress_wizard_5(request, step_list, congress):
     """wizard step 5 - options"""
 
     if request.method == "POST":
-        form = CongressForm(request.POST)
+        form = CongressForm(request.POST, instance=congress)
         if form.is_valid():
             # congress.payment_method_system_dollars = form.cleaned_data[
             #     "payment_method_system_dollars"
