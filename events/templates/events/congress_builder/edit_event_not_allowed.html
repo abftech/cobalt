@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load cobalt_tags %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% block title %} - Edit Event{% endblock %}
+
+{% block content %}
+
+    <nav aria-label="breadcrumb" role="navigation">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url "events:create_congress_wizard" congress_id=congress.id step=6 %}">{{ congress.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Event: {{ event.event_name }}</li>
+        </ol>
+    </nav>
+
+    <div class="container">
+        <h2>Congress is in the past. Edits are not allowed.</h2>
+    </div>
+
+{% endblock %}

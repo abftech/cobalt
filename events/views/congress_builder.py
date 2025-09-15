@@ -1,7 +1,7 @@
 """This file contains all of the code relating to an convener building
 a congress or editing a congress."""
 
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 import pytz
@@ -14,6 +14,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import strip_tags
+from django.utils.timezone import now
 
 from cobalt.settings import (
     TIME_ZONE,
@@ -715,6 +716,17 @@ def create_event(request, congress_id):
     if not rbac_user_has_role(request.user, role):
         return rbac_forbidden(request, role)
 
+    # Don't allow edits if more than 15 weeks since start unless flag is set
+    if (
+        congress.start_date < (now() - timedelta(weeks=15)).date()
+        and not congress.allow_edit_of_old_congress
+    ):
+        return render(
+            request,
+            "events/congress_builder/edit_event_not_allowed.html",
+            {"congress": congress},
+        )
+
     form = EventForm(
         request.POST or None,
         initial={
@@ -725,7 +737,6 @@ def create_event(request, congress_id):
     )
 
     if request.method == "POST":
-
         if form.is_valid():
             event = form.save(commit=False)
             event.congress = congress
