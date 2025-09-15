@@ -25,6 +25,7 @@ def release_notes_view(request):
                 "DEV - Improve stripe API checks for development",
                 "Add event id to cancelled event entries",
                 "Prevent editing of old congresses",
+                "Additional finance reports",
             ],
         },
         {

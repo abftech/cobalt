@@ -12,14 +12,20 @@
                 <th class="text-left">Type</th>
                 <th class="text-left">Date</th>
                 <th class="text-right">Amount</th>
+                <th class="text-center">Breakdown</th>
             </tr>
         </thead>
         <tbody>
+
+        <!-- OPENING BALANCE -->
             <tr>
                 <td class="text-left"><b>Opening Balance</b></td>
-                <td class="text-left">{{ start_date }}</td>
-                <td class="text-right">{{ opening_balance|cobalt_currency_colour }}</td>
+                <td class="text-left">{{ start_date_display }}</td>
+                <td class="text-right"><b>{{ opening_balance|cobalt_currency_colour }}</b></td>
+                <td></td>
             </tr>
+
+        <!-- SETTLEMENTS -->
             <tr>
                 <td class="text-left">Settlements</td>
                 <td class="text-left">&nbsp;</td>
@@ -30,7 +36,21 @@
                         {{ settlements|cobalt_currency_colour }}
                     {% endif %}
                 </td>
+                <td>
+                    <button
+                        class="btn btn-sm btn-info"
+                        hx-post="{% url "organisations:transaction_filter_htmx" %}"
+                        hx-target="#id_filtered_transactions_below"
+                        hx-vars="club_id:{{ club.id }}, show_filtered_data: 1, start_date: '{{start_date}}', end_date: '{{end_date}}', 'hx_target': '#id_filtered_transactions_below', view_type_selector: 'txntype', transaction_type_selector:'Settlement'"
+                        _="on click put 'Settlement' into #breakdown_title"
+                    >
+                        View
+                    </button>
+                </td>
             </tr>
+
+        <!-- EVENT ENTRIES -->
+
             <tr>
                 <td class="text-left">Event Entries</td>
                 <td class="text-left">&nbsp;</td>
@@ -41,7 +61,21 @@
                         {{ event_entries|cobalt_currency_colour }}
                     {% endif %}
                 </td>
+                <td>
+                    <button
+                        class="btn btn-sm btn-info"
+                        hx-post="{% url "organisations:transaction_filter_htmx" %}"
+                        hx-target="#id_filtered_transactions_below"
+                        hx-vars="club_id:{{ club.id }}, show_filtered_data: 1, start_date: '{{start_date}}', end_date: '{{end_date}}', 'hx_target': '#id_filtered_transactions_below', view_type_selector: 'txntype', transaction_type_selector:'Entry to an event'"
+                        _="on click put 'Entry to an Event' into #breakdown_title"
+                    >
+                        View
+                    </button>
+                </td>
             </tr>
+
+        <!-- CLUB SESSIONS -->
+
             <tr>
                 <td class="text-left">Club Sessions</td>
                 <td class="text-left">&nbsp;</td>
@@ -52,7 +86,21 @@
                         {{ club_sessions|cobalt_currency_colour }}
                     {% endif %}
                 </td>
+                <td>
+                    <button
+                        class="btn btn-sm btn-info"
+                        hx-post="{% url "organisations:transaction_filter_htmx" %}"
+                        hx-target="#id_filtered_transactions_below"
+                        hx-vars="club_id:{{ club.id }}, show_filtered_data: 1, start_date: '{{start_date}}', end_date: '{{end_date}}', 'hx_target': '#id_filtered_transactions_below', view_type_selector: 'txntype', transaction_type_selector:'Club Payment'"
+                        _="on click put 'Club Payment' into #breakdown_title"
+                    >
+                        View
+                    </button>
+                </td>
             </tr>
+
+        <!-- CLUB MEMBERSHIPS -->
+
             <tr>
                 <td class="text-left">Club Memberships</td>
                 <td class="text-left">&nbsp;</td>
@@ -62,10 +110,23 @@
                     {% else %}
                         {{ club_memberships|cobalt_currency_colour }}
                     {% endif %}
+                </td><td>
+                    <button
+                        class="btn btn-sm btn-info"
+                        hx-post="{% url "organisations:transaction_filter_htmx" %}"
+                        hx-target="#id_filtered_transactions_below"
+                        hx-vars="club_id:{{ club.id }}, show_filtered_data: 1, start_date: '{{start_date}}', end_date: '{{end_date}}', 'hx_target': '#id_filtered_transactions_below', view_type_selector: 'txntype', transaction_type_selector:'Club Membership'"
+                        _="on click put 'Club Membership' into #breakdown_title"
+                    >
+                        View
+                    </button>
                 </td>
             </tr>
+
+        <!-- OTHER -->
+
             <tr>
-                <td class="text-left">Other Adjustments</td>
+                <td class="text-left">Other</td>
                 <td class="text-left">&nbsp;</td>
                 <td class="text-right">
                     {% if other_adjustments == 0 %}
@@ -74,12 +135,32 @@
                         {{ other_adjustments|cobalt_currency_colour }}
                     {% endif %}
                 </td>
+                <td>
+                    <button
+                        class="btn btn-sm btn-info"
+                        hx-post="{% url "organisations:transaction_filter_htmx" %}"
+                        hx-target="#id_filtered_transactions_below"
+                        hx-vars="club_id:{{ club.id }}, show_filtered_data: 1, start_date: '{{start_date}}', end_date: '{{end_date}}', 'hx_target': '#id_filtered_transactions_below', view_type_selector: 'txntype', transaction_type_selector:'Other Artificial'"
+                        _="on click put 'Other' into #breakdown_title"
+                    >
+                        View
+                    </button>
+                </td>
             </tr>
             <tr>
                 <td class="text-left"><b>Closing Balance</b></td>
-                <td class="text-left">{{ end_date }}</td>
-                <td class="text-right">{{ closing_balance|cobalt_currency_colour }}</td>
+                <td class="text-left">{{ end_date_display }}</td>
+                <td class="text-right"><b>{{ closing_balance|cobalt_currency_colour }}</b></td>
+                <td></td>
             </tr>
         </tbody>
     </table>
 </div>
+
+<!-- TITLE FOR BREAKDOWN REPORT -->
+
+<h2 id="breakdown_title"></h2>
+
+<!-- PLACEHOLDER FOR BREAKDOWN REPORT -->
+
+<div id="id_filtered_transactions_below"></div>

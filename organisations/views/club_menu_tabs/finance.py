@@ -768,9 +768,14 @@ def organisation_transactions_filtered_data(
     # set up data for pagination footer
     hx_data = {
         "hx_post": reverse("organisations:transaction_filter_htmx"),
-        "hx_target": "#id_filtered_transactions",
-        "hx_vars": f"club_id: {club.id}, show_filtered_data: 1, start_date: '{start_date}', end_date: '{end_date}', view_type_selector: '{view_type_selector}'",
+        "hx_vars": f"club_id: {club.id}, show_filtered_data: 1, start_date: '{start_date}', end_date: '{end_date}', view_type_selector: '{view_type_selector}', transaction_type_selector: '{transaction_type}'",
     }
+
+    # The movement report uses its own hx-target so allow this to be overridden
+    hx_target = request.POST.get("hx_target", "#id_filtered_transactions")
+    hx_data["hx_target"] = hx_target
+    hx_data["hx_vars"] = f"{hx_data['hx_vars']}, hx_target: '{hx_target}'"
+
     if description_search:
         hx_data["hx_vars"] = (
             f"{hx_data['hx_vars']}, description_search: '{description_search}'"
@@ -820,9 +825,7 @@ def organisation_transactions_filtered_data(
             club,
             start_date,
             end_date,
-            description_search,
             hx_data,
-            transaction_type,
         )
 
     else:
@@ -875,18 +878,18 @@ def organisation_transactions_filtered_data_movement(
     club,
     start_date,
     end_date,
-    description_search,
     hx_data,
-    transaction_type,
 ):
     """handle the filter by movement option"""
 
+    # Dates
     end_datetime_raw = datetime.datetime.strptime(end_date, "%Y-%m-%d")
     end_datetime_raw += datetime.timedelta(days=1)
     end_datetime = timezone.make_aware(end_datetime_raw, pytz.timezone(TIME_ZONE))
     start_datetime_raw = datetime.datetime.strptime(start_date, "%Y-%m-%d")
     start_datetime = timezone.make_aware(start_datetime_raw, pytz.timezone(TIME_ZONE))
 
+    # Queries
     opening_balance = org_balance_at_date(club, start_date, start_of_day_balance=True)
     closing_balance = org_balance_at_date(club, end_date)
     base_query = (
@@ -908,6 +911,10 @@ def organisation_transactions_filtered_data_movement(
         type__in=["Settlement", "Entry to an event", "Club Payment", "Club Membership"]
     ).aggregate(total=Sum("amount"))
 
+    # Reformat date strings to be consistent
+    start_date_display = f"{start_date[8:10]}/{start_date[5:7]}/{start_date[:4]}"
+    end_date_display = f"{end_date[8:10]}/{end_date[5:7]}/{end_date[:4]}"
+
     return render(
         request,
         "organisations/club_menu/finance/organisation_transactions_filtered_data_movement_htmx.html",
@@ -921,7 +928,9 @@ def organisation_transactions_filtered_data_movement(
             "club_memberships": club_memberships["total"] or 0,
             "other_adjustments": other_adjustments["total"] or 0,
             "start_date": start_date,
+            "start_date_display": start_date_display,
             "end_date": end_date,
+            "end_date_display": end_date_display,
             "hx_target": hx_data["hx_target"],
             "hx_post": hx_data["hx_post"],
             "hx_vars": hx_data["hx_vars"],
@@ -940,7 +949,6 @@ def organisation_transactions_filtered_data_all(
 
     things = cobalt_paginator(request, organisation_transactions, 50)
 
-    # COB-772
     balance_at_end_date = org_balance_at_date(club, end_date)
     end_datetime = datetime.datetime.strptime(end_date, "%Y-%m-%d")
 
@@ -984,7 +992,6 @@ def organisation_transactions_filtered_data_sessions(
     list_of_sessions.reverse()
     things = cobalt_paginator(request, list_of_sessions)
 
-    # COB-772
     balance_at_end_date = org_balance_at_date(club, end_date)
     end_datetime = datetime.datetime.strptime(end_date, "%Y-%m-%d")
 

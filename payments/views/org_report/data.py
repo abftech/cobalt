@@ -206,18 +206,6 @@ def organisation_transactions_by_date_range(
     # Convert dates to date times
     start_datetime, end_datetime = start_end_date_to_datetime(start_date, end_date)
 
-    # JPG cleanup
-    # # run query
-    # organisation_transactions = (
-    #     OrganisationTransaction.objects.filter(
-    #         organisation=club,
-    #         created_date__gte=start_datetime,
-    #         created_date__lte=end_datetime,
-    #     )
-    #     .order_by("-created_date")
-    #     .select_related("member")
-    # )
-
     # build the base query
     organisation_transactions = OrganisationTransaction.objects.filter(
         organisation=club,
@@ -225,10 +213,22 @@ def organisation_transactions_by_date_range(
         created_date__lte=end_datetime,
     )
 
-    if transaction_type and transaction_type != "all":
-        organisation_transactions = organisation_transactions.filter(
-            type=transaction_type,
-        )
+    # special case of 'Other Artificial' for the movement report
+    if transaction_type:
+        if transaction_type == "Other Artificial":
+            organisation_transactions = organisation_transactions.exclude(
+                type__in=[
+                    "Settlement",
+                    "Entry to an event",
+                    "Club Payment",
+                    "Club Membership",
+                ]
+            )
+
+        elif transaction_type != "all":
+            organisation_transactions = organisation_transactions.filter(
+                type=transaction_type,
+            )
 
     organisation_transactions = organisation_transactions.order_by(
         "-created_date"
