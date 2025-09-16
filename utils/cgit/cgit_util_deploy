@@ -20,7 +20,7 @@ ENV=$1
 if [[ -z $(git status -s) ]]
 then
 
-  if echo $ENV | grep test >/dev/null
+  if echo $ENV | grep production >/dev/null
   then
     echo ""
     echo "############################################"
