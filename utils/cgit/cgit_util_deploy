@@ -26,6 +26,7 @@ then
     echo "##################################"
     echo "# PRODUCTION!!! Are you mad?     #"
     echo "##################################"
+    echo ""
     read -p "Press key to continue..." -n1 -s
   fi
 
