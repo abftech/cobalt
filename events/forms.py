@@ -247,7 +247,9 @@ class CongressForm(forms.ModelForm):
             instance.start_date < (now() - timedelta(weeks=15)).date()
             and not instance.allow_edit_of_old_congress
         ):
-            raise ValidationError("Congress is in the past. Edits are not allowed.")
+            raise ValidationError(
+                "Congress is in the past. Edits are not allowed. Start a new one by creating a copy via Club Admin - Calendar."
+            )
         return cleaned_data
 
     def clean_allow_youth_payment_discount(self):
@@ -380,7 +382,9 @@ class EventForm(forms.ModelForm):
             instance.congress.start_date < (now() - timedelta(weeks=15)).date()
             and not instance.congress.allow_edit_of_old_congress
         ):
-            raise ValidationError("Congress is in the past. Edits are not allowed.")
+            raise ValidationError(
+                "Congress is in the past. Edits are not allowed. Start a new one by creating a copy via Club Admin - Calendar"
+            )
         return cleaned_data
 
     def clean_entry_early_payment_discount(self):
