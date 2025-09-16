@@ -11,15 +11,24 @@ BRANCH=`git branch --show-current`
     echo ""
     echo ""
     echo "Usage: $0 env"
-    echo "e.g. $0 cobalt-test-black"
+    echo "e.g. $0 cobalt-test-white"
    exit 1
   fi
 
+ENV=$1
+
 if [[ -z $(git status -s) ]]
 then
+
+  if echo $ENV | grep test
+  then
+    echo "PRODUCTION!!! Are you mad?"
+    read -p "Press key to continue..." -n1 -s
+  fi
+
    DATE=$(date '+%a_%d/%m/%Y_%H:%M:%S')
-   echo "Running eb deploy -m '$BRANCH@$DATE' $1"
-   eb deploy -m "$BRANCH@$DATE" $1
+   echo "Running eb deploy -m '$BRANCH@$DATE' $ENV"
+   eb deploy -m "$BRANCH@$DATE" $ENV
 else
   echo ""
   echo ""
