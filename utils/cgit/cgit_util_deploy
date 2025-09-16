@@ -23,9 +23,11 @@ then
   if echo $ENV | grep test >/dev/null
   then
     echo ""
-    echo "##################################"
-    echo "# PRODUCTION!!! Are you mad?     #"
-    echo "##################################"
+    echo "############################################"
+    echo "#                                          #"
+    echo "#   Deploy to PRODUCTION!!! Are you mad?   #"
+    echo "#                                          #"
+    echo "############################################"
     echo ""
     read -p "Press key to continue..." -n1 -s
   fi
