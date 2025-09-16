@@ -1615,6 +1615,13 @@ def enter_event_non_post(event, congress, request, enter_for_another):
     # get payment types for this congress
     pay_methods = congress.get_payment_methods()
 
+    if not pay_methods:
+        return render(
+            request,
+            "utils/coblt_generic_error_page.html",
+            {"title": "Congress has no payment methods. Unable to proceed."},
+        )
+
     # Get teammates for this user - exclude anyone entered already
     all_team_mates = TeamMate.objects.filter(user=request.user)
     team_mates_list = all_team_mates.values_list("team_mate")

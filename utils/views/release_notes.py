@@ -26,6 +26,8 @@ def release_notes_view(request):
                 "Add event id to cancelled event entries",
                 "Prevent editing of old congresses",
                 "Additional finance reports",
+                "Handle congress having no payment methods",
+                "DEV - update copy to local db",
             ],
         },
         {
