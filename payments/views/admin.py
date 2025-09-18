@@ -1,6 +1,7 @@
 import csv
 import datetime
 import logging
+from datetime import timedelta
 
 import pytz
 import stripe
@@ -202,22 +203,52 @@ def organisation_movement_report(request):
         print(start_date)
         print(end_date)
 
-        results = (
+        # Build a list of all organisations with the columns we want
+        data = {}
+        for organisation in Organisation.objects.filter(status="Open").order_by(
+            "org_id"
+        ):
+            data[organisation.id] = {
+                "org_id": organisation.org_id,
+                "name": organisation.name,
+                "opening_balance": 0,
+                "closing_balance": 0,
+                "transactions": 0,
+                "manual_adjustments": 0,
+                "settlement": 0,
+            }
+
+        # Get the transactions
+        transactions = (
             OrganisationTransaction.objects.filter(created_date__gte=start_date)
             .filter(created_date__lt=end_date)
-            .values("organisation")
-            .order_by("organisation")
-            .annotate(transactions=Sum("amount"))
-            .select_related("organisation")
+            .values("organisation", "type")
+            .order_by("organisation__org_id", "type")
+            .annotate(transactions_total=Sum("amount"))
         )
 
-        print(results)
+        # add to our table
+        for item in transactions:
+            identifier = item["organisation"]
 
+            # For settlement and manual adjustment record separately, everythign else just add it up
+            if type == "Settlement":
+                data[identifier]["settlement"] = item["transactions_total"]
+            elif type == "Manual Adjustment":
+                data[identifier]["manual_adjustments"] = item["transactions_total"]
+            else:
+                data[identifier]["transactions"] += item["transactions_total"]
+
+        print(data)
+
+        # fix the start date
+        start_date = start_date + datetime.timedelta(days=1)
     else:
 
         # Default to first to last days of previous month
         end_date = now().replace(day=1) - datetime.timedelta(days=1)
         start_date = end_date.replace(day=1)
+        data = {}
 
     return render(
         request,
@@ -225,6 +256,7 @@ def organisation_movement_report(request):
         {
             "start_date": start_date,
             "end_date": end_date,
+            "data": data,
         },
     )
 

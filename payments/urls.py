@@ -162,7 +162,7 @@ urlpatterns = [
         name="statement_admin_summary",
     ),
     path(
-        "orgainsation-movement-report",
+        "organisation-movement-report",
         payments.views.admin.organisation_movement_report,
         name="organisation_movement_report",
     ),

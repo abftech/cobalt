@@ -139,9 +139,8 @@ def cobalt_hide_email(email):
 
     if loc and last_fullstop:
         hidden_email = "*" * len(email)
-        hidden_email = hidden_email[:loc] + "@" + hidden_email[loc + 1 :]  # noqa: E203
-        hidden_email = hidden_email[:last_fullstop] + email[last_fullstop:]
-        return hidden_email
+        hidden_email = f"{hidden_email[:loc]}@{hidden_email[loc + 1:]}"
+        return hidden_email[:last_fullstop] + email[last_fullstop:]
     else:
         return "*******************"
 
@@ -199,6 +198,33 @@ def cobalt_currency_colour(dollars):
         close_span = ""
 
     num = f"{GLOBAL_CURRENCY_SYMBOL}{dollars:,.2f}".replace("$-", "-$")
+
+    return mark_safe(f"{open_span}{num}{close_span}") @ register.filter(
+        name="cobalt_currency_colour_short", is_safe=True
+    )
+
+
+def cobalt_currency_colour_short(dollars):
+    """Return number formatted as currency with bootstrap colours. If the number is 0 return a dash. Don't
+    include a currency symbol
+    """
+
+    try:
+        dollars = round(float(dollars), 2)
+    except ValueError:
+        return dollars
+
+    if dollars == 0:
+        return "-"
+
+    if dollars < 0:
+        open_span = "<span class='text-danger'>"
+        close_span = "</span>"
+    else:
+        open_span = ""
+        close_span = ""
+
+    num = f"{dollars:,.2f}"
 
     return mark_safe(f"{open_span}{num}{close_span}")
 

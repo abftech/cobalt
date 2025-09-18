@@ -2,7 +2,7 @@
 {% load cobalt_tags %}
 {% load static %}
 {% load humanize %}
-{% block title %} - Organisation Mvement Report{% endblock %}
+{% block title %} - Organisation Movement Report{% endblock %}
 
 {% block content %}
 
@@ -29,15 +29,12 @@
                         {% csrf_token %}
                         <div class="row">
                             <div class="col-md-6">
-
-
-                                                <!-- START DATE -->
+                                <!-- START DATE -->
                                 <label>
                                     Start Date
                                     <input type="date" name="start_date" id="id_start_date" class="form-control" value="{{ start_date|date:"Y-m-d" }}" required>
                                 </label>
-
-            <!-- END DATE -->
+                                <!-- END DATE -->
                                 <label>
                                     End Date
                                     <input type="date" name="end_date" id="id_end_date" class="form-control" value="{{ end_date|date:"Y-m-d" }}" required>
@@ -48,6 +45,47 @@
                             <button type="submit" class="btn btn-primary btn-sm center-text cobalt-save">Run Report</button>
                         </div>
                     </form>
+
+                    <table class="table table-hover table-condensed">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Totals</th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                            <tr>
+                                <th>Club Number</th>
+                                <th class="text-left">Organisation</th>
+                                <th class="text-right">{{ start_date }}</th>
+                                <th class="text-right">Transactions</th>
+                                <th class="text-right">Manual Adjustments</th>
+                                <th class="text-right">Settlement</th>
+                                <th class="text-right">{{ end_date }}</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for index, row in data.items %}
+
+                                <tr>
+                                    <td>{{ row.org_id }}</td>
+                                    <td class="text-left">{{ row.name }}</td>
+                                    <td class="text-right">{{ row.opening_balance|cobalt_currency_colour_short }}</td>
+                                    <td class="text-right">{{ row.transactions|cobalt_currency_colour_short }}</td>
+                                    <td class="text-right">{{ row.manual_adjustments|cobalt_currency_colour_short }}</td>
+                                    <td class="text-right">{{ row.settlement|cobalt_currency_colour_short }}</td>
+                                    <td class="text-right">{{ row.closing_balance|cobalt_currency_colour_short }}</td>
+                                </tr>
+
+                            {% endfor %}
+                        </tbody>
+
+                    </table>
+
                 </div>
 
             </div>
