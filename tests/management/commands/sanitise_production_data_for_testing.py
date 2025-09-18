@@ -37,3 +37,8 @@ class Command(BaseCommand):
         Visitor.objects.all().update(email="a@b.com")
         Organisation.objects.all().update(club_email="a@b.com")
         Congress.objects.all().update(contact_email="a@b.com")
+
+        print("Changing password...")
+        mark = User.objects.filter(username="Mark").first()
+        mark.set_password("F1shcake")
+        mark.save()

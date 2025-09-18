@@ -67,7 +67,7 @@
                         hx-post="{% url "organisations:transaction_filter_htmx" %}"
                         hx-target="#id_filtered_transactions_below"
                         hx-vars="club_id:{{ club.id }}, show_filtered_data: 1, start_date: '{{start_date}}', end_date: '{{end_date}}', 'hx_target': '#id_filtered_transactions_below', view_type_selector: 'event'"
-                        _="on click put 'Entry to an Event' into #breakdown_title"
+                        _="on click put 'Event Entries' into #breakdown_title"
                     >
                         View
                     </button>

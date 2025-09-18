@@ -28,6 +28,7 @@ def release_notes_view(request):
                 "Additional finance reports",
                 "Handle congress having no payment methods",
                 "DEV - update copy to local db",
+                "DEV - minor changes to cgit scripts",
             ],
         },
         {

@@ -1,18 +1,58 @@
 #!/bin/bash
 # Menu command for cgit
 
-TEMP_FILE=/tmp/cgit_cmd
-rm -f $TEMP_FILE
+function level_1 () {
+  TEMP_FILE=/tmp/cgit_cmd
+  rm -f $TEMP_FILE
 
-# list cgit commands and get the high level name eg test, uat, util
-for FILE_AND_PATH in utils/cgit/cgit_*; do
-  FILE_NAME=$(basename "$FILE_AND_PATH")
-  # Get high level area e.g. cgit_dev_start - we want dev
-  echo "$FILE_NAME" | awk -F '_' '{print $2}' >> $TEMP_FILE
-done
+  echo ""
+  echo "CGIT High Level Commands"
+  echo "========================"
+  echo ""
 
-# Get unique commands from file
-cat $TEMP_FILE | sort -u
+  # list cgit commands and get the high level name eg test, uat, util
+  for FILE_AND_PATH in utils/cgit/cgit_*; do
+    FILE_NAME=$(basename "$FILE_AND_PATH")
+    # Get high level area e.g. cgit_dev_start - we want dev
+    echo "$FILE_NAME" | awk -F '_' '{print $2}' >> $TEMP_FILE
+  done
+
+  # Get unique commands from file
+  cat $TEMP_FILE | sort -u
+
+  echo ""
+  echo "Run cgit with the high level command to see options. e.g. cgit dev"
+  echo ""
+
+  rm -f $TEMP_FILE
+}
+
+function level_2 () {
+  # Get next level of commands
+  LEVEL_1=$1
+
+  for FILE_AND_PATH in utils/cgit/cgit_"$LEVEL_1"_*; do
+    FILE_NAME=$(basename "$FILE_AND_PATH")
+
+    about="$(grep -i about: "$FILE_AND_PATH" | grep -v cgit_help | cut -d' ' -f3-)"
+    printf "%-40s" "$FILE_NAME"
+    echo "- $about"
+  done
+}
+
+# Called with no parameters
+if [ "$#" -eq 0 ]
+then
+  level_1
+  exit
+fi
+
+# Called with one parameter
+if [ "$#" -eq 1 ]
+then
+  level_2 "$1"
+  exit
+fi
 
 
-rm $TEMP_FILE
+echo "level 2"
