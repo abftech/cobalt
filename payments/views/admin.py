@@ -2,7 +2,9 @@ import csv
 import datetime
 import logging
 
+import pytz
 import stripe
+from dateutil.relativedelta import relativedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -12,7 +14,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template.loader import render_to_string
 from django.utils import timezone, dateformat
-from django.utils.timezone import make_aware
+from django.utils.timezone import make_aware, now
 
 from accounts.models import User
 from cobalt.settings import (
@@ -23,6 +25,7 @@ from cobalt.settings import (
     GLOBAL_ORG_ID,
     GLOBAL_ORG,
     ABF_ORG,
+    TIME_ZONE,
 )
 from logs.views import log_event
 from masterpoints.views import user_summary
@@ -176,6 +179,52 @@ def statement_admin_summary(request):
             "balance": total_balance_orgs + total_balance_members,
             "stripe": stripe,
             "stripe_balance": stripe_balance,
+        },
+    )
+
+
+@rbac_check_role("payments.global.view")
+def organisation_movement_report(request):
+    """Movement report for all organisations"""
+
+    if request.method == "POST":
+        print("ok")
+        start_date = datetime.datetime.strptime(
+            request.POST.get("start_date"), "%Y-%m-%d"
+        )
+        start_date = make_aware(start_date, pytz.timezone(TIME_ZONE))
+        # Move end date forward one day (time is 00:00) and use less than in query
+        end_date = datetime.datetime.strptime(
+            request.POST.get("end_date"), "%Y-%m-%d"
+        ) + datetime.timedelta(days=1)
+        end_date = make_aware(end_date, pytz.timezone(TIME_ZONE))
+
+        print(start_date)
+        print(end_date)
+
+        results = (
+            OrganisationTransaction.objects.filter(created_date__gte=start_date)
+            .filter(created_date__lt=end_date)
+            .values("organisation")
+            .order_by("organisation")
+            .annotate(transactions=Sum("amount"))
+            .select_related("organisation")
+        )
+
+        print(results)
+
+    else:
+
+        # Default to first to last days of previous month
+        end_date = now().replace(day=1) - datetime.timedelta(days=1)
+        start_date = end_date.replace(day=1)
+
+    return render(
+        request,
+        "payments/admin/organisation_movement_report.html",
+        {
+            "start_date": start_date,
+            "end_date": end_date,
         },
     )
 
@@ -689,9 +738,9 @@ def admin_view_stripe_transactions(request):
         today = dateformat.format(local_dt, "Y-m-d H:i:s")
 
         response = HttpResponse(content_type="text/csv")
-        response[
-            "Content-Disposition"
-        ] = 'attachment; filename="stripe-transactions.csv"'
+        response["Content-Disposition"] = (
+            'attachment; filename="stripe-transactions.csv"'
+        )
 
         writer = csv.writer(response)
         writer.writerow(
@@ -1589,9 +1638,9 @@ def settlement(request):
                 today = dateformat.format(local_dt, "Y-m-d H:i:s")
 
                 response = HttpResponse(content_type="text/csv")
-                response[
-                    "Content-Disposition"
-                ] = 'attachment; filename="settlements.csv"'
+                response["Content-Disposition"] = (
+                    'attachment; filename="settlements.csv"'
+                )
 
                 writer = csv.writer(response)
                 writer.writerow(

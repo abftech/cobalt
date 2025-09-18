@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load cobalt_tags %}
+{% load static %}
+{% load humanize %}
+{% block title %} - Organisation Mvement Report{% endblock %}
+
+{% block content %}
+
+    <!-- BREADCRUMBS -->
+
+    <nav aria-label="breadcrumb" role="navigation">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url "rbac:admin_menu" %}">Admin</a></li>
+            <li class="breadcrumb-item"><a href="{% url "rbac:admin_menu" %}#payments">Finance</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Organisation Movement Report</li>
+        </ol>
+    </nav>
+
+    <div id="ignore_cobalt_save"></div>
+    <div class="">
+        <div class="card">
+            <div class="card-header card-header-primary">
+                <h1>Organisation Movement Report</h1>
+            </div>
+            <div class="card-body table-responsive">
+
+                <div class="card-body table-responsive table-hover">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">
+
+
+                                                <!-- START DATE -->
+                                <label>
+                                    Start Date
+                                    <input type="date" name="start_date" id="id_start_date" class="form-control" value="{{ start_date|date:"Y-m-d" }}" required>
+                                </label>
+
+            <!-- END DATE -->
+                                <label>
+                                    End Date
+                                    <input type="date" name="end_date" id="id_end_date" class="form-control" value="{{ end_date|date:"Y-m-d" }}" required>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <button type="submit" class="btn btn-primary btn-sm center-text cobalt-save">Run Report</button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+

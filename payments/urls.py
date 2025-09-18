@@ -162,6 +162,11 @@ urlpatterns = [
         name="statement_admin_summary",
     ),
     path(
+        "orgainsation-movement-report",
+        payments.views.admin.organisation_movement_report,
+        name="organisation_movement_report",
+    ),
+    path(
         "statement-org/<int:org_id>/",
         payments.views.orgs.statement_org,
         name="statement_org",
