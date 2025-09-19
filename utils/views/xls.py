@@ -121,6 +121,14 @@ class XLSXFormat:
         "valign": "top",
         "bg_color": bs_grey,
     }
+    summary_row_title_money = {
+        "bold": True,
+        "font_size": 15,
+        "align": "right",
+        "valign": "top",
+        "bg_color": bs_grey,
+        "num_format": "$#,##0.00",
+    }
     summary_row_data = {"font_size": 15, "align": "left", "bg_color": bs_grey}
     director_notes = {
         "font_size": 15,

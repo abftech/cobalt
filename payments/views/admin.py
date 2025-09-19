@@ -2,9 +2,11 @@ import csv
 import datetime
 import logging
 from datetime import timedelta
+from decimal import Decimal
 
 import pytz
 import stripe
+import xlsxwriter
 from dateutil.relativedelta import relativedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -28,6 +30,7 @@ from cobalt.settings import (
     ABF_ORG,
     TIME_ZONE,
 )
+from events.models import EventLog
 from logs.views import log_event
 from masterpoints.views import user_summary
 from notifications.views.core import contact_member
@@ -61,6 +64,7 @@ from rbac.core import rbac_user_has_role
 from rbac.decorators import rbac_check_role
 from rbac.views import rbac_forbidden
 from utils.utils import cobalt_paginator
+from utils.views.xls import XLSXStyles
 
 logger = logging.getLogger("cobalt")
 
@@ -184,6 +188,152 @@ def statement_admin_summary(request):
     )
 
 
+def _organisation_movement_report_calcs(start_date, end_date):
+    """sub of organisation_movement_report to do the calculations"""
+
+    # Build a list of all organisations with the columns we want
+    data = {}
+    for organisation in Organisation.objects.filter(status="Open").order_by("org_id"):
+        data[organisation.id] = {
+            "org_id": organisation.org_id,
+            "name": organisation.name,
+            "opening_balance": Decimal(0),
+            "closing_balance": Decimal(0),
+            "transactions": Decimal(0),
+            "manual_adjustments": Decimal(0),
+            "settlement": Decimal(0),
+        }
+
+    # Get the transactions
+    transactions = (
+        OrganisationTransaction.objects.filter(created_date__gte=start_date)
+        .filter(created_date__lt=end_date)
+        .filter(organisation__status="Open")
+        .values("organisation", "type")
+        .annotate(transactions_total=Sum("amount"))
+    )
+
+    # add to our table
+    for item in transactions:
+        identifier = item["organisation"]
+
+        # For settlement and manual adjustment record separately, everything else just add it up
+        if item["type"] == "Settlement":
+            data[identifier]["settlement"] = item["transactions_total"]
+        elif item["type"] == "Manual Adjustment":
+            data[identifier]["manual_adjustments"] = item["transactions_total"]
+        else:
+            data[identifier]["transactions"] += item["transactions_total"]
+
+    # Get opening balance
+    opening_balances = (
+        OrganisationTransaction.objects.filter(organisation__status="Open")
+        .filter(created_date__lte=start_date)
+        .filter(organisation__status="Open")
+        .order_by("organisation_id", "-created_date")
+        .distinct("organisation_id")
+    )
+
+    for item in opening_balances:
+        data[item.organisation_id]["opening_balance"] = item.balance
+
+    # Get closing balance
+    closing_balances = (
+        OrganisationTransaction.objects.filter(created_date__lt=end_date)
+        .filter(organisation__status="Open")
+        .order_by("organisation_id", "-pk")
+        .distinct("organisation_id")
+    )
+
+    for item in closing_balances:
+        data[item.organisation_id]["closing_balance"] = item.balance
+
+    # grand totals
+    total_opening_balance = 0
+    total_transactions = 0
+    total_manual_adjustments = 0
+    total_settlement = 0
+    total_closing_balance = 0
+
+    for item in data:
+        total_opening_balance += data[item]["opening_balance"]
+        total_transactions += data[item]["transactions"]
+        total_manual_adjustments += data[item]["manual_adjustments"]
+        total_settlement += data[item]["settlement"]
+        total_closing_balance += data[item]["closing_balance"]
+
+    totals = {
+        "total_opening_balance": total_opening_balance,
+        "total_transactions": total_transactions,
+        "total_manual_adjustments": total_manual_adjustments,
+        "total_settlement": total_settlement,
+        "total_closing_balance": total_closing_balance,
+    }
+
+    return data, totals
+
+
+def _organisation_movement_report_excel(data, totals, start_date, end_date):
+    """sub of organisation_movement_report to handle the Excel download"""
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = (
+        f'attachment; filename="Organisation Movement Report [{start_date.date()} to {end_date.date()}].xlsx"'
+    )
+
+    # Create an Excel file and add worksheet
+    workbook = xlsxwriter.Workbook(response)
+    sheet = workbook.add_worksheet("Organisation Movement Report")
+
+    # Create styles
+    formats = XLSXStyles(workbook)
+
+    # Heading
+    sheet.merge_range(0, 0, 3, 6, "Organisation Movement Report", formats.h1)
+
+    # Titles - top row
+    sheet.merge_range(4, 0, 4, 1, "TOTALS:", formats.summary_row_title)
+    sheet.write(4, 2, totals["total_opening_balance"], formats.summary_row_title_money)
+    sheet.write(4, 3, totals["total_transactions"], formats.summary_row_title_money)
+    sheet.write(
+        4, 4, totals["total_manual_adjustments"], formats.summary_row_title_money
+    )
+    sheet.write(4, 5, totals["total_settlement"], formats.summary_row_title_money)
+    sheet.write(4, 6, totals["total_closing_balance"], formats.summary_row_title_money)
+
+    # Titles - second row
+    sheet.set_column("A:B", 20)
+    sheet.set_column("B:C", 50)
+    sheet.set_column("C:D", 30)
+    sheet.set_column("D:E", 30)
+    sheet.set_column("E:F", 30)
+    sheet.set_column("F:G", 30)
+    sheet.set_column("G:H", 30)
+
+    sheet.write(5, 0, "Club No.", formats.summary_row_title)
+    sheet.write(5, 1, "Organisation", formats.summary_row_title)
+    sheet.write(5, 2, f"{start_date:%A %d %B %Y}", formats.summary_row_title_money)
+    sheet.write(5, 3, "Transactions", formats.summary_row_title_money)
+    sheet.write(5, 4, "Manual Adjustments", formats.summary_row_title_money)
+    sheet.write(5, 5, "Settlement", formats.summary_row_title_money)
+    sheet.write(5, 6, f"{end_date:%A %d %B %Y}", formats.summary_row_title_money)
+
+    for row, item in enumerate(data, start=6):
+        sheet.write(row, 0, f"{data[item]['org_id']}", formats.detail_row_data)
+        sheet.write(row, 1, data[item]["name"], formats.detail_row_data)
+        sheet.write(row, 2, data[item]["opening_balance"], formats.detail_row_money)
+        sheet.write(row, 3, data[item]["transactions"], formats.detail_row_money)
+        sheet.write(row, 4, data[item]["manual_adjustments"], formats.detail_row_money)
+        sheet.write(row, 5, data[item]["settlement"], formats.detail_row_money)
+        sheet.write(row, 6, data[item]["closing_balance"], formats.detail_row_money)
+
+    workbook.close()
+
+    return response
+
+
 @rbac_check_role("payments.global.view")
 def organisation_movement_report(request):
     """Movement report for all organisations"""
@@ -202,77 +352,25 @@ def organisation_movement_report(request):
         ) + datetime.timedelta(days=1)
         end_date = make_aware(end_date, get_current_timezone())
 
-        # Build a list of all organisations with the columns we want
-        data = {}
-        for organisation in Organisation.objects.filter(status="Open").order_by(
-            "org_id"
-        ):
-            data[organisation.id] = {
-                "org_id": organisation.org_id,
-                "name": organisation.name,
-                "opening_balance": 0,
-                "closing_balance": 0,
-                "transactions": 0,
-                "manual_adjustments": 0,
-                "settlement": 0,
-            }
+        # Run the queries to get the data
+        data, totals = _organisation_movement_report_calcs(start_date, end_date)
 
-        # Get the transactions
-        transactions = (
-            OrganisationTransaction.objects.filter(created_date__gte=start_date)
-            .filter(created_date__lt=end_date)
-            .values("organisation", "type")
-            .annotate(transactions_total=Sum("amount"))
-        )
+        # fix the end date to display in browser
+        end_date = end_date - datetime.timedelta(days=1)
 
-        # add to our table
-        for item in transactions:
-            identifier = item["organisation"]
+        # Excel download
+        if "excel" in request.POST:
+            return _organisation_movement_report_excel(
+                data, totals, start_date, end_date
+            )
 
-            # For settlement and manual adjustment record separately, everything else just add it up
-            if item["type"] == "Settlement":
-                data[identifier]["settlement"] = item["transactions_total"]
-            elif item["type"] == "Manual Adjustment":
-                data[identifier]["manual_adjustments"] = item["transactions_total"]
-            else:
-                data[identifier]["transactions"] += item["transactions_total"]
-
-        # Get opening balance
-        opening_balances = (
-            OrganisationTransaction.objects.filter(organisation__status="Open")
-            .filter(created_date__lte=start_date)
-            .order_by("organisation_id", "-pk")
-            .distinct("organisation_id")
-        )
-
-        for item in opening_balances:
-            # print("##########")
-            # print(item.organisation_id)
-            # print(item.created_date)
-            data[item.organisation_id]["opening_balance"] = item.balance
-            # print(item)
-            # print(item.balance)
-
-        # Get closing balance
-        closing_balances = (
-            OrganisationTransaction.objects.filter(created_date__gte=start_date)
-            .filter(created_date__lt=end_date)
-            .filter(organisation__status="Open")
-            .order_by("organisation_id", "pk")
-            .distinct("organisation_id")
-        )
-
-        for item in closing_balances:
-            data[item.organisation_id]["closing_balance"] = item.balance
-
-        # fix the start date
-        start_date = start_date + datetime.timedelta(days=1)
     else:
 
         # Default to first to last days of previous month
         end_date = now().replace(day=1) - datetime.timedelta(days=1)
         start_date = end_date.replace(day=1)
         data = {}
+        totals = {}
 
     return render(
         request,
@@ -281,6 +379,7 @@ def organisation_movement_report(request):
             "start_date": start_date,
             "end_date": end_date,
             "data": data,
+            "totals": totals,
         },
     )
 

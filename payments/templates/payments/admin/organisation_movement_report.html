@@ -46,8 +46,8 @@
                             </div>
                         </div>
                         <div class="row">
-                            <button type="submit" class="btn btn-primary btn-sm center-text cobalt-save">Run Report</button>
-                            <button type="submit" class="btn btn-success btn-sm center-text cobalt-save">Excel Download</button>
+                            <button type="submit" name="report" class="btn btn-primary btn-sm center-text">Run Report</button>
+                            <button type="submit" name="excel" class="btn btn-success btn-sm center-text">Excel Download</button>
                         </div>
                     </form>
 
@@ -65,21 +65,21 @@
                             <thead>
                                 <tr>
                                     <th></th>
-                                    <th>Totals</th>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
+                                    <th>TOTALS:</th>
+                                    <th class="text-right">{{ totals.total_opening_balance|cobalt_currency_colour_short }}</th>
+                                    <th class="text-right">{{ totals.total_transactions|cobalt_currency_colour_short }}</th>
+                                    <th class="text-right">{{ totals.total_manual_adjustments|cobalt_currency_colour_short }}</th>
+                                    <th class="text-right">{{ totals.total_settlement|cobalt_currency_colour_short }}</th>
+                                    <th class="text-right">{{ totals.total_closing_balance|cobalt_currency_colour_short }}</th>
                                 </tr>
                                 <tr>
                                     <th>Club No.</th>
                                     <th class="text-left">Organisation</th>
-                                    <th class="text-right">{{ start_date }}</th>
+                                    <th class="text-right">{{ start_date|date:"d M Y" }}</th>
                                     <th class="text-right">Transactions</th>
                                     <th class="text-right">Manual Adjustments</th>
                                     <th class="text-right">Settlement</th>
-                                    <th class="text-right">{{ end_date }}</th>
+                                    <th class="text-right">{{ end_date|date:"d M Y" }}</th>
                                 </tr>
                             </thead>
 
