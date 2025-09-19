@@ -199,11 +199,10 @@ def cobalt_currency_colour(dollars):
 
     num = f"{GLOBAL_CURRENCY_SYMBOL}{dollars:,.2f}".replace("$-", "-$")
 
-    return mark_safe(f"{open_span}{num}{close_span}") @ register.filter(
-        name="cobalt_currency_colour_short", is_safe=True
-    )
+    return mark_safe(f"{open_span}{num}{close_span}")
 
 
+@register.filter(name="cobalt_currency_colour_short", is_safe=True)
 def cobalt_currency_colour_short(dollars):
     """Return number formatted as currency with bootstrap colours. If the number is 0 return a dash. Don't
     include a currency symbol

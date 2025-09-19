@@ -15,7 +15,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template.loader import render_to_string
 from django.utils import timezone, dateformat
-from django.utils.timezone import make_aware, now
+from django.utils.timezone import make_aware, now, get_current_timezone
 
 from accounts.models import User
 from cobalt.settings import (
@@ -189,19 +189,18 @@ def organisation_movement_report(request):
     """Movement report for all organisations"""
 
     if request.method == "POST":
-        print("ok")
+
+        # Extract the date component
         start_date = datetime.datetime.strptime(
             request.POST.get("start_date"), "%Y-%m-%d"
         )
-        start_date = make_aware(start_date, pytz.timezone(TIME_ZONE))
+        start_date = make_aware(start_date, get_current_timezone())
+
         # Move end date forward one day (time is 00:00) and use less than in query
         end_date = datetime.datetime.strptime(
             request.POST.get("end_date"), "%Y-%m-%d"
         ) + datetime.timedelta(days=1)
-        end_date = make_aware(end_date, pytz.timezone(TIME_ZONE))
-
-        print(start_date)
-        print(end_date)
+        end_date = make_aware(end_date, get_current_timezone())
 
         # Build a list of all organisations with the columns we want
         data = {}
@@ -223,7 +222,6 @@ def organisation_movement_report(request):
             OrganisationTransaction.objects.filter(created_date__gte=start_date)
             .filter(created_date__lt=end_date)
             .values("organisation", "type")
-            .order_by("organisation__org_id", "type")
             .annotate(transactions_total=Sum("amount"))
         )
 
@@ -231,15 +229,41 @@ def organisation_movement_report(request):
         for item in transactions:
             identifier = item["organisation"]
 
-            # For settlement and manual adjustment record separately, everythign else just add it up
-            if type == "Settlement":
+            # For settlement and manual adjustment record separately, everything else just add it up
+            if item["type"] == "Settlement":
                 data[identifier]["settlement"] = item["transactions_total"]
-            elif type == "Manual Adjustment":
+            elif item["type"] == "Manual Adjustment":
                 data[identifier]["manual_adjustments"] = item["transactions_total"]
             else:
                 data[identifier]["transactions"] += item["transactions_total"]
 
-        print(data)
+        # Get opening balance
+        opening_balances = (
+            OrganisationTransaction.objects.filter(organisation__status="Open")
+            .filter(created_date__lte=start_date)
+            .order_by("organisation_id", "-pk")
+            .distinct("organisation_id")
+        )
+
+        for item in opening_balances:
+            # print("##########")
+            # print(item.organisation_id)
+            # print(item.created_date)
+            data[item.organisation_id]["opening_balance"] = item.balance
+            # print(item)
+            # print(item.balance)
+
+        # Get closing balance
+        closing_balances = (
+            OrganisationTransaction.objects.filter(created_date__gte=start_date)
+            .filter(created_date__lt=end_date)
+            .filter(organisation__status="Open")
+            .order_by("organisation_id", "pk")
+            .distinct("organisation_id")
+        )
+
+        for item in closing_balances:
+            data[item.organisation_id]["closing_balance"] = item.balance
 
         # fix the start date
         start_date = start_date + datetime.timedelta(days=1)

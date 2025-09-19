@@ -28,6 +28,7 @@ class OrganisationAdmin(admin.ModelAdmin):
     autocomplete_fields = [
         "secretary",
         "last_updated_by",
+        "default_secondary_payment_method",
     ]
     search_fields = ["name"]
 
