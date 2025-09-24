@@ -298,7 +298,7 @@ class SimpleSelenium:
 
         # Wait for clickable
         try:
-            matching_element = WebDriverWait(self.driver, 10).until(
+            matching_element = WebDriverWait(self.driver, 5).until(
                 expected_conditions.element_to_be_clickable(element)
             )
         except TimeoutException:
@@ -373,8 +373,8 @@ class SimpleSelenium:
         self.go_to("/accounts/login")
 
         # Provide credentials
-        self.enter_value_into_field_by_name("username", username)
-        self.enter_value_into_field_by_name("password", self.default_password)
+        self.enter_value_into_field("id_username", username)
+        self.enter_value_into_field("id_password", self.default_password)
 
         # Take a screenshot
         self.screenshot("Logging in")
