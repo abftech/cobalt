@@ -449,7 +449,7 @@ def _update_entries_process_their_system_dollars_make_payments(event_entries_by_
 
             if payment_api_batch(
                 member=event_entry_player.player,
-                description=event_entry.event.event_name,
+                description=f"{event_entry.event.event_name} - {event_entry_player.player}",
                 amount=event_entry_player.entry_fee,
                 organisation=event_entry_player.event_entry.event.congress.congress_master.org,
                 payment_type="Entry to an event",
