@@ -298,7 +298,7 @@ def create_congress_wizard_2(request, step_list, congress):
                 org=congress.congress_master.org
             ),
             events_admin=events_admin,
-            instance=congress,
+            congress_id=congress.id,
         )
         if form.is_valid():
             # Extra validation if already published
@@ -321,6 +321,7 @@ def create_congress_wizard_2(request, step_list, congress):
             congress_masters=CongressMaster.objects.filter(
                 org=congress.congress_master.org
             ),
+            congress_id=congress.id,
         )
 
     form.fields["year"].required = True
@@ -371,6 +372,9 @@ def _create_congress_wizard_2_handle_form(form, congress):
     congress.congress_venue_type = form.cleaned_data["congress_venue_type"]
     congress.online_platform = form.cleaned_data["online_platform"]
     congress.congress_master = form.cleaned_data["congress_master"]
+    congress.allow_edit_of_old_congress = form.cleaned_data[
+        "allow_edit_of_old_congress"
+    ]
     congress.save()
 
     return redirect("events:create_congress_wizard", step=3, congress_id=congress.id)
@@ -380,7 +384,7 @@ def create_congress_wizard_3(request, step_list, congress):
     """wizard step 3 - venue"""
 
     if request.method == "POST":
-        form = CongressForm(request.POST, instance=congress)
+        form = CongressForm(request.POST, congress_id=congress.id)
         if form.is_valid():
             congress.venue_name = form.cleaned_data["venue_name"]
             congress.venue_location = form.cleaned_data["venue_location"]
@@ -394,7 +398,7 @@ def create_congress_wizard_3(request, step_list, congress):
         else:
             print(form.errors)
     else:
-        form = CongressForm(instance=congress)
+        form = CongressForm(instance=congress, congress_id=congress.id)
 
     form.fields["venue_name"].required = True
     #   form.fields["venue_location"].required = True
@@ -412,7 +416,7 @@ def create_congress_wizard_4(request, step_list, congress):
     """wizard step 3 - sponsor"""
 
     if request.method == "POST":
-        form = CongressForm(request.POST, instance=congress)
+        form = CongressForm(request.POST, congress_id=congress.id)
         if form.is_valid():
             congress.sponsors = form.cleaned_data["sponsors"]
             congress.save()
@@ -423,7 +427,7 @@ def create_congress_wizard_4(request, step_list, congress):
         else:
             print(form.errors)
     else:
-        form = CongressForm(instance=congress)
+        form = CongressForm(instance=congress, congress_id=congress.id)
 
     return render(
         request,
@@ -436,7 +440,7 @@ def create_congress_wizard_5(request, step_list, congress):
     """wizard step 5 - options"""
 
     if request.method == "POST":
-        form = CongressForm(request.POST, instance=congress)
+        form = CongressForm(request.POST, congress_id=congress.id)
         if form.is_valid():
             # congress.payment_method_system_dollars = form.cleaned_data[
             #     "payment_method_system_dollars"
@@ -527,7 +531,7 @@ def create_congress_wizard_5(request, step_list, congress):
             )
         if congress.senior_date:
             initial["senior_date"] = congress.senior_date.strftime("%d/%m/%Y")
-        form = CongressForm(instance=congress, initial=initial)
+        form = CongressForm(instance=congress, initial=initial, congress_id=congress.id)
 
     form.fields["payment_method_system_dollars"].required = True
     form.fields["payment_method_bank_transfer"].required = True

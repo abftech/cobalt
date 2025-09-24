@@ -38,6 +38,10 @@ class CongressForm(forms.ModelForm):
 
         # See if this user is an admin
         self.events_admin = kwargs.pop("events_admin", False)
+
+        # save id of congress if we have one
+        self.congress_id = kwargs.pop("congress_id", False)
+
         super().__init__(*args, **kwargs)
 
         # Modify congress master if passed
@@ -235,17 +239,17 @@ class CongressForm(forms.ModelForm):
         # clean the data
         cleaned_data = super().clean()
 
-        # Allow admins to do anything
-        if self.events_admin:
+        # Allow admins to do anything, don't check without congress_id
+        if self.events_admin or not self.congress_id:
             return cleaned_data
 
         # Get the congress instance
-        instance = super(CongressForm, self).save(commit=False)
+        congress = Congress.objects.filter(pk=self.congress_id).first()
 
         # Don't allow edits if more than 15 weeks since start unless flag is set
         if (
-            instance.start_date < (now() - timedelta(weeks=15)).date()
-            and not instance.allow_edit_of_old_congress
+            congress.start_date < (now() - timedelta(weeks=15)).date()
+            and not congress.allow_edit_of_old_congress
         ):
             raise ValidationError(
                 "Congress is in the past. Edits are not allowed. Start a new one by creating a copy via Club Admin - Calendar."

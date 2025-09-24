@@ -239,6 +239,9 @@
                                     </div>
                                 </div>
 
+                            {% else %}
+                                <span style="display: none">{% render_field form.allow_edit_of_old_congress class+="form-control" %}</span>
+
                             {% endif %}
 
                             <hr>
