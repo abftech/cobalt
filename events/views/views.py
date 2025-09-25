@@ -355,7 +355,7 @@ def view_congress(request, congress_id, fullscreen=False):
         template = "events/players/congress.html"
 
         # check if published or user has rights
-        if congress.status != "Published":
+        if congress.status == "Draft":
             role = "events.org.%s.edit" % congress.congress_master.org.id
             if not rbac_user_has_role(request.user, role):
                 return render(

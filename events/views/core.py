@@ -710,6 +710,7 @@ def _get_events_event_entry_players(user):
         EventEntryPlayer.objects.filter(player=user)
         .exclude(event_entry__entry_status="Cancelled")
         .exclude(event_entry__event__denormalised_end_date__lt=datetime.today())
+        .exclude(event_entry__event__denormalised_end_date__isnull=True)
         .order_by("event_entry__event__denormalised_start_date")
         .select_related("event_entry__event")
     )
@@ -804,6 +805,8 @@ def get_events(user):
     event_entry_players, more_events, total_events = _get_events_event_entry_players(
         user
     )
+    for e in event_entry_players:
+        print(e.id)
 
     # Flag for unpaid entries. Default to False.
     unpaid = False
@@ -812,17 +815,23 @@ def get_events(user):
     users_basket, other_basket = _get_events_basket_items(event_entry_players, user)
 
     event_start_dates = _get_event_start_date_from_sessions(event_entry_players)
+    print(event_start_dates)
 
     # Augment data
     for event_entry_player in event_entry_players:
         # Set start date based upon sessions
 
-        event_entry_player.calculated_start_date = event_start_dates[
-            event_entry_player.event_entry.event
-        ]
+        try:
 
-        if event_entry_player.calculated_start_date == timezone.localdate():
-            event_entry_player.is_running = True
+            event_entry_player.calculated_start_date = event_start_dates[
+                event_entry_player.event_entry.event
+            ]
+
+            if event_entry_player.calculated_start_date == timezone.localdate():
+                event_entry_player.is_running = True
+        except KeyError as exp:
+            logger.error(exp.__str__())
+            logger.error(event_entry_player)
 
         # Check if still in cart
         event_entry_player.in_cart = event_entry_player.event_entry in users_basket
