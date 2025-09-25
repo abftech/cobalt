@@ -805,8 +805,6 @@ def get_events(user):
     event_entry_players, more_events, total_events = _get_events_event_entry_players(
         user
     )
-    for e in event_entry_players:
-        print(e.id)
 
     # Flag for unpaid entries. Default to False.
     unpaid = False
@@ -815,23 +813,17 @@ def get_events(user):
     users_basket, other_basket = _get_events_basket_items(event_entry_players, user)
 
     event_start_dates = _get_event_start_date_from_sessions(event_entry_players)
-    print(event_start_dates)
 
     # Augment data
     for event_entry_player in event_entry_players:
         # Set start date based upon sessions
 
-        try:
+        event_entry_player.calculated_start_date = event_start_dates[
+            event_entry_player.event_entry.event
+        ]
 
-            event_entry_player.calculated_start_date = event_start_dates[
-                event_entry_player.event_entry.event
-            ]
-
-            if event_entry_player.calculated_start_date == timezone.localdate():
-                event_entry_player.is_running = True
-        except KeyError as exp:
-            logger.error(exp.__str__())
-            logger.error(event_entry_player)
+        if event_entry_player.calculated_start_date == timezone.localdate():
+            event_entry_player.is_running = True
 
         # Check if still in cart
         event_entry_player.in_cart = event_entry_player.event_entry in users_basket
