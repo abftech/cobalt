@@ -391,13 +391,13 @@ def payment_options_for_user_ajax(request):
                 reply = True
             else:
                 if user_committed > 0.0:
-                    response_data[
-                        "description"
-                    ] = f"{user.first_name} has insufficient funds taking into account other pending event entries."
+                    response_data["description"] = (
+                        f"{user.first_name} has insufficient funds taking into account other pending event entries."
+                    )
                 else:
-                    response_data[
-                        "description"
-                    ] = f"{user.first_name} has insufficient funds."
+                    response_data["description"] = (
+                        f"{user.first_name} has insufficient funds."
+                    )
 
     if reply:
         response_data["add_entry"] = "their-system-dollars"
@@ -914,6 +914,7 @@ def give_player_refund_ajax(request):
         description=f"Refund to {event_entry_player.paid_by} for {event_entry.event.event_name}",
         payment_type="Refund",
         member=event_entry_player.paid_by,
+        event=event_entry.event,
     )
 
     # create payment for member
@@ -923,6 +924,7 @@ def give_player_refund_ajax(request):
         description=f"Refund for {event_entry.event}",
         payment_type="Refund",
         member=event_entry_player.paid_by,
+        event_id=event_entry.event.id,
     )
 
     # Log it
@@ -1092,6 +1094,7 @@ def change_player_entry_ajax(request):
             description=f"{event_entry_player.event_entry.event.event_name} - {event_entry_player.paid_by} partial refund",
             payment_type="Refund",
             member=event_entry_player.paid_by,
+            event=event,
         )
 
         # create payment for user
@@ -1101,6 +1104,7 @@ def change_player_entry_ajax(request):
             description=f"Refund for {event_entry_player.event_entry.event.event_name} - {event_entry_player.player}",
             payment_type="Refund",
             organisation=event_entry_player.event_entry.event.congress.congress_master.org,
+            event_id=event.id,
         )
 
         # update entry payment amount
