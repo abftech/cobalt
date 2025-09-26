@@ -215,14 +215,11 @@ def _add_memberships_to_queryset(queryset):
     return queryset
 
 
-def _global_search_people(request, query, searchparams, include_people):
+def _global_search_people(request, query, searchparams, include_people, email_admin):
     """sub of global_search to handle people (Users, Unregistered users and contacts)"""
 
     if not include_people:
         return [], searchparams
-
-    # If this user is an email admin, then we include contacts
-    email_admin = bool(rbac_user_has_role(request.user, "notifications.admin.view"))
 
     # Handle splitting name in to first and second
     if query.find(" ") >= 0:
@@ -234,8 +231,10 @@ def _global_search_people(request, query, searchparams, include_people):
     else:
         first_name_search = query
         last_name_search = query
-        q_string = Q(first_name__icontains=first_name_search) | Q(
-            last_name__icontains=last_name_search
+        q_string = (
+            Q(first_name__icontains=first_name_search)
+            | Q(last_name__icontains=last_name_search)
+            | Q(system_number__icontains=query)
         )
 
     registered = User.objects.filter(q_string)
@@ -264,6 +263,9 @@ def global_search(request):
     we show if a search is performed, to allow the user to reduce the range of the search
     """
 
+    # If this user is an email admin, then we include contacts
+    email_admin = bool(rbac_user_has_role(request.user, "notifications.admin.view"))
+
     query = request.POST.get("search_string") or request.GET.get("search_string")
     include_people = request.POST.get("include_people") or request.GET.get(
         "include_people"
@@ -290,7 +292,7 @@ def global_search(request):
 
         # Users
         people, searchparams = _global_search_people(
-            request, query, searchparams, include_people
+            request, query, searchparams, include_people, email_admin
         )
 
         # Posts
@@ -353,5 +355,6 @@ def global_search(request):
             "include_payments": include_payments,
             "include_orgs": include_orgs,
             "searchparams": searchparams,
+            "email_admin": email_admin,
         },
     )

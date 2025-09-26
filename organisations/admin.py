@@ -180,6 +180,8 @@ class MemberClubDetailsAdmin(admin.ModelAdmin):
         "latest_membership",
     ]
 
+    list_filter = ["membership_status"]
+
 
 @admin.register(MemberClubOptions)
 class MemberClubOptionsAdmin(admin.ModelAdmin):

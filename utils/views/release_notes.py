@@ -34,6 +34,7 @@ def release_notes_view(request):
                 "Fix Stripe previous month transactions download",
                 "Fix dates on other Stripe reports",
                 "Remove warning message on Stripe reports when changing dates",
+                "DEV - Add list filters to some Django admin views",
             ],
         },
         {

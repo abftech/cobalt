@@ -127,7 +127,14 @@
                                             <a href="{% url "accounts:public_profile" pk=thing.id %}">
                                                 {{ GLOBAL_ORG}} Number: {{ thing.system_number }}
                                                 {% for club in thing.member_club_details %}
-                                                    <br>Member of {{ club.club.name }}
+                                                    <br>
+                                                    {% if club.membership_status == "CON" %}
+                                                        Contact of
+                                                    {% else %}
+                                                        Member of
+                                                    {% endif %}
+
+                                                    {{ club.club.name }}
                                                 {% endfor %}
                                             </a>
                                         </td>

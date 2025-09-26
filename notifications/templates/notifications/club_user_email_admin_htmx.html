@@ -37,7 +37,7 @@
                                     {% if item.latest_membership %}
                                         <td>{{ item.latest_membership.membership_type }}</td>
                                     {% else %}
-                                        <td>-</td>
+                                        <td>{{ item.club }}</td>
                                     {% endif %}
                                     <td>{{ item.get_membership_status_display }}</td>
                                     <td>{{ item.email| default_if_none:"-" }}</td>

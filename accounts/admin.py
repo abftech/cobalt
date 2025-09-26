@@ -35,6 +35,8 @@ class UnregisteredUserAdmin(admin.ModelAdmin):
         "added_by_club",
     ]
 
+    list_filter = ["internal_system_number"]
+
 
 @admin.register(TeamMate)
 class TeamMateAdmin(admin.ModelAdmin):
