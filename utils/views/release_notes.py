@@ -31,6 +31,7 @@ def release_notes_view(request):
                 "DEV - minor changes to cgit scripts",
                 "Fix organisations view in Django admin",
                 "Fix viewing of events without sessions",
+                "Fix Stripe previous month transactions download",
             ],
         },
         {

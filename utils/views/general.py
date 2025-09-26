@@ -1,4 +1,5 @@
 import csv
+import datetime
 from time import sleep
 
 import dateutil.utils
@@ -6,9 +7,10 @@ import requests
 from dateutil.relativedelta import relativedelta
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, HttpRequest
 from django.shortcuts import render
 from django.utils import timezone
+from django.utils.timezone import make_aware, get_current_timezone
 from geopy import Nominatim
 
 from api.models import ApiLog
@@ -108,3 +110,49 @@ def timeout(request):
     sleep(100)
 
     return HttpResponse("time out test")
+
+
+def cobalt_report_ref_dates(request: HttpRequest = None):
+    """
+    Common function to handle dates
+
+    Accepts an optional HttpRequest which can contain POST data with a "ref_date" parameter
+    ref_date should be dd/mm/yyyy
+
+    Used for when you want to get things like the first and last date of the previous month
+
+    Returns a dictionary of timezone aware dates, can be updated if anything is missing
+
+        ref_date: last day of previous month, or ref_date value from request
+        ref_date_month_earlier: date a month earlier, same day of month
+
+    """
+
+    # Get date from request if provided
+    start_date = request.POST.get("ref_date") if request else None
+
+    if start_date:
+        ref_date = datetime.datetime.strptime(start_date, "%d/%m/%Y")
+    else:
+        # Default to last day of previous month
+        today = datetime.date.today()
+        first = today.replace(day=1)
+        last_day_of_last_month = first - datetime.timedelta(days=1)
+        ref_date = datetime.datetime(
+            year=last_day_of_last_month.year,
+            month=last_day_of_last_month.month,
+            day=last_day_of_last_month.day,
+            hour=23,
+            minute=59,
+            second=59,
+            microsecond=999_999,
+        )
+
+    # Make timezone aware
+    ref_date = make_aware(ref_date, get_current_timezone())
+
+    # Also calculate date a month earlier
+    ref_date_month_earlier = ref_date - relativedelta(months=1)
+
+    # return dictionary of dates
+    return {"ref_date": ref_date, "ref_date_month_earlier": ref_date_month_earlier}

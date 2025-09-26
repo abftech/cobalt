@@ -64,6 +64,7 @@ from rbac.core import rbac_user_has_role
 from rbac.decorators import rbac_check_role
 from rbac.views import rbac_forbidden
 from utils.utils import cobalt_paginator
+from utils.views.general import cobalt_report_ref_dates
 from utils.views.xls import XLSXStyles
 
 logger = logging.getLogger("cobalt")
@@ -1450,9 +1451,8 @@ def admin_stripe_rec(request):
     Returns:
         HTTPResponse
     """
-    ref_date, _ = _admin_stripe_rec_ref_date(request)
-
-    print(ref_date)
+    dates = cobalt_report_ref_dates(request)
+    ref_date = dates["ref_date"]
 
     members_balance, members = _get_member_balance_at_date(ref_date)
     orgs_balance, orgs = _get_org_balance_at_date(ref_date)
@@ -1473,25 +1473,24 @@ def admin_stripe_rec(request):
 def _admin_stripe_rec_ref_date(request):
     """common function to handle reference date"""
 
-    # Get date from request if provided
-    start_date = request.POST.get("ref_date")
+    # Default date is last day of the previous month. Get first of this month and step back 1 day
+    ref_date = datetime.datetime.now(tz=TZ).replace(
+        day=1, hour=23, minute=59, second=59, microsecond=999_999
+    ) - datetime.timedelta(days=1)
 
-    if start_date:
-        ref_date = datetime.datetime.strptime(start_date, "%d/%m/%Y")
-    else:
-        # Default to last day of previous month
-        today = datetime.date.today()
-        first = today.replace(day=1)
-        last_day_of_last_month = first - datetime.timedelta(days=1)
-        ref_date = datetime.datetime(
-            year=last_day_of_last_month.year, month=last_day_of_last_month.month, day=1
+    form_date = request.POST.get("ref_date")
+
+    if form_date:
+        ref_date = (
+            datetime.datetime.strptime(form_date, "%d/%m/%Y")
+            .replace(tzinfo=TZ)
+            .replace(hour=23, minute=59, second=59, microsecond=999_999)
         )
 
-    # Make timezone aware
-    ref_date = make_aware(ref_date, get_current_timezone())
-
-    # Also calculate date a month earlier
-    ref_date_month_earlier = ref_date - relativedelta(months=1)
+    # also calculate date a month earlier
+    ref_date_month_earlier = ref_date.replace(
+        day=1, hour=0, minute=0, second=0, microsecond=0
+    ) - datetime.timedelta(days=1)
 
     return ref_date, ref_date_month_earlier
 
@@ -1509,20 +1508,21 @@ def admin_stripe_rec_download(request):
     # Get the ref date
     ref_date, ref_date_month_earlier = _admin_stripe_rec_ref_date(request)
 
-    print(ref_date)
-    print(ref_date_month_earlier)
-
     # Get the 3 different kinds of financial transaction
-    members = MemberTransaction.objects.filter(created_date__lte=ref_date).filter(
-        created_date__gte=ref_date_month_earlier
+    members = (
+        MemberTransaction.objects.filter(created_date__lte=ref_date)
+        .filter(created_date__gte=ref_date_month_earlier)
+        .select_related("other_member", "organisation")
     )
     stripes = (
         StripeTransaction.objects.filter(created_date__lte=ref_date)
         .filter(created_date__gte=ref_date_month_earlier)
         .filter(status__in=["Succeeded", "Partial refund", "Refunded"])
     )
-    orgs = OrganisationTransaction.objects.filter(created_date__lte=ref_date).filter(
-        created_date__gte=ref_date_month_earlier
+    orgs = (
+        OrganisationTransaction.objects.filter(created_date__lte=ref_date)
+        .filter(created_date__gte=ref_date_month_earlier)
+        .select_related("member")
     )
 
     # Merge them together
