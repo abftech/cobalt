@@ -195,13 +195,22 @@ def _add_memberships_to_queryset(queryset, email_admin=False):
     system_numbers = queryset.values_list("system_number")
 
     # Get matching member_club_detail records - and also load the club info
-    member_club_details = MemberClubDetails.objects.filter(
-        system_number__in=system_numbers
-    ).select_related("club")
+    member_club_details = (
+        MemberClubDetails.objects.filter(system_number__in=system_numbers)
+        .order_by("club", "pk")
+        .distinct("club")
+        .select_related("club")
+    )
 
     # Hide contacts from non-admins, they are private records for clubs only
-    if not email_admin:
-        member_club_details = member_club_details.exclude(membership_status="CON")
+    if email_admin:
+        member_club_details = member_club_details.filter(
+            membership_status__in=["CUR", "DUE", "CON"]
+        )
+    else:
+        member_club_details = member_club_details.filter(
+            membership_status__in=["CUR", "DUE"]
+        )
 
     # Turn into a dictionary
     lookup = {}
