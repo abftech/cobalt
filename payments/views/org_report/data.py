@@ -223,7 +223,7 @@ def organisation_transactions_by_date_range(
                     "Club Payment",
                     "Club Membership",
                 ]
-            )
+            ).exclude(event_id__isnull=False)
 
         elif transaction_type != "all":
             organisation_transactions = organisation_transactions.filter(

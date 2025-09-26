@@ -907,9 +907,18 @@ def organisation_transactions_filtered_data_movement(
     club_memberships = base_query.filter(type="Club Membership").aggregate(
         total=Sum("amount")
     )
-    other_adjustments = base_query.exclude(
-        type__in=["Settlement", "Entry to an event", "Club Payment", "Club Membership"]
-    ).aggregate(total=Sum("amount"))
+    other_adjustments = (
+        base_query.exclude(
+            type__in=[
+                "Settlement",
+                "Entry to an event",
+                "Club Payment",
+                "Club Membership",
+            ]
+        )
+        .exclude(event_id__isnull=False)
+        .aggregate(total=Sum("amount"))
+    )
 
     # Reformat date strings to be consistent
     start_date_display = f"{start_date[8:10]}/{start_date[5:7]}/{start_date[:4]}"
