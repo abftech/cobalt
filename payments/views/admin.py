@@ -1506,7 +1506,9 @@ def admin_stripe_rec_download(request):
     """
 
     # Get the ref date
-    ref_date, ref_date_month_earlier = _admin_stripe_rec_ref_date(request)
+    dates = cobalt_report_ref_dates(request)
+    ref_date = dates["ref_date"]
+    ref_date_month_earlier = dates["ref_date_month_earlier"]
 
     # Get the 3 different kinds of financial transaction
     members = (
@@ -1640,7 +1642,8 @@ def admin_stripe_rec_download_member(request):
     """
 
     # Get the ref date
-    ref_date, _ = _admin_stripe_rec_ref_date(request)
+    dates = cobalt_report_ref_dates(request)
+    ref_date = dates["ref_date"]
 
     # Get the member balances
     members_balance, members = _get_member_balance_at_date(ref_date)
@@ -1689,7 +1692,8 @@ def admin_stripe_rec_download_org(request):
     """
 
     # Get the ref date
-    ref_date, _ = _admin_stripe_rec_ref_date(request)
+    dates = cobalt_report_ref_dates(request)
+    ref_date = dates["ref_date"]
 
     # Get the member balances
     org_balance, orgs = _get_org_balance_at_date(ref_date)

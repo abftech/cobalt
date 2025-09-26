@@ -133,6 +133,7 @@ def cobalt_report_ref_dates(request: HttpRequest = None):
 
     if start_date:
         ref_date = datetime.datetime.strptime(start_date, "%d/%m/%Y")
+        ref_date = ref_date.replace(hour=23, minute=59, second=59, microsecond=999_999)
     else:
         # Default to last day of previous month
         today = datetime.date.today()
