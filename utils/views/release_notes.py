@@ -35,6 +35,7 @@ def release_notes_view(request):
                 "Fix dates on other Stripe reports",
                 "Remove warning message on Stripe reports when changing dates",
                 "DEV - Add list filters to some Django admin views",
+                "Prevent deletion of last session in a published event",
             ],
         },
         {
