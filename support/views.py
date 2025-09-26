@@ -188,7 +188,7 @@ def browser_errors(request):
     return HttpResponse("ok")
 
 
-def _add_memberships_to_queryset(queryset):
+def _add_memberships_to_queryset(queryset, email_admin=False):
     """augments the queryset with membership data. Works for User or UnregisteredUser"""
 
     # Get system numbers
@@ -198,6 +198,10 @@ def _add_memberships_to_queryset(queryset):
     member_club_details = MemberClubDetails.objects.filter(
         system_number__in=system_numbers
     ).select_related("club")
+
+    # Hide contacts from non-admins, they are private records for clubs only
+    if not email_admin:
+        member_club_details = member_club_details.exclude(membership_status="CON")
 
     # Turn into a dictionary
     lookup = {}
@@ -215,11 +219,14 @@ def _add_memberships_to_queryset(queryset):
     return queryset
 
 
-def _global_search_people(request, query, searchparams, include_people, email_admin):
+def _global_search_people(request, query, searchparams, include_people):
     """sub of global_search to handle people (Users, Unregistered users and contacts)"""
 
     if not include_people:
         return [], searchparams
+
+    # If this user is an email admin, then we include contacts
+    email_admin = bool(rbac_user_has_role(request.user, "notifications.admin.view"))
 
     # Handle splitting name in to first and second
     if query.find(" ") >= 0:
@@ -247,8 +254,10 @@ def _global_search_people(request, query, searchparams, include_people, email_ad
         unregistered = unregistered.exclude(internal_system_number=True)
 
     # Augment with membership data
-    registered_with_memberships = _add_memberships_to_queryset(registered)
-    unregistered_with_memberships = _add_memberships_to_queryset(unregistered)
+    registered_with_memberships = _add_memberships_to_queryset(registered, email_admin)
+    unregistered_with_memberships = _add_memberships_to_queryset(
+        unregistered, email_admin
+    )
 
     data = list(chain(registered_with_memberships, unregistered_with_memberships))
 
@@ -262,9 +271,6 @@ def global_search(request):
     """This handles the search bar that appears on every page. Also gets called from the search panel that
     we show if a search is performed, to allow the user to reduce the range of the search
     """
-
-    # If this user is an email admin, then we include contacts
-    email_admin = bool(rbac_user_has_role(request.user, "notifications.admin.view"))
 
     query = request.POST.get("search_string") or request.GET.get("search_string")
     include_people = request.POST.get("include_people") or request.GET.get(
@@ -292,7 +298,7 @@ def global_search(request):
 
         # Users
         people, searchparams = _global_search_people(
-            request, query, searchparams, include_people, email_admin
+            request, query, searchparams, include_people
         )
 
         # Posts
@@ -355,6 +361,5 @@ def global_search(request):
             "include_payments": include_payments,
             "include_orgs": include_orgs,
             "searchparams": searchparams,
-            "email_admin": email_admin,
         },
     )
