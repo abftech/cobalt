@@ -1077,9 +1077,7 @@ def fix_closed_congress(congress, actor):
         event_entry_player.save()
 
         # Also remove any basket items
-        BasketItem.objects.filter(
-            player=event_entry_player.player, event_entry=event_entry_player.event_entry
-        ).delete()
+        BasketItem.objects.filter(event_entry=event_entry_player.event_entry).delete()
 
         # log it
         logger.info(action)
