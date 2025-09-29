@@ -898,9 +898,6 @@ def organisation_transactions_filtered_data_movement(
         .filter(created_date__lt=end_datetime)
     )
     settlements = base_query.filter(type="Settlement").aggregate(total=Sum("amount"))
-    # event_entries = base_query.filter(Q(type="Entry to an event") or Q(event_id__isnull=False)).aggregate(
-    #     total=Sum("amount")
-    # )
     club_sessions = base_query.filter(type="Club Payment").aggregate(
         total=Sum("amount")
     )
@@ -920,7 +917,7 @@ def organisation_transactions_filtered_data_movement(
         .aggregate(total=Sum("amount"))
     )
 
-    # Event entries
+    # Event entries - handle separately as we already have logic for this
     event_data = event_payments_summary_by_date_range(club, start_date, end_date)
     events_total = sum(event_data[event_id]["amount"] for event_id in event_data)
 
