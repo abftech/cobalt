@@ -1,7 +1,7 @@
 import datetime
 
 import pytz
-from django.db.models import Sum, Min
+from django.db.models import Sum, Min, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
@@ -898,9 +898,9 @@ def organisation_transactions_filtered_data_movement(
         .filter(created_date__lt=end_datetime)
     )
     settlements = base_query.filter(type="Settlement").aggregate(total=Sum("amount"))
-    event_entries = base_query.filter(type="Entry to an event").aggregate(
-        total=Sum("amount")
-    )
+    # event_entries = base_query.filter(Q(type="Entry to an event") or Q(event_id__isnull=False)).aggregate(
+    #     total=Sum("amount")
+    # )
     club_sessions = base_query.filter(type="Club Payment").aggregate(
         total=Sum("amount")
     )
@@ -920,6 +920,10 @@ def organisation_transactions_filtered_data_movement(
         .aggregate(total=Sum("amount"))
     )
 
+    # Event entries
+    event_data = event_payments_summary_by_date_range(club, start_date, end_date)
+    events_total = sum(event_data[event_id]["amount"] for event_id in event_data)
+
     # Reformat date strings to be consistent
     start_date_display = f"{start_date[8:10]}/{start_date[5:7]}/{start_date[:4]}"
     end_date_display = f"{end_date[8:10]}/{end_date[5:7]}/{end_date[:4]}"
@@ -932,7 +936,7 @@ def organisation_transactions_filtered_data_movement(
             "opening_balance": opening_balance,
             "closing_balance": closing_balance,
             "settlements": settlements["total"] or 0,
-            "event_entries": event_entries["total"] or 0,
+            "event_entries": events_total,
             "club_sessions": club_sessions["total"] or 0,
             "club_memberships": club_memberships["total"] or 0,
             "other_adjustments": other_adjustments["total"] or 0,
