@@ -775,7 +775,7 @@ def view_events(request):
     event_dict = {}
     for event in events:
         start_date = event.start_date()
-        if start_date >= datetime.now().date():
+        if start_date and start_date >= datetime.now().date():
             event.entry_status = event.entry_status(request.user)
             event_dict[event] = start_date
 

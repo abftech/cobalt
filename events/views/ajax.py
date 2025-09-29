@@ -289,6 +289,17 @@ def delete_session_ajax(request):
     if not rbac_user_has_role(request.user, role):
         return rbac_forbidden(request, role)
 
+    # Check this is not the last session for this event
+    other_sessions = (
+        Session.objects.filter(event=session.event).exclude(pk=session.id).exists()
+    )
+
+    if not other_sessions and session.event.congress.status == "Published":
+        response_data = {
+            "message": "Cannot delete the last session for an event in a congress that has been published. Sessions are required to let people know when the event starts."
+        }
+        return JsonResponse({"data": response_data})
+
     session.delete()
 
     update_event_start_and_end_times(session.event)
