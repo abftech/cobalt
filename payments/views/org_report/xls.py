@@ -1,10 +1,7 @@
 import xlsxwriter
-from django.db.models import Sum
 from django.http import HttpResponse
 
-from club_sessions.models import Session
 from cobalt.settings import GLOBAL_CURRENCY_SYMBOL
-from payments.models import OrganisationTransaction
 from payments.views.org_report.data import (
     organisation_transactions_by_date_range,
     event_payments_summary_by_date_range,
@@ -253,6 +250,83 @@ def _organisation_transactions_xls_download_sessions(
         sessions_sheet.write(row_no, 3, amount, formats.detail_row_money)
 
 
+def _organisation_transactions_xls_download_movements(
+    formats, movement_sheet, request, club, start_date, end_date
+):
+    """sub of organisation_transactions_xls_download to handle the movement report tab"""
+
+    from organisations.views.club_menu_tabs.finance import (
+        organisation_transactions_filtered_data_movement_queries,
+    )
+
+    # Add main heading
+    _organisation_transactions_xls_header(
+        request,
+        club,
+        movement_sheet,
+        formats,
+        title=f"Download for {start_date} to {end_date}",
+        subtitle="Movement Summary",
+        subtitle_style=formats.h1_primary,
+        width=2,
+    )
+
+    # Now do data headings
+    movement_sheet.write(11, 0, "Type", formats.detail_row_title)
+    movement_sheet.set_column("A:A", 55)
+    movement_sheet.write(11, 1, "Date", formats.detail_row_title_number)
+    movement_sheet.set_column("B:B", 30)
+    movement_sheet.write(11, 2, "Amount", formats.detail_row_title_number)
+    movement_sheet.set_column("C:C", 40)
+
+    # Get movement summary
+    # Get data
+    (
+        opening_balance,
+        closing_balance,
+        settlements,
+        events_total,
+        sessions_total,
+        club_memberships,
+        other_adjustments,
+    ) = organisation_transactions_filtered_data_movement_queries(
+        club, start_date, end_date
+    )
+
+    # write data
+    movement_sheet.write(12, 0, "Opening Balance", formats.detail_row_data)
+    movement_sheet.write(12, 1, start_date, formats.detail_row_number)
+    movement_sheet.write(12, 2, opening_balance, formats.detail_row_money)
+
+    movement_sheet.write(13, 0, "Settlements", formats.detail_row_data)
+    movement_sheet.write(13, 1, "", formats.detail_row_data)
+    movement_sheet.write(13, 2, settlements["total"] or 0, formats.detail_row_money)
+
+    movement_sheet.write(14, 0, "Event Entries", formats.detail_row_data)
+    movement_sheet.write(14, 1, "", formats.detail_row_data)
+    movement_sheet.write(14, 2, events_total, formats.detail_row_money)
+
+    movement_sheet.write(15, 0, "Club Sessions", formats.detail_row_data)
+    movement_sheet.write(15, 1, "", formats.detail_row_data)
+    movement_sheet.write(15, 2, sessions_total, formats.detail_row_money)
+
+    movement_sheet.write(16, 0, "Club Memberships", formats.detail_row_data)
+    movement_sheet.write(16, 1, "", formats.detail_row_data)
+    movement_sheet.write(
+        16, 2, club_memberships["total"] or 0, formats.detail_row_money
+    )
+
+    movement_sheet.write(17, 0, "Other", formats.detail_row_data)
+    movement_sheet.write(17, 1, "", formats.detail_row_data)
+    movement_sheet.write(
+        17, 2, other_adjustments["total"] or 0, formats.detail_row_money
+    )
+
+    movement_sheet.write(18, 0, "Closing Balance", formats.detail_row_data)
+    movement_sheet.write(18, 1, end_date, formats.detail_row_number)
+    movement_sheet.write(18, 2, closing_balance, formats.detail_row_money)
+
+
 def _organisation_transactions_xls_download_events(
     formats, sessions_sheet, request, club, start_date, end_date
 ):
@@ -315,9 +389,6 @@ def organisation_transactions_xls_download(
 ):
     """Download XLS File of org transactions"""
 
-    # JPG Query - this seems to be a useless call
-    combined_view_events_sessions_other(club, start_date, end_date)
-
     # Create HttpResponse to put the Excel file into
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -326,6 +397,7 @@ def organisation_transactions_xls_download(
 
     # Create an Excel file and add worksheets
     workbook = xlsxwriter.Workbook(response)
+    movement_sheet = workbook.add_worksheet("Movement Summary")
     details_sheet = workbook.add_worksheet("Transactions")
     sessions_sheet = workbook.add_worksheet("Sessions")
     events_sheet = workbook.add_worksheet("Events")
@@ -333,6 +405,11 @@ def organisation_transactions_xls_download(
 
     # Create styles
     formats = XLSXStyles(workbook)
+
+    # Movements Summary tab
+    _organisation_transactions_xls_download_movements(
+        formats, movement_sheet, request, club, start_date, end_date
+    )
 
     # Details tab
     _organisation_transactions_xls_download_details(

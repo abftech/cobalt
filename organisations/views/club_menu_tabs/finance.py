@@ -882,6 +882,54 @@ def organisation_transactions_filtered_data_movement(
 ):
     """handle the filter by movement option"""
 
+    (
+        opening_balance,
+        closing_balance,
+        settlements,
+        events_total,
+        sessions_total,
+        club_memberships,
+        other_adjustments,
+    ) = organisation_transactions_filtered_data_movement_queries(
+        club,
+        start_date,
+        end_date,
+    )
+
+    # Reformat date strings to be consistent
+    start_date_display = f"{start_date[8:10]}/{start_date[5:7]}/{start_date[:4]}"
+    end_date_display = f"{end_date[8:10]}/{end_date[5:7]}/{end_date[:4]}"
+
+    return render(
+        request,
+        "organisations/club_menu/finance/organisation_transactions_filtered_data_movement_htmx.html",
+        {
+            "club": club,
+            "opening_balance": opening_balance,
+            "closing_balance": closing_balance,
+            "settlements": settlements["total"] or 0,
+            "event_entries": events_total,
+            "club_sessions": sessions_total,
+            "club_memberships": club_memberships["total"] or 0,
+            "other_adjustments": other_adjustments["total"] or 0,
+            "start_date": start_date,
+            "start_date_display": start_date_display,
+            "end_date": end_date,
+            "end_date_display": end_date_display,
+            "hx_target": hx_data["hx_target"],
+            "hx_post": hx_data["hx_post"],
+            "hx_vars": hx_data["hx_vars"],
+        },
+    )
+
+
+def organisation_transactions_filtered_data_movement_queries(
+    club,
+    start_date,
+    end_date,
+):
+    """The data is used by Excel download and on screen report"""
+
     # Dates
     end_datetime_raw = datetime.datetime.strptime(end_date, "%Y-%m-%d")
     end_datetime_raw += datetime.timedelta(days=1)
@@ -898,9 +946,7 @@ def organisation_transactions_filtered_data_movement(
         .filter(created_date__lt=end_datetime)
     )
     settlements = base_query.filter(type="Settlement").aggregate(total=Sum("amount"))
-    club_sessions = base_query.filter(type="Club Payment").aggregate(
-        total=Sum("amount")
-    )
+
     club_memberships = base_query.filter(type="Club Membership").aggregate(
         total=Sum("amount")
     )
@@ -921,30 +967,24 @@ def organisation_transactions_filtered_data_movement(
     event_data = event_payments_summary_by_date_range(club, start_date, end_date)
     events_total = sum(event_data[event_id]["amount"] for event_id in event_data)
 
-    # Reformat date strings to be consistent
-    start_date_display = f"{start_date[8:10]}/{start_date[5:7]}/{start_date[:4]}"
-    end_date_display = f"{end_date[8:10]}/{end_date[5:7]}/{end_date[:4]}"
+    # Sessions also has complex logic
+    sessions_in_range, payments_dict = sessions_and_payments_by_date_range(
+        club, start_date, end_date
+    )
 
-    return render(
-        request,
-        "organisations/club_menu/finance/organisation_transactions_filtered_data_movement_htmx.html",
-        {
-            "club": club,
-            "opening_balance": opening_balance,
-            "closing_balance": closing_balance,
-            "settlements": settlements["total"] or 0,
-            "event_entries": events_total,
-            "club_sessions": club_sessions["total"] or 0,
-            "club_memberships": club_memberships["total"] or 0,
-            "other_adjustments": other_adjustments["total"] or 0,
-            "start_date": start_date,
-            "start_date_display": start_date_display,
-            "end_date": end_date,
-            "end_date_display": end_date_display,
-            "hx_target": hx_data["hx_target"],
-            "hx_post": hx_data["hx_post"],
-            "hx_vars": hx_data["hx_vars"],
-        },
+    # Add session total amount to data
+    sessions_total = 0
+    for session_in_range_id in sessions_in_range:
+        sessions_total += payments_dict.get(session_in_range_id, 0)
+
+    return (
+        opening_balance,
+        closing_balance,
+        settlements,
+        events_total,
+        sessions_total,
+        club_memberships,
+        other_adjustments,
     )
 
 
@@ -1097,13 +1137,11 @@ def organisation_transactions_filtered_data_congresses(
     """handle the congress option"""
 
     congress_data = congress_payments_summary_by_date_range(club, start_date, end_date)
-    print(congress_data)
 
     list_of_congresses = list(congress_data.values())
     list_of_congresses.reverse()
     things = cobalt_paginator(request, list_of_congresses)
 
-    # COB-772
     balance_at_end_date = org_balance_at_date(club, end_date)
     end_datetime = datetime.datetime.strptime(end_date, "%Y-%m-%d")
     congresses_total = 0
