@@ -160,16 +160,17 @@
                                                 <br>
                                             {% endif %}
 
-                                            <a href="{% url "accounts:unregistered_public_profile" pk=thing.id %}"
+                                            <a href="{% url "accounts:unregistered_public_profile" pk=thing.id %}">
 
                                                <!-- {{ thing.member_club_details }} -->
                                                 {% for club in thing.member_club_details %}
-                                                    {% if thing.internal_system_number %}
-                                                        Contact
+
+                                                    {% if club.membership_status == "CON" %}
+                                                        Contact of
                                                     {% else %}
-                                                        Member
+                                                        Member of
                                                     {% endif %}
-                                                    of {{ club.club.name }}<br>
+                                                    {{ club.club.name }}<br>
                                                 {% endfor %}
 
                                             </a>
