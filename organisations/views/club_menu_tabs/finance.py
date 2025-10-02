@@ -960,6 +960,7 @@ def organisation_transactions_filtered_data_movement_queries(
             ]
         )
         .exclude(event_id__isnull=False)
+        .exclude(club_session_id__isnull=False)
         .aggregate(total=Sum("amount"))
     )
 
