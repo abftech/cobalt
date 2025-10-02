@@ -1109,30 +1109,60 @@ def org_balance(organisation):
 # org_balance_at_date             #
 ###################################
 def org_balance_at_date(organisation, as_at_date, start_of_day_balance=False):
-    """Returns org balance as at the end of a specified date (unless flag is set)
+    """Returns org balance on a specified date
 
     Args:
         organisation (organisations.models.Organisation): Organisation object
-        as_at_date: date
+        as_at_date: date as a string YYYY-MM-DD
         start_of_day_balance: Boolean if set gets the balance at the start of the day
+                              otherwise at the end of the day (default)
 
     Returns:
         float: balance
     """
 
+    # Get the timezone
+    my_timezone = pytz.timezone(TIME_ZONE)
+
     # for end date use 00:00 time on the next day
     end_datetime_raw = datetime.datetime.strptime(as_at_date, "%Y-%m-%d")
-    if not start_of_day_balance:
-        end_datetime_raw += datetime.timedelta(days=1)
-    end_datetime = timezone.make_aware(end_datetime_raw, pytz.timezone(TIME_ZONE))
 
-    last_tran = (
-        OrganisationTransaction.objects.filter(
-            organisation=organisation, created_date__lte=end_datetime
+    if not start_of_day_balance:
+        # move day forward a day and check for less than in the query
+        end_datetime_raw += datetime.timedelta(days=1)
+
+    end_datetime = my_timezone.localize(end_datetime_raw)
+
+    if start_of_day_balance:
+        last_tran = (
+            OrganisationTransaction.objects.filter(
+                organisation=organisation, created_date__lt=end_datetime
+            )
+            .order_by("created_date")
+            .last()
         )
-        .order_by("created_date")
-        .last()
-    )
+    else:
+        last_tran = (
+            OrganisationTransaction.objects.filter(
+                organisation=organisation, created_date__lte=end_datetime
+            )
+            .order_by("created_date")
+            .last()
+        )
+
+    if start_of_day_balance:
+        print(f"Looking for start of day balance on {as_at_date}")
+        print(f"End datetime is: {end_datetime}")
+        print(f"Transaction found is {last_tran.id}")
+        print(f"Transaction balance is {last_tran.balance}")
+        print(f"Transaction date is {last_tran.created_date}")
+    else:
+        print(f"Looking for end of day balance on {as_at_date}")
+        print(f"End datetime is: {end_datetime}")
+        print(f"Transaction found is {last_tran.id}")
+        print(f"Transaction balance is {last_tran.balance}")
+        print(f"Transaction date is {last_tran.created_date}")
+
     balance = last_tran.balance if last_tran else 0.0
     return float(balance)
 
