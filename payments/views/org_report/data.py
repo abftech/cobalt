@@ -91,8 +91,6 @@ def congress_names_for_date_range(club, start_datetime, end_datetime):
         .values("id", "congress_id", "congress__name", "congress__start_date")
     )
 
-    print(congress_names)
-
     congress_name_dict = {}
 
     for congress_name in congress_names:

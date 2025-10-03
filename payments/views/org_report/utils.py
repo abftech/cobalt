@@ -17,23 +17,32 @@ def format_date_helper(input_date):
 
 def date_to_datetime_midnight(input_date):
     """turn a date into a datetime with a time of midnight"""
+
     midnight_datetime = datetime.datetime.combine(
         input_date, datetime.datetime.min.time()
     )
-    return timezone.make_aware(midnight_datetime, TZ)
+    # You should be able to use: timezone.make_aware(midnight_datetime, TZ)
+    # But it will give you a time 5 minutes later than you want by getting the timezone wrong
+    # Instead of 00:00:00+10 you get 00:00:00+10:05
+    # So we use TZ.localize() which gets it right
+    return TZ.localize(midnight_datetime)
 
 
-def start_end_date_to_datetime(start_date, end_date):
-    """helper to convert start and end date to date times"""
+def start_end_date_to_datetime(start_date: str, end_date: str):
+    """helper to convert start and end date to date times
+
+    dates should be strings in the format "YYYY-MM-DD" e.g. "2045-11-03"
+
+    """
 
     # Convert dates to date times
     start_datetime_raw = datetime.datetime.strptime(start_date, "%Y-%m-%d")
-    start_datetime = timezone.make_aware(start_datetime_raw, TZ)
+    start_datetime = TZ.localize(start_datetime_raw)
 
     # Start date is 00:00 time on the day, for end date use 00:00 time on the next day
     end_datetime_raw = datetime.datetime.strptime(end_date, "%Y-%m-%d")
     end_datetime_raw += datetime.timedelta(days=1)
-    end_datetime = timezone.make_aware(end_datetime_raw, TZ)
+    end_datetime = TZ.localize(end_datetime_raw)
 
     return start_datetime, end_datetime
 

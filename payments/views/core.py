@@ -1150,19 +1150,6 @@ def org_balance_at_date(organisation, as_at_date, start_of_day_balance=False):
             .last()
         )
 
-    if start_of_day_balance:
-        print(f"Looking for start of day balance on {as_at_date}")
-        print(f"End datetime is: {end_datetime}")
-        print(f"Transaction found is {last_tran.id}")
-        print(f"Transaction balance is {last_tran.balance}")
-        print(f"Transaction date is {last_tran.created_date}")
-    else:
-        print(f"Looking for end of day balance on {as_at_date}")
-        print(f"End datetime is: {end_datetime}")
-        print(f"Transaction found is {last_tran.id}")
-        print(f"Transaction balance is {last_tran.balance}")
-        print(f"Transaction date is {last_tran.created_date}")
-
     balance = last_tran.balance if last_tran else 0.0
     return float(balance)
 

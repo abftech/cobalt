@@ -40,6 +40,7 @@ from payments.views.org_report.data import (
     combined_view_events_sessions_other,
     congress_payments_summary_by_date_range,
 )
+from payments.views.org_report.utils import start_end_date_to_datetime
 from payments.views.org_report.xls import organisation_transactions_xls_download
 from payments.views.payments_api import payment_api_batch
 from rbac.core import (
@@ -928,14 +929,10 @@ def organisation_transactions_filtered_data_movement_queries(
     start_date,
     end_date,
 ):
-    """The data is used by Excel download and on screen report"""
+    """The data is used by both the Excel download and the on screen report"""
 
     # Dates
-    end_datetime_raw = datetime.datetime.strptime(end_date, "%Y-%m-%d")
-    end_datetime_raw += datetime.timedelta(days=1)
-    end_datetime = timezone.make_aware(end_datetime_raw, pytz.timezone(TIME_ZONE))
-    start_datetime_raw = datetime.datetime.strptime(start_date, "%Y-%m-%d")
-    start_datetime = timezone.make_aware(start_datetime_raw, pytz.timezone(TIME_ZONE))
+    start_datetime, end_datetime = start_end_date_to_datetime(start_date, end_date)
 
     # Queries
     opening_balance = org_balance_at_date(club, start_date, start_of_day_balance=True)
