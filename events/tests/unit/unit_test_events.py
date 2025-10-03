@@ -536,6 +536,8 @@ class EventModelTests:
             entry_fee=Decimal(ENTRY_FEE),
             entry_early_payment_discount=Decimal(EARLY_DISCOUNT),
             player_format="Pairs",
+            denormalised_end_date=today + timedelta(days=7),
+            denormalised_start_date=today + timedelta(days=5),
         )
         event.save()
 
