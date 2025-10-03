@@ -65,8 +65,40 @@
                                 <th>Event</th>
                                 <th>Type</th>
                                 <th>Status</th>
-                                <th>Full Entry Fee</th>
-                                <th>Early Entry Fee</th>
+
+                                <!-- WE CAN HAVE DIFFERENT SCENARIOS OF ENTRY FEES:
+
+                                    MOST BASIC IS JUST AN ENTRY FEE FOR A STANDARD CONGRESS WITH NO DISCOUNTS
+                                    NEXT WE CAN HAVE A MEMBER ONLY CONGRESS WITH AN ENTRY FEE FOR MEMBERS AND NO DISCOUNTS
+                                    THEN WE CAN HAVE A STANDARD CONGRESS WITH A FULL ENTRY FEE AND AN EARLY ENTRY FEE
+                                    THEN WE CAN HAVE THE SAME FOR A MEMBER ONLY CONGRESS
+                                    THEN WE CAN HAVE A MEMBERS ENTRY FEE AND A NORMAL ENTRY FEE
+                                    THEN WE CAN HAVE A MEMBER ENTRY FEE, A NORMAL ENTRY FEE AND TWO EARLY DISCOUNTS
+
+                                   -->
+
+                                <!-- SHOW FULL ENTRY FEE IF NOT MEMBERS ONLY -->
+                                {% if not congress.members_only %}
+                                    <th>
+                                        {% if congress.allow_early_payment_discount %}
+                                            Full
+                                        {% endif %}
+                                        Entry Fee</th>
+                                {% endif %}
+
+                                <!-- SHOW EARLY ENTRY FEE ONLY IF ALLOWED -->
+                                {% if congress.allow_early_payment_discount %}
+                                    <th>Early Entry Fee</th>
+                                {% endif %}
+
+                                <!-- SHOW MEMBER ENTRY FEE IF AVAILABLE -->
+                                {% if congress.members_only or congress.allow_member_entry_fee %}
+                                    <th>Member Entry Fee</th>
+                                    {% if congress.allow_early_payment_discount %}
+                                        <th>Member Early Entry Fee</th>
+                                    {% endif %}
+                                {% endif %}
+
                                 <th>Entries</th>
                                 <th>Tables</th>
                                 <th class="text-right">Due</th>
@@ -84,15 +116,24 @@
                                     <td>{{ event.event_type|default_if_none:"" }}</td>
                                     <td>{% if event.is_open %}Entries Open{% else %}Entries Closed{% endif %}</td>
 
-                                    <!-- If members only congress then use that fee, not entry fee -->
-
-                                    {% if congress.members_only %}
-                                        <td class="text-right">{{ event.member_entry_fee|cobalt_number }}</td>
-                                    {% else %}
+                                    <!-- SHOW FULL ENTRY FEE IF NOT MEMBERS ONLY -->
+                                    {% if not congress.members_only %}
                                         <td class="text-right">{{ event.entry_fee|cobalt_number }}</td>
                                     {% endif %}
 
-                                    <td class="text-right">{{ event.early_fee|cobalt_number }}</td>
+                                    <!-- SHOW EARLY ENTRY FEE ONLY IF ALLOWED -->
+                                    {% if congress.allow_early_payment_discount %}
+                                        <td class="text-right">{{ event.early_fee|cobalt_number }}</td>
+                                    {% endif %}
+
+                                    <!-- SHOW MEMBER ENTRY FEE IF AVAILABLE -->
+                                    {% if congress.members_only or congress.allow_member_entry_fee %}
+                                        <td class="text-right">{{ event.member_entry_fee|cobalt_number }}</td>
+                                        {% if congress.allow_early_payment_discount %}
+                                            <td class="text-right">{{ event.member_early_fee|cobalt_number }}</td>
+                                        {% endif %}
+                                    {% endif %}
+
                                     <td class="text-right">{{ event.entries }}</td>
                                     <td class="text-right">{{ event.tables }}</td>
                                     <td class="text-right">{{ event.due|cobalt_number }}</td>
@@ -106,8 +147,24 @@
                                 <td class="font-weight-bold">Total</td>
                                 <td></td>
                                 <td></td>
-                                <td></td>
-                                <td></td>
+
+                                <!-- SHOW FULL ENTRY FEE COLUMN IF NOT MEMBERS ONLY -->
+                                {% if not congress.members_only %}
+                                    <td></td>
+                                {% endif %}
+
+                                <!-- SHOW EARLY ENTRY FEE ONLY IF ALLOWED -->
+                                {% if congress.allow_early_payment_discount %}
+                                    <td></td>
+                                {% endif %}
+
+                                <!-- SHOW MEMBER ENTRY FEE IF AVAILABLE -->
+                                {% if congress.members_only or congress.allow_member_entry_fee %}
+                                    <td></td>
+                                    {% if congress.allow_early_payment_discount %}
+                                        <td></td>
+                                    {% endif %}
+                                {% endif %}
 
                                 <td class="text-right font-weight-bold">{{ total.entries }}</td>
                                 <td class="text-right font-weight-bold">{{ total.tables }}</td>

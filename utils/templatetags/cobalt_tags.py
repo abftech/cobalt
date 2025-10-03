@@ -154,8 +154,11 @@ def get_class(value):
 @register.filter(name="cobalt_number", is_safe=True)
 def cobalt_number(dollars):
     """Return number formatted with commas and 2 decimals"""
-    dollars = round(float(dollars), 2)
-    return f'{intcomma(int(dollars))}{("%0.2f" % dollars)[-3:]}'
+    try:
+        dollars = round(float(dollars), 2)
+        return f'{intcomma(int(dollars))}{("%0.2f" % dollars)[-3:]}'
+    except ValueError:
+        return dollars
 
 
 @register.filter(name="cobalt_number_short", is_safe=True)

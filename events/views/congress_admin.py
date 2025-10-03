@@ -114,6 +114,14 @@ def admin_summary(request, congress_id, message=""):
         else:
             event.early_fee = event.entry_fee
 
+        if congress.allow_member_entry_fee or congress.members_only:
+            if event.entry_early_payment_discount:
+                event.member_early_fee = (
+                    event.member_entry_fee - event.entry_early_payment_discount
+                )
+            else:
+                event.member_early_fee = event.member_entry_fee
+
         # calculate tables
         players_per_entry = EVENT_PLAYER_FORMAT_SIZE[event.player_format]
 
