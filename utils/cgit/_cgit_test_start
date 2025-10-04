@@ -44,12 +44,16 @@ _cgit_test_handle_db
 
 # Start Stripe and Django in terminal windows
 if [ "$STRIPE" == "1" ]; then
-  open utils/cgit/tools/test_stripe_short.terminal
+  osascript -e 'tell app "Terminal"
+    do script "cobalt; utils/cgit/tools/test_stripe.sh"
+end tell'
 fi
 
 # To debug we want to run pycharm so don't start the server here
 if [ "$DJANGO" == "1" ]; then
-  open utils/cgit/tools/test_manage_short.terminal
+  osascript -e 'tell app "Terminal"
+    do script "cobalt; utils/cgit/tools/test_manage.sh"
+end tell'
   echo "Waiting for Webserver to start..."
 else
   echo "Debugging enabled. Please start your webserver"

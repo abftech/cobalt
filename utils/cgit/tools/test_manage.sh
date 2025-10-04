@@ -1,10 +1,9 @@
 #!/bin/bash
 
-. ~/bin/cobalt.sh
-utils/cgit/tools/explosion.sh
-cat utils/cgit/tools/test.txt
-sleep 1
-clear
+# . ~/bin/cobalt.sh
 export RDS_DB_NAME=test
-coverage run -p manage.py runserver 0.0.0.0:8088 --noreload
+unset DEBUG_TOOLBAR_ENABLED
+# Run with coverage -p stores the data in a different file
+coverage run -p ./manage.py runserver 0.0.0.0:8088 --noreload 2>&1 | tee /tmp/test_manager.txt
+
 exit
