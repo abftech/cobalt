@@ -48,8 +48,7 @@ def build_commands(script):
         # Handle comments
         if line[0] == "#":
             continue
-        comment = re.search("#", line)
-        if comment:
+        if comment := re.search("#", line):
             line = line[: comment.start()]
 
         # Use shlex to split 'hello "I am a string" goodbye' into ['hello', 'I am a string', 'goodbye']
@@ -57,9 +56,7 @@ def build_commands(script):
 
         commands.append(f"manager.current_action='{line}'")
 
-        cmd_string = build_command_line(words, line_number)
-
-        if cmd_string:
+        if cmd_string := build_command_line(words, line_number):
             commands.append(cmd_string)
         else:
             print(f"Error parsing Line {line_number + 1}: {line}")
@@ -84,8 +81,7 @@ def build_command_line(words, line_number):
 
     # Check number of expected words
     pattern = r"{}(\d+)".format(re.escape("WORDS_"))
-    matches = re.findall(pattern, cmd_string)
-    if matches:
+    if matches := re.findall(pattern, cmd_string):
         # matches is a list of strings e.g. ['1', '3']
         required = int(max(matches))
         if len(words) != required + 1:

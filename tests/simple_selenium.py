@@ -48,7 +48,10 @@ class SimpleSelenium:
         # NOTE: If scripts get retired they will still have output in the directory
         files = glob.glob(f"{self.output_directory}/*")
         for file in files:
-            os.remove(file)
+            if os.path.isfile(file):
+                os.remove(file)
+            if os.path.isdir(file):
+                os.removedirs(file)
 
         # Start chrome
         options = ChromeOptions()

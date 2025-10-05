@@ -23,6 +23,8 @@ def list_commands_helper():
         cmd = f"print('{item: <30}', SimpleSelenium.{method_name}.__doc__)"
         exec(cmd)
 
+    print("\n")
+
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
@@ -35,8 +37,6 @@ class Command(BaseCommand):
         parser.add_argument(
             "--password", help="password for user. Leave blank for default."
         )
-
-        # COB-789 - generalise userid
         parser.add_argument("--userid", help="user to run the test under")
         parser.add_argument(
             "--silent", action="store_true", help="don't display any output"

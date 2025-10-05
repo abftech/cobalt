@@ -6,4 +6,3 @@ sleep 2
 enter a@wrong.email.zz into id_email
 enter F1shcake into id_password1
 enter F1shcake into id_password2
-sleep 999999

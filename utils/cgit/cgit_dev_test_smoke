@@ -12,6 +12,7 @@ export DUMMY_DATA_COUNT=1
 # Get arguments
 COVERAGE=0
 SILENT=0
+LIST=0
 MODULE=""
 
 while [[ $# -gt 0 ]]; do
@@ -22,6 +23,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -s|--silent)
       SILENT=1
+      shift # past argument
+      ;;
+    -l|--list)
+      LIST=1
       shift # past argument
       ;;
     -m|--module)
@@ -47,6 +52,11 @@ fi
 if [ $COVERAGE -eq 1 ]
 then
   COMMAND="coverage run -p $COMMAND"
+fi
+
+if [ $LIST -eq 1 ]
+then
+  COMMAND="$COMMAND --list"
 fi
 
 echo "Running tests in tests/scripts/test_suite..."
