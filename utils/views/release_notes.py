@@ -37,6 +37,7 @@ def release_notes_view(request):
                 "DEV - Add list filters to some Django admin views",
                 "Prevent deletion of last session in a published event",
                 "Check events are in the same congress before allowing a entry to be moved",
+                "Extend admin organisation movement report to provide breakdowns",
             ],
         },
         {
