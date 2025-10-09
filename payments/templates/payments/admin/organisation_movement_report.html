@@ -4,6 +4,23 @@
 {% load humanize %}
 {% block title %} - Organisation Movement Report{% endblock %}
 
+{% block header %}
+    <style>
+        th {
+            position: sticky;
+            top: 0;
+            background-color: #f0f0f0; /* Optional: Add a background color for visibility */
+            z-index: 1; /* Optional: Ensure the header stays above other content */
+        }
+
+    {#/* Optional: For the scrollable container if needed */#}
+    {#div {#}
+    {#    height: 300px; /* Set a fixed height */#}
+    {#    overflow-y: scroll; /* Enable vertical scrolling */#}
+    {#}#}
+    </style>
+{% endblock %}
+
 {% block content %}
 
     <!-- BREADCRUMBS -->
@@ -60,51 +77,62 @@
                             style="display: none"
                         {% endif %}
                     >
+                        <div style="height: 70vh; overflow-y: scroll;">
 
-                        <table class="table table-hover table-condensed table-striped" id="id_table">
-                            <thead>
-                                <tr>
-                                    <th></th>
-                                    <th>TOTALS:</th>
-                                    <th class="text-right">{{ totals.total_opening_balance|cobalt_currency_colour_short }}</th>
-                                    <th class="text-right">{{ totals.total_transactions|cobalt_currency_colour_short }}</th>
-                                    <th class="text-right">{{ totals.total_manual_adjustments|cobalt_currency_colour_short }}</th>
-                                    <th class="text-right">{{ totals.total_settlement|cobalt_currency_colour_short }}</th>
-                                    <th class="text-right">{{ totals.total_closing_balance|cobalt_currency_colour_short }}</th>
-                                </tr>
-                                <tr>
-                                    <th>Club No.</th>
-                                    <th class="text-left">Organisation</th>
-                                    <th class="text-right">{{ start_date|date:"d M Y" }}</th>
-                                    <th class="text-right">Transactions</th>
-                                    <th class="text-right">Manual Adjustments</th>
-                                    <th class="text-right">Settlement</th>
-                                    <th class="text-right">{{ end_date|date:"d M Y" }}</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {% for index, row in data.items %}
-
+                            <table class="table table-hover table-condensed table-striped" id="id_table">
+                                <thead>
                                     <tr>
-                                        <td>{{ row.org_id }}</td>
-                                        <td class="text-left">
-                                            <a href="{% url "organisations:club_menu_tab_finance_statement" club_id=index %}" target="_blank">
-                                                {{ row.name }}
-                                            </a>
-                                        </td>
-                                        <td class="text-right">{{ row.opening_balance|cobalt_currency_colour_short }}</td>
-                                        <td class="text-right">{{ row.transactions|cobalt_currency_colour_short }}</td>
-                                        <td class="text-right">{{ row.manual_adjustments|cobalt_currency_colour_short }}</td>
-                                        <td class="text-right">{{ row.settlement|cobalt_currency_colour_short }}</td>
-                                        <td class="text-right">{{ row.closing_balance|cobalt_currency_colour_short }}</td>
+                                        <th></th>
+                                        <th>TOTALS:</th>
+                                        <th class="text-right">{{ totals.total_opening_balance|cobalt_currency_colour_short }}</th>
+                                        <th class="text-right">{{ totals.total_event_entry|cobalt_currency_colour_short }}</th>
+                                        <th class="text-right">{{ totals.total_club_payment|cobalt_currency_colour_short }}</th>
+                                        <th class="text-right">{{ totals.total_club_membership|cobalt_currency_colour_short }}</th>
+                                        <th class="text-right">{{ totals.total_club_other|cobalt_currency_colour_short }}</th>
+                                        <th class="text-right">{{ totals.total_manual_adjustments|cobalt_currency_colour_short }}</th>
+                                        <th class="text-right">{{ totals.total_settlement|cobalt_currency_colour_short }}</th>
+                                        <th class="text-right">{{ totals.total_closing_balance|cobalt_currency_colour_short }}</th>
                                     </tr>
+                                    <tr>
+                                        <th>Club No.</th>
+                                        <th class="text-left">Organisation</th>
+                                        <th class="text-right">{{ start_date|date:"d M Y" }}</th>
+                                        <th class="text-right">Event Entry</th>
+                                        <th class="text-right">Club Sessions</th>
+                                        <th class="text-right">Club Membership</th>
+                                        <th class="text-right">Other</th>
+                                        <th class="text-right">Manual Adjustments</th>
+                                        <th class="text-right">Settlement</th>
+                                        <th class="text-right">{{ end_date|date:"d M Y" }}</th>
+                                    </tr>
+                                </thead>
 
-                                {% endfor %}
-                            </tbody>
+                                <tbody>
+                                    {% for index, row in data.items %}
 
-                        </table>
+                                        <tr>
+                                            <td>{{ row.org_id }}</td>
+                                            <td class="text-left">
+                                                <a href="{% url "organisations:club_menu_tab_finance_statement" club_id=index %}" target="_blank">
+                                                    {{ row.name }}
+                                                </a>
+                                            </td>
+                                            <td class="text-right">{{ row.opening_balance|cobalt_currency_colour_short }}</td>
+                                            <td class="text-right">{{ row.event_entry|cobalt_currency_colour_short }}</td>
+                                            <td class="text-right">{{ row.club_payment|cobalt_currency_colour_short }}</td>
+                                            <td class="text-right">{{ row.club_membership|cobalt_currency_colour_short }}</td>
+                                            <td class="text-right">{{ row.other|cobalt_currency_colour_short }}</td>
+                                            <td class="text-right">{{ row.manual_adjustments|cobalt_currency_colour_short }}</td>
+                                            <td class="text-right">{{ row.settlement|cobalt_currency_colour_short }}</td>
+                                            <td class="text-right">{{ row.closing_balance|cobalt_currency_colour_short }}</td>
+                                        </tr>
 
+                                    {% endfor %}
+                                </tbody>
+
+                            </table>
+
+                        </div>
                     </div>
                 </div>
 

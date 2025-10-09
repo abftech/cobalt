@@ -190,7 +190,13 @@ def statement_admin_summary(request):
 
 
 def _organisation_movement_report_calcs(start_date, end_date):
-    """sub of organisation_movement_report to do the calculations"""
+    """
+    sub of organisation_movement_report to do the calculations
+
+    This report is only used monthly by a small number of people. The queries are not very efficient
+    and could be improved.
+
+    """
 
     # Build a list of all organisations with the columns we want
     data = {}
@@ -200,16 +206,80 @@ def _organisation_movement_report_calcs(start_date, end_date):
             "name": organisation.name,
             "opening_balance": Decimal(0),
             "closing_balance": Decimal(0),
-            "transactions": Decimal(0),
-            "manual_adjustments": Decimal(0),
             "settlement": Decimal(0),
+            "manual_adjustments": Decimal(0),
+            "event_entry": Decimal(0),
+            "club_payment": Decimal(0),
+            "club_membership": Decimal(0),
+            "other": Decimal(0),
         }
 
-    # Get the transactions
+    # We use as close as possible to the logic used by the club admin movement report to get the numbers to match
+
+    # Query for events
+    event_payments = (
+        OrganisationTransaction.objects.filter(
+            created_date__gte=start_date, created_date__lte=end_date
+        )
+        .filter(event_id__isnull=False)
+        .filter(organisation__status="Open")
+        .values("organisation")
+        .annotate(transactions_total=Sum("amount"))
+    )
+
+    # add to data
+    for item in event_payments:
+        data[item["organisation"]]["event_entry"] = item["transactions_total"]
+
+    # query for sessions
+    session_payments = (
+        OrganisationTransaction.objects.filter(
+            created_date__gte=start_date, created_date__lte=end_date
+        )
+        .filter(club_session_id__isnull=False)
+        .filter(organisation__status="Open")
+        .values("organisation")
+        .annotate(transactions_total=Sum("amount"))
+    )
+
+    # add to data
+    for item in session_payments:
+        data[item["organisation"]]["club_payment"] = item["transactions_total"]
+
+    # query for Other
+    other_payments = (
+        OrganisationTransaction.objects.filter(
+            created_date__gte=start_date, created_date__lte=end_date
+        )
+        .exclude(
+            type__in=[
+                "Settlement",
+                "Club Membership",
+            ]
+        )
+        .exclude(event_id__isnull=False)
+        .exclude(club_session_id__isnull=False)
+        .filter(organisation__status="Open")
+        .values("organisation")
+        .annotate(transactions_total=Sum("amount"))
+    )
+
+    # add to data
+    for item in other_payments:
+        data[item["organisation"]]["other"] = item["transactions_total"]
+
+    # query for the 3 easy ones
     transactions = (
         OrganisationTransaction.objects.filter(created_date__gte=start_date)
         .filter(created_date__lt=end_date)
         .filter(organisation__status="Open")
+        .filter(
+            type__in=[
+                "Settlement",
+                "Club Membership",
+                "Manual adjustment",
+            ]
+        )
         .values("organisation", "type")
         .annotate(transactions_total=Sum("amount"))
     )
@@ -217,14 +287,12 @@ def _organisation_movement_report_calcs(start_date, end_date):
     # add to our table
     for item in transactions:
         identifier = item["organisation"]
-
-        # For settlement and manual adjustment record separately, everything else just add it up
         if item["type"] == "Settlement":
             data[identifier]["settlement"] = item["transactions_total"]
         elif item["type"] == "Manual Adjustment":
             data[identifier]["manual_adjustments"] = item["transactions_total"]
-        else:
-            data[identifier]["transactions"] += item["transactions_total"]
+        elif item["type"] == "Club Membership":
+            data[identifier]["club_membership"] = item["transactions_total"]
 
     # Get opening balance
     opening_balances = (
@@ -251,23 +319,32 @@ def _organisation_movement_report_calcs(start_date, end_date):
 
     # grand totals
     total_opening_balance = 0
-    total_transactions = 0
     total_manual_adjustments = 0
     total_settlement = 0
+    total_event_entry = 0
+    total_club_payment = 0
+    total_club_membership = 0
+    total_other = 0
     total_closing_balance = 0
 
     for item in data:
         total_opening_balance += data[item]["opening_balance"]
-        total_transactions += data[item]["transactions"]
         total_manual_adjustments += data[item]["manual_adjustments"]
         total_settlement += data[item]["settlement"]
+        total_event_entry += data[item]["event_entry"]
+        total_club_payment += data[item]["club_payment"]
+        total_club_membership += data[item]["club_membership"]
+        total_other += data[item]["other"]
         total_closing_balance += data[item]["closing_balance"]
 
     totals = {
         "total_opening_balance": total_opening_balance,
-        "total_transactions": total_transactions,
+        "total_other": total_other,
         "total_manual_adjustments": total_manual_adjustments,
         "total_settlement": total_settlement,
+        "total_event_entry": total_event_entry,
+        "total_club_payment": total_club_payment,
+        "total_club_membership": total_club_membership,
         "total_closing_balance": total_closing_balance,
     }
 
@@ -292,43 +369,55 @@ def _organisation_movement_report_excel(data, totals, start_date, end_date):
     formats = XLSXStyles(workbook)
 
     # Heading
-    sheet.merge_range(0, 0, 3, 6, "Organisation Movement Report", formats.h1)
+    sheet.merge_range(0, 0, 3, 9, "Organisation Movement Report", formats.h1)
 
     # Titles - top row
     sheet.merge_range(4, 0, 4, 1, "TOTALS:", formats.summary_row_title)
     sheet.write(4, 2, totals["total_opening_balance"], formats.summary_row_title_money)
-    sheet.write(4, 3, totals["total_transactions"], formats.summary_row_title_money)
+    sheet.write(4, 3, totals["total_event_entry"], formats.summary_row_title_money)
+    sheet.write(4, 4, totals["total_club_payment"], formats.summary_row_title_money)
+    sheet.write(4, 5, totals["total_club_membership"], formats.summary_row_title_money)
+    sheet.write(4, 6, totals["total_other"], formats.summary_row_title_money)
     sheet.write(
-        4, 4, totals["total_manual_adjustments"], formats.summary_row_title_money
+        4, 7, totals["total_manual_adjustments"], formats.summary_row_title_money
     )
-    sheet.write(4, 5, totals["total_settlement"], formats.summary_row_title_money)
-    sheet.write(4, 6, totals["total_closing_balance"], formats.summary_row_title_money)
+    sheet.write(4, 8, totals["total_settlement"], formats.summary_row_title_money)
+    sheet.write(4, 9, totals["total_closing_balance"], formats.summary_row_title_money)
 
     # Titles - second row
     sheet.set_column("A:B", 20)
     sheet.set_column("B:C", 50)
     sheet.set_column("C:D", 30)
-    sheet.set_column("D:E", 30)
-    sheet.set_column("E:F", 30)
-    sheet.set_column("F:G", 30)
-    sheet.set_column("G:H", 30)
+    sheet.set_column("D:E", 25)
+    sheet.set_column("E:F", 25)
+    sheet.set_column("F:G", 25)
+    sheet.set_column("G:H", 25)
+    sheet.set_column("H:I", 25)
+    sheet.set_column("I:J", 25)
+    sheet.set_column("J:K", 30)
 
     sheet.write(5, 0, "Club No.", formats.summary_row_title)
     sheet.write(5, 1, "Organisation", formats.summary_row_title)
     sheet.write(5, 2, f"{start_date:%A %d %B %Y}", formats.summary_row_title_money)
-    sheet.write(5, 3, "Transactions", formats.summary_row_title_money)
-    sheet.write(5, 4, "Manual Adjustments", formats.summary_row_title_money)
-    sheet.write(5, 5, "Settlement", formats.summary_row_title_money)
-    sheet.write(5, 6, f"{end_date:%A %d %B %Y}", formats.summary_row_title_money)
+    sheet.write(5, 3, "Event Entry", formats.summary_row_title_money)
+    sheet.write(5, 4, "Club Sessions", formats.summary_row_title_money)
+    sheet.write(5, 5, "Club Membership", formats.summary_row_title_money)
+    sheet.write(5, 6, "Other", formats.summary_row_title_money)
+    sheet.write(5, 7, "Manual Adjustments", formats.summary_row_title_money)
+    sheet.write(5, 8, "Settlement", formats.summary_row_title_money)
+    sheet.write(5, 9, f"{end_date:%A %d %B %Y}", formats.summary_row_title_money)
 
     for row, item in enumerate(data, start=6):
         sheet.write(row, 0, f"{data[item]['org_id']}", formats.detail_row_data)
         sheet.write(row, 1, data[item]["name"], formats.detail_row_data)
         sheet.write(row, 2, data[item]["opening_balance"], formats.detail_row_money)
-        sheet.write(row, 3, data[item]["transactions"], formats.detail_row_money)
-        sheet.write(row, 4, data[item]["manual_adjustments"], formats.detail_row_money)
-        sheet.write(row, 5, data[item]["settlement"], formats.detail_row_money)
-        sheet.write(row, 6, data[item]["closing_balance"], formats.detail_row_money)
+        sheet.write(row, 3, data[item]["event_entry"], formats.detail_row_money)
+        sheet.write(row, 4, data[item]["club_payment"], formats.detail_row_money)
+        sheet.write(row, 5, data[item]["club_membership"], formats.detail_row_money)
+        sheet.write(row, 6, data[item]["other"], formats.detail_row_money)
+        sheet.write(row, 7, data[item]["manual_adjustments"], formats.detail_row_money)
+        sheet.write(row, 8, data[item]["settlement"], formats.detail_row_money)
+        sheet.write(row, 9, data[item]["closing_balance"], formats.detail_row_money)
 
     workbook.close()
 
