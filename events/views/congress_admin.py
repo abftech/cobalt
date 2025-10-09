@@ -1667,8 +1667,14 @@ def admin_move_entry(request, event_entry_id):
 
         old_entry = copy.copy(event_entry.event)
 
+        # Check this event is in this congress, just to be sure
+        if old_entry.congress != new_event.congress:
+            return HttpResponse("Events are not in the same congress!")
+
         event_entry.event = new_event
         event_entry.save()
+
+        # Update payment details
 
         # Log it
 

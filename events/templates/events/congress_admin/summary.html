@@ -87,7 +87,7 @@
                                 {% endif %}
 
                                 <!-- SHOW EARLY ENTRY FEE ONLY IF ALLOWED -->
-                                {% if congress.allow_early_payment_discount %}
+                                {% if congress.allow_early_payment_discount and not congress.members_only %}
                                     <th>Early Entry Fee</th>
                                 {% endif %}
 
@@ -122,7 +122,7 @@
                                     {% endif %}
 
                                     <!-- SHOW EARLY ENTRY FEE ONLY IF ALLOWED -->
-                                    {% if congress.allow_early_payment_discount %}
+                                    {% if congress.allow_early_payment_discount and not congress.members_only %}
                                         <td class="text-right">{{ event.early_fee|cobalt_number }}</td>
                                     {% endif %}
 
@@ -154,7 +154,7 @@
                                 {% endif %}
 
                                 <!-- SHOW EARLY ENTRY FEE ONLY IF ALLOWED -->
-                                {% if congress.allow_early_payment_discount %}
+                                {% if congress.allow_early_payment_discount and not congress.members_only %}
                                     <td></td>
                                 {% endif %}
 
