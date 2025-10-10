@@ -19,6 +19,10 @@ Development Environment Set Up
     Flutter and the associated tools change rapidly. These instructions
     may be out of date.
 
+This section assumes you do not already have a working development environment.
+If you have Flutter, Android Studio and XCode already set up, then you only
+need to complete the first section.
+
 Set Up Code
 -----------
 
@@ -29,6 +33,9 @@ Set up the code::
     git init
     git remote add origin https://github.com/abftech/cobalt-mobile.git
     git fetch
+
+Some critical files are not included in the repository, these need to
+be sourced from someone at the ABF.
 
 Install Flutter
 ---------------
