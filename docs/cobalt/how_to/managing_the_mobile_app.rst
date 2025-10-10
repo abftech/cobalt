@@ -113,5 +113,9 @@ You will also need the server config file. In the Firebase Console, click on the
 go to settings and the Service Accounts tab. Generate a new key and download the file that is produced.
 This file needs to go in the location specified by the environment variable `GOOGLE_APPLICATION_CREDENTIALS`.
 
+Important Files
+===============
 
+Release Procedure
+=================
 
