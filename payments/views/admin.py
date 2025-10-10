@@ -255,6 +255,7 @@ def _organisation_movement_report_calcs(start_date, end_date):
             type__in=[
                 "Settlement",
                 "Club Membership",
+                "Manual Adjustment",
             ]
         )
         .exclude(event_id__isnull=False)
@@ -277,7 +278,7 @@ def _organisation_movement_report_calcs(start_date, end_date):
             type__in=[
                 "Settlement",
                 "Club Membership",
-                "Manual adjustment",
+                "Manual Adjustment",
             ]
         )
         .values("organisation", "type")
@@ -358,7 +359,7 @@ def _organisation_movement_report_excel(data, totals, start_date, end_date):
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
     response["Content-Disposition"] = (
-        f'attachment; filename="Organisation Movement Report [{start_date.date()} to {end_date.date()}].xlsx"'
+        f'attachment; filename="Organisation Movement Report ({start_date.date()} to {end_date.date()}).xlsx"'
     )
 
     # Create an Excel file and add worksheet
