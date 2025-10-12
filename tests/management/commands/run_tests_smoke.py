@@ -6,7 +6,7 @@ from tests.simple_selenium_parser import simple_selenium_parser, command_lookup
 # This import is required. Used in an exec()
 from tests.simple_selenium import SimpleSelenium
 
-ALLOWED_PRODUCTION_SCRIPTS = ["basic_smoke_test_production.txt"]
+ALLOWED_PRODUCTION_SCRIPTS = ["ad_hoc/basic_smoke_test_production.txt"]
 
 
 def list_commands_helper():
