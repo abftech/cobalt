@@ -116,7 +116,7 @@ django-loginas==0.3.11
 django-debug-toolbar==5.2.0
 
 # New Relic monitoring
-newrelic==10.12.0
+newrelic==11.0.1
 
 # MFA for the admin pages
 
