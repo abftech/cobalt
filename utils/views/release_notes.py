@@ -8,7 +8,7 @@ def release_notes_view(request):
 
     release_notes = [
         {
-            "release": "6.1.10",
+            "release": "6.2.0",
             "notes": [
                 "Update new relic package",
             ],
