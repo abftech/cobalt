@@ -8,6 +8,12 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.1.10",
+            "notes": [
+                "Update new relic package",
+            ],
+        },
+        {
             "release": "6.1.9",
             "notes": [
                 "DEV - Increase email_count for event entry tests",
