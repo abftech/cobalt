@@ -14,6 +14,12 @@ def release_notes_view(request):
             ],
         },
         {
+            "release": "6.2.1",
+            "notes": [
+                "Comment out club movement report",
+            ],
+        },
+        {
             "release": "6.1.9",
             "notes": [
                 "DEV - Increase email_count for event entry tests",
