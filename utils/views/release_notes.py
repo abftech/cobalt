@@ -8,13 +8,20 @@ def release_notes_view(request):
 
     release_notes = [
         {
-            "release": "6.2.0",
+            "release": "6.2.2",
+            "notes": [
+                "Documentation for mobile app",
+                "Add index to payments abstract class for session_id",
+            ],
+        },
+        {
+            "release": "6.2.1",
             "notes": [
                 "Update new relic package",
             ],
         },
         {
-            "release": "6.2.1",
+            "release": "6.2.0",
             "notes": [
                 "Comment out club movement report",
             ],

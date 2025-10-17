@@ -209,7 +209,7 @@ class AbstractTransaction(models.Model):
 
     # Sessions are important enough to Organisations that we add them here. Lets us summarise by session
     # We can't use a foreign key as there is a circular import issue
-    club_session_id = models.IntegerField(blank=True, null=True)
+    club_session_id = models.IntegerField(blank=True, null=True, db_index=True)
 
     # Event id is needed for summarising by event
     event_id = models.IntegerField(blank=True, null=True)
