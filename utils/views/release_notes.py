@@ -12,6 +12,7 @@ def release_notes_view(request):
             "notes": [
                 "Documentation for mobile app",
                 "Add index to payments abstract class for session_id",
+                "Bug fix for new congresses after changing form in 6.1.9",
             ],
         },
         {
