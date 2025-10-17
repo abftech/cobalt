@@ -248,7 +248,8 @@ class CongressForm(forms.ModelForm):
 
         # Don't allow edits if more than 15 weeks since start unless flag is set
         if (
-            congress.start_date < (now() - timedelta(weeks=15)).date()
+            congress.start_date
+            and congress.start_date < (now() - timedelta(weeks=15)).date()
             and not congress.allow_edit_of_old_congress
         ):
             raise ValidationError(
