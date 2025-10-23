@@ -112,10 +112,11 @@ def sessions_and_payments_by_date_range(club, start_date, end_date):
 
     returns a dictionary of sessions keyed on id and payment mapping dictionary also keyed on id
 
-    Note: This is a director view of things - the dates that matter are the dates the sessions took place.
+    the default is a director view of things - the dates that matter are the dates the sessions took place.
           For an accountants view of this, you need the dates the payments were taken, which can be after the session
           was run (often the next day).
 
+    If accounts_view is true then we use the payment dates, not the session dates
     """
 
     sessions_in_range = (
