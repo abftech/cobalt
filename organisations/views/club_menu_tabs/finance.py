@@ -944,8 +944,12 @@ def organisation_transactions_filtered_data_movement_queries(
     )
     settlements = base_query.filter(type="Settlement").aggregate(total=Sum("amount"))
 
-    club_memberships = base_query.filter(type="Club Membership").aggregate(
-        total=Sum("amount")
+    # Some historic data can have a type of Club Membership but also an event_id (shouldn't be allowed)
+    # We exclude anything with an event_id assuming that the event_id takes precedence
+    club_memberships = (
+        base_query.filter(type="Club Membership")
+        .exclude(event_id__isnull=False)
+        .aggregate(total=Sum("amount"))
     )
     other_adjustments = (
         base_query.exclude(
@@ -965,15 +969,15 @@ def organisation_transactions_filtered_data_movement_queries(
     event_data = event_payments_summary_by_date_range(club, start_date, end_date)
     events_total = sum(event_data[event_id]["amount"] for event_id in event_data)
 
-    # Sessions also has complex logic
-    sessions_in_range, payments_dict = sessions_and_payments_by_date_range(
-        club, start_date, end_date
-    )
+    # We want the session data, but using payment dates, not the date the session ran.
+    # Payments may be handled the next day or even later. For this report we are
+    # not interested in when the session ran, just when the payment was made.
 
-    # Add session total amount to data
-    sessions_total = 0
-    for session_in_range_id in sessions_in_range:
-        sessions_total += payments_dict.get(session_in_range_id, 0)
+    sessions_total = base_query.filter(club_session_id__isnull=False).aggregate(
+        Sum("amount")
+    )["amount__sum"]
+
+    print(sessions_total)
 
     return (
         opening_balance,
