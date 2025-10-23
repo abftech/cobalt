@@ -944,12 +944,8 @@ def organisation_transactions_filtered_data_movement_queries(
     )
     settlements = base_query.filter(type="Settlement").aggregate(total=Sum("amount"))
 
-    # Some historic data can have a type of Club Membership but also an event_id (shouldn't be allowed)
-    # We exclude anything with an event_id assuming that the event_id takes precedence
-    club_memberships = (
-        base_query.filter(type="Club Membership")
-        .exclude(event_id__isnull=False)
-        .aggregate(total=Sum("amount"))
+    club_memberships = base_query.filter(type="Club Membership").aggregate(
+        total=Sum("amount")
     )
     other_adjustments = (
         base_query.exclude(
