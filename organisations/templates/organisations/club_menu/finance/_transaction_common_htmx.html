@@ -44,7 +44,7 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <input placeholder="Description" required type="text" id="id_pay_member_description"
-                                name="description" class="form-control">
+                                   name="description" class="form-control">
                         </div>
                     </div>
                 </div>
@@ -54,7 +54,7 @@
                         <div class="form-group">
                             <label for="id_pay_member_amount" class="bmd-label-static">Amount</label>
                             <input required type="number" step="0.01" min="0" id="id_pay_member_amount" name="amount"
-                                class="form-control">
+                                   class="form-control">
                         </div>
                     </div>
                 </div>
@@ -79,7 +79,7 @@
 
                 {% if club.full_club_admin %}
 
-                    <div class="row mb-5">
+                    <div class="row mb-5" id="t_membership_fee">
                         <div class="col">
                             <div class="form-check">
                                 <label
@@ -90,8 +90,9 @@
                                         id="id_membership_fee"
                                         name="membership_fee"
                                         type="checkbox"
+                                        _="on change toggle .d-none on #id_event_id"
                                     >
-                                    Membership fees transaction?
+                                    Membership fees transaction
                                     <span class="form-check-sign">
                                         <span class="check"></span>
                                     </span>
@@ -137,24 +138,15 @@
         // show modal straight away
         $('#userSearchModalpay_member').modal('show');
 
-        // COMMENTED OUT FOR NOW. 2023-06-29
+        $('#id_event_id').on('change', function () {
+            // un-hide membership box if we are not set or hide if we are
+            if (parseInt(this.value) === -1){
+                $('#t_membership_fee').removeClass('d-none');
+            } else {
+                $('#t_membership_fee').addClass('d-none');
+            }
+        });
 
-        {#// don't allow both event_id and session_id#}
-        {#$("#id_event_id").on("change", function(){#}
-        {#    if  ($("#id_event_id").val() === "-1"){#}
-        {#        $("#id_session_id").removeAttr("disabled");#}
-        {#    } else {#}
-        {#        $("#id_session_id").attr("disabled", true);#}
-        {#    }#}
-        {#});#}
-        {##}
-        {#$("#id_session_id").on("change", function(){#}
-        {#    if  ($("#id_session_id").val() === "-1"){#}
-        {#        $("#id_event_id").removeAttr("disabled");#}
-        {#    } else {#}
-        {#        $("#id_event_id").attr("disabled", true);#}
-        {#    }#}
-        {#});#}
     });
 
 

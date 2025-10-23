@@ -8,6 +8,12 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.2.3",
+            "notes": [
+                "Club admin pay anyone - prevent both congress and membership fee flags together",
+            ],
+        },
+        {
             "release": "6.2.2",
             "notes": [
                 "Documentation for mobile app",
