@@ -1,19 +1,18 @@
 import datetime
 
-import pytz
-from django.db.models import Sum, Min, Q
+from django.db.models import Sum, Min
+from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
-from django.utils import timezone
 
 from accounts.models import User
 from club_sessions.models import Session
-from cobalt.settings import GLOBAL_CURRENCY_SYMBOL, BRIDGE_CREDITS, TIME_ZONE
+from cobalt.settings import GLOBAL_CURRENCY_SYMBOL, BRIDGE_CREDITS
 from events.models import Event, Congress
 from notifications.views.core import send_cobalt_email_to_system_number
 from organisations.decorators import check_club_menu_access
-from organisations.models import ClubLog, MemberMembershipType, Organisation
+from organisations.models import ClubLog, Organisation
 from organisations.views.club_menu import tab_finance_htmx
 from organisations.views.club_menu_tabs.members import club_admin_edit_member_htmx
 from organisations.club_admin_core import (
@@ -25,7 +24,6 @@ from payments.models import (
     OrganisationTransaction,
     TRANSACTION_TYPE,
 )
-from payments.views.admin import settlement
 from payments.views.core import (
     update_account,
     update_organisation,
@@ -658,9 +656,6 @@ def transaction_session_details_htmx(request, club):
     session_transactions = OrganisationTransaction.objects.filter(
         organisation=club, club_session_id=club_session.id
     )
-    # trans = get_object_or_404(OrganisationTransaction, pk=request.POST.get("trans_id"))
-    # if trans.organisation != club:
-    #     return HttpResponse("Transaction does not belong to this club")
 
     return render(
         request,
@@ -973,8 +968,6 @@ def organisation_transactions_filtered_data_movement_queries(
         Sum("amount")
     )["amount__sum"]
 
-    print(sessions_total)
-
     return (
         opening_balance,
         closing_balance,
@@ -1158,5 +1151,67 @@ def organisation_transactions_filtered_data_congresses(
             "hx_target": hx_data["hx_target"],
             "hx_post": hx_data["hx_post"],
             "hx_vars": hx_data["hx_vars"],
+        },
+    )
+
+
+@check_club_menu_access(check_payments=True)
+def movement_report_session_details_htmx(request, club):
+    """ " shows what makes up the sessions numbers for the
+    movement report. This is based upon payment date, not session date"""
+
+    # Dates
+    start_date = request.POST.get("start_date")
+    end_date = request.POST.get("end_date")
+    start_datetime, end_datetime = start_end_date_to_datetime(start_date, end_date)
+
+    # We want it ordered by date, session id and total payments
+    session_payments = (
+        OrganisationTransaction.objects.filter(organisation=club)
+        .filter(created_date__gte=start_datetime)
+        .filter(created_date__lt=end_datetime)
+        .filter(club_session_id__isnull=False)
+        .annotate(day=TruncDate("created_date"))
+        .values("day", "club_session_id")
+        .order_by("-day")
+        .annotate(total=Sum("amount"))
+    )
+
+    # Get the session ids we need so we can get the descriptions
+    session_ids = []
+    for session_payment in session_payments:
+        session_ids.append(session_payment["club_session_id"])
+
+    sessions = Session.objects.filter(id__in=session_ids).values("id", "description")
+
+    # convert to dict
+    sessions_dict = {session["id"]: session["description"] for session in sessions}
+
+    # Augment the session_payments with the names of the sessions
+    for session_payment in session_payments:
+        try:
+            session_payment["session_description"] = sessions_dict[
+                session_payment["club_session_id"]
+            ]
+        except KeyError:
+            session_payment["session_description"] = (
+                "Session not found. May be deleted."
+            )
+
+    things = cobalt_paginator(request, session_payments)
+
+    hx_post = reverse("organisations:movement_report_session_details_htmx")
+    hx_target = "#id_filtered_transactions_below"
+    hx_vars = f"club_id: {club.id}, start_date: '{start_date}', end_date: '{end_date}'"
+
+    return render(
+        request,
+        "organisations/club_menu/finance/movement_report_session_details_htmx.html",
+        {
+            "club": club,
+            "things": things,
+            "hx_post": hx_post,
+            "hx_target": hx_target,
+            "hx_vars": hx_vars,
         },
     )

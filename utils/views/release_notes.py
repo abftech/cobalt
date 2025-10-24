@@ -11,6 +11,7 @@ def release_notes_view(request):
             "release": "6.2.3",
             "notes": [
                 "Club admin pay anyone - prevent both congress and membership fee flags together",
+                "DEV - Cobalt tags handle missing values better",
             ],
         },
         {
