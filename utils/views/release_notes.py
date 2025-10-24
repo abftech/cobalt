@@ -12,6 +12,7 @@ def release_notes_view(request):
             "notes": [
                 "Club admin pay anyone - prevent both congress and membership fee flags together",
                 "DEV - Cobalt tags handle missing values better",
+                "New sub report for movement report showing session payments by date",
             ],
         },
         {
