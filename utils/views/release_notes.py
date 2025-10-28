@@ -14,6 +14,8 @@ def release_notes_view(request):
                 "Changes to club movement report",
                 "Fix bug with results not handling voids for Double Dummy Solver",
                 "DEV - update sanitise data script for testing to include FCMDevices",
+                "DEV - Cobalt tags handle missing values better",
+                "New sub report for movement report showing session payments by date",
             ],
         },
         {

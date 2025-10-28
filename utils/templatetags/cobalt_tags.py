@@ -190,7 +190,7 @@ def cobalt_currency_colour(dollars):
 
     try:
         dollars = round(float(dollars), 2)
-    except ValueError:
+    except (ValueError, TypeError):
         return dollars
 
     if dollars < 0:

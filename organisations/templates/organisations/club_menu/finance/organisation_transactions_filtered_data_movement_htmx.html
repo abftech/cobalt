@@ -80,7 +80,7 @@
                 <td class="text-left">Club Sessions</td>
                 <td class="text-left">&nbsp;</td>
                 <td class="text-right">
-                    {% if club_sessions == 0 %}
+                    {% if not club_sessions or club_sessions == 0 %}
                         -
                     {% else %}
                         {{ club_sessions|cobalt_currency_colour }}
@@ -89,10 +89,9 @@
                 <td>
                     <button
                         class="btn btn-sm btn-info"
-                        hx-post="{% url "organisations:transaction_filter_htmx" %}"
+                        hx-post="{% url "organisations:movement_report_session_details_htmx" %}"
                         hx-target="#id_filtered_transactions_below"
-{#                        hx-vars="club_id:{{ club.id }}, show_filtered_data: 1, start_date: '{{start_date}}', end_date: '{{end_date}}', 'hx_target': '#id_filtered_transactions_below', view_type_selector: 'txntype', transaction_type_selector:'Club Payment'"#}
-                        hx-vars="club_id:{{ club.id }}, show_filtered_data: 1, start_date: '{{start_date}}', end_date: '{{end_date}}', 'hx_target': '#id_filtered_transactions_below', view_type_selector: 'session'"
+                        hx-vars="club_id:{{ club.id }}, start_date: '{{start_date}}', end_date: '{{end_date}}', 'hx_target': '#id_filtered_transactions_below'"
                         _="on click put 'Sessions' into #breakdown_title"
                     >
                         View
