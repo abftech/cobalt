@@ -16,6 +16,7 @@ def release_notes_view(request):
                 "DEV - update sanitise data script for testing to include FCMDevices",
                 "DEV - Cobalt tags handle missing values better",
                 "New sub report for movement report showing session payments by date",
+                "Fix for COB-1073, error when creating blank session",
             ],
         },
         {
