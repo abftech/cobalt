@@ -78,9 +78,9 @@ class SessionForm(forms.ModelForm):
         )
         self.fields["default_secondary_payment_method"].choices = org_payment_types
         if club.default_secondary_payment_method:
-            self.fields[
-                "default_secondary_payment_method"
-            ].initial = club.default_secondary_payment_method.id
+            self.fields["default_secondary_payment_method"].initial = (
+                club.default_secondary_payment_method.id
+            )
 
     def clean_session_type(self):
         """validate session type - don't allow changes if payments made"""
@@ -89,6 +89,10 @@ class SessionForm(forms.ModelForm):
 
         # If no change, don't worry
         if "session_type" not in self.changed_data:
+            return data
+
+        # if we are new, don't worry either
+        if self.instance.id is None:
             return data
 
         # See if any payments have been made, if so reject change
