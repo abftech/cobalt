@@ -132,6 +132,9 @@ def double_dummy_from_usebio(board):
     pbn_str += f" {hand['South']['spades']}.{hand['South']['hearts']}.{hand['South']['diamonds']}.{hand['South']['clubs']}"
     pbn_str += f" {hand['West']['spades']}.{hand['West']['hearts']}.{hand['West']['diamonds']}.{hand['West']['clubs']}"
 
+    # Voids will be in the string as None replace with nothing
+    pbn_str = pbn_str.replace("None", "")
+
     pbn_bytes = bytes(pbn_str, encoding="utf-8")
 
     return ddstable.get_ddstable(pbn_bytes)

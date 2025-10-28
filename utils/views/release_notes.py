@@ -11,6 +11,9 @@ def release_notes_view(request):
             "release": "6.2.3",
             "notes": [
                 "Club admin pay anyone - prevent both congress and membership fee flags together",
+                "Changes to club movement report",
+                "Fix bug with results not handling voids for Double Dummy Solver",
+                "DEV - update sanitise data script for testing to include FCMDevices",
             ],
         },
         {

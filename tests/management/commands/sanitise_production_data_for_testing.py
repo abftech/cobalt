@@ -1,6 +1,7 @@
 """Script to sanitise prod data so we can use it for testing"""
 
 from django.core.exceptions import SuspiciousOperation
+from fcm_django.models import FCMDevice
 from post_office.models import Email, STATUS
 
 from cobalt.settings import (
@@ -37,6 +38,7 @@ class Command(BaseCommand):
         Visitor.objects.all().update(email="a@b.com")
         Organisation.objects.all().update(club_email="a@b.com")
         Congress.objects.all().update(contact_email="a@b.com")
+        FCMDevice.objects.all().delete()
 
         print("Changing password...")
         mark = User.objects.filter(username="Mark").first()
