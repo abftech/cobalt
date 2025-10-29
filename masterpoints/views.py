@@ -368,10 +368,7 @@ def get_abf_checksum(abf_raw: int) -> int:
     if mod == 0:
         return 0
 
-    if mod == 1:
-        return 1
-
-    return 11 - mod
+    return 1 if mod == 1 else 11 - mod
 
 
 def abf_checksum_is_valid(abf_number: int) -> bool:
