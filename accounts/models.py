@@ -210,7 +210,7 @@ class User(AbstractUser):
         choices=CovidStatus.choices, max_length=2, default=CovidStatus.UNSET
     )
 
-    old_mpc_id = models.PositiveIntegerField(null=True, blank=True)
+    old_mpc_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
     """ Temporary link to old Masterpoint Centre record, required for MPC work """
 
     REQUIRED_FIELDS = [
@@ -322,7 +322,7 @@ class UnregisteredUser(models.Model):
     )
     """ random string identifier to use in emails to handle preferences. Can't use the pk obviously """
 
-    old_mpc_id = models.PositiveIntegerField(null=True, blank=True)
+    old_mpc_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
     """ Temporary link to old Masterpoint Centre record, required for MPC work """
 
     # Managers: objects excludes internal system number records, all_objects does not

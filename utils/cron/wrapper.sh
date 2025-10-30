@@ -15,6 +15,7 @@ cd /var/app/current/
 tmpfile=$(mktemp /tmp/env.XXXXXX)
 cat /opt/elasticbeanstalk/deployment/env | grep "'" | sed 's/.*/export &/' > $tmpfile
 . $tmpfile
+rm $tmpfile
 
 # run manage.py command passing all parameters
 ./manage.py $@

@@ -2,20 +2,19 @@
 
 # about: reads a models.py file and generates some of a corresponding admin.py file
 
-""" Reads a models.py file and generates some of a corresponding admin.py file.
+"""Reads a models.py file and generates some of a corresponding admin.py file.
 
-    Anything used as a foreign key needs to have a search_fields=[] entry. We don't generate that.
+Anything used as a foreign key needs to have a search_fields=[] entry. We don't generate that.
 
-    This is a helper, it will not generate perfect code.
+This is a helper, it will not generate perfect code.
 
-    We will generate admin entries for any class we find, some will be abstract or not database related.
+We will generate admin entries for any class we find, some will be abstract or not database related.
 
 """
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
-
-from django.utils.datetime_safe import datetime
 
 if len(sys.argv) != 2:
     print(f"\n\nUsage: {sys.argv[0]} <app>/models.py\n")

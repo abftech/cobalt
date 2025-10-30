@@ -5,16 +5,10 @@ from accounts.models import User
 from organisations.models import Organisation
 
 
-#     "ChargeTypeID": 1,
-#     "TypeName": "Annual capitation - full year",
-#     "FeeInclGST": 23.3,
-#     "MPsOrPlayers": "P",
-#     "QuickbooksCode": "4018",
-#     "IsShowOnInvoice": "Y",
-#     "IsGSTTaxable": "Y",
-#     "InvoiceWords": "New year capitation",
-#     "IsShowOnPriceList": "Y",
-#     "PriceListSequence": 101
+class MPColours(models.TextChoices):
+    GREEN = "G", "Green"
+    RED = "R", "Red"
+    GOLD = "Y", "Gold"
 
 
 class ChargeType(models.Model):
@@ -103,8 +97,8 @@ class GreenPointAchievementBand(models.Model):
 
     old_mpc_id = models.PositiveIntegerField()
     """ temporary link with MPC """
-    low_points = models.FloatField()
-    high_points = models.FloatField()
+    low_points = models.DecimalField(decimal_places=2, max_digits=10)
+    high_points = models.DecimalField(decimal_places=2, max_digits=10)
 
     def __str__(self):
         return f"{self.low_points} to {self.high_points}"
@@ -203,3 +197,61 @@ class MPBatch(models.Model):
     {"ORDINAL_POSITION":18,"COLUMN_NAME":"HowSubmitted","DATA_TYPE":"char","CHARACTER_MAXIMUM_LENGTH":1,"IS_NULLABLE":"YES"},
     {"ORDINAL_POSITION":19,"COLUMN_NAME":"EventMonth","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":3,"IS_NULLABLE":"YES"}]
     """
+    old_mpc_id = models.PositiveIntegerField(unique=True, db_index=True)
+    mps_submitted_green = models.DecimalField(
+        decimal_places=2, max_digits=10, null=True, blank=True
+    )
+    mps_submitted_red = models.DecimalField(
+        decimal_places=2, max_digits=10, null=True, blank=True
+    )
+    mps_submitted_gold = models.DecimalField(
+        decimal_places=2, max_digits=10, null=True, blank=True
+    )
+    old_mpc_posted_by_user_id = models.IntegerField(null=True, blank=True)
+    posted_date = models.DateTimeField()
+    source = models.CharField(max_length=1)
+    event_or_club_id = models.IntegerField()
+    posting_month = models.IntegerField(null=True, blank=True)
+    posting_year = models.IntegerField(null=True, blank=True)
+    is_mccutcheon_eligible = models.BooleanField()
+    is_approved = models.BooleanField()
+    uploaded_comments = models.TextField(null=True, blank=True)
+    admin_comments = models.TextField(null=True, blank=True)
+    is_charged = models.BooleanField()
+    authorisation_number = models.CharField(max_length=100, null=True, blank=True)
+    uploaded_filename = models.CharField(max_length=100, null=True, blank=True)
+    how_submitted = models.CharField(max_length=1)
+    event_month = models.CharField(max_length=3, null=True, blank=True)
+
+    class Meta:
+        verbose_name_plural = "MP Batches"
+
+    def __str__(self):
+        return f"{self.old_mpc_id} {self.posted_date}"
+
+
+class MPTran(models.Model):
+    """
+    [{"ORDINAL_POSITION":1,"COLUMN_NAME":"TranID","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"NO"},
+    {"ORDINAL_POSITION":2,"COLUMN_NAME":"PlayerID","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"},
+    {"ORDINAL_POSITION":3,"COLUMN_NAME":"MPColour","DATA_TYPE":"char","CHARACTER_MAXIMUM_LENGTH":1,"IS_NULLABLE":"YES"},
+    {"ORDINAL_POSITION":4,"COLUMN_NAME":"MPs","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"},
+    {"ORDINAL_POSITION":5,"COLUMN_NAME":"Source","DATA_TYPE":"char","CHARACTER_MAXIMUM_LENGTH":1,"IS_NULLABLE":"YES"},
+    {"ORDINAL_POSITION":6,"COLUMN_NAME":"MPBatchID","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"},
+    {"ORDINAL_POSITION":7,"COLUMN_NAME":"IsApproved","DATA_TYPE":"char","CHARACTER_MAXIMUM_LENGTH":1,"IS_NULLABLE":"YES"}]
+    """
+
+    old_mpc_id = models.PositiveIntegerField(db_index=True)
+    old_mpc_player_id = models.PositiveIntegerField()
+    """ temporary - here for any debugging """
+    system_number = models.PositiveIntegerField(db_index=True)
+    mp_colour = models.CharField(max_length=1, choices=MPColours.choices)
+    mp_amount = models.DecimalField(decimal_places=2, max_digits=10)
+    source = models.CharField(max_length=1)
+    old_mp_batch_id = models.PositiveIntegerField()
+    """ temporary - here for any debugging """
+    mp_batch = models.ForeignKey(MPBatch, on_delete=models.PROTECT)
+    is_approved = models.BooleanField()
+
+    def __str__(self):
+        return f"{self.system_number} - {self.mp_colour} - {self.mp_amount}"

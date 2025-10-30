@@ -1,6 +1,10 @@
+import cProfile
+import io
+import pstats
 import sys
 
 from django.core.management.base import BaseCommand
+from django.db.models import Max
 
 from accounts.models import User, UnregisteredUser
 from masterpoints.factories import masterpoint_query_list
@@ -11,6 +15,8 @@ from masterpoints.models import (
     Period,
     Rank,
     Promotion,
+    MPBatch,
+    MPTran,
 )
 from masterpoints.views import get_abf_checksum
 from organisations.models import Organisation
@@ -263,6 +269,119 @@ def sync_players():
     )
 
 
+def sync_mp_batches():
+    """MPBatches -> MPBatch"""
+
+    print("syncing MP Batches...")
+
+    batch_size = 5000
+
+    # Get new data only
+    min_batch = (
+        MPBatch.objects.aggregate(max_my_field=Max("old_mpc_id"))["max_my_field"] or 1
+    )
+    max_batch = min_batch + batch_size
+
+    data_returned = True
+
+    while data_returned:
+        data_returned = False
+        print(f"Processing {min_batch} to {max_batch}")
+        for item in masterpoint_query_list(f"mpci-batches/{min_batch}/{max_batch}"):
+            data_returned = True
+
+            mp_batch = MPBatch()
+            mp_batch.old_mpc_id = item["MPBatchID"]
+            mp_batch.mps_submitted_green = item["MPsSubmittedGreen"]
+            mp_batch.mps_submitted_red = item["MPsSubmittedRed"]
+            mp_batch.mps_submitted_gold = item["MPsSubmittedGold"]
+            mp_batch.old_mpc_posted_by_user_id = item["PostedByUserID"]
+            mp_batch.posted_date = item["PostedDate"]
+            mp_batch.source = item["Source"]
+            mp_batch.event_or_club_id = item["EventOrClubID"]
+            mp_batch.posting_month = item["PostingMonth"]
+            mp_batch.posting_year = item["PostingYear"]
+            mp_batch.is_mccutcheon_eligible = item["IsMcCutcheonEligible"] == "Y"
+            mp_batch.is_approved = item["IsApproved"] == "Y"
+            mp_batch.uploaded_comments = item["UploaderComments"]
+            mp_batch.admin_comments = item["AdminComments"]
+            mp_batch.is_charged = item["IsCharged"] == "Y"
+            mp_batch.authorisation_number = item["AuthorisationNumber"]
+            mp_batch.uploaded_filename = item["UploadedFileName"]
+            mp_batch.how_submitted = item["HowSubmitted"]
+            mp_batch.event_month = item["EventMonth"]
+
+            mp_batch.save()
+
+        min_batch = max_batch + 1
+        max_batch = max_batch + batch_size
+
+
+def sync_mp_trans(full_sync=False):
+    """MPTrans -> MPTrans"""
+
+    print("syncing MP Trans...")
+
+    batch_size = 5000
+
+    # Get new data only unless we are doing a full sync
+    min_batch = (
+        MPTran.objects.aggregate(max_my_field=Max("old_mpc_id"))["max_my_field"] or 0
+    )
+    if full_sync:
+        min_batch = 0
+    max_batch = min_batch + batch_size
+
+    data_returned = True
+
+    while data_returned:
+        data_returned = False
+        print(f"Processing {min_batch} to {max_batch}")
+        for item in masterpoint_query_list(f"mpci-trans/{min_batch}/{max_batch}"):
+            data_returned = True
+
+            mp_trans = (
+                MPTran.objects.filter(old_mpc_id=item["TranID"]).first() or MPTran()
+            )
+
+            mp_trans.old_mpc_id = item["TranID"]
+            mp_trans.old_mpc_player_id = item["PlayerID"]
+            mp_trans.old_mp_batch_id = item["MPBatchID"]
+            mp_trans.mp_colour = item["MPColour"]
+            mp_trans.mp_amount = item["MPs"]
+            mp_trans.source = item["Source"]
+            mp_trans.is_approved = item["IsApproved"] == "Y"
+
+            # validate and add system number
+            player = (
+                User.objects.filter(old_mpc_id=item["PlayerID"]).first()
+                or UnregisteredUser.objects.filter(old_mpc_id=item["PlayerID"]).first()
+            )
+            if player:
+                mp_trans.system_number = player.system_number
+            else:
+                print(
+                    f"No matching user found for PlayerID={item['PlayerID']}. MPTransID={item['TranID']}"
+                )
+                continue
+
+            # link to mp_batch
+            mp_batch = MPBatch.objects.filter(old_mpc_id=item["MPBatchID"]).first()
+
+            if mp_batch:
+                mp_trans.mp_batch = mp_batch
+            else:
+                print(
+                    f"No matching user found for BatchID={item['MPBatchID']}. MPTransID={item['TranID']}"
+                )
+                continue
+
+            mp_trans.save()
+
+        min_batch = max_batch + 1
+        max_batch = max_batch + batch_size
+
+
 class Command(BaseCommand):
     def handle(self, *args, **options):
         print("Running mpc_sync")
@@ -275,4 +394,31 @@ class Command(BaseCommand):
         # sync_green_point_achievement_bands()
         # sync_periods()
         # sync_ranks()
-        sync_promotions()
+        # sync_promotions()
+        # sync_mp_batches()
+        sync_mp_trans(full_sync=True)
+
+        # profiler = cProfile.Profile()
+        #
+        # # Enable profiling
+        # profiler.enable()
+        #
+        # # Run the code you want to profile
+        # sync_mp_trans(full_sync=True)
+        #
+        # # Disable profiling
+        # profiler.disable()
+        #
+        # # Create a StringIO object to capture the profile output
+        # s = io.StringIO()
+        #
+        # # Create a pstats.Stats object from the profiler data
+        # # Sort the statistics by cumulative time for better insight into bottlenecks
+        # sortby = pstats.SortKey.CUMULATIVE
+        # ps = pstats.Stats(profiler, stream=s).sort_stats(sortby)
+        #
+        # # Print the statistics to the StringIO object
+        # ps.print_stats()
+        #
+        # # Print the captured profile output
+        # print(s.getvalue())
