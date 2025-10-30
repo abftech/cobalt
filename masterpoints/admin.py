@@ -10,6 +10,7 @@ from .models import (
     Promotion,
     MPBatch,
     MPTran,
+    ClubMembershipHistory,
 )
 
 
@@ -28,6 +29,14 @@ class PromotionAdmin(admin.ModelAdmin):
     autocomplete_fields = [
         "rank",
         "period",
+    ]
+
+
+class ClubMembershipHistoryAdmin(admin.ModelAdmin):
+    """Admin class for model ClubMembershipHistory"""
+
+    autocomplete_fields = [
+        "club",
     ]
 
 
@@ -75,3 +84,4 @@ admin.site.register(Period, PeriodAdmin)
 admin.site.register(Promotion, PromotionAdmin)
 admin.site.register(MPBatch, MPBatchAdmin)
 admin.site.register(MPTran, MPTranAdmin)
+admin.site.register(ClubMembershipHistory, ClubMembershipHistoryAdmin)

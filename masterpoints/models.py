@@ -117,7 +117,7 @@ class Rank(models.Model):
     {"ORDINAL_POSITION":7,"COLUMN_NAME":"GoldNeeded","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"}]
     """
 
-    old_mpc_id = models.PositiveIntegerField()
+    old_mpc_id = models.PositiveIntegerField(db_index=True)
     rank_name = models.CharField(max_length=15)
     rank_old_name = models.CharField(max_length=15)
     rank_sequence = models.CharField(max_length=1)
@@ -140,7 +140,7 @@ class Period(models.Model):
     {"ORDINAL_POSITION":5,"COLUMN_NAME":"IsCurrent","DATA_TYPE":"char","CHARACTER_MAXIMUM_LENGTH":1,"IS_NULLABLE":"YES"}]
     """
 
-    old_mpc_id = models.PositiveIntegerField()
+    old_mpc_id = models.PositiveIntegerField(db_index=True)
     period_month = models.PositiveIntegerField()
     period_year = models.PositiveIntegerField()
     period_end = models.DateTimeField()
@@ -255,3 +255,27 @@ class MPTran(models.Model):
 
     def __str__(self):
         return f"{self.system_number} - {self.mp_colour} - {self.mp_amount}"
+
+
+class ClubMembershipHistory(models.Model):
+    """historic view of memberships"""
+
+    """
+    [{"ORDINAL_POSITION":1,"COLUMN_NAME":"RecordID","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"NO"},
+    {"ORDINAL_POSITION":2,"COLUMN_NAME":"BillingMonth","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"},
+    {"ORDINAL_POSITION":3,"COLUMN_NAME":"BillingYear","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"},
+    {"ORDINAL_POSITION":4,"COLUMN_NAME":"ClubID","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"},
+    {"ORDINAL_POSITION":5,"COLUMN_NAME":"HomeMembers","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"}]
+    """
+
+    old_mpc_id = models.PositiveIntegerField()
+    """ only needed temporarily """
+    billing_month = models.PositiveIntegerField()
+    billing_year = models.PositiveIntegerField()
+    old_mpc_club_id = models.PositiveIntegerField()
+    """ only needed temporarily """
+    club = models.ForeignKey(Organisation, on_delete=models.PROTECT)
+    home_members = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"{self.club} - {self.billing_year}/{self.billing_month} - {self.home_members}"

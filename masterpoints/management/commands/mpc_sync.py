@@ -17,6 +17,7 @@ from masterpoints.models import (
     Promotion,
     MPBatch,
     MPTran,
+    ClubMembershipHistory,
 )
 from masterpoints.views import get_abf_checksum
 from organisations.models import Organisation
@@ -382,6 +383,34 @@ def sync_mp_trans(full_sync=False):
         max_batch = max_batch + batch_size
 
 
+def sync_mpc_club_membership_history():
+    """ClubMembership -> ClubMembershipHistory"""
+
+    print("syncing club membership history...")
+
+    for item in masterpoint_query_list("mpci-club-membership"):
+
+        membership = ClubMembershipHistory.objects.filter(
+            old_mpc_id=item["RecordID"]
+        ).first() or ClubMembershipHistory(old_mpc_id=item["RecordID"])
+
+        membership.billing_year = item["BillingYear"]
+        membership.billing_month = item["BillingMonth"]
+        membership.old_mpc_club_id = item["ClubID"]
+        membership.home_members = item["HomeMembers"]
+
+        club = Organisation.objects.filter(old_mpc_id=item["ClubID"]).first()
+        if club:
+            membership.club = club
+        else:
+            print(
+                f"No matching club found for ClubID={item['ClubID']}. RecordID={item['RecordID']}"
+            )
+            continue
+
+        membership.save()
+
+
 class Command(BaseCommand):
     def handle(self, *args, **options):
         print("Running mpc_sync")
@@ -394,9 +423,10 @@ class Command(BaseCommand):
         # sync_green_point_achievement_bands()
         # sync_periods()
         # sync_ranks()
-        # sync_promotions()
+        sync_promotions()
         # sync_mp_batches()
-        sync_mp_trans(full_sync=True)
+        # sync_mp_trans(full_sync=True)
+        # sync_mpc_club_membership_history()
 
         # profiler = cProfile.Profile()
         #

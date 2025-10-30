@@ -217,7 +217,7 @@ class Organisation(models.Model):
     use_last_payment_method_for_player_sessions = models.BooleanField(default=False)
     """ some clubs want to default payments for sessions to use whatever the player last paid with """
 
-    old_mpc_id = models.PositiveIntegerField(null=True, blank=True)
+    old_mpc_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
     """ temporary link to record in MPC """
 
     @property
