@@ -423,10 +423,10 @@ class Command(BaseCommand):
         # sync_green_point_achievement_bands()
         # sync_periods()
         # sync_ranks()
-        sync_promotions()
+        # sync_promotions()
         # sync_mp_batches()
         # sync_mp_trans(full_sync=True)
-        # sync_mpc_club_membership_history()
+        sync_mpc_club_membership_history()
 
         # profiler = cProfile.Profile()
         #
