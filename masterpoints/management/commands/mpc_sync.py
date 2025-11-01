@@ -383,12 +383,27 @@ def sync_mp_trans(full_sync=False):
         max_batch = max_batch + batch_size
 
 
-def sync_mpc_club_membership_history():
+def sync_mpc_club_membership_history(full_sync=False):
     """ClubMembership -> ClubMembershipHistory"""
 
     print("syncing club membership history...")
 
-    for item in masterpoint_query_list("mpci-club-membership"):
+    # Get the last id we know about
+    min_batch = (
+        ClubMembershipHistory.objects.aggregate(max_my_field=Max("old_mpc_id"))["max_my_field"] or 0
+    )
+
+    # go back a bit
+    min_batch -= 500_000
+    if min_batch < 0:
+        min_batch = 0
+
+    if full_sync:
+        min_batch = 0
+
+    print(f"Full sync = {full_sync}. Starting with {min_batch}.")
+
+    for item in masterpoint_query_list(f"mpci-club-membership/{min_batch}"):
 
         membership = ClubMembershipHistory.objects.filter(
             old_mpc_id=item["RecordID"]
