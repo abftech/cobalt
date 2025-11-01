@@ -160,7 +160,7 @@ XERO_TENANT_NAME = "17 Ways"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": "psqlextra.backend",
         "NAME": RDS_DB_NAME,
         "USER": RDS_USERNAME,
         "PASSWORD": RDS_PASSWORD,
@@ -209,6 +209,7 @@ if os.name == "posix":
 #########################################
 
 INSTALLED_APPS = [
+    # Our apps
     "calendar_app",
     "api",
     "notifications",
@@ -228,6 +229,7 @@ INSTALLED_APPS = [
     "utils",
     "tests",
     "xero",
+    # Django contrib
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -235,18 +237,21 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.humanize",
+    "django.contrib.postgres",
+    "django.contrib.admindocs",
+    # 3rd party apps
     "django_summernote",
     "crispy_forms",
     "crispy_bootstrap4",
     "widget_tweaks",
     "django_extensions",
-    "django.contrib.admindocs",
     "post_office",
     "django_ses",
     "django_otp",
     "django_otp.plugins.otp_totp",
     "loginas",
     "fcm_django",
+    "psqlextra",
 ]
 
 MIDDLEWARE = [

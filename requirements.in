@@ -38,6 +38,9 @@ gunicorn==23.0.0
 # Stripe payments gateway
 stripe==12.1.0
 
+# django-postgres-extra for Partitioning database tables
+django-postgres-extra==2.0.9
+
 ####################################
 # Django/Python standard libraries #
 ####################################
