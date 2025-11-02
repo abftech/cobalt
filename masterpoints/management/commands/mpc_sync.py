@@ -324,11 +324,18 @@ def sync_mp_trans(full_sync=False):
     print("syncing MP Trans...")
 
     batch_size = 5000
+    rewind = 500_000
 
     # Get new data only unless we are doing a full sync
     min_batch = (
         MPTran.objects.aggregate(max_my_field=Max("old_mpc_id"))["max_my_field"] or 0
     )
+
+    # Rewind as recent things could have changed but old things won't
+    min_batch = min_batch - rewind
+    if min_batch < 0:
+        min_batch = 0
+
     if full_sync:
         min_batch = 0
     max_batch = min_batch + batch_size
@@ -430,17 +437,17 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         print("Running mpc_sync")
 
-        # sync_clubs()
-        # sync_players()
-        # sync_charge_types()
-        # sync_events(masterpoint_query_list("mpci-events"))
-        # sync_events(masterpoint_query_list("mpci-deleted-events"), force_closed=True)
-        # sync_green_point_achievement_bands()
-        # sync_periods()
-        # sync_ranks()
-        # sync_promotions()
-        # sync_mp_batches()
-        # sync_mp_trans(full_sync=True)
+        sync_clubs()
+        sync_players()
+        sync_charge_types()
+        sync_events(masterpoint_query_list("mpci-events"))
+        sync_events(masterpoint_query_list("mpci-deleted-events"), force_closed=True)
+        sync_green_point_achievement_bands()
+        sync_periods()
+        sync_ranks()
+        sync_promotions()
+        sync_mp_batches()
+        sync_mp_trans(full_sync=True)
         sync_mpc_club_membership_history()
 
         # profiler = cProfile.Profile()
