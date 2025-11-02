@@ -10,6 +10,9 @@ class MPColours(models.TextChoices):
     RED = "R", "Red"
     GOLD = "Y", "Gold"
 
+class MPSource(models.TextChoices):
+    CLUB = "C", "Club"
+    EVENT = "E", "Event"
 
 class ChargeType(models.Model):
     """Different types of charges for Masterpoints"""
@@ -247,7 +250,7 @@ class MPTran(models.Model):
     system_number = models.PositiveIntegerField(db_index=True)
     mp_colour = models.CharField(max_length=1, choices=MPColours.choices)
     mp_amount = models.DecimalField(decimal_places=2, max_digits=10)
-    source = models.CharField(max_length=1)
+    source = models.CharField(max_length=1, choices=MPSource.choices)
     old_mp_batch_id = models.PositiveIntegerField()
     """ temporary - here for any debugging """
     mp_batch = models.ForeignKey(MPBatch, on_delete=models.PROTECT)

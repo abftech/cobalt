@@ -227,9 +227,11 @@ def sync_players():
         for item in masterpoint_query_list(f"mpci-players/{min_batch}/{max_batch}"):
             data_returned = True
 
-            # The ABF Raw field has the ABF number
-            if "ABFNumberRaw" in item:
+            if "ABFNumber" in item:
+                abf_number = item["ABFNumber"]
+            elif "ABFNumberRaw" in item:
                 abf_number = item["ABFNumberRaw"]
+                print(f"using ABFNumberRaw: {item['ABFNumberRaw']} {item['GivenNames']} {item['Surname']} {item['IsActive']}")
             else:
                 print("Skipping record with no ABF number")
                 print(item)
@@ -437,18 +439,18 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         print("Running mpc_sync")
 
-        sync_clubs()
+        # sync_clubs()
         sync_players()
-        sync_charge_types()
-        sync_events(masterpoint_query_list("mpci-events"))
-        sync_events(masterpoint_query_list("mpci-deleted-events"), force_closed=True)
-        sync_green_point_achievement_bands()
-        sync_periods()
-        sync_ranks()
-        sync_promotions()
-        sync_mp_batches()
-        sync_mp_trans(full_sync=True)
-        sync_mpc_club_membership_history()
+        # sync_charge_types()
+        # sync_events(masterpoint_query_list("mpci-events"))
+        # sync_events(masterpoint_query_list("mpci-deleted-events"), force_closed=True)
+        # sync_green_point_achievement_bands()
+        # sync_periods()
+        # sync_ranks()
+        # sync_promotions()
+        # sync_mp_batches()
+        # sync_mp_trans(full_sync=True)
+        # sync_mpc_club_membership_history()
 
         # profiler = cProfile.Profile()
         #

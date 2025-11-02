@@ -160,7 +160,7 @@ XERO_TENANT_NAME = "17 Ways"
 
 DATABASES = {
     "default": {
-        "ENGINE": "psqlextra.backend",
+        "ENGINE": "django.db.backends.postgresql",
         "NAME": RDS_DB_NAME,
         "USER": RDS_USERNAME,
         "PASSWORD": RDS_PASSWORD,
@@ -251,7 +251,6 @@ INSTALLED_APPS = [
     "django_otp.plugins.otp_totp",
     "loginas",
     "fcm_django",
-    "psqlextra",
 ]
 
 MIDDLEWARE = [

@@ -51,7 +51,6 @@ django==5.2.1
     #   django-ninja
     #   django-otp
     #   django-post-office
-    #   django-postgres-extra
     #   django-ses
     #   django-summernote
     #   fcm-django
@@ -75,8 +74,6 @@ django-ninja==0.16.1
 django-otp==1.1.1
     # via -r requirements.in
 django-post-office @ git+https://github.com/abftech/django-post_office
-    # via -r requirements.in
-django-postgres-extra==2.0.9
     # via -r requirements.in
 django-ses==3.1.2
     # via -r requirements.in
@@ -197,9 +194,7 @@ pyparsing==3.2.3
 pysocks==1.7.1
     # via urllib3
 python-dateutil==2.9.0.post0
-    # via
-    #   botocore
-    #   django-postgres-extra
+    # via botocore
 pytz==2019.3
     # via
     #   -r requirements.in
