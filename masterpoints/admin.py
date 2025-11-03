@@ -52,7 +52,7 @@ class MPBatchAdmin(admin.ModelAdmin):
     """Admin class for model MPBatch"""
 
     search_fields = [
-        "old_mpc_id",
+        "=old_mpc_id",
     ]
 
     list_filter = (

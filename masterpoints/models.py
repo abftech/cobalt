@@ -216,8 +216,9 @@ class MPBatch(models.Model):
     )
     old_mpc_posted_by_user_id = models.IntegerField(null=True, blank=True)
     posted_date = models.DateTimeField()
-    source = models.CharField(max_length=1)
-    event_or_club_id = models.IntegerField()
+    source = models.CharField(max_length=1, choices=MPSource.choices)
+    old_mpc_event_or_club_id = models.IntegerField()
+    """ Can be removed when we no longer sync from the MPC """
     posting_month = models.IntegerField(null=True, blank=True)
     posting_year = models.IntegerField(null=True, blank=True)
     is_mccutcheon_eligible = models.BooleanField()
@@ -260,7 +261,7 @@ class MPTran(models.Model):
     source = models.CharField(max_length=1, choices=MPSource.choices)
     old_mp_batch_id = models.PositiveIntegerField()
     """ temporary - here for any debugging """
-    mp_batch = models.ForeignKey(MPBatch, on_delete=models.PROTECT)
+    mp_batch = models.ForeignKey(MPBatch, on_delete=models.CASCADE)
     is_approved = models.BooleanField()
 
     def __str__(self):

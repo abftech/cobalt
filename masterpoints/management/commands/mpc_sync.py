@@ -280,10 +280,7 @@ def sync_mp_batches():
 
     batch_size = 5000
 
-    # Get new data only
-    min_batch = (
-        MPBatch.objects.aggregate(max_my_field=Max("old_mpc_id"))["max_my_field"] or 1
-    )
+    min_batch = 0
     max_batch = min_batch + batch_size
 
     # Update the check flag so we know if something has been deleted
@@ -306,7 +303,7 @@ def sync_mp_batches():
             mp_batch.old_mpc_posted_by_user_id = item["PostedByUserID"]
             mp_batch.posted_date = item["PostedDate"]
             mp_batch.source = item["Source"]
-            mp_batch.event_or_club_id = item["EventOrClubID"]
+            mp_batch.old_mpc_event_or_club_id = item["EventOrClubID"]
             mp_batch.posting_month = item["PostingMonth"]
             mp_batch.posting_year = item["PostingYear"]
             mp_batch.is_mccutcheon_eligible = item["IsMcCutcheonEligible"] == "Y"
@@ -321,9 +318,11 @@ def sync_mp_batches():
 
             # Map to MasterpointEvent or Organisation
             if mp_batch.source == MPSource.CLUB:
-                mp_batch.club_id = mp_batch.event_or_club_id
+                club = Organisation.objects.filter(old_mpc_id=mp_batch.old_mpc_event_or_club_id).first()
+                mp_batch.club = club
             elif mp_batch.source == MPSource.EVENT:
-                mp_batch.masterpoint_event_id = mp_batch.event_or_club_id
+                mp_event = MasterpointEvent.objects.filter(old_mpc_id=mp_batch.old_mpc_event_or_club_id).first()
+                mp_batch.masterpoint_event = mp_event
 
             mp_batch.save()
 
@@ -365,10 +364,8 @@ def sync_mp_trans(full_sync=False):
             data_returned = True
 
             mp_trans = (
-                MPTran.objects.filter(old_mpc_id=item["TranID"]).first() or MPTran()
+                MPTran.objects.filter(old_mpc_id=item["TranID"]).first() or MPTran(item["TranID"])
             )
-
-            mp_trans.old_mpc_id = item["TranID"]
             mp_trans.old_mpc_player_id = item["PlayerID"]
             mp_trans.old_mp_batch_id = item["MPBatchID"]
             mp_trans.mp_colour = item["MPColour"]
@@ -453,18 +450,18 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         print("Running mpc_sync")
 
-        sync_clubs()
-        sync_players()
-        sync_charge_types()
-        sync_events(masterpoint_query_list("mpci-events"))
-        sync_events(masterpoint_query_list("mpci-deleted-events"), force_closed=True)
-        sync_green_point_achievement_bands()
-        sync_periods()
-        sync_ranks()
-        sync_promotions()
+        # sync_clubs()
+        # sync_players()
+        # sync_charge_types()
+        # sync_events(masterpoint_query_list("mpci-events"))
+        # sync_events(masterpoint_query_list("mpci-deleted-events"), force_closed=True)
+        # sync_green_point_achievement_bands()
+        # sync_periods()
+        # sync_ranks()
+        # sync_promotions()
         sync_mp_batches()
-        sync_mp_trans(full_sync=True)
-        sync_mpc_club_membership_history()
+        # sync_mp_trans(full_sync=True)
+        # sync_mpc_club_membership_history()
 
         # profiler = cProfile.Profile()
         #
