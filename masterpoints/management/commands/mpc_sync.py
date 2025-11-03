@@ -281,7 +281,6 @@ def sync_players():
             # If not, create an unregistered user
             if not user:
                 user = UnregisteredUser(system_number=abf_number)
-                user.old_mpc_id = item["PlayerID"]
                 user.first_name = item["GivenNames"]
                 user.last_name = item["Surname"]
                 user.origin = "MPCS"
@@ -449,22 +448,7 @@ def sync_mpc_club_membership_history(full_sync=False):
 
     start_time = time.perf_counter()
 
-    # Get the last id we know about
-    min_batch = (
-        ClubMembershipHistory.objects.aggregate(max_my_field=Max("old_mpc_id"))["max_my_field"] or 0
-    )
-
-    # go back a bit
-    min_batch -= 500_000
-    if min_batch < 0:
-        min_batch = 0
-
-    if full_sync:
-        min_batch = 0
-
-    print(f"Full sync = {full_sync}. Starting with {min_batch}.")
-
-    for item in masterpoint_query_list(f"mpci-club-membership/{min_batch}"):
+    for item in masterpoint_query_list(f"mpci-club-membership"):
 
         membership = ClubMembershipHistory.objects.filter(
             old_mpc_id=item["RecordID"]
@@ -504,6 +488,6 @@ class Command(BaseCommand):
         # sync_ranks()
         # sync_promotions()
         # sync_mp_batches()
-        # sync_mp_trans(full_sync=True)
-        sync_mpc_club_membership_history()
+        sync_mp_trans(full_sync=True)
+        # sync_mpc_club_membership_history()
 
