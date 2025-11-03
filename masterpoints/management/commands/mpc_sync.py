@@ -1,7 +1,9 @@
 import cProfile
+import datetime
 import io
 import pstats
 import sys
+import time
 
 from django.core.management.base import BaseCommand
 from django.db.models import Max
@@ -30,6 +32,8 @@ def sync_charge_types():
 
     print("Syncing ChargeType...")
 
+    start_time = time.perf_counter()
+
     for charge_type in masterpoint_query_list("mpci-charge-types"):
         item, _ = ChargeType.objects.get_or_create(
             old_mpc_id=charge_type["ChargeTypeID"]
@@ -44,11 +48,16 @@ def sync_charge_types():
         item.mps_or_player = charge_type["MPsOrPlayers"]
         item.save()
 
+    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+
 
 def sync_events(query_list, force_closed=False):
     """Events -> MasterpointEvent"""
 
     print(f"Syncing Events...{force_closed=}")
+
+    start_time = time.perf_counter()
+
     for event in query_list:
         item, _ = MasterpointEvent.objects.get_or_create(old_mpc_id=event["EventID"])
         item.event_code = event["EventCode"]
@@ -84,6 +93,8 @@ def sync_events(query_list, force_closed=False):
 
         item.save()
 
+    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+
 
 def sync_clubs():
     """Sync missing clubs and additional data"""
@@ -92,6 +103,8 @@ def sync_clubs():
     # So other things work
 
     print("Syncing clubs...")
+
+    start_time = time.perf_counter()
 
     for org in masterpoint_query_list("mpci-clubs"):
 
@@ -114,11 +127,15 @@ def sync_clubs():
         club.old_mpc_id = org["ClubID"]
         club.save()
 
+    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+
 
 def sync_green_point_achievement_bands():
     """GreenPointAchievementBands -> GreenPointAchievementBand"""
 
     print("Syncing GreenPointAchievementBands...")
+
+    start_time = time.perf_counter()
 
     for item in masterpoint_query_list("mpci-GreenPointAchievementBands"):
 
@@ -131,11 +148,14 @@ def sync_green_point_achievement_bands():
 
         band.save()
 
+    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
 
 def sync_periods():
     """Periods -> Period"""
 
     print("syncing periods...")
+
+    start_time = time.perf_counter()
 
     for item in masterpoint_query_list("mpci-periods"):
         period = Period.objects.filter(old_mpc_id=item["PeriodID"]).first() or Period(
@@ -149,11 +169,14 @@ def sync_periods():
 
         period.save()
 
+    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
 
 def sync_ranks():
     """Ranks -> Rank"""
 
     print("syncing ranks...")
+
+    start_time = time.perf_counter()
 
     for item in masterpoint_query_list("mpci-ranks"):
         rank = Rank.objects.filter(old_mpc_id=item["RankID"]).first() or Rank(
@@ -169,11 +192,14 @@ def sync_ranks():
 
         rank.save()
 
+    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
 
 def sync_promotions():
     """Promotions -> Promotion"""
 
     print("syncing promotions...")
+
+    start_time = time.perf_counter()
 
     for item in masterpoint_query_list("mpci-promotions"):
         promotion = Promotion.objects.filter(
@@ -205,11 +231,15 @@ def sync_promotions():
 
         promotion.save()
 
+    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+
 
 def sync_players():
     """Players -> User/UnregisteredUser"""
 
     print("syncing players...")
+
+    start_time = time.perf_counter()
 
     added_count = 0
     skipped_count = 0
@@ -229,10 +259,10 @@ def sync_players():
 
             if "ABFNumber" in item:
                 abf_number = item["ABFNumber"]
-                print(f"using ABFNumber: {item['ABFNumber']} {item['GivenNames']} {item['Surname']} {item['IsActive']}")
+                # print(f"using ABFNumber: {item['ABFNumber']} {item['GivenNames']} {item['Surname']} {item['IsActive']}")
             elif "ABFNumberRaw" in item:
                 abf_number = item["ABFNumberRaw"]
-                print(f"using ABFNumberRaw: {item['ABFNumberRaw']} {item['GivenNames']} {item['Surname']} {item['IsActive']}")
+                # print(f"using ABFNumberRaw: {item['ABFNumberRaw']} {item['GivenNames']} {item['Surname']} {item['IsActive']}")
             else:
                 print("Skipping record with no ABF number")
                 print(item)
@@ -271,12 +301,14 @@ def sync_players():
     print(
         f"Unmatched Users: {unmatched_users}. Unmatched Unregistered Users: {unmatched_unreg_users}"
     )
-
+    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
 
 def sync_mp_batches():
     """MPBatches -> MPBatch"""
 
     print("syncing MP Batches...")
+
+    start_time = time.perf_counter()
 
     batch_size = 5000
 
@@ -332,11 +364,15 @@ def sync_mp_batches():
     # Anything that still has the check flag as false was not found on the MPC side
     MPBatch.objects.filter(check_flag=False).delete()
 
+    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+
 
 def sync_mp_trans(full_sync=False):
     """MPTrans -> MPTrans"""
 
     print("syncing MP Trans...")
+
+    start_time = time.perf_counter()
 
     batch_size = 5000
     rewind = 500_000
@@ -364,7 +400,7 @@ def sync_mp_trans(full_sync=False):
             data_returned = True
 
             mp_trans = (
-                MPTran.objects.filter(old_mpc_id=item["TranID"]).first() or MPTran(item["TranID"])
+                MPTran.objects.filter(old_mpc_id=item["TranID"]).first() or MPTran(old_mpc_id=item["TranID"])
             )
             mp_trans.old_mpc_player_id = item["PlayerID"]
             mp_trans.old_mp_batch_id = item["MPBatchID"]
@@ -402,11 +438,15 @@ def sync_mp_trans(full_sync=False):
         min_batch = max_batch + 1
         max_batch = max_batch + batch_size
 
+    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+
 
 def sync_mpc_club_membership_history(full_sync=False):
     """ClubMembership -> ClubMembershipHistory"""
 
     print("syncing club membership history...")
+
+    start_time = time.perf_counter()
 
     # Get the last id we know about
     min_batch = (
@@ -445,6 +485,8 @@ def sync_mpc_club_membership_history(full_sync=False):
 
         membership.save()
 
+    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
@@ -459,9 +501,9 @@ class Command(BaseCommand):
         # sync_periods()
         # sync_ranks()
         # sync_promotions()
-        sync_mp_batches()
-        # sync_mp_trans(full_sync=True)
-        # sync_mpc_club_membership_history()
+        # sync_mp_batches()
+        sync_mp_trans(full_sync=True)
+        sync_mpc_club_membership_history()
 
         # profiler = cProfile.Profile()
         #
