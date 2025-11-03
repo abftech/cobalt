@@ -26,7 +26,7 @@ class UserAdmin(admin.ModelAdmin):
 class UnregisteredUserAdmin(admin.ModelAdmin):
     """Admin class for model UnregisteredUser"""
 
-    search_fields = ["last_name", "first_name", "system_number"]
+    search_fields = ["last_name", "first_name", "=system_number", "=old_mpc_id"]
 
     autocomplete_fields = [
         "last_updated_by",
