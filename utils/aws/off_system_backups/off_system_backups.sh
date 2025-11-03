@@ -32,7 +32,7 @@ then
 fi
 
 # Backup file system
-if ! ./04_file_system_backup.sh
+if ! ./04_file_system_backup.sh "$1"
 then
   exit 1
 fi
