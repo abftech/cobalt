@@ -200,6 +200,10 @@ class MPBatch(models.Model):
     {"ORDINAL_POSITION":18,"COLUMN_NAME":"HowSubmitted","DATA_TYPE":"char","CHARACTER_MAXIMUM_LENGTH":1,"IS_NULLABLE":"YES"},
     {"ORDINAL_POSITION":19,"COLUMN_NAME":"EventMonth","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":3,"IS_NULLABLE":"YES"}]
     """
+    masterpoint_event = models.ForeignKey(MasterpointEvent, on_delete=models.PROTECT, null=True, blank=True)
+    """ We link to either an Event (in Masterpoints terminology) or a club """
+    club = models.ForeignKey(Organisation, on_delete=models.PROTECT, null=True, blank=True)
+    """ We link to either an Event (in Masterpoints terminology) or a club """
     old_mpc_id = models.PositiveIntegerField(unique=True, db_index=True)
     mps_submitted_green = models.DecimalField(
         decimal_places=2, max_digits=10, null=True, blank=True
@@ -225,6 +229,9 @@ class MPBatch(models.Model):
     uploaded_filename = models.CharField(max_length=100, null=True, blank=True)
     how_submitted = models.CharField(max_length=1)
     event_month = models.CharField(max_length=3, null=True, blank=True)
+
+    check_flag = models.BooleanField(default=False)
+    """ temporary. Used while we sync with the MPC. Can be removed later """
 
     class Meta:
         verbose_name_plural = "MP Batches"

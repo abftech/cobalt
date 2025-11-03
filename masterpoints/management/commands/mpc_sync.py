@@ -17,7 +17,7 @@ from masterpoints.models import (
     Promotion,
     MPBatch,
     MPTran,
-    ClubMembershipHistory,
+    ClubMembershipHistory, MPSource,
 )
 from masterpoints.views import get_abf_checksum
 from organisations.models import Organisation
@@ -229,6 +229,7 @@ def sync_players():
 
             if "ABFNumber" in item:
                 abf_number = item["ABFNumber"]
+                print(f"using ABFNumber: {item['ABFNumber']} {item['GivenNames']} {item['Surname']} {item['IsActive']}")
             elif "ABFNumberRaw" in item:
                 abf_number = item["ABFNumberRaw"]
                 print(f"using ABFNumberRaw: {item['ABFNumberRaw']} {item['GivenNames']} {item['Surname']} {item['IsActive']}")
@@ -285,6 +286,9 @@ def sync_mp_batches():
     )
     max_batch = min_batch + batch_size
 
+    # Update the check flag so we know if something has been deleted
+    MPBatch.objects.filter(id__gte=min_batch).update(check_flag=False)
+
     data_returned = True
 
     while data_returned:
@@ -293,8 +297,9 @@ def sync_mp_batches():
         for item in masterpoint_query_list(f"mpci-batches/{min_batch}/{max_batch}"):
             data_returned = True
 
-            mp_batch = MPBatch()
-            mp_batch.old_mpc_id = item["MPBatchID"]
+            mp_batch = MPBatch.objects.filter(old_mpc_id=item["MPBatchID"]).first() or MPBatch(old_mpc_id=item["MPBatchID"])
+
+            mp_batch.check_flag = True
             mp_batch.mps_submitted_green = item["MPsSubmittedGreen"]
             mp_batch.mps_submitted_red = item["MPsSubmittedRed"]
             mp_batch.mps_submitted_gold = item["MPsSubmittedGold"]
@@ -314,10 +319,19 @@ def sync_mp_batches():
             mp_batch.how_submitted = item["HowSubmitted"]
             mp_batch.event_month = item["EventMonth"]
 
+            # Map to MasterpointEvent or Organisation
+            if mp_batch.source == MPSource.CLUB:
+                mp_batch.club_id = mp_batch.event_or_club_id
+            elif mp_batch.source == MPSource.EVENT:
+                mp_batch.masterpoint_event_id = mp_batch.event_or_club_id
+
             mp_batch.save()
 
         min_batch = max_batch + 1
         max_batch = max_batch + batch_size
+
+    # Anything that still has the check flag as false was not found on the MPC side
+    MPBatch.objects.filter(check_flag=False).delete()
 
 
 def sync_mp_trans(full_sync=False):
@@ -382,7 +396,7 @@ def sync_mp_trans(full_sync=False):
                 mp_trans.mp_batch = mp_batch
             else:
                 print(
-                    f"No matching user found for BatchID={item['MPBatchID']}. MPTransID={item['TranID']}"
+                    f"No matching batch found for BatchID={item['MPBatchID']}. MPTransID={item['TranID']}"
                 )
                 continue
 
@@ -439,18 +453,18 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         print("Running mpc_sync")
 
-        # sync_clubs()
+        sync_clubs()
         sync_players()
-        # sync_charge_types()
-        # sync_events(masterpoint_query_list("mpci-events"))
-        # sync_events(masterpoint_query_list("mpci-deleted-events"), force_closed=True)
-        # sync_green_point_achievement_bands()
-        # sync_periods()
-        # sync_ranks()
-        # sync_promotions()
-        # sync_mp_batches()
-        # sync_mp_trans(full_sync=True)
-        # sync_mpc_club_membership_history()
+        sync_charge_types()
+        sync_events(masterpoint_query_list("mpci-events"))
+        sync_events(masterpoint_query_list("mpci-deleted-events"), force_closed=True)
+        sync_green_point_achievement_bands()
+        sync_periods()
+        sync_ranks()
+        sync_promotions()
+        sync_mp_batches()
+        sync_mp_trans(full_sync=True)
+        sync_mpc_club_membership_history()
 
         # profiler = cProfile.Profile()
         #
