@@ -1,8 +1,4 @@
-import cProfile
 import datetime
-import io
-import pstats
-import sys
 import time
 
 from django.core.management.base import BaseCommand
@@ -21,10 +17,14 @@ from masterpoints.models import (
     MPTran,
     ClubMembershipHistory, MPSource,
 )
-from masterpoints.views import get_abf_checksum
 from organisations.models import Organisation
 
 SYSTEM_ACCOUNT = User.objects.filter(pk=3).first()
+
+def _print_timing(start_time):
+    """ Helper to print time taken for each function to run """
+    
+    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
 
 
 def sync_charge_types():
@@ -48,7 +48,7 @@ def sync_charge_types():
         item.mps_or_player = charge_type["MPsOrPlayers"]
         item.save()
 
-    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+    _print_timing(start_time)
 
 
 def sync_events(query_list, force_closed=False):
@@ -93,7 +93,7 @@ def sync_events(query_list, force_closed=False):
 
         item.save()
 
-    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+    _print_timing(start_time)
 
 
 def sync_clubs():
@@ -127,7 +127,7 @@ def sync_clubs():
         club.old_mpc_id = org["ClubID"]
         club.save()
 
-    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+    _print_timing(start_time)
 
 
 def sync_green_point_achievement_bands():
@@ -148,7 +148,7 @@ def sync_green_point_achievement_bands():
 
         band.save()
 
-    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+    _print_timing(start_time)
 
 def sync_periods():
     """Periods -> Period"""
@@ -169,7 +169,7 @@ def sync_periods():
 
         period.save()
 
-    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+    _print_timing(start_time)
 
 def sync_ranks():
     """Ranks -> Rank"""
@@ -192,7 +192,7 @@ def sync_ranks():
 
         rank.save()
 
-    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+    _print_timing(start_time)
 
 def sync_promotions():
     """Promotions -> Promotion"""
@@ -231,7 +231,7 @@ def sync_promotions():
 
         promotion.save()
 
-    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+    _print_timing(start_time)
 
 
 def sync_players():
@@ -302,7 +302,7 @@ def sync_players():
     print(
         f"Unmatched Users: {unmatched_users}. Unmatched Unregistered Users: {unmatched_unreg_users}"
     )
-    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+    _print_timing(start_time)
 
 def sync_mp_batches():
     """MPBatches -> MPBatch"""
@@ -365,7 +365,7 @@ def sync_mp_batches():
     # Anything that still has the check flag as false was not found on the MPC side
     MPBatch.objects.filter(check_flag=False).delete()
 
-    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+    _print_timing(start_time)
 
 
 def sync_mp_trans(full_sync=False):
@@ -439,7 +439,7 @@ def sync_mp_trans(full_sync=False):
         min_batch = max_batch + 1
         max_batch = max_batch + batch_size
 
-    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+    _print_timing(start_time)
 
 
 def sync_mpc_club_membership_history(full_sync=False):
@@ -486,13 +486,14 @@ def sync_mpc_club_membership_history(full_sync=False):
 
         membership.save()
 
-    print(f"Run time(H:M:S:ms): {str(datetime.timedelta(seconds=time.perf_counter() - start_time))}"[:-4])
+    _print_timing(start_time)
 
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
         print("Running mpc_sync")
 
+        # Order matters, we need to link to foreign keys so they need to exist first
         sync_clubs()
         sync_players()
         sync_charge_types()
@@ -506,27 +507,3 @@ class Command(BaseCommand):
         sync_mp_trans(full_sync=True)
         sync_mpc_club_membership_history()
 
-        # profiler = cProfile.Profile()
-        #
-        # # Enable profiling
-        # profiler.enable()
-        #
-        # # Run the code you want to profile
-        # sync_mp_trans(full_sync=True)
-        #
-        # # Disable profiling
-        # profiler.disable()
-        #
-        # # Create a StringIO object to capture the profile output
-        # s = io.StringIO()
-        #
-        # # Create a pstats.Stats object from the profiler data
-        # # Sort the statistics by cumulative time for better insight into bottlenecks
-        # sortby = pstats.SortKey.CUMULATIVE
-        # ps = pstats.Stats(profiler, stream=s).sort_stats(sortby)
-        #
-        # # Print the statistics to the StringIO object
-        # ps.print_stats()
-        #
-        # # Print the captured profile output
-        # print(s.getvalue())
