@@ -236,13 +236,10 @@ def download_abf_card_pdf(request):
     except AttributeError:
         return HttpResponse("User details not found", status=400)
 
-    qry = f"{GLOBAL_MPSERVER}/mps/{system_number}"
-    try:
-        summary = masterpoint_query_local(qry)[0]
-    except IndexError:
-        return HttpResponse("User details not found", status=400)
+    mp_source = masterpoint_factory_creator()
+    summary = mp_source.user_summary(system_number)
 
-    club_name = _get_club_name(summary["HomeClubID"])
+    club_name = summary["home_club"]
 
     if not club_name:
         return HttpResponse("Club details not found", status=400)
@@ -270,18 +267,6 @@ def download_abf_card_pdf(request):
     # rewind and return the file
     buffer.seek(0)
     return FileResponse(buffer, filename=f"ABF Registration for {system_number}.pdf")
-
-
-def _get_club_name(club_id):
-    """
-    Return the club name from the club_id
-    """
-
-    qry = f"{GLOBAL_MPSERVER}/club/{club_id}"
-    club_details = masterpoint_query_local(qry)
-    print(club_details)
-
-    return club_details[0]["ClubName"]
 
 
 def _draw_membership_card(pdf, summary, width, height, expiry, club_name):
@@ -473,48 +458,19 @@ def abf_registration_card_htmx(request):
     if not abf_number and not first_name and not last_name:
         return HttpResponse("")
 
-    if abf_number:
+    mp_source = masterpoint_factory_creator()
+    status, active_matches = mp_source.user_search(abf_number, first_name, last_name)
 
-        try:
-            matches = requests.get(f"{GLOBAL_MPSERVER}/mps/{abf_number}").json()
-        except JSONDecodeError:
-            return HttpResponse("<h2>No match found</h2>")
+    if not status:
+        return HttpResponse(f"<h2>{active_matches}</h2>")
 
-        if len(matches) == 0:
-            return HttpResponse("<h2>No match found</h2>")
-    elif not first_name:  # last name only
-        try:
-            matches = requests.get(
-                f"{GLOBAL_MPSERVER}/lastname_search/{last_name}"
-            ).json()
-        except JSONDecodeError:
-            return HttpResponse("<h2>Error loading data<h2>")
-
-    elif not last_name:  # first name only
-        try:
-            matches = requests.get(
-                f"{GLOBAL_MPSERVER}/firstname_search/{first_name}"
-            ).json()
-        except JSONDecodeError:
-            return HttpResponse("<h2>Error loading data<h2>")
-    else:  # first and last names
-        try:
-            matches = requests.get(
-                f"{GLOBAL_MPSERVER}/firstlastname_search/{first_name}/{last_name}"
-            ).json()
-        except JSONDecodeError:
-            return HttpResponse("<h2>Error loading data<h2>")
-    # Filter out inactive
-    active_matches = []
-    for match in matches:
-        if match["IsActive"] == "Y":
-            active_matches.append(match)
-
-    if not active_matches:
-        return HttpResponse("<h2>No match found</h2>")
+    if MP_USE_DJANGO:
+        template =  "masterpoints/registration_card_logged_out_htmx.html"
+    else:
+        template =  "masterpoints/registration_card_logged_out_htmx_old.html"
 
     return render(
         request,
-        "masterpoints/registration_card_logged_out_htmx.html",
+       template,
         {"matches": active_matches},
     )

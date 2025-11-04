@@ -12,11 +12,11 @@
     {% for match in matches %}
 
         <tr>
-            <td style="text-align: left; padding-left: 25px">{{ match.ABFNumber }}</td>
-            <td style="text-align: left; padding-left: 25px">{{ match.GivenNames }} {{ match.Surname }}</td>
-            <td style="text-align: left; padding-left: 25px">{{ match.ClubName }}</td>
-            <td style="text-align: left; padding-left: 25px">{{ match.RankName }} Master</td>
-            <td style="padding-left: 25px; text-decoration: underline"><a href="{% url "masterpoints:abf_card" %}?abf_number={{ match.ABFNumber }}" target="_blank">Download Card</a></td>
+            <td style="text-align: left; padding-left: 25px">{{ match.system_number }}</td>
+            <td style="text-align: left; padding-left: 25px">{{ match.full_name }}</td>
+            <td style="text-align: left; padding-left: 25px">{{ match.club_name }}</td>
+            <td style="text-align: left; padding-left: 25px">{{ match.rank }} Master</td>
+            <td style="padding-left: 25px; text-decoration: underline"><a href="{% url "masterpoints:abf_card" %}?abf_number={{ match.system_number }}" target="_blank">Download Card</a></td>
         </tr>
 
     {% endfor %}

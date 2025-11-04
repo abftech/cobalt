@@ -7,8 +7,9 @@ import pytz
 import requests
 from dateutil.relativedelta import relativedelta
 from django.contrib import messages
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.shortcuts import redirect
+from requests import JSONDecodeError
 
 from accounts.models import User, UnregisteredUser
 from cobalt.settings import GLOBAL_MPSERVER, MP_USE_FILE, MP_USE_DJANGO, TIME_ZONE
@@ -371,7 +372,50 @@ class MasterpointDB(MasterpointFactory):
                 "timescale": timescale,
             }
 
+    def user_search(self, abf_number, first_name, last_name):
+        """ search for a user """
 
+        if abf_number:
+            try:
+                matches = requests.get(f"{GLOBAL_MPSERVER}/mps/{abf_number}").json()
+            except JSONDecodeError:
+                return False, "No match found"
+
+            if len(matches) == 0:
+                return False, "No match found"
+        elif not first_name:  # last name only
+            try:
+                matches = requests.get(
+                    f"{GLOBAL_MPSERVER}/lastname_search/{last_name}"
+                ).json()
+            except JSONDecodeError:
+                return False, "Error loading data"
+
+        elif not last_name:  # first name only
+            try:
+                matches = requests.get(
+                    f"{GLOBAL_MPSERVER}/firstname_search/{first_name}"
+                ).json()
+            except JSONDecodeError:
+                return False, "Error loading data"
+        else:  # first and last names
+            try:
+                matches = requests.get(
+                    f"{GLOBAL_MPSERVER}/firstlastname_search/{first_name}/{last_name}"
+                ).json()
+            except JSONDecodeError:
+                return False, "Error loading data"
+
+        # Filter out inactive
+        active_matches = []
+        for match in matches:
+            if match["IsActive"] == "Y":
+                active_matches.append(match)
+
+        if not active_matches:
+            return False, "No match found"
+
+        return True, active_matches
 
 class MasterpointDjango(MasterpointFactory):
     """Concrete implementation of a masterpoint factory using local tables in Django to get the data"""
@@ -527,9 +571,10 @@ class MasterpointDjango(MasterpointFactory):
 
         # Get the details
         start_date = datetime.now(tz=TZ) - relativedelta(years=years)
-        details = MPTran.objects.filter(system_number=system_number).filter(mp_batch__posted_date__gte=start_date).order_by("-mp_batch__posted_date")
+        details = MPTran.objects.filter(system_number=system_number).filter(mp_batch__posted_date__gte=start_date).order_by("-mp_batch__posted_date").select_related("mp_batch", "mp_batch__club", "mp_batch__masterpoint_event")
 
-        counter = summary["TotalMPs"]  # we need to construct the balance to show
+        # we need to construct the balance to show
+        counter = summary["TotalMPs"]
         gold = float(summary["TotalGold"])
         red = float(summary["TotalRed"])
         green = float(summary["TotalGreen"])
@@ -643,6 +688,32 @@ class MasterpointDjango(MasterpointFactory):
                 "system_number": system_number,
                 "timescale": timescale,
             }
+
+    def user_search(self, abf_number, first_name, last_name):
+        """ search for a user """
+        
+        user_base_query = User.objects.exclude(is_active=False)
+        un_reg_base_query = UnregisteredUser.objects.exclude(is_active=False)
+
+        if abf_number:
+            matches = user_base_query.filter(system_number=abf_number) or un_reg_base_query.filter(system_number=abf_number)
+
+        elif not first_name:  # last name only
+            user_matches = user_base_query.filter(last_name__icontains=last_name)
+            un_reg_matches = un_reg_base_query.filter(last_name__icontains=last_name)
+            matches = list(user_matches) + list(un_reg_matches)
+
+        elif not last_name:  # first name only
+            user_matches = user_base_query.filter(first_name__icontains=first_name)
+            un_reg_matches = un_reg_base_query.filter(first_name__icontains=first_name)
+            matches = list(user_matches) + list(un_reg_matches)
+
+        else:  # first and last names
+            user_matches = user_base_query.filter(Q(first_name__icontains=first_name) & Q(last_name__icontains=last_name))
+            un_reg_matches = un_reg_base_query.filter(Q(first_name__icontains=first_name) & Q(last_name__icontains=last_name))
+            matches = list(user_matches) + list(un_reg_matches)
+
+        return (True, matches) if matches else (False, "No match found")
 
 class MasterpointFile(MasterpointFactory):
     """Concrete implementation of a masterpoint factory using a file to get the data"""
