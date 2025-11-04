@@ -9,7 +9,6 @@
 {% extends 'base.html' %}
 {% load humanize %}
 {% load static %}
-{% load cobalt_tags %}
 {% block title %} - MasterPoints{% endblock %}
 
 {% block header %}
@@ -220,9 +219,7 @@
                                             <div class="card-header card-header-warning">
                                                 <h4 class="card-title">
                                                     Recent Activity
-                                                </h4>
                                                 </div>
-
                                                 <div class="card-body table-responsive">
                                                     <table class="table table-hover">
                                                         <thead class="text-info">
@@ -247,20 +244,19 @@
                                                                                     {% for row in details %}
 
                                                                                         <tr>
-                                                                                            <td>{{ row.mp_batch.posted_date|date:"M-Y" }}
-                                                                                                <td>{{ row.mp_batch.masterpoint_event|default_if_none:"" }}
-                                                                                                    {{ row.mp_batch.club|default_if_none:"" }}
+                                                                                            <td>{{ row.PostingDateDisplay }}
+                                                                                                <td>{{ row.EventDescription }}
                                                                                                     <td class="text-right" style="color: orange;">
-                                                                                                        {% if row.mp_colour == "Y" %}
-                                                                                                            {{ row.mp_amount |floatformat:2 }}
+                                                                                                        {% if row.MPColour == "Y" %}
+                                                                                                            {{ row.mps |floatformat:2 }}
                                                                                                         {% endif %}
                                                                                                         <td class="text-right" style="color: red;">
-                                                                                                            {% if row.mp_colour == "R" %}
-                                                                                                                {{ row.mp_amount|floatformat:2 }}
+                                                                                                            {% if row.MPColour == "R" %}
+                                                                                                                {{ row.mps|floatformat:2 }}
                                                                                                             {% endif %}
                                                                                                             <td class="text-right" style="color: green;">
-                                                                                                                {% if row.mp_colour == "G" %}
-                                                                                                                    {{ row.mp_amount|floatformat:2 }}
+                                                                                                                {% if row.MPColour == "G" %}
+                                                                                                                    {{ row.mps|floatformat:2 }}
                                                                                                                 {% endif %}
                                                                                                                 <td class="text-right">{{ row.running_total|floatformat:2|intcomma }}
                                                                                                                 </tr>
