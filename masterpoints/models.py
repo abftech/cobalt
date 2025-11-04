@@ -238,7 +238,7 @@ class MPBatch(models.Model):
         verbose_name_plural = "MP Batches"
 
     def __str__(self):
-        return f"{self.old_mpc_id} {self.posted_date}"
+        return f"{self.old_mpc_id} {self.posted_date:%Y-%m-%d}"
 
 
 class MPTran(models.Model):
@@ -287,6 +287,9 @@ class ClubMembershipHistory(models.Model):
     """ only needed temporarily """
     club = models.ForeignKey(Organisation, on_delete=models.PROTECT)
     home_members = models.PositiveIntegerField()
+
+    class Meta:
+        verbose_name_plural = "Club Membership Histories"
 
     def __str__(self):
         return f"{self.club} - {self.billing_year}/{self.billing_month} - {self.home_members}"
