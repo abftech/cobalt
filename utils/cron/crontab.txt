@@ -1,14 +1,17 @@
 # Crontab file for all AWS environments - NEEDS BLANK LINE AT END
 CRON_TZ=Australia/Sydney
 # Run the email check cron every 2 minutes
-# use sleep 30 ; to run more oftenq
-# delete_basket_items_with_payments can be removed after 1.1.9 is released
-# */2 * * * * /var/app/current/utils/cron/wrapper.sh email_sender_cron
-# */2 * * * * /var/app/current/utils/cron/wrapper.sh delete_basket_items_with_payments
+# use sleep 30 ; to run more often
 * * * * * /var/app/current/utils/cron/wrapper.sh post_office_email_sender_cron
 * * * * * sleep 30; /var/app/current/utils/cron/wrapper.sh post_office_email_sender_cron
+# Close old helpdesk tickets
 0 21 * * * /var/app/current/utils/cron/wrapper.sh close_old_helpdesk_tickets
+# Get rid of old notifications
 0 22 * * * /var/app/current/utils/cron/wrapper.sh delete_old_in_app_notifications
+# Handle congresses that are finished but have outstanding payments
 0 23 * * * /var/app/current/utils/cron/wrapper.sh handle_closed_congresses_with_unpaid_entries
+# Memberships
 5 3 * * * /var/app/current/utils/cron/wrapper.sh update_membership_status
 5 23 * * * /var/app/current/utils/cron/wrapper.sh auto_pay_batch
+# Temporary sync with MPC
+1 0 * * * /var/app/current/utils/cron/wrapper_by_env.sh mpc_sync
