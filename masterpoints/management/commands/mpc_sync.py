@@ -363,7 +363,9 @@ def sync_mp_batches():
         max_batch = max_batch + batch_size
 
     # Anything that still has the check flag as false was not found on the MPC side
-    MPBatch.objects.filter(check_flag=False).delete()
+    missing = MPBatch.objects.filter(check_flag=False)
+    print(f"Found {missing.count()} deleted batches. Removing from MyABF")
+    missing.delete()
 
     _print_timing(start_time)
 
@@ -489,6 +491,6 @@ class Command(BaseCommand):
         sync_ranks()
         sync_promotions()
         sync_mp_batches()
-        sync_mp_trans(full_sync=True)
+        sync_mp_trans(full_sync=False)
         sync_mpc_club_membership_history()
 
