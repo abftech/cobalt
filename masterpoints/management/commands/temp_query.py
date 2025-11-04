@@ -2,7 +2,8 @@ from django.core.management import BaseCommand
 from django.db.models import F, Value, CharField, Sum
 from django.db.models.functions import Coalesce
 
-from masterpoints.models import MPTran
+from masterpoints.models import MPTran, Rank
+
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
@@ -56,7 +57,26 @@ class Command(BaseCommand):
         #
         # print(view_player_trans)
 
-        total_mps = MPTran.objects.filter(system_number=436178, mp_colour="Y").aggregate(Sum("mp_amount"))
+
+        player = 620246
+
+        total_mps = MPTran.objects.filter(system_number=player).values("mp_colour").order_by("mp_colour").annotate(total=Sum("mp_amount"))
         print(total_mps)
-        total_mps = MPTran.objects.filter(system_number=436178, mp_colour="Y")
-        print(total_mps)
+
+        green = 0
+        red = 0
+        gold = 0
+
+        for item in total_mps:
+            if item["mp_colour"] == "G":
+                green = item["total"]
+            elif item["mp_colour"] == "R":
+                red = item["total"]
+            if item["mp_colour"] == "Y":
+                gold = item["total"]
+
+        total = green + red + gold
+
+        rank = Rank.objects.filter(total_needed__lte=total, gold_needed__lte=gold, red_gold_needed__lte=red+gold).last()
+
+        print(rank)

@@ -288,6 +288,7 @@ def sync_players():
                 added_count += 1
 
             user.old_mpc_id = item["PlayerID"]
+            user.is_active = item["IsActive"] == "Y"
             user.save()
 
         min_batch = max_batch + 1
@@ -478,16 +479,16 @@ class Command(BaseCommand):
         print("Running mpc_sync")
 
         # Order matters, we need to link to foreign keys so they need to exist first
-        # sync_clubs()
-        # sync_players()
-        # sync_charge_types()
-        # sync_events(masterpoint_query_list("mpci-events"))
-        # sync_events(masterpoint_query_list("mpci-deleted-events"), force_closed=True)
-        # sync_green_point_achievement_bands()
-        # sync_periods()
-        # sync_ranks()
-        # sync_promotions()
-        # sync_mp_batches()
+        sync_clubs()
+        sync_players()
+        sync_charge_types()
+        sync_events(masterpoint_query_list("mpci-events"))
+        sync_events(masterpoint_query_list("mpci-deleted-events"), force_closed=True)
+        sync_green_point_achievement_bands()
+        sync_periods()
+        sync_ranks()
+        sync_promotions()
+        sync_mp_batches()
         sync_mp_trans(full_sync=True)
-        # sync_mpc_club_membership_history()
+        sync_mpc_club_membership_history()
 

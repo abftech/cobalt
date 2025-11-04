@@ -144,6 +144,7 @@ NEW_RELIC_APP_ID = set_value("NEW_RELIC_APP_ID", "601323710")
 
 # Masterpoint source
 MP_USE_FILE = set_value("MP_USE_FILE", None)
+MP_USE_DJANGO = set_value("MP_USE_DJANGO", None)
 
 # database
 RDS_DB_NAME = set_value("RDS_DB_NAME")
