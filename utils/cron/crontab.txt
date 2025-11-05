@@ -14,4 +14,4 @@ CRON_TZ=Australia/Sydney
 5 3 * * * /var/app/current/utils/cron/wrapper.sh update_membership_status
 5 23 * * * /var/app/current/utils/cron/wrapper.sh auto_pay_batch
 # Temporary sync with MPC
-1 0 * * * /var/app/current/utils/cron/wrapper_by_env.sh mpc_sync
+# 1 0 * * * /var/app/current/utils/cron/wrapper_by_env.sh mpc_sync
