@@ -4,14 +4,30 @@
 
 #  TODO: This really needs a 4th option (or another script) - restore from the actual offsite backups on BackBlaze
 
+# Get most recent backup stored locally
+NEWEST_FILE=$(ls -t ~/abf_backup/* | head -1)
+NEWEST_DATE=$(ls -la $NEWEST_FILE | awk '{print $6, $7}')
+
 # Check if we are running off system backups locally or copying from latest
 echo ""
 echo "1. Copy latest off system backup from LightSail (Old. Full including email)"
 echo "2. Take a new backup (Current. Full including email)"
 echo "3. Take a new backup faster (Current. Short, excludes emails)"
+echo "4. Take a new backup without a snapshot even faster (Current, excludes emails, excludes file system)"
+echo "5. Restore an existing copy. Most recent copy is $NEWEST_DATE"
 echo ""
 echo -n "Option: "
 read OPTION
+
+if [ "$OPTION" = "5" ]
+then
+  _cgit_restore_local_db prod_load "$NEWEST_FILE"
+fi
+
+if [ "$OPTION" = "4" ]
+then
+  cgit_util_dirty_copy_prod
+fi
 
 if [ "$OPTION" = "3" ]
 then
