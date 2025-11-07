@@ -29,6 +29,22 @@ def no_future(value):
         raise ValidationError("Date cannot be in the future.")
 
 
+class UserManager(models.Manager):
+    """
+    Added when UnregisteredUsers were merged into the User object so anything referencing User.objects didn't
+    need to be changed.
+    """
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                user_type=User.UserType.USER,
+            )
+        )
+
+
 class User(AbstractUser):
     """
     User class based upon AbstractUser.
@@ -127,11 +143,13 @@ class User(AbstractUser):
 ,{"ORDINAL_POSITION":90,"COLUMN_NAME":"IsPrinting1000ClubThisMonth","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":1,"IS_NULLABLE":"NO"
     """
 
-    class CovidStatus(models.TextChoices):
-        UNSET = "US", "Unset"
-        USER_CONFIRMED = "UC", "User Confirmed"
-        ADMIN_CONFIRMED = "AC", "Administrator Confirmed"
-        USER_EXEMPT = "AV", "User Medically Exempt from Vaccination"
+    class UserType(models.TextChoices):
+        USER = "U", "User"
+        """ A 'normal' registered user with a password and validated email address """
+        UNREGISTERED = "N", "Unregistered"
+        """ A member of the ABF with a valid ABF number, but not a user of MyABF, can be converted to a User """
+        CONTACT = "C", "Contact"
+        """ A contact for an organisation who is not an ABF member """
 
     email = models.EmailField(unique=False)
     system_number = models.IntegerField(
@@ -140,6 +158,7 @@ class User(AbstractUser):
         unique=True,
         db_index=True,
     )
+    user_type = models.CharField(max_length=1, choices=UserType.choices, default=UserType.USER)
 
     deceased = models.BooleanField("Deceased", default=False)
     """ Player is deceased, status set by My ABF support """
@@ -206,12 +225,11 @@ class User(AbstractUser):
     )
     last_activity = models.DateTimeField(blank="True", null=True)
 
-    covid_status = models.CharField(
-        choices=CovidStatus.choices, max_length=2, default=CovidStatus.UNSET
-    )
-
     old_mpc_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
     """ Temporary link to old Masterpoint Centre record, required for MPC work """
+
+    all_objects = models.Manager()
+    objects = UserManager()
 
     REQUIRED_FIELDS = [
         "system_number",
@@ -222,12 +240,12 @@ class User(AbstractUser):
         if self.id in (TBA_PLAYER, RBAC_EVERYONE, ABF_USER):
             return self.first_name
         else:
-            return "%s (%s: %s)" % (self.full_name, GLOBAL_ORG, self.system_number)
+            return f"{self.full_name} ({GLOBAL_ORG}: {self.system_number})"
 
     @property
     def full_name(self):
         """Returns the person's full name."""
-        return "%s %s" % (self.first_name, self.last_name)
+        return f"{self.first_name} {self.last_name}"
 
     @property
     def href(self):
