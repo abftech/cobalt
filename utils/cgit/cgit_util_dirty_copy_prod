@@ -79,3 +79,7 @@ psql </tmp/drop_db_prod_copy
 # Load the database
 printf "Loading the data into the local database...\n"
 pg_restore -d $LOCAL_DB_NAME --no-owner --no-privileges --role=cobalt -v ~/abf_backup/cobalt_prod_dump.$(date '+%Y-%m-%d')
+
+# sanitise the data
+export RDS_HOSTNAME=$LOCAL_DB_NAME
+./manage.py sanitise_production_data_for_testing
