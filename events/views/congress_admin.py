@@ -1677,7 +1677,7 @@ def admin_move_entry(request, event_entry_id):
         event_entry.save()
 
         # Update payment details
-        _admin_move_entry_payments(request, event_entry)
+        _admin_move_entry_payments(request, event_entry, old_entry)
 
         # Log it
 
@@ -1743,7 +1743,7 @@ def admin_move_entry(request, event_entry_id):
     )
 
 
-def _admin_move_entry_payments(request, event_entry):
+def _admin_move_entry_payments(request, event_entry, old_entry):
     """update payment info when an entry is moved"""
 
     for event_entry_player in EventEntryPlayer.objects.filter(event_entry=event_entry):
@@ -1762,9 +1762,13 @@ def _admin_move_entry_payments(request, event_entry):
         # Find a matching payment
         min_date = event_entry_player.entry_complete_date - timedelta(seconds=5)
         max_date = event_entry_player.entry_complete_date + timedelta(seconds=5)
-        matches = OrganisationTransaction.objects.filter(
-            created_date__lt=max_date, created_date__gt=min_date
-        ).filter(member=event_entry_player.paid_by)
+        matches = (
+            OrganisationTransaction.objects.filter(
+                created_date__lt=max_date, created_date__gt=min_date
+            )
+            .filter(member=event_entry_player.paid_by)
+            .filter(event_id=old_entry.id)
+        )
 
         if len(matches) == 0:
             EventLog(
