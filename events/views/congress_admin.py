@@ -1768,6 +1768,7 @@ def _admin_move_entry_payments(request, event_entry, old_entry):
             )
             .filter(member=event_entry_player.paid_by)
             .filter(event_id=old_entry.id)
+            .filter(amount=event_entry_player.entry_fee)
         )
 
         if len(matches) == 0:
@@ -1779,15 +1780,7 @@ def _admin_move_entry_payments(request, event_entry, old_entry):
             ).save()
             continue
 
-        if len(matches) > 1:
-            EventLog(
-                event=event_entry.event,
-                event_entry=event_entry,
-                actor=request.user,
-                action=f"Tried to update payment records but found more than one. {matches}",
-            ).save()
-            continue
-
+        # We may get multiple matches if a player has paid for others, just take the first one
         tran = matches[0]
         EventLog(
             event=event_entry.event,
