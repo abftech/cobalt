@@ -2,18 +2,53 @@
 
 # about: Take a copy of production data locally without a snapshot
 
-# Use existing code on offsite backups
-cd utils/aws/off_system_backups
-. ./01_environment_variables.sh
-./02_update_aws_firewall_rule.sh
+# If we are on the test system then run the dump - cannot do it from a dev machine
+# directly to production
+function remote() {
+  # Temp file location
+  ENV_FILE=/tmp/prod_env
 
-if ! echo pg_dump -h "production-blue.c97jawiow7ed.ap-southeast-2.rds.amazonaws.com" -p 5432 \
-             -d "$RDS_DB_NAME" -U "$RDS_USERNAME" -F c -b -v -f "$DUMP_FILE" \
-             --exclude-table-data "public.notifications_abstractemail" \
-             --exclude-table-data "public.post_office_*"
+  printf "Downloading the environment variables...\n"
+  eb printenv cobalt-production-blue > $ENV_FILE
+
+  # Get the production password - store as environment variable for pg_dump
+  PGPASSWORD=$(grep RDS_PASSWORD $ENV_FILE | awk '{print $3}')
+  export PGPASSWORD
+
+  # Get the database server
+  RDS_HOSTNAME=$(grep RDS_HOSTNAME $ENV_FILE | awk '{print $3}')
+
+  # Get the database name
+  RDS_DB_NAME=$(grep RDS_DB_NAME $ENV_FILE | awk '{print $3}')
+  export RDS_DB_NAME
+
+  # Get the user name
+  RDS_USERNAME=$(grep RDS_USERNAME $ENV_FILE | awk '{print $3}')
+  export RDS_USERNAME
+
+  # Remove temp file
+  printf "Deleting temp file...\n"
+  rm $ENV_FILE
+
+  export DUMP_FILE="/tmp/prod_db.dump"
+
+  if ! pg_dump -h "$RDS_HOSTNAME" -p 5432 -d "$RDS_DB_NAME" -U "$RDS_USERNAME" -F c -b -v -f "$DUMP_FILE" \
+              --exclude-table-data "public.notifications_abstractemail" \
+              --exclude-table-data "public.post_office_*"
+  then
+    echo "Errors occurred!"
+    exit 1
+  fi
+
+}
+
+function local() {
+    echo "Local"
+}
+
+if [ "$COBALT_HOSTNAME" = "cobalt-test-white.myabf.com.au" ]
 then
-  echo "Errors occurred"
-  exit 1
+  remote
+else
+  local
 fi
-
-# Don't restore here as we have production credentials available in this script
