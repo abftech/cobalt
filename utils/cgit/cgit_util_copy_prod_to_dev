@@ -22,11 +22,13 @@ read OPTION
 if [ "$OPTION" = "5" ]
 then
   _cgit_restore_local_db prod_load "$NEWEST_FILE"
+  exit
 fi
 
 if [ "$OPTION" = "4" ]
 then
   cgit_util_dirty_copy_prod
+  exit
 fi
 
 if [ "$OPTION" = "3" ]
