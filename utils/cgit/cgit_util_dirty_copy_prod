@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# about: Take a copy of production data locally without a snapshot
+
+# Use existing code on offsite backups
+cd utils/aws/off_system_backups
+. ./01_environment_variables.sh
+./02_update_aws_firewall_rule.sh
+
+if ! echo pg_dump -h "production-blue.c97jawiow7ed.ap-southeast-2.rds.amazonaws.com" -p 5432 \
+             -d "$RDS_DB_NAME" -U "$RDS_USERNAME" -F c -b -v -f "$DUMP_FILE" \
+             --exclude-table-data "public.notifications_abstractemail" \
+             --exclude-table-data "public.post_office_*"
+then
+  echo "Errors occurred"
+  exit 1
+fi
+
+# Don't restore here as we have production credentials available in this script
