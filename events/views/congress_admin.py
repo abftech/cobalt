@@ -31,6 +31,7 @@ from notifications.views.core import (
 from logs.views import log_event
 from django.db import transaction, connection
 
+from payments.models import OrganisationTransaction
 from utils.views.general import download_csv
 from events.models import (
     Congress,
@@ -43,6 +44,7 @@ from events.models import (
     EventPlayerDiscount,
     Bulletin,
     BasketItem,
+    PAYMENT_STATUSES,
 )
 from accounts.models import User
 import requests
@@ -1675,6 +1677,7 @@ def admin_move_entry(request, event_entry_id):
         event_entry.save()
 
         # Update payment details
+        _admin_move_entry_payments(request, event_entry, old_entry)
 
         # Log it
 
@@ -1738,6 +1741,57 @@ def admin_move_entry(request, event_entry_id):
         "events/congress_admin/move_entry.html",
         {"events": events, "event_entry": event_entry},
     )
+
+
+def _admin_move_entry_payments(request, event_entry, old_entry):
+    """update payment info when an entry is moved"""
+
+    for event_entry_player in EventEntryPlayer.objects.filter(event_entry=event_entry):
+
+        # We only want to change bridge credits
+        if event_entry_player.payment_type not in [
+            "my-system-dollars",
+            "their-system-dollars",
+        ]:
+            continue
+
+        # We only care if payment has been made
+        if event_entry_player.payment_status != "Paid":
+            continue
+
+        # Find a matching payment
+        min_date = event_entry_player.entry_complete_date - timedelta(seconds=5)
+        max_date = event_entry_player.entry_complete_date + timedelta(seconds=5)
+        matches = (
+            OrganisationTransaction.objects.filter(
+                created_date__lt=max_date, created_date__gt=min_date
+            )
+            .filter(member=event_entry_player.paid_by)
+            .filter(event_id=old_entry.id)
+            .filter(amount=event_entry_player.entry_fee)
+        )
+
+        if len(matches) == 0:
+            EventLog(
+                event=event_entry.event,
+                event_entry=event_entry,
+                actor=request.user,
+                action=f"Tried to update payment records but did not find a match. Event_entry_player was {event_entry_player}",
+            ).save()
+            continue
+
+        # We may get multiple matches if a player has paid for others, just take the first one
+        tran = matches[0]
+        EventLog(
+            event=event_entry.event,
+            event_entry=event_entry,
+            actor=request.user,
+            action=f"Updated Payment details for moved event. Payment record was {tran.id}",
+        ).save()
+
+        # Update
+        tran.event_id = event_entry_player.event_entry.event_id
+        tran.save()
 
 
 @login_required()

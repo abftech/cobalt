@@ -27,3 +27,6 @@ if ! pg_restore -d "$RDS_DB_NAME" --no-owner --no-privileges --role=cobalt -v "$
 then
   echo "An error occurred"
 fi
+
+export RDS_DB_NAME=prod_load
+./manage.py sanitise_production_data_for_testing

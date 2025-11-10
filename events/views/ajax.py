@@ -1770,9 +1770,9 @@ def save_congress_view_filters_ajax(request):
     """Save a users preferences for viewing congresses"""
 
     # Get data
-    state = request.POST.get("state")
-    congress_type = request.POST.get("congress_type")
-    congress_venue_type = request.POST.get("congress_venue_type")
+    state = request.POST.getlist("state[]")
+    congress_type = request.POST.getlist("congress_type[]")
+    congress_venue_type = request.POST.getlist("congress_venue_type[]")
     search_string = request.POST.get("search_string")
     preferences = {
         "state": state,
