@@ -292,41 +292,34 @@
             // if dropdowns change, reload and handle resetting values
             $("#id_state, #id_congress_type, #id_congress_venue_type").on("changed.bs.select", function(e, clickedIndex, isSelected, oldValue) {
 
+                // trigger the reload from the server. Logically we would do this after fixing
+                // the data in the dropdowns, but if we do that we get a CSRF error that I can't work out
+                htmx.trigger("#events_list", "refresh_events");
+
                 // get value (after last change), this will be an array like ["NSW", "WA"]
                 let current_val = $(this).val();
 
                 // If there is nothing in the list, then select ALL
                 if (current_val.length === 0){
                     $(this).selectpicker('val', ['All']);
-                    // Even though we add all, it doesn't appear ticked, best compromise is to close the dropdown
-                    $(this).selectpicker('toggle');
+                    // Refresh or it won't appear as changed
+                    $(this).selectpicker('refresh');
                 }
 
                 // if ALL was clicked (index=0) then make that the only thing selected
-                else if (clickedIndex === 0 && current_val !== ['All']){
-                    console.log("All was clicked");
-                    console.log("clickedIndex", clickedIndex);
-                    console.log("CurrentVal", current_val);
+                else if (clickedIndex === 0 && current_val.length !== 1 ){
                     $(this).selectpicker('val', ['All']);
-                    $(this).selectpicker('toggle');
+                    $(this).selectpicker('refresh');
                 }
 
                 // If anything is selected and ALL is in the list, then remove ALL
                 else if (current_val.includes('All') && current_val.length > 1){
-                    console.log("here");
                     const new_val = current_val.filter(item => item !== "All")
                     $(this).selectpicker('val', new_val);
-                    $(this).selectpicker('toggle');
+                    $(this).selectpicker('refresh');
                 }
 
-                console.log("Outside");
-                console.log("clickedIndex", clickedIndex);
-                console.log("CurrentVal", current_val);
-
-
-
-
-                htmx.trigger("#events_list", "refresh_events");
+                // update buttons
                 manage_filter_buttons();
                 check_save_filter_button();
             });
