@@ -157,6 +157,7 @@
                             data-style="btn btn-danger"
                             id="id_state"
                             name="state"
+                            multiple
                         >
                             <option value="All">All</option>
                             {% for state in states %}
@@ -170,7 +171,8 @@
                             class="selectpicker"
                             data-style="btn btn-info"
                             id="id_congress_type"
-                            name="congress_type">
+                            name="congress_type"
+                            multiple>
                             <option value="All">All</option>
                             {% for congress_type in congress_types %}
                                 <option value="{{ congress_type.0 }}">{{ congress_type.1|title }}</option>
@@ -183,7 +185,9 @@
                             class="selectpicker"
                             data-style="btn btn-warning"
                             id="id_congress_venue_type"
-                            name="congress_venue_type">
+                            name="congress_venue_type"
+                            multiple
+                        >
                             <option value="All">All</option>
                             {% for congress_venue_type in congress_venue_types %}
                                 <option value="{{ congress_venue_type.0 }}">{{ congress_venue_type.1 }}</option>
@@ -215,13 +219,13 @@
             </form>
 
             <div id="events_list"
-                hx-post="{% url "events:congress_listing_data_htmx" %}"
-                hx-include="[id='events_form']"
-                hx-trigger="load, refresh_events"
+                 hx-post="{% url "events:congress_listing_data_htmx" %}"
+                 hx-include="[id='events_form']"
+                 hx-trigger="load, refresh_events"
 
-                {% if reverse_list %}
-                    hx-vars="reverse_list:'reverse'"
-                {% endif %}
+                 {% if reverse_list %}
+                     hx-vars="reverse_list:'reverse'"
+                 {% endif %}
             >
             </div>
 
@@ -285,8 +289,43 @@
                 evt.preventDefault();
             });
 
-            // if dropdowns change, reload
-            $("#id_state, #id_congress_type, #id_congress_venue_type").on("changed.bs.select", function() {
+            // if dropdowns change, reload and handle resetting values
+            $("#id_state, #id_congress_type, #id_congress_venue_type").on("changed.bs.select", function(e, clickedIndex, isSelected, oldValue) {
+
+                // get value (after last change), this will be an array like ["NSW", "WA"]
+                let current_val = $(this).val();
+
+                // If there is nothing in the list, then select ALL
+                if (current_val.length === 0){
+                    $(this).selectpicker('val', ['All']);
+                    // Even though we add all, it doesn't appear ticked, best compromise is to close the dropdown
+                    $(this).selectpicker('toggle');
+                }
+
+                // if ALL was clicked (index=0) then make that the only thing selected
+                else if (clickedIndex === 0 && current_val !== ['All']){
+                    console.log("All was clicked");
+                    console.log("clickedIndex", clickedIndex);
+                    console.log("CurrentVal", current_val);
+                    $(this).selectpicker('val', ['All']);
+                    $(this).selectpicker('toggle');
+                }
+
+                // If anything is selected and ALL is in the list, then remove ALL
+                else if (current_val.includes('All') && current_val.length > 1){
+                    console.log("here");
+                    const new_val = current_val.filter(item => item !== "All")
+                    $(this).selectpicker('val', new_val);
+                    $(this).selectpicker('toggle');
+                }
+
+                console.log("Outside");
+                console.log("clickedIndex", clickedIndex);
+                console.log("CurrentVal", current_val);
+
+
+
+
                 htmx.trigger("#events_list", "refresh_events");
                 manage_filter_buttons();
                 check_save_filter_button();

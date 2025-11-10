@@ -154,10 +154,12 @@ def congress_listing_data_htmx(request):
     show_forward_arrow = None
 
     # Get any parameters from the form
-    state = request.POST.get("state")
-    congress_type = request.POST.get("congress_type")
-    congress_venue_type = request.POST.get("congress_venue_type")
+    state = request.POST.getlist("state")
+    congress_type = request.POST.getlist("congress_type")
+    congress_venue_type = request.POST.getlist("congress_venue_type")
     congress_search_string = request.POST.get("congress_search_string")
+
+    print(state)
 
     # Reverse list means we want the historic date (closed events, going backwards)
     reverse_list = request.POST.get("reverse_list")
@@ -193,17 +195,18 @@ def congress_listing_data_htmx(request):
         )
 
     # Now add modifiers for the queryset
-    if state != "All":
-        congresses = congresses.filter(congress_master__org__state=state)
+    if "All" not in state:
+        congresses = congresses.filter(congress_master__org__state__in=state)
 
-    if congress_type != "All":
-        congresses = congresses.filter(congress_type=congress_type)
+    if "All" not in congress_type:
+        congresses = congresses.filter(congress_type__in=congress_type)
 
-    if congress_venue_type != "All":
+    if "All" not in congress_venue_type:
         # If user searches for face-to-face or online also show mixed
         if congress_venue_type == "F":
             congresses = congresses.filter(congress_venue_type__in=["F", "M"])
 
+        print(congress_venue_type)
         # Check for online - we can get "O" or "Ox"
         if congress_venue_type[0] == "O":
             congresses = congresses.filter(congress_venue_type__in=["O", "M"])
