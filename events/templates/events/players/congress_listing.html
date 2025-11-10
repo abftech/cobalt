@@ -157,6 +157,7 @@
                             data-style="btn btn-danger"
                             id="id_state"
                             name="state"
+                            multiple
                         >
                             <option value="All">All</option>
                             {% for state in states %}
@@ -170,7 +171,8 @@
                             class="selectpicker"
                             data-style="btn btn-info"
                             id="id_congress_type"
-                            name="congress_type">
+                            name="congress_type"
+                            multiple>
                             <option value="All">All</option>
                             {% for congress_type in congress_types %}
                                 <option value="{{ congress_type.0 }}">{{ congress_type.1|title }}</option>
@@ -183,7 +185,9 @@
                             class="selectpicker"
                             data-style="btn btn-warning"
                             id="id_congress_venue_type"
-                            name="congress_venue_type">
+                            name="congress_venue_type"
+                            multiple
+                        >
                             <option value="All">All</option>
                             {% for congress_venue_type in congress_venue_types %}
                                 <option value="{{ congress_venue_type.0 }}">{{ congress_venue_type.1 }}</option>
@@ -215,13 +219,13 @@
             </form>
 
             <div id="events_list"
-                hx-post="{% url "events:congress_listing_data_htmx" %}"
-                hx-include="[id='events_form']"
-                hx-trigger="load, refresh_events"
+                 hx-post="{% url "events:congress_listing_data_htmx" %}"
+                 hx-include="[id='events_form']"
+                 hx-trigger="load, refresh_events"
 
-                {% if reverse_list %}
-                    hx-vars="reverse_list:'reverse'"
-                {% endif %}
+                 {% if reverse_list %}
+                     hx-vars="reverse_list:'reverse'"
+                 {% endif %}
             >
             </div>
 
@@ -285,9 +289,66 @@
                 evt.preventDefault();
             });
 
-            // if dropdowns change, reload
-            $("#id_state, #id_congress_type, #id_congress_venue_type").on("changed.bs.select", function() {
+            // if dropdowns change, reload and handle resetting values
+            $("#id_state, #id_congress_type, #id_congress_venue_type").on("changed.bs.select", function(e, clickedIndex, isSelected, oldValue) {
+
+                // trigger the reload from the server. Logically we would do this after fixing
+                // the data in the dropdowns, but if we do that we get a CSRF error that I can't work out
                 htmx.trigger("#events_list", "refresh_events");
+
+                // get value (after last change), this will be an array like ["NSW", "WA"]
+                let current_val = $(this).val();
+
+                // If there is nothing in the list, then select ALL
+                if (current_val.length === 0){
+                    $(this).selectpicker('val', ['All']);
+                    // Refresh or it won't appear as changed
+                    $(this).selectpicker('refresh');
+                }
+
+                // if ALL was clicked (index=0) then make that the only thing selected
+                else if (clickedIndex === 0 && current_val.length !== 1 ){
+                    $(this).selectpicker('val', ['All']);
+                    $(this).selectpicker('refresh');
+                }
+
+                // If anything is selected and ALL is in the list, then remove ALL
+                else if (current_val.includes('All') && current_val.length > 1){
+                    const new_val = current_val.filter(item => item !== "All");
+                    $(this).selectpicker('val', new_val);
+                    $(this).selectpicker('refresh');
+                }
+
+                // If "Online - All" ("O") is selected, remove other entries
+                let ref_array = ["F", "O"]
+                const ref_array2 = ["O"]
+
+                if (this.id === "id_congress_venue_type"
+                    && clickedIndex === 2
+                    && JSON.stringify(current_val)!==JSON.stringify(ref_array)
+                    &&  JSON.stringify(current_val)!==JSON.stringify(ref_array2)
+                ){
+                    let new_val = ["O"];
+                    if (current_val.includes("F")){
+                        new_val = ["F", "O"]
+                    }
+                    $(this).selectpicker('val', new_val);
+                    $(this).selectpicker('refresh');
+                }
+
+                // If "Online - xxx" is selected, remove "Online - All"
+                if (this.id === "id_congress_venue_type"
+                    && clickedIndex !== 0
+                    && clickedIndex !== 1
+                    && clickedIndex !== 2
+                    && current_val.includes("O")
+                ){
+                    const new_vals = current_val.filter(item => item !== "O")
+                    $(this).selectpicker('val', new_vals);
+                    $(this).selectpicker('refresh');
+                }
+
+                // update buttons
                 manage_filter_buttons();
                 check_save_filter_button();
             });
@@ -347,6 +408,22 @@
 
                     // update the search field
                     $("#id_congress_search_string").val(result.search_string);
+
+                    // refresh data
+                    htmx.trigger("#events_list", "refresh_events");
+
+                    // check if we should show filter buttons
+                    manage_filter_buttons();
+                } else {
+                    // No filters
+
+                    // update select pickers
+                    $('select[name=state]').val("All");
+                    $('select[name=congress_type]').val("All");
+                    $('select[name=congress_venue_type]').val("All");
+
+                    // refresh select pickers
+                    $('.selectpicker').selectpicker('refresh')
 
                     // refresh data
                     htmx.trigger("#events_list", "refresh_events");

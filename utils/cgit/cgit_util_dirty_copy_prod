@@ -2,18 +2,84 @@
 
 # about: Take a copy of production data locally without a snapshot
 
-# Use existing code on offsite backups
-cd utils/aws/off_system_backups
-. ./01_environment_variables.sh
-./02_update_aws_firewall_rule.sh
+. ./utils/cgit/_cgit_include_vars
 
-if ! echo pg_dump -h "production-blue.c97jawiow7ed.ap-southeast-2.rds.amazonaws.com" -p 5432 \
-             -d "$RDS_DB_NAME" -U "$RDS_USERNAME" -F c -b -v -f "$DUMP_FILE" \
-             --exclude-table-data "public.notifications_abstractemail" \
-             --exclude-table-data "public.post_office_*"
-then
-  echo "Errors occurred"
-  exit 1
-fi
+# Use a non-production environment to run the dump
+EB_ENV="cobalt-test-white"
 
-# Don't restore here as we have production credentials available in this script
+# Temp file location
+ENV_FILE=/tmp/prod_env
+
+# Script file
+SCRIPT_FILE=/tmp/db_dump.sh
+
+printf "Downloading the environment variables...\n"
+eb printenv cobalt-production-blue > $ENV_FILE
+
+# Environment variable
+PGPASSWORD=$(grep RDS_PASSWORD $ENV_FILE | awk '{print $3}')
+RDS_HOSTNAME=$(grep RDS_HOSTNAME $ENV_FILE | awk '{print $3}')
+RDS_DB_NAME=$(grep RDS_DB_NAME $ENV_FILE | awk '{print $3}')
+RDS_USERNAME=$(grep RDS_USERNAME $ENV_FILE | awk '{print $3}')
+LOCAL_DB_NAME="prod_load"
+
+# Remove temp file
+printf "Deleting temp file...\n"
+rm $ENV_FILE
+
+# create script for remote execution
+cat << EOF > $SCRIPT_FILE
+#!/bin/bash
+export PGPASSWORD=$PGPASSWORD
+pg_dump -h $RDS_HOSTNAME -p 5432 -d $RDS_DB_NAME -U $RDS_USERNAME -F c -b -v -f /tmp/db_dump \
+            --exclude-table-data "public.notifications_abstractemail" \
+            --exclude-table-data "public.notifications_snooper" \
+            --exclude-table-data "public.post_office_*"
+EOF
+
+chmod 777 $SCRIPT_FILE
+
+# Get an EC2 instance from the EB environment
+printf "Finding an EC2 instance...\n"
+INSTANCE=$(eb list --verbose | grep "$EB_ENV" | awk 'NF>1{print $NF}' | tr -d "'" | tr -d "]" | tr -d "[")
+printf "Instance is ${BLUE}$INSTANCE${NC}\n"
+
+# Get IP of instance
+printf "Getting the IP address of the instance...\n"
+EC2_IP_ADDRESS=$(aws ec2 describe-instances --instance-ids "$INSTANCE" | grep PublicIpAddress | head -1 | awk '{print $2}' | tr -d '",')
+export EC2_IP_ADDRESS
+printf "IP Address of ${BLUE}$EB_ENV${NC} is ${YELLOW}$EC2_IP_ADDRESS${NC}\n"
+
+# Copy to Test
+scp -i ~/.ssh/cobalt.pem /tmp/db_dump.sh ec2-user@"$EC2_IP_ADDRESS":/tmp/db_dump.sh
+
+# Run on test
+eb ssh -n 1 $EB_ENV --command "/tmp/db_dump.sh"
+
+# Copy dump file back
+scp -i ~/.ssh/cobalt.pem ec2-user@"$EC2_IP_ADDRESS":/tmp/db_dump ~/abf_backup/cobalt_prod_dump.$(date '+%Y-%m-%d')
+
+# Clean up
+rm $SCRIPT_FILE
+eb ssh -n 1 $EB_ENV --command "rm /tmp/db_dump.sh; rm /tmp/db_dump"
+
+# Load the database
+printf "Loading database, dropping old DB ${RED}$LOCAL_DB_NAME${NC}..."
+cat << EOF > /tmp/drop_db_prod_copy
+\c postgres
+SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
+WHERE datname = '$LOCAL_DB_NAME';
+drop database IF EXISTS $LOCAL_DB_NAME;
+create database $LOCAL_DB_NAME with owner cobalt;
+EOF
+
+psql </tmp/drop_db_prod_copy
+
+# Load the database
+printf "Loading the data into the local database...\n"
+pg_restore -d $LOCAL_DB_NAME --no-owner --no-privileges --role=cobalt -v ~/abf_backup/cobalt_prod_dump.$(date '+%Y-%m-%d')
+
+# sanitise the data
+export RDS_DB_NAME=$LOCAL_DB_NAME
+./manage.py sanitise_production_data_for_testing

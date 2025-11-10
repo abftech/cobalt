@@ -154,9 +154,9 @@ def congress_listing_data_htmx(request):
     show_forward_arrow = None
 
     # Get any parameters from the form
-    state = request.POST.get("state")
-    congress_type = request.POST.get("congress_type")
-    congress_venue_type = request.POST.get("congress_venue_type")
+    state = request.POST.getlist("state")
+    congress_type = request.POST.getlist("congress_type")
+    congress_venue_type = request.POST.getlist("congress_venue_type")
     congress_search_string = request.POST.get("congress_search_string")
 
     # Reverse list means we want the historic date (closed events, going backwards)
@@ -193,24 +193,15 @@ def congress_listing_data_htmx(request):
         )
 
     # Now add modifiers for the queryset
-    if state != "All":
-        congresses = congresses.filter(congress_master__org__state=state)
+    if "All" not in state:
+        congresses = congresses.filter(congress_master__org__state__in=state)
 
-    if congress_type != "All":
-        congresses = congresses.filter(congress_type=congress_type)
+    if "All" not in congress_type:
+        congresses = congresses.filter(congress_type__in=congress_type)
 
-    if congress_venue_type != "All":
-        # If user searches for face-to-face or online also show mixed
-        if congress_venue_type == "F":
-            congresses = congresses.filter(congress_venue_type__in=["F", "M"])
+    if "All" not in congress_venue_type:
 
-        # Check for online - we can get "O" or "Ox"
-        if congress_venue_type[0] == "O":
-            congresses = congresses.filter(congress_venue_type__in=["O", "M"])
-            if len(congress_venue_type) == 2:
-                # User wants specific platforms e.g. BBO or StepBridge
-                online_platform = congress_venue_type[1]
-                congresses = congresses.filter(online_platform=online_platform)
+        congresses = _congress_listing_venue_type(congresses, congress_venue_type)
 
     if congress_search_string:
         congresses = congresses.filter(
@@ -238,6 +229,35 @@ def congress_listing_data_htmx(request):
             "reverse_list": reverse_list,
         },
     )
+
+
+def _congress_listing_venue_type(congresses, congress_venue_type):
+    """sub of congress_listing_data_htmx to handle venue type queries"""
+
+    online_query = Q()
+    face_to_face_query = Q()
+
+    # If user searches for face-to-face or online also show mixed
+    if "F" in congress_venue_type:
+        face_to_face_query = Q(congress_venue_type__in=["F", "M"])
+
+    # Check for online - we can get "O" or "Ox"
+    if [w for w in congress_venue_type if w.startswith("O")]:
+        online_query = Q(congress_venue_type__in=["O", "M"])
+
+        # See if User wants specific platforms e.g. BBO or StepBridge
+        # We want the online venue codes ["F", "OR", "O", "OT"] -> ["R", "T"]
+        online_platform = []
+        for item in congress_venue_type:
+            if len(item) == 2 and item[0] == "O":
+                online_platform.append(item[1])
+
+        if online_platform:
+            online_query = online_query and Q(online_platform__in=online_platform)
+
+    congresses = congresses.filter(online_query | face_to_face_query)
+
+    return congresses
 
 
 def congress_listing_data_backwards(last_data_date, where_to_go, date_now):

@@ -8,6 +8,14 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.2.4",
+            "notes": [
+                "Congress admin - update event_id on payment records if entry is moved",
+                "DEV - Upgrade Python packages",
+                "DEV - Faster way to get Production data into a development environment",
+            ],
+        },
+        {
             "release": "6.2.3",
             "notes": [
                 "Club admin pay anyone - prevent both congress and membership fee flags together",
