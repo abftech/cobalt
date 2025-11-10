@@ -314,8 +314,37 @@
 
                 // If anything is selected and ALL is in the list, then remove ALL
                 else if (current_val.includes('All') && current_val.length > 1){
-                    const new_val = current_val.filter(item => item !== "All")
+                    const new_val = current_val.filter(item => item !== "All");
                     $(this).selectpicker('val', new_val);
+                    $(this).selectpicker('refresh');
+                }
+
+                // If "Online - All" ("O") is selected, remove other entries
+                let ref_array = ["F", "O"]
+                const ref_array2 = ["O"]
+
+                if (this.id === "id_congress_venue_type"
+                    && clickedIndex === 2
+                    && JSON.stringify(current_val)!==JSON.stringify(ref_array)
+                    &&  JSON.stringify(current_val)!==JSON.stringify(ref_array2)
+                ){
+                    let new_val = ["O"];
+                    if (current_val.includes("F")){
+                        new_val = ["F", "O"]
+                    }
+                    $(this).selectpicker('val', new_val);
+                    $(this).selectpicker('refresh');
+                }
+
+                // If "Online - xxx" is selected, remove "Online - All"
+                if (this.id === "id_congress_venue_type"
+                    && clickedIndex !== 0
+                    && clickedIndex !== 1
+                    && clickedIndex !== 2
+                    && current_val.includes("O")
+                ){
+                    const new_vals = current_val.filter(item => item !== "O")
+                    $(this).selectpicker('val', new_vals);
                     $(this).selectpicker('refresh');
                 }
 
@@ -379,6 +408,22 @@
 
                     // update the search field
                     $("#id_congress_search_string").val(result.search_string);
+
+                    // refresh data
+                    htmx.trigger("#events_list", "refresh_events");
+
+                    // check if we should show filter buttons
+                    manage_filter_buttons();
+                } else {
+                    // No filters
+
+                    // update select pickers
+                    $('select[name=state]').val("All");
+                    $('select[name=congress_type]').val("All");
+                    $('select[name=congress_venue_type]').val("All");
+
+                    // refresh select pickers
+                    $('.selectpicker').selectpicker('refresh')
 
                     // refresh data
                     htmx.trigger("#events_list", "refresh_events");

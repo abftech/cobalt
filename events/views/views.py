@@ -252,14 +252,10 @@ def _congress_listing_venue_type(congresses, congress_venue_type):
             if len(item) == 2 and item[0] == "O":
                 online_platform.append(item[1])
 
-        print(online_platform)
-
         if online_platform:
-            online_query = online_query & Q(online_platform__in=online_platform)
+            online_query = online_query and Q(online_platform__in=online_platform)
 
-    congresses = congresses.filter(online_query or face_to_face_query)
-
-    print(congresses.query)
+    congresses = congresses.filter(online_query | face_to_face_query)
 
     return congresses
 
