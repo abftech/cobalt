@@ -44,6 +44,35 @@ class UserManager(models.Manager):
             )
         )
 
+class UnRegManager(models.Manager):
+    """
+    Manager for Unregistered users
+    """
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                user_type=User.UserType.UNREGISTERED,
+            )
+        )
+
+
+class ContactManager(models.Manager):
+    """
+    Manager for contact users
+    """
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                user_type=User.UserType.CONTACT,
+            )
+        )
+
 
 class User(AbstractUser):
     """
@@ -223,13 +252,15 @@ class User(AbstractUser):
     windows_scrollbar = models.BooleanField(
         "Use Perfect Scrollbar on Windows", default=False
     )
-    last_activity = models.DateTimeField(blank="True", null=True)
+    last_activity = models.DateTimeField(blank=True, null=True)
 
     old_mpc_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
     """ Temporary link to old Masterpoint Centre record, required for MPC work """
 
     all_objects = models.Manager()
     objects = UserManager()
+    unreg_objects = UnRegManager()
+    contact_objects = ContactManager()
 
     REQUIRED_FIELDS = [
         "system_number",
