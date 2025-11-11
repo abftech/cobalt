@@ -13,6 +13,7 @@ def release_notes_view(request):
                 "Congress admin - update event_id on payment records if entry is moved",
                 "DEV - Upgrade Python packages",
                 "DEV - Faster way to get Production data into a development environment",
+                "Calendar - allow multiple selections",
             ],
         },
         {
