@@ -155,7 +155,7 @@ class UserSessionForm(forms.Form):
             self.is_valid_number = True
             self.player_type = "Registered User"
         else:
-            self.player = UnregisteredUser.objects.filter(
+            self.player = User.unreg_objects.filter(
                 system_number=session_entry.system_number
             ).first()
             self.is_user = False

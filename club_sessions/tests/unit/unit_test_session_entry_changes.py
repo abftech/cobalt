@@ -2,7 +2,7 @@ from copy import copy, deepcopy
 from decimal import Decimal
 from typing import Union
 
-from accounts.models import UnregisteredUser
+from accounts.models import UnregisteredUser, User
 from club_sessions.models import Session, SessionType, SessionEntry, SessionMiscPayment
 from club_sessions.views.core import (
     bridge_credits_for_club,
@@ -416,7 +416,8 @@ class SessionEntryChangesTests:
         """Tests for changes to ious for unregistered users"""
 
         system_number = 987654321
-        barry = UnregisteredUser(
+        barry = User(
+            user_type=User.UserType.UNREGISTERED,
             first_name="Barry",
             last_name="McGuigan",
             system_number=system_number,

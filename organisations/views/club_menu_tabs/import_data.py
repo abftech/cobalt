@@ -1342,14 +1342,15 @@ def process_member_import(
             added_users += added
         else:
             # See if we have an unregistered user already
-            un_reg = UnregisteredUser.objects.filter(
+            un_reg = User.unreg_objects.filter(
                 system_number=club_member["system_number"]
             ).first()
 
             if not un_reg:
                 # Create a new unregistered user
 
-                UnregisteredUser(
+                User(
+                    user_type=User.UserType.UNREGISTERED,
                     system_number=club_member["system_number"],
                     first_name=club_member["first_name"],
                     last_name=club_member["last_name"],
@@ -1547,7 +1548,8 @@ def process_contact_import(
 
                         #  create an unregistered user
 
-                        UnregisteredUser(
+                        User(
+                            user_type=User.UserType.UNREGISTERED,
                             system_number=contact["system_number"],
                             first_name=contact["first_name"],
                             last_name=contact["last_name"],
@@ -1562,7 +1564,7 @@ def process_contact_import(
             with transaction.atomic():
 
                 # create a new unregistered user with an internal system number
-                unreg_user = UnregisteredUser()
+                unreg_user = User(user_type=User.UserType.CONTACT)
                 unreg_user.system_number = NextInternalSystemNumber.next_available()
                 unreg_user.first_name = contact["first_name"]
                 unreg_user.last_name = contact["last_name"]

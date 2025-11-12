@@ -22,7 +22,6 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, RegexValidator
 from django.db import models, transaction
 
-
 def no_future(value):
     today = date.today()
     if value > today:
@@ -315,7 +314,6 @@ class UnregisteredUser(models.Model):
     provided it, but ironically shown to the club that did and editable.
     """
 
-    # Import here to avoid circular dependencies
     from organisations.models import Organisation
 
     ORIGINS = [
@@ -481,6 +479,8 @@ class UserAdditionalInfo(models.Model):
     as the User is getting overloaded and is accessed constantly by Django so we should
     try to keep it clean.
     """
+    # Import here to avoid circular dependencies
+    from organisations.models import Organisation
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     email_hard_bounce = models.BooleanField(default=False)
@@ -494,6 +494,9 @@ class UserAdditionalInfo(models.Model):
     """ sort order for the club menu members tab list """
     last_club_visited = models.IntegerField(null=True, blank=True)
     """ used to store which club was last visited for users with access to multiple clubs """
+    last_registration_invite_sent = models.DateTimeField(
+        "Last Registration Invite Sent", blank=True, null=True
+    )
 
     def __str__(self):
         return self.user.__str__()

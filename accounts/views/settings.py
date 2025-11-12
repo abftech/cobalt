@@ -111,7 +111,7 @@ def developer_settings_delete_token_htmx(request):
 def unregistered_user_settings(request, identifier):
     """allow an unregistered user to control their email preferences"""
 
-    unregistered = UnregisteredUser.objects.filter(identifier=identifier).first()
+    unregistered = User.unreg_objects.filter(identifier=identifier).first()
 
     if not unregistered:
         return HttpResponse("Invalid identifier")

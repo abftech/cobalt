@@ -481,7 +481,7 @@ def check_user_or_unreg_deceased(system_number):
     if user:
         return user.deceased
     else:
-        unreg_user = UnregisteredUser.objects.filter(system_number=system_number).last()
+        unreg_user = User.unreg_objects.filter(system_number=system_number).last()
         if unreg_user:
             return unreg_user.deceased
         else:
@@ -533,7 +533,7 @@ def club_has_unregistered_members(club):
     ).values("system_number")
 
     return (
-        UnregisteredUser.objects.filter(system_number__in=members)
+        User.unreg_objects.filter(system_number__in=members)
         .exclude(
             deceased=True,
         )
@@ -1537,7 +1537,7 @@ def mark_player_as_deceased(system_number, requester):
         user.is_active = False
         user.save()
     else:
-        unreg_user = UnregisteredUser.objects.filter(system_number=system_number).last()
+        unreg_user = User.unreg_objects.filter(system_number=system_number).last()
         if unreg_user:
             unreg_user.deceased = True
             unreg_user.save()
@@ -2784,7 +2784,7 @@ def convert_existing_membership(club, membership):
         is_user = True
         deceased = user.deceased
     else:
-        unreg_user = UnregisteredUser.objects.get(
+        unreg_user = User.unreg_objects.get(
             system_number=membership.system_number
         )
         # will raise an exception if not found
@@ -3753,7 +3753,7 @@ def get_outstanding_memberships(club, sort_option="name_asc"):
     system_numbers = memberships.values_list("system_number", flat=True)
 
     users = User.objects.filter(system_number__in=system_numbers)
-    unreg = UnregisteredUser.objects.filter(system_number__in=system_numbers)
+    unreg = User.unreg_objects.filter(system_number__in=system_numbers)
     member_details = MemberClubDetails.objects.filter(
         club=club, system_number__in=system_numbers
     )
@@ -3912,7 +3912,7 @@ def get_auto_pay_memberships_for_club(club, date=None):
     users = User.objects.filter(system_number__in=system_numbers)
     user_dict = {user.system_number: user for user in users}
 
-    unreg_users = UnregisteredUser.objects.filter(system_number__in=system_numbers)
+    unreg_users = User.unreg_objects.filter(system_number__in=system_numbers)
     unreg_user_dict = {
         unreg_user.system_number: unreg_user for unreg_user in unreg_users
     }

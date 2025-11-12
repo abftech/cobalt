@@ -80,7 +80,7 @@ class UserSearch:
         ).save()
 
         # Create Unregistered user
-        self.unreg_user = UnregisteredUser()
+        self.unreg_user = User(user_type=User.UserType.UNREGISTERED)
         self.unreg_user.system_number = 123456789
         self.unreg_user.first_name = "Sherlock"
         self.unreg_user.last_name = "Balvenie"
@@ -108,7 +108,7 @@ class UserSearch:
         _block_email("sherlock.balvenie@fake.com")
 
         # Create Contact
-        self.contact = UnregisteredUser()
+        self.contact = User(user_type=User.UserType.CONTACT)
         self.contact.system_number = 23456789
         self.contact.first_name = "David"
         self.contact.last_name = "Attenborough"
@@ -254,7 +254,7 @@ class UserSearch:
         log_entry = ClubMemberLog.objects.latest("id")
 
         # Get membership record
-        unreg = UnregisteredUser.all_objects.last()
+        unreg = User.unreg_objects.last()
         membership_details = MemberClubDetails.objects.last()
 
         ok = (

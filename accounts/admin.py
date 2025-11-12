@@ -20,6 +20,7 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ["last_name", "first_name", "system_number", "email"]
     # We use loginas to for admins to take over a user session
     change_form_template = "loginas/change_form.html"
+    list_filter = ["user_type", ]
 
 
 @admin.register(UnregisteredUser)

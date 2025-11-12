@@ -175,7 +175,7 @@ def load_session_entry_static(session, club):
 
     # Get Users and UnregisteredUsers
     users = User.objects.filter(system_number__in=system_number_list)
-    un_regs = UnregisteredUser.objects.filter(system_number__in=system_number_list)
+    un_regs = User.unreg_objects.filter(system_number__in=system_number_list)
 
     # Convert to a dictionary
     mixed_dict = {}
@@ -1720,7 +1720,8 @@ def change_user_on_session_entry(
             if not status:
                 return f"Error looking up {GLOBAL_ORG} Number: {system_number}"
 
-            UnregisteredUser(
+            User(
+                user_type=User.UserType.UNREGISTERED,
                 system_number=system_number,
                 last_updated_by=director,
                 last_name=return_value[1],

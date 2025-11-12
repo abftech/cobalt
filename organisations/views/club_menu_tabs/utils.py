@@ -219,7 +219,7 @@ def get_club_members_from_system_number_list(
     cobalt_members = User.objects.filter(system_number__in=system_numbers)
 
     # Get unregistered
-    unregistered_members = UnregisteredUser.objects.filter(
+    unregistered_members = User.unreg_objects.filter(
         system_number__in=system_numbers
     )
 

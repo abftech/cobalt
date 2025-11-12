@@ -1020,7 +1020,7 @@ def send_cobalt_email_to_system_number(
         )
         return
 
-    un_registered_user = UnregisteredUser.objects.filter(
+    un_registered_user = User.unreg_objects.filter(
         system_number=system_number
     ).first()
     if un_registered_user:

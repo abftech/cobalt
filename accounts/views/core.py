@@ -357,7 +357,7 @@ def _check_duplicate_email(user):
 def _check_unregistered_user_match(user):
     """See if there is already a user with this system_id in UnregisteredUser and cut across data"""
 
-    unregistered_user = UnregisteredUser.objects.filter(
+    unregistered_user = User.unreg_objects.filter(
         system_number=user.system_number
     ).first()
 
@@ -382,7 +382,7 @@ def add_un_registered_user_with_mpc_data(
     # do nothing if user already exists
     if User.objects.filter(system_number=system_number).exists():
         return "user", None
-    if UnregisteredUser.objects.filter(system_number=system_number).exists():
+    if User.unreg_objects.filter(system_number=system_number).exists():
         return "un_reg", None
 
     # Get data from the MPC
@@ -392,7 +392,8 @@ def add_un_registered_user_with_mpc_data(
         return None, None
 
     # Create user
-    UnregisteredUser(
+    User(
+        user_type=User.UserType.UNREGISTERED,
         system_number=system_number,
         last_updated_by=added_by,
         last_name=details["Surname"],
@@ -418,7 +419,7 @@ def get_user_or_unregistered_user_from_system_number(system_number):
     if user:
         return user
 
-    return UnregisteredUser.objects.filter(system_number=system_number).first()
+    return User.unreg_objects.filter(system_number=system_number).first()
 
 
 def get_email_address_and_name_from_system_number(
@@ -452,7 +453,7 @@ def get_email_address_and_name_from_system_number(
         return None, None
 
     # try Unregistered user
-    un_reg = UnregisteredUser.objects.filter(system_number=system_number).first()
+    un_reg = User.unreg_objects.filter(system_number=system_number).first()
 
     if not un_reg:
         return None, None
@@ -473,7 +474,7 @@ def get_users_or_unregistered_users_from_system_number_list(system_number_list):
 
     # Get Users and UnregisteredUsers
     users = User.objects.filter(system_number__in=system_number_list)
-    un_regs = UnregisteredUser.objects.filter(system_number__in=system_number_list)
+    un_regs = User.unreg_objects.filter(system_number__in=system_number_list)
 
     # Convert to a dictionary
     mixed_dict = {}
@@ -518,7 +519,7 @@ def get_users_or_unregistered_users_from_email_list(email_list):
     club_member_dict = {
         system_no: club_email for (system_no, club_email) in club_member_list
     }
-    un_regs = UnregisteredUser.objects.filter(
+    un_regs = User.unreg_objects.filter(
         system_number__in=club_member_dict,
     ).distinct()
     un_reg_dict = {un_reg.system_number: un_reg for un_reg in un_regs}
@@ -549,7 +550,7 @@ def get_user_statistics():
 
     users_with_auto_top_up = User.objects.filter(stripe_auto_confirmed="On").count()
 
-    un_registered_users = UnregisteredUser.objects.count()
+    un_registered_users = User.unreg_objects.count()
 
     return {
         "total_users": total_users,

@@ -111,7 +111,7 @@ class Command(BaseCommand):
                 player_name = player.full_name
                 player_id = player.id
             else:
-                player = UnregisteredUser.objects.filter(
+                player = User.unreg_objects.filter(
                     system_number=se.system_number
                 ).first()
                 if player:

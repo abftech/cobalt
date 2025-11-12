@@ -637,7 +637,7 @@ def search_tab_email_htmx(request, club):
 
     users = User.objects.filter(system_number__in=system_number_list)
 
-    un_regs = UnregisteredUser.objects.filter(system_number__in=system_number_list)
+    un_regs = User.unreg_objects.filter(system_number__in=system_number_list)
 
     user_list = list(chain(users, un_regs))
 

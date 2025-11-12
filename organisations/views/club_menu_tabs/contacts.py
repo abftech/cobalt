@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from accounts.models import (
     NextInternalSystemNumber,
-    UnregisteredUser,
+    UnregisteredUser, User,
 )
 from accounts.views.api import search_for_user_in_cobalt_and_mpc
 from cobalt.settings import (
@@ -545,7 +545,7 @@ def add_contact_manual_htmx(request, club):
                 with transaction.atomic():
 
                     # create a new unregistered user with an internal system number
-                    unreg_user = UnregisteredUser()
+                    unreg_user = User(user_type=User.UserType.CONTACT)
                     unreg_user.system_number = NextInternalSystemNumber.next_available()
                     unreg_user.first_name = form.cleaned_data["first_name"]
                     unreg_user.last_name = form.cleaned_data["last_name"]
@@ -587,7 +587,7 @@ def add_contact_manual_htmx(request, club):
 
                 if source == "mpc":
                     # need to create a new unregistered user
-                    unreg_user = UnregisteredUser()
+                    unreg_user = User(user_type=User.UserType.UNREGISTERED)
                     unreg_user.system_number = system_number
                     unreg_user.first_name = request.POST.get("first_name")
                     unreg_user.last_name = request.POST.get("last_name")
@@ -688,7 +688,7 @@ def add_individual_internal_htmx(request, club):
             with transaction.atomic():
 
                 # create a new unregistered user with an internal system number
-                unreg_user = UnregisteredUser()
+                unreg_user = User(user_type=User.UserType.CONTACT)
                 unreg_user.system_number = NextInternalSystemNumber.next_available()
                 unreg_user.first_name = form.cleaned_data["first_name"]
                 unreg_user.last_name = form.cleaned_data["last_name"]

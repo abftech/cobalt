@@ -458,7 +458,7 @@ def report_all_csv(request, club_id):
     users = User.objects.filter(system_number__in=club_members_list)
 
     # Get un reg users
-    un_regs = UnregisteredUser.objects.filter(system_number__in=club_members_list)
+    un_regs = User.unreg_objects.filter(system_number__in=club_members_list)
 
     # Get local emails (if set) and turn into a dictionary
     club_emails = MemberClubEmail.objects.filter(system_number__in=club_members_list)
@@ -1226,12 +1226,13 @@ def add_un_reg_htmx(request, club):
         return list_htmx(request, message=message)
 
     # User may already be registered, the form will allow this
-    if UnregisteredUser.objects.filter(
+    if User.unreg_objects.filter(
         system_number=form.cleaned_data["system_number"],
     ).exists():
         message = "User already existed."  # don't change the fields
     else:
-        UnregisteredUser(
+        User(
+            user_type=User.UserType.UNREGISTERED,
             system_number=form.cleaned_data["system_number"],
             last_updated_by=request.user,
             last_name=form.cleaned_data["last_name"],
@@ -1313,7 +1314,7 @@ def _check_member_errors(club):
         .filter(email_hard_bounce=True)
         .values("system_number")
     )
-    un_regs = UnregisteredUser.objects.filter(system_number__in=un_regs_bounces)
+    un_regs = User.unreg_objects.filter(system_number__in=un_regs_bounces)
 
     return list(chain(users, un_regs))
 
@@ -1464,7 +1465,7 @@ def bulk_invite_to_join_htmx(request, club):
     members = MemberMembershipType.objects.filter(
         membership_type__organisation=club
     ).values("system_number")
-    unregistered = UnregisteredUser.objects.filter(system_number__in=members)
+    unregistered = User.unreg_objects.filter(system_number__in=members)
 
     two_weeks = timezone.now() - timezone.timedelta(weeks=2)
 
@@ -2358,7 +2359,7 @@ def club_admin_add_member_detail_htmx(request, club):
     if user:
         user_type = "REG"
     else:
-        user = UnregisteredUser.objects.filter(
+        user = User.unreg_objects.filter(
             system_number=system_number,
         ).last()
         if user:

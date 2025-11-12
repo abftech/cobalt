@@ -469,7 +469,7 @@ class MasterpointDjango(MasterpointFactory):
         if User.objects.filter(system_number=system_number, is_active=True):
             return "Error: User already registered"
 
-        unregistered = UnregisteredUser.objects.filter(system_number=system_number).first()
+        unregistered = User.unreg_objects.filter(system_number=system_number).first()
         if unregistered and unregistered.is_active:
             given_name = unregistered.first_name.split(" ")[0]
             surname = unregistered.last_name
@@ -486,7 +486,7 @@ class MasterpointDjango(MasterpointFactory):
             return False
 
         # ee if unregistered user exists
-        user = UnregisteredUser.objects.filter(system_number=system_number).first()
+        user = User.unreg_objects.filter(system_number=system_number).first()
 
         if not user or not user.is_active:
             return False
@@ -501,7 +501,7 @@ class MasterpointDjango(MasterpointFactory):
         ).exists():
             return False, "User already registered"
 
-        user = UnregisteredUser.objects.filter(system_number=system_number).first()
+        user = User.unreg_objects.filter(system_number=system_number).first()
 
         if not user or not user.is_active:
             return False, "Invalid or inactive number"
@@ -528,7 +528,7 @@ class MasterpointDjango(MasterpointFactory):
                 }
 
         """
-        user = User.objects.filter(system_number=system_number).first() or UnregisteredUser.objects.filter(system_number=system_number).first()
+        user = User.objects.filter(system_number=system_number).first() or User.unreg_objects.filter(system_number=system_number).first()
 
         if not user:
             return None
@@ -693,7 +693,7 @@ class MasterpointDjango(MasterpointFactory):
         """ search for a user """
         
         user_base_query = User.objects.exclude(is_active=False)
-        un_reg_base_query = UnregisteredUser.objects.exclude(is_active=False)
+        un_reg_base_query = User.unreg_objects.exclude(is_active=False)
 
         if abf_number:
             matches = user_base_query.filter(system_number=abf_number) or un_reg_base_query.filter(system_number=abf_number)

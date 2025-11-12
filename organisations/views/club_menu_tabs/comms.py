@@ -199,7 +199,7 @@ def _send_email_to_tags(request, club, tags, email_form, club_template, attachme
     members = User.objects.filter(system_number__in=tag_system_numbers)
 
     # Get unregistered
-    un_regs = UnregisteredUser.objects.filter(system_number__in=tag_system_numbers)
+    un_regs = User.unreg_objects.filter(system_number__in=tag_system_numbers)
 
     # get club level email
 

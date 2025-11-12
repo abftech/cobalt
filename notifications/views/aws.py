@@ -115,7 +115,7 @@ def admin_aws_suppression(request):
     un_reg_emails_system_number_list = un_reg_emails.values("system_number")
 
     # Get the matching unregistered users
-    un_reg_qs = UnregisteredUser.objects.filter(
+    un_reg_qs = User.unreg_objects.filter(
         system_number__in=un_reg_emails_system_number_list
     )
 

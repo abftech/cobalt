@@ -217,7 +217,7 @@ def sync_promotions():
         # Link to player - we can't use a foreign key
         player = (
             User.objects.filter(old_mpc_id=item["PlayerID"]).first()
-            or UnregisteredUser.objects.filter(old_mpc_id=item["PlayerID"]).first()
+            or User.unreg_objects.filter(old_mpc_id=item["PlayerID"]).first()
         )
         if player:
             promotion.system_number = player.system_number
@@ -273,18 +273,16 @@ def sync_players():
             abf_number = int(abf_number)
 
             # See if we have a user or unregistered user matching this record
-            user = (
-                User.objects.filter(system_number=abf_number).first()
-                or UnregisteredUser.objects.filter(system_number=abf_number).first()
-            )
+            user = User.all_objects.filter(system_number=abf_number).first()
 
             # If not, create an unregistered user
             if not user:
-                user = UnregisteredUser(system_number=abf_number)
+                user = User(user_type=User.UserType.UNREGISTERED, system_number=abf_number)
                 user.first_name = item["GivenNames"]
                 user.last_name = item["Surname"]
+                user.username = abf_number
                 user.origin = "MPCS"
-                user.last_updated_by = SYSTEM_ACCOUNT
+#                user.last_updated_by = SYSTEM_ACCOUNT
                 added_count += 1
 
             user.old_mpc_id = item["PlayerID"]
@@ -295,7 +293,7 @@ def sync_players():
         max_batch = max_batch + batch_size
 
     unmatched_users = User.objects.filter(old_mpc_id__isnull=True).count()
-    unmatched_unreg_users = UnregisteredUser.objects.filter(
+    unmatched_unreg_users = User.unreg_objects.filter(
         old_mpc_id__isnull=True
     ).count()
     print(f"Added: {added_count}. Skipped: {skipped_count}.")
@@ -415,7 +413,7 @@ def sync_mp_trans(full_sync=False):
             # validate and add system number
             player = (
                 User.objects.filter(old_mpc_id=item["PlayerID"]).first()
-                or UnregisteredUser.objects.filter(old_mpc_id=item["PlayerID"]).first()
+                or User.unreg_objects.filter(old_mpc_id=item["PlayerID"]).first()
             )
             if player:
                 mp_trans.system_number = player.system_number
@@ -489,8 +487,8 @@ class Command(BaseCommand):
         sync_green_point_achievement_bands()
         sync_periods()
         sync_ranks()
-        sync_promotions()
-        sync_mp_batches()
-        sync_mp_trans(full_sync=False)
-        sync_mpc_club_membership_history()
+        # sync_promotions()
+        # sync_mp_batches()
+        # sync_mp_trans(full_sync=False)
+        # sync_mpc_club_membership_history()
 
