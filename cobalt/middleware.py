@@ -12,7 +12,7 @@ from django.core.exceptions import MiddlewareNotUsed
 import sys
 import traceback as traceback_lib
 
-from django.http import RawPostDataException
+from django.http import RawPostDataException, Http404, HttpResponseServerError
 from django.shortcuts import render
 from django.template.loader import render_to_string
 
@@ -64,6 +64,10 @@ class CobaltLog500ErrorsMiddleware:
 
         # Get the traceback info
         error_type, error_value, traceback = sys.exc_info()
+
+        # Skip if not a 500 error
+        if type(error_type) is not HttpResponseServerError:
+            return
 
         # Get further details of the traceback
         traceback_list = traceback_lib.format_exception(

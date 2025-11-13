@@ -9,7 +9,7 @@ from django.apps import apps
 from django.contrib.auth.decorators import login_required
 from django.db import connection, ProgrammingError
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
@@ -36,6 +36,7 @@ from rbac.views import get_rbac_statistics
 from results.views.core import get_results_statistics
 from support.helpdesk import get_support_statistics
 from utils.forms import SystemSettingsForm
+from utils.models import Error500
 from utils.utils import cobalt_paginator
 
 from importlib import import_module
@@ -688,38 +689,21 @@ def system_status(request):
 
 @login_required()
 def recent_errors(request):
-    """Show recent errors from error log messages"""
+    """Show recent errors from error 500 table"""
 
-    lines = (
-        subprocess.run(["tail", "-1000", "/var/log/messages"], stdout=subprocess.PIPE)
-        .stdout.decode("utf-8")
-        .splitlines()
+    errors = Error500.objects.order_by("-pk")
+
+    things = cobalt_paginator(request, errors)
+
+    return render(request, "utils/monitoring/recent_errors.html", {"things": things})
+
+
+@login_required()
+def recent_errors_detail(request, pk):
+    """Show details of a 500 error"""
+
+    error = get_object_or_404(Error500, pk=pk)
+
+    return render(
+        request, "utils/monitoring/recent_errors_details.html", {"error": error}
     )
-
-    errors = []
-
-    matches = [
-        "systemd",
-        "dhcpd",
-        "dhclient",
-        "rsyslogd",
-        "ec2net",
-        "[INFO]",
-        "healthd",
-        "journal:",
-        "nginx",
-        "favicon.ico",
-    ]
-
-    for line in lines:
-        if all(match not in line for match in matches):
-            parts = line.split(" ")
-            timestamp = f"{parts[0]} {parts[1]} {parts[2]}"
-            # We get some rubbish in the logs some times, find last occurence of web:
-            loc = line.rfind("web:")
-            # fmt: off
-            message = line[loc + 5:]
-            # fmt: on
-            errors.append({"timestamp": timestamp, "message": message})
-
-    return render(request, "utils/monitoring/recent_errors.html", {"errors": errors})
