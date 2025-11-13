@@ -14,6 +14,7 @@ def release_notes_view(request):
                 "DEV - Upgrade Python packages",
                 "DEV - Faster way to get Production data into a development environment",
                 "Calendar - allow multiple selections",
+                "Viewer for 500 errors and middleware to capture if debug is on",
             ],
         },
         {
