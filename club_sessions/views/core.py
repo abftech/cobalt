@@ -1722,6 +1722,7 @@ def change_user_on_session_entry(
 
             User(
                 user_type=User.UserType.UNREGISTERED,
+                username=system_number,
                 system_number=system_number,
                 # last_updated_by=director,
                 last_name=return_value[1],

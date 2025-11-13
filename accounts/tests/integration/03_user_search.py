@@ -82,6 +82,7 @@ class UserSearch:
         # Create Unregistered user
         self.unreg_user = User(user_type=User.UserType.UNREGISTERED)
         self.unreg_user.system_number = 123456789
+        self.unreg_user.username = 123456789
         self.unreg_user.first_name = "Sherlock"
         self.unreg_user.last_name = "Balvenie"
         self.unreg_user.internal_system_number = False
@@ -109,6 +110,7 @@ class UserSearch:
         # Create Contact
         self.contact = User(user_type=User.UserType.CONTACT)
         self.contact.system_number = 23456789
+        self.contact.username = 23456789
         self.contact.first_name = "David"
         self.contact.last_name = "Attenborough"
         self.contact.internal_system_number = True

@@ -386,6 +386,7 @@ def add_un_registered_user_with_mpc_data(
     User(
         user_type=User.UserType.UNREGISTERED,
         system_number=system_number,
+        username=system_number,
  #       last_updated_by=added_by,
         last_name=details["Surname"],
         first_name=details["GivenNames"],

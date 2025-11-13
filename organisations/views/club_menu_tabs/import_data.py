@@ -1352,9 +1352,9 @@ def process_member_import(
                 User(
                     user_type=User.UserType.UNREGISTERED,
                     system_number=club_member["system_number"],
+                    username=club_member["system_number"],
                     first_name=club_member["first_name"],
                     last_name=club_member["last_name"],
-                    origin=origin,
                     # last_updated_by=user,
                     # added_by_club=club,
                 ).save()
@@ -1551,9 +1551,10 @@ def process_contact_import(
                         User(
                             user_type=User.UserType.UNREGISTERED,
                             system_number=contact["system_number"],
+                            username=contact["system_number"],
                             first_name=contact["first_name"],
                             last_name=contact["last_name"],
-                            origin=origin,
+                            # origin=origin,
                             # last_updated_by=user,
                             # added_by_club=club,
                         ).save()

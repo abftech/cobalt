@@ -1233,6 +1233,7 @@ def add_un_reg_htmx(request, club):
     else:
         User(
             user_type=User.UserType.UNREGISTERED,
+            username=form.cleaned_data["system_number"],
             system_number=form.cleaned_data["system_number"],
             # last_updated_by=request.user,
             last_name=form.cleaned_data["last_name"],

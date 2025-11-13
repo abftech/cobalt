@@ -588,6 +588,7 @@ def add_contact_manual_htmx(request, club):
                     # need to create a new unregistered user
                     unreg_user = User(user_type=User.UserType.UNREGISTERED)
                     unreg_user.system_number = system_number
+                    unreg_user.username = system_number
                     unreg_user.first_name = request.POST.get("first_name")
                     unreg_user.last_name = request.POST.get("last_name")
                     # unreg_user.added_by_club = club

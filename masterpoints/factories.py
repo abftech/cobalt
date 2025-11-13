@@ -539,6 +539,8 @@ class MasterpointDjango(MasterpointFactory):
         rank = Rank.objects.filter(total_needed__lte=total, gold_needed__lte=gold,
                                    red_gold_needed__lte=red + gold).last()
 
+        rank_name = rank.rank_name if rank else "Unknown"
+
         return {
             'ABFNumber': system_number,
             'Surname': user.last_name,
@@ -549,7 +551,7 @@ class MasterpointDjango(MasterpointFactory):
             'TotalGold': gold,
             'TotalRed': red,
             'TotalGreen': green,
-            'RankName': rank.rank_name,
+            'RankName': rank_name,
             'home_club': 'Home Club is Hardcoded',
         }
 
