@@ -66,8 +66,8 @@ class CobaltLog500ErrorsMiddleware:
         error_type, error_value, traceback = sys.exc_info()
 
         # Skip if not a 500 error
-        if type(error_type) is not HttpResponseServerError:
-            return
+        # if type(error_type) is not HttpResponseServerError:
+        #     return
 
         # Get further details of the traceback
         traceback_list = traceback_lib.format_exception(
