@@ -6,7 +6,7 @@ import subprocess
 import boto3
 import pytz
 from django.apps import apps
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import connection, ProgrammingError
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
@@ -687,7 +687,7 @@ def system_status(request):
     )
 
 
-@login_required()
+@user_passes_test(lambda u: u.is_superuser)
 def recent_errors(request):
     """Show recent errors from error 500 table"""
 
@@ -698,7 +698,7 @@ def recent_errors(request):
     return render(request, "utils/monitoring/recent_errors.html", {"things": things})
 
 
-@login_required()
+@user_passes_test(lambda u: u.is_superuser)
 def recent_errors_detail(request, pk):
     """Show details of a 500 error"""
 
