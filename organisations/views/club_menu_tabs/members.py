@@ -1722,7 +1722,7 @@ def club_admin_edit_member_htmx(request, club, message=None):
                     form.save()
 
                 if name_form and name_form.has_changed():
-                    unreg = UnregisteredUser.all_objects.get(
+                    unreg = User.all_objects.exclude(user_type=User.UserType.USER).get(
                         system_number=member_details.system_number
                     )
                     unreg.first_name = name_form.cleaned_data["first_name"]

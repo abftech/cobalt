@@ -143,17 +143,15 @@ class Command(BaseCommand):
 
                 # check for an unregistered user with an internal system number
                 # and delete it if found (only if called for a contact)
-                check_unreg = UnregisteredUser.all_objects.filter(
-                    system_number=system_number,
-                ).last()
+                check_unreg = User.contact_objects.filter(system_number=system_number).last()
 
-                if check_unreg and check_unreg.internal_system_number:
+                if check_unreg:
                     check_unreg.delete()
 
         except Exception as e:
-            return (RESULT_ERROR, f"{e}")
+            return RESULT_ERROR, f"{e}"
 
-        return (RESULT_PROCESSED, None)
+        return RESULT_PROCESSED, None
 
     def process_user_row(self, row):
         """

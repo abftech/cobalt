@@ -667,23 +667,22 @@ def _augment_member_details(member_qs, sort_option="last_desc"):
     members = list(member_qs)
     system_numbers = [member.system_number for member in members]
 
-    users = User.objects.filter(system_number__in=system_numbers)
-    unreg_users = UnregisteredUser.all_objects.filter(system_number__in=system_numbers)
+    users = User.all_objects.filter(system_number__in=system_numbers).exclude(user_type=User.UserType.CONTACT)
     player_dict = {
         player.system_number: {
             "first_name": player.first_name,
             "last_name": player.last_name,
             "user_type": (
-                f"{GLOBAL_TITLE} User" if type(player) is User else "Unregistered User"
+                f"{GLOBAL_TITLE} User" if player.user_type == User.UserType.USER else User.UserType.UNREGISTERED
             ),
             "user_or_unreg_id": player.id,
             "user_or_unreg": player,
-            "user_email": player.email if type(player) is User else None,
+            "user_email": player.email if player.user_type == User.UserType.USER else None,
             "internal": (
-                False if type(player) is User else player.internal_system_number
+                True if player.user_type == User.UserType.CONTACT else False
             ),
         }
-        for player in chain(users, unreg_users)
+        for player in users
     }
 
     for member in members:
@@ -985,8 +984,7 @@ def _augment_contact_details(club, contact_qs, sort_option="last_desc"):
     contacts = list(contact_qs)
     system_numbers = [contact.system_number for contact in contacts]
 
-    users = User.objects.filter(system_number__in=system_numbers)
-    unreg_users = UnregisteredUser.all_objects.filter(system_number__in=system_numbers)
+    users = User.all_objects.filter(system_number__in=system_numbers)
 
     # get system numbers of registered users blocking membership of this club
     blocking_system_numbers = MemberClubOptions.objects.filter(
@@ -1001,20 +999,20 @@ def _augment_contact_details(club, contact_qs, sort_option="last_desc"):
             "last_name": player.last_name,
             "user_type": (
                 f"{GLOBAL_TITLE} User"
-                if type(player) is User
+                if player.user_type == User.UserType.USER
                 else (
                     "Contact Only"
-                    if player.internal_system_number
+                    if player.user_type == User.UserType.CONTACT
                     else "Unregistered User"
                 )
             ),
             "user_or_unreg_id": player.id,
             "internal": (
-                False if type(player) is User else player.internal_system_number
+                True if player.user_type == User.UserType.CONTACT else False
             ),
             "blocking_membership": player.system_number in blocking_system_numbers,
         }
-        for player in chain(users, unreg_users)
+        for player in users
     }
 
     for contact in contacts:
@@ -3130,7 +3128,7 @@ def convert_contact_to_member(
             system_number=a_system_number,
         ).last()
         if not u_or_u:
-            u_or_u = UnregisteredUser.all_objects.filter(
+            u_or_u = User.all_objects.exclude(user_type=User.UserType.USER).filter(
                 system_number=a_system_number
             ).last()
         return u_or_u
@@ -3162,7 +3160,7 @@ def convert_contact_to_member(
             existing_user_or_unreg.first_name = mpc_details["GivenNames"]
 
             existing_user_or_unreg.system_number = system_number
-            existing_user_or_unreg.internal_system_number = False
+            # existing_user_or_unreg.internal_system_number = False
             existing_user_or_unreg.save()
             new_user_or_unreg = existing_user_or_unreg
 
@@ -3239,13 +3237,11 @@ def delete_contact(club, system_number):
     )
 
     if contact_details.membership_status != MemberClubDetails.MEMBERSHIP_STATUS_CONTACT:
-        return (False, "This person is not a contact of the club")
+        return False, "This person is not a contact of the club"
 
-    contact_unreg_user = UnregisteredUser.all_objects.filter(
-        system_number=system_number
-    ).last()
+    contact_unreg_user = User.contact_objects.filter(system_number=system_number).last()
 
-    if contact_unreg_user and contact_unreg_user.internal_system_number:
+    if contact_unreg_user:
         # delete the unregistered user record and any recipient entries
 
         contact_unreg_user.delete()
@@ -3262,7 +3258,7 @@ def delete_contact(club, system_number):
 
     ClubMemberLog.objects.filter(club=club, system_number=system_number)
 
-    return (True, "Contact deleted")
+    return True, "Contact deleted"
 
 
 def block_club_for_user(club_id, user):
@@ -3573,7 +3569,7 @@ def get_members_for_renewal(
     system_numbers = [member.system_number for member in member_list]
 
     users = User.objects.filter(system_number__in=system_numbers)
-    unreg_users = UnregisteredUser.all_objects.filter(system_number__in=system_numbers)
+    unreg_users = User.all_objects.exclude(user_type=User.UserType.USER).filter(system_number__in=system_numbers)
 
     # NOTE: Options records are created when someone looks at their profile, so we
     # need to check for people who have blocked (default is allow).

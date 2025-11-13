@@ -8,7 +8,7 @@ from accounts.models import User, UnregisteredUser
 class Command(BaseCommand):
     def handle(self, *args, **options):
 
-        for player in UnregisteredUser.all_objects.all():
+        for player in User.all_objects.exclude(user_type=User.UserType.USER).all():
             new_user = User()
             new_user.email = "fixlater@broken.com"
             new_user.system_number = player.system_number

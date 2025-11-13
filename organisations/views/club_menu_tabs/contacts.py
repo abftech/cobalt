@@ -205,7 +205,7 @@ def edit_htmx(request, club, message=None):
         if form.is_valid() and name_form_ok:
             form.save()
             if name_form:
-                unreg = UnregisteredUser.all_objects.get(
+                unreg = User.all_objects.exclude(user_type=User.UserType.USER).get(
                     system_number=contact_details.system_number
                 )
                 unreg.first_name = name_form.cleaned_data["first_name"]
@@ -549,7 +549,7 @@ def add_contact_manual_htmx(request, club):
                     unreg_user.system_number = NextInternalSystemNumber.next_available()
                     unreg_user.first_name = form.cleaned_data["first_name"]
                     unreg_user.last_name = form.cleaned_data["last_name"]
-                    unreg_user.internal_system_number = True
+                    # unreg_user.internal_system_number = True
                     # unreg_user.added_by_club = club
                     # unreg_user.last_updated_by = request.user
                     unreg_user.save()
@@ -691,7 +691,7 @@ def add_individual_internal_htmx(request, club):
                 unreg_user.system_number = NextInternalSystemNumber.next_available()
                 unreg_user.first_name = form.cleaned_data["first_name"]
                 unreg_user.last_name = form.cleaned_data["last_name"]
-                unreg_user.internal_system_number = True
+                # unreg_user.internal_system_number = True
                 # unreg_user.added_by_club = club
                 # unreg_user.last_updated_by = request.user
                 unreg_user.save()
