@@ -1355,8 +1355,8 @@ def process_member_import(
                     first_name=club_member["first_name"],
                     last_name=club_member["last_name"],
                     origin=origin,
-                    last_updated_by=user,
-                    added_by_club=club,
+                    # last_updated_by=user,
+                    # added_by_club=club,
                 ).save()
 
             added, error = add_member_to_membership(
@@ -1554,8 +1554,8 @@ def process_contact_import(
                             first_name=contact["first_name"],
                             last_name=contact["last_name"],
                             origin=origin,
-                            last_updated_by=user,
-                            added_by_club=club,
+                            # last_updated_by=user,
+                            # added_by_club=club,
                         ).save()
 
         else:
@@ -1568,10 +1568,9 @@ def process_contact_import(
                 unreg_user.system_number = NextInternalSystemNumber.next_available()
                 unreg_user.first_name = contact["first_name"]
                 unreg_user.last_name = contact["last_name"]
-                unreg_user.origin = "CSV"
                 unreg_user.internal_system_number = True
-                unreg_user.added_by_club = club
-                unreg_user.last_updated_by = user
+                # unreg_user.added_by_club = club
+                # unreg_user.last_updated_by = user
                 unreg_user.save()
 
                 contact["system_number"] = unreg_user.system_number

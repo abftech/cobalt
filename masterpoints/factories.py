@@ -470,7 +470,7 @@ class MasterpointDjango(MasterpointFactory):
             return "Error: User already registered"
 
         unregistered = User.unreg_objects.filter(system_number=system_number).first()
-        if unregistered and unregistered.is_active:
+        if unregistered:
             given_name = unregistered.first_name.split(" ")[0]
             surname = unregistered.last_name
             return html.unescape(f"{given_name} {surname}")
@@ -485,10 +485,10 @@ class MasterpointDjango(MasterpointFactory):
         if User.objects.filter(system_number=system_number).exists():
             return False
 
-        # ee if unregistered user exists
+        # See if unregistered user exists
         user = User.unreg_objects.filter(system_number=system_number).first()
 
-        if not user or not user.is_active:
+        if not user or not user.is_abf_active:
             return False
 
         return True

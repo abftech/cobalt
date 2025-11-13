@@ -87,6 +87,8 @@ def run_methods(class_instance):
             ):
                 print(error)
                 traceback.print_exc()
+                print("\n\nAn error occurred. Description above. Pausing so you can check the web browser (if appropriate).")
+                time.sleep(55555)
                 raise error
 
 

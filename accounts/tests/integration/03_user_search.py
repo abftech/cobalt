@@ -84,10 +84,9 @@ class UserSearch:
         self.unreg_user.system_number = 123456789
         self.unreg_user.first_name = "Sherlock"
         self.unreg_user.last_name = "Balvenie"
-        self.unreg_user.origin = "Manual"
         self.unreg_user.internal_system_number = False
-        self.unreg_user.added_by_club = self.club
-        self.unreg_user.last_updated_by = self.manager.alan
+       # self.unreg_user.added_by_club = self.club
+       # self.unreg_user.last_updated_by = self.manager.alan
         self.unreg_user.save()
 
         # create 2 member detail records
@@ -112,10 +111,9 @@ class UserSearch:
         self.contact.system_number = 23456789
         self.contact.first_name = "David"
         self.contact.last_name = "Attenborough"
-        self.contact.origin = "Manual"
         self.contact.internal_system_number = True
-        self.contact.added_by_club = self.club
-        self.contact.last_updated_by = self.manager.alan
+     #   self.contact.added_by_club = self.club
+     #   self.contact.last_updated_by = self.manager.alan
         self.contact.save()
 
         # Create 2 memberships

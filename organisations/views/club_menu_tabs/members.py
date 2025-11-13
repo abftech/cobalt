@@ -531,7 +531,7 @@ def report_all_csv(request, club_id):
                 email,
                 email_source,
                 "Unregistered",
-                un_reg.origin,
+                "-",
                 user_tags,
             ]
         )
@@ -1234,11 +1234,10 @@ def add_un_reg_htmx(request, club):
         User(
             user_type=User.UserType.UNREGISTERED,
             system_number=form.cleaned_data["system_number"],
-            last_updated_by=request.user,
+            # last_updated_by=request.user,
             last_name=form.cleaned_data["last_name"],
             first_name=form.cleaned_data["first_name"],
-            origin="Manual",
-            added_by_club=club,
+            # added_by_club=club,
         ).save()
         ClubLog(
             organisation=club,

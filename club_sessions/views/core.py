@@ -1723,11 +1723,11 @@ def change_user_on_session_entry(
             User(
                 user_type=User.UserType.UNREGISTERED,
                 system_number=system_number,
-                last_updated_by=director,
+                # last_updated_by=director,
                 last_name=return_value[1],
                 first_name=return_value[0],
                 origin="Manual",
-                added_by_club=club,
+                # added_by_club=club,
             ).save()
             ClubLog(
                 organisation=club,

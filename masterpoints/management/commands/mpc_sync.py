@@ -281,12 +281,11 @@ def sync_players():
                 user.first_name = item["GivenNames"]
                 user.last_name = item["Surname"]
                 user.username = abf_number
-                user.origin = "MPCS"
 #                user.last_updated_by = SYSTEM_ACCOUNT
                 added_count += 1
 
             user.old_mpc_id = item["PlayerID"]
-            user.is_active = item["IsActive"] == "Y"
+            user.is_abf_active = item["IsActive"] == "Y"
             user.save()
 
         min_batch = max_batch + 1

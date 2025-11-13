@@ -549,10 +549,9 @@ def add_contact_manual_htmx(request, club):
                     unreg_user.system_number = NextInternalSystemNumber.next_available()
                     unreg_user.first_name = form.cleaned_data["first_name"]
                     unreg_user.last_name = form.cleaned_data["last_name"]
-                    unreg_user.origin = "Manual"
                     unreg_user.internal_system_number = True
-                    unreg_user.added_by_club = club
-                    unreg_user.last_updated_by = request.user
+                    # unreg_user.added_by_club = club
+                    # unreg_user.last_updated_by = request.user
                     unreg_user.save()
 
                     # create a new member details record
@@ -591,9 +590,8 @@ def add_contact_manual_htmx(request, club):
                     unreg_user.system_number = system_number
                     unreg_user.first_name = request.POST.get("first_name")
                     unreg_user.last_name = request.POST.get("last_name")
-                    unreg_user.origin = "MCP"
-                    unreg_user.added_by_club = club
-                    unreg_user.last_updated_by = request.user
+                    # unreg_user.added_by_club = club
+                    # unreg_user.last_updated_by = request.user
                     unreg_user.save()
 
                 add_contact_with_system_number(
@@ -692,10 +690,9 @@ def add_individual_internal_htmx(request, club):
                 unreg_user.system_number = NextInternalSystemNumber.next_available()
                 unreg_user.first_name = form.cleaned_data["first_name"]
                 unreg_user.last_name = form.cleaned_data["last_name"]
-                unreg_user.origin = "Manual"
                 unreg_user.internal_system_number = True
-                unreg_user.added_by_club = club
-                unreg_user.last_updated_by = request.user
+                # unreg_user.added_by_club = club
+                # unreg_user.last_updated_by = request.user
                 unreg_user.save()
 
                 # create a new member details record

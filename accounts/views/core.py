@@ -80,9 +80,23 @@ def register_user(request, system_number=None, email=None):
 
 
 def _register_handle_valid_form(form, request):
+    # Check for an unregistered user
     user = form.save(commit=False)
+
+    un_reg = User.unreg_objects.filter(username=user.username).first()
+
+    if un_reg:
+        # If we have a matching unregistered user, remove it
+        un_reg.delete()
+
+    user.user_type = User.UserType.USER
+    user.is_abf_active = True
     user.is_active = False  # not active until email confirmed
     user.system_number = user.username
+
+    # Update club records
+    replace_unregistered_user_with_real_user(user)
+
     user.save()
 
     _check_duplicate_email(user)
@@ -108,9 +122,6 @@ def _register_handle_valid_form(form, request):
     send_cobalt_email_with_template(
         to_address=to_email, context=context, priority="now"
     )
-
-    # Check if we have a matching UnregisteredUser object and copy data across
-    _check_unregistered_user_match(user)
 
     return render(
         request, "accounts/core/register_complete.html", {"email_address": to_email}
@@ -353,26 +364,6 @@ def _check_duplicate_email(user):
 
     return others_same_email.exists()
 
-
-def _check_unregistered_user_match(user):
-    """See if there is already a user with this system_id in UnregisteredUser and cut across data"""
-
-    unregistered_user = User.unreg_objects.filter(
-        system_number=user.system_number
-    ).first()
-
-    if not unregistered_user:
-        return
-
-    # Call the callbacks
-
-    # Organisations
-    replace_unregistered_user_with_real_user(user)
-
-    # Now delete the unregistered user, we don't need it anymore. This will also delete any UnregisteredBlockedEmail
-    unregistered_user.delete()
-
-
 def add_un_registered_user_with_mpc_data(
     system_number: int, club: Organisation, added_by: User, origin: str = "Manual"
 ) -> (str, dict):
@@ -395,12 +386,11 @@ def add_un_registered_user_with_mpc_data(
     User(
         user_type=User.UserType.UNREGISTERED,
         system_number=system_number,
-        last_updated_by=added_by,
+ #       last_updated_by=added_by,
         last_name=details["Surname"],
         first_name=details["GivenNames"],
         # email=mpc_email,
-        origin=origin,
-        added_by_club=club,
+        # added_by_club=club,
     ).save()
 
     return "new", details

@@ -29,12 +29,12 @@ class UnregisteredUserAdmin(admin.ModelAdmin):
 
     search_fields = ["last_name", "first_name", "=system_number", "=old_mpc_id"]
 
-    autocomplete_fields = [
-        "last_updated_by",
-        "last_registration_invite_by_user",
-        "last_registration_invite_by_club",
-        "added_by_club",
-    ]
+    # autocomplete_fields = [
+    #     "last_updated_by",
+    #     "last_registration_invite_by_user",
+    #     "last_registration_invite_by_club",
+    #     "added_by_club",
+    # ]
 
     list_filter = ["internal_system_number"]
 

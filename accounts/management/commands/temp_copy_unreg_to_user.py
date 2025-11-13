@@ -19,6 +19,7 @@ class Command(BaseCommand):
             new_user.first_name = player.first_name
             new_user.last_name = player.last_name
             new_user.username = player.system_number
+            new_user.is_active = False
 
             try:
                 new_user.save()

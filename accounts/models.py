@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
+from accounts.managers import UserManager, ContactManager, UnRegManager
 from cobalt.settings import (
     AUTO_TOP_UP_MAX_AMT,
     GLOBAL_ORG,
@@ -20,57 +21,12 @@ from cobalt.settings import (
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, RegexValidator
-from django.db import models, transaction
-
+from django.db import models
 def no_future(value):
     today = date.today()
     if value > today:
         raise ValidationError("Date cannot be in the future.")
 
-
-class UserManager(models.Manager):
-    """
-    Added when UnregisteredUsers were merged into the User object so anything referencing User.objects didn't
-    need to be changed.
-    """
-
-    def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .filter(
-                user_type=User.UserType.USER,
-            )
-        )
-
-class UnRegManager(models.Manager):
-    """
-    Manager for Unregistered users
-    """
-
-    def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .filter(
-                user_type=User.UserType.UNREGISTERED,
-            )
-        )
-
-
-class ContactManager(models.Manager):
-    """
-    Manager for contact users
-    """
-
-    def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .filter(
-                user_type=User.UserType.CONTACT,
-            )
-        )
 
 
 class User(AbstractUser):
@@ -174,7 +130,7 @@ class User(AbstractUser):
     class UserType(models.TextChoices):
         USER = "U", "User"
         """ A 'normal' registered user with a password and validated email address """
-        UNREGISTERED = "N", "Unregistered"
+        UNREGISTERED = "N", "Unregistered User"
         """ A member of the ABF with a valid ABF number, but not a user of MyABF, can be converted to a User """
         CONTACT = "C", "Contact"
         """ A contact for an organisation who is not an ABF member """
@@ -252,6 +208,9 @@ class User(AbstractUser):
         "Use Perfect Scrollbar on Windows", default=False
     )
     last_activity = models.DateTimeField(blank=True, null=True)
+
+    is_abf_active = models.BooleanField(default=True, blank=True)
+    """ Is this person an active member of the ABF """
 
     old_mpc_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
     """ Temporary link to old Masterpoint Centre record, required for MPC work """

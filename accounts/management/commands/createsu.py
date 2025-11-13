@@ -21,12 +21,12 @@ class Command(BaseCommand):
             user.is_staff = True
             user.save()
             self.stdout.write(
-                self.style.SUCCESS("Successfully created new super user - %s" % newuser)
+                self.style.SUCCESS(
+                    f"Successfully created new super user - {newuser}"
+                )
             )
         else:
-            self.stdout.write(
-                self.style.SUCCESS("%s user already exists - ok" % newuser)
-            )
+            self.stdout.write(self.style.SUCCESS(f"{newuser} user already exists - ok"))
 
     def handle(self, *args, **options):
         print("Running createsu.")
@@ -79,8 +79,6 @@ class Command(BaseCommand):
             "TBA",
             "pic_folder/julian.jpg",
         )
-
-        # COB-797
         self.create_initial_user(
             "335533",
             "success@simulator.amazonses.com",

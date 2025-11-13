@@ -421,7 +421,7 @@ class SessionEntryChangesTests:
             first_name="Barry",
             last_name="McGuigan",
             system_number=system_number,
-            last_updated_by=self.manager.alan,
+            # last_updated_by=self.manager.alan,
         )
         barry.save()
         self.session_entry.system_number = system_number

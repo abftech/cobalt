@@ -7,7 +7,6 @@ import accounts.views.profile
 import accounts.views.settings
 import accounts.views.search
 import accounts.views.core
-import accounts.views.covid
 import accounts.views.system_card
 
 app_name = "accounts"  # pylint: disable=invalid-name
@@ -62,21 +61,6 @@ urlpatterns = [
         name="activate",
     ),
     path("profile", accounts.views.profile.profile, name="user_profile"),
-    path(
-        "profile-covid-htmx",
-        accounts.views.covid.covid_htmx,
-        name="covid_htmx",
-    ),
-    path(
-        "profile-covid-user-confirm-htmx",
-        accounts.views.covid.covid_user_confirm_htmx,
-        name="covid_user_confirm_htmx",
-    ),
-    path(
-        "profile-covid-user-exempt-htmx",
-        accounts.views.covid.covid_user_exempt_htmx,
-        name="covid_user_exempt_htmx",
-    ),
     path(
         "profile-memberships",
         accounts.views.profile.memberships_card_htmx,
