@@ -262,6 +262,10 @@ MIDDLEWARE = [
     "django_otp.middleware.OTPMiddleware",
 ]
 
+# Use middleware on non-prod systems to show errors
+if DEBUG:
+    MIDDLEWARE.append("cobalt.middleware.CobaltLog500ErrorsMiddleware")
+
 ROOT_URLCONF = "cobalt.urls"
 
 TEMPLATES = [
