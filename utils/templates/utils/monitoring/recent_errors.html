@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load cobalt_tags %}
 
 {% block content %}
 
@@ -16,7 +17,7 @@
     <div class="card">
         <div class="card-header card-header-info">
             <h2>Recent Errors</h2>
-            <h3>Most recent at the bottom</h3>
+            <h3>View Server 500 Errors</h3>
         </div>
         <div class="card-body">
 
@@ -24,15 +25,17 @@
                 <table class="table table-condensed table-hover">
                     <thead class="text-primary">
                         <tr>
-                            <th>Time</th>
+                            <th>Date</th>
                             <th class="text-left">Error</th>
+                            <th class="text-left">User</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for error in errors %}
+                        {% for thing in things %}
                             <tr>
-                                <td>{{ error.timestamp }}</td>
-                                <td class="text-left">{{ error.message }}</td>
+                                <td><a href="{% url "utils:recent_errors_detail" pk=thing.id %}">{{ thing.error_date_time|cobalt_nice_datetime_short }}</a></td>
+                                <td class="text-left"><a href="{% url "utils:recent_errors_detail" pk=thing.id %}">{{ thing.summary }}</a></td>
+                                <td class="text-left"><a href="{% url "utils:recent_errors_detail" pk=thing.id %}">{{ thing.user }}</a></td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -41,5 +44,6 @@
         </div>
     </div>
 
+    {% include "utils/pagination_footer.html" %}
 
 {% endblock %}

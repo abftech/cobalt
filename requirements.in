@@ -86,10 +86,24 @@ boto3==1.38.20
 git+https://github.com/abftech/django-post_office
 
 # Django package to talk to AWS Simple Email Service, integrated with Django Post Office
-django-ses==4.4.0
+
+###############################################################################################
+# This package has database changes                                                           #
+# For the Blue/Green deployment to Production use the same version as is already installed    #
+# Upgrade after installation                                                                  #
+###############################################################################################
+# django-ses==4.4.0
+django-ses==3.1.2
 
 # Django package to talk to Google FCM
-# fcm-django==2.3.1
+
+###############################################################################################
+# This package has database changes                                                           #
+# For the Blue/Green deployment to Production use the same version as is already installed    #
+# Upgrade after installation                                                                  #
+###############################################################################################
+# fcm-django==2.2.1
+fcm-django==1.0.11
 
 ############################
 # Monitoring and tools     #

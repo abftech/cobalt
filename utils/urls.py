@@ -21,6 +21,11 @@ urlpatterns = [
     path("database", utils.views.monitoring.database_view, name="database_view"),
     path("recent-errors", utils.views.monitoring.recent_errors, name="recent_errors"),
     path(
+        "recent-errors-detail/<int:pk>",
+        utils.views.monitoring.recent_errors_detail,
+        name="recent_errors_detail",
+    ),
+    path(
         "admin-show-aws-infrastructure-info",
         utils.views.monitoring.admin_show_aws_infrastructure_info,
         name="admin_show_aws_infrastructure_info",
