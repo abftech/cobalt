@@ -9,7 +9,7 @@ from .models import (
     UserPaysFor,
     APIToken,
     UserAdditionalInfo,
-    SystemCard,
+    SystemCard, NextInternalSystemNumber,
 )
 
 
@@ -58,6 +58,12 @@ class UserPaysForAdmin(admin.ModelAdmin):
         "lucky_person",
     ]
 
+
+@admin.register(NextInternalSystemNumber)
+class NextInternalSystemNumberAdmin(admin.ModelAdmin):
+    """Admin class for model NextInternalSystemNumber"""
+
+    pass
 
 @admin.register(APIToken)
 class APITokenAdmin(admin.ModelAdmin):

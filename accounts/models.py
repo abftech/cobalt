@@ -515,6 +515,9 @@ class NextInternalSystemNumber(models.Model):
         """Checks whether the number is an internal system number"""
         return number >= cls._first_number
 
+    def __str__(self):
+        return self.number
+
 
 class SystemCard(models.Model):
     """System cards for users"""

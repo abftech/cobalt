@@ -7,7 +7,7 @@ from selenium.common import NoSuchElementException
 from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 
-from accounts.models import UnregisteredUser, UserAdditionalInfo, User
+from accounts.models import UnregisteredUser, UserAdditionalInfo, User, NextInternalSystemNumber
 from cobalt.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION_NAME
 from organisations.models import Organisation, ClubMemberLog, MemberClubDetails
 from rbac.core import (
@@ -219,7 +219,7 @@ class UserSearch:
 
         # Check we got a profile
         ok = (
-            self.manager.driver.current_url.find("accounts/unregistered_public-profile")
+            self.manager.driver.current_url.find("accounts/public-profile")
             > 0
         )
 
@@ -254,7 +254,9 @@ class UserSearch:
         log_entry = ClubMemberLog.objects.latest("id")
 
         # Get membership record
-        unreg = User.unreg_objects.last()
+        latest_internal_number = NextInternalSystemNumber.objects.last().number
+        unreg = User.contact_objects.filter(system_number=latest_internal_number-1).first()
+
         membership_details = MemberClubDetails.objects.last()
 
         ok = (
@@ -312,7 +314,7 @@ class UserSearch:
 
         # Check we got a profile
         ok = (
-            self.manager.driver.current_url.find("accounts/unregistered_public-profile")
+            self.manager.driver.current_url.find("accounts/public-profile")
             > 0
         )
 
@@ -381,7 +383,7 @@ class UserSearch:
 
         # Go to the profile
         url = self.manager.base_url + reverse(
-            "accounts:unregistered_public_profile", kwargs={"pk": self.unreg_user.id}
+            "accounts:public_profile", kwargs={"pk": self.unreg_user.id}
         )
         self.manager.driver.get(url)
 
@@ -412,6 +414,7 @@ class UserSearch:
         remove_block = self.manager.selenium_wait_for_clickable(
             "t_remove_block_membership"
         )
+
         remove_block.click()
 
         # give it a second
@@ -434,7 +437,7 @@ class UserSearch:
 
         # Go to the profile
         url = self.manager.base_url + reverse(
-            "accounts:unregistered_public_profile", kwargs={"pk": self.contact.id}
+            "accounts:public_profile", kwargs={"pk": self.contact.id}
         )
         self.manager.driver.get(url)
 
