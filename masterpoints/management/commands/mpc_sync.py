@@ -456,14 +456,18 @@ def sync_mp_trans(full_sync=False):
     _print_timing(start_time)
 
 
-def sync_mpc_club_membership_history(full_sync=False):
+def sync_mpc_club_membership_history():
     """ClubMembership -> ClubMembershipHistory"""
 
     print("syncing club membership history...")
 
     start_time = time.perf_counter()
 
-    for item in masterpoint_query_list(f"mpci-club-membership"):
+    club_dict = {}
+    for club in Organisation.objects.all():
+        club_dict[club.old_mpc_id] = club.id
+
+    for item in masterpoint_query_list("mpci-club-membership"):
 
         membership = ClubMembershipHistory.objects.filter(
             old_mpc_id=item["RecordID"]
@@ -474,9 +478,8 @@ def sync_mpc_club_membership_history(full_sync=False):
         membership.old_mpc_club_id = item["ClubID"]
         membership.home_members = item["HomeMembers"]
 
-        club = Organisation.objects.filter(old_mpc_id=item["ClubID"]).first()
-        if club:
-            membership.club = club
+        if item["ClubID"] in club_dict:
+            membership.club_id = club_dict[item["ClubID"]]
         else:
             print(
                 f"No matching club found for ClubID={item['ClubID']}. RecordID={item['RecordID']}"
