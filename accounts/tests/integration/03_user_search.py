@@ -215,7 +215,7 @@ class UserSearch:
         )
 
         # Click on link to go to profile
-        self.manager.driver.find_element(By.ID, "t_search_link_33").click()
+        self.manager.selenium_find_text_in_link("Sherlock Balvenie").click()
 
         # Check we got a profile
         ok = (
@@ -310,7 +310,7 @@ class UserSearch:
         )
 
         # Click on link to go to profile
-        self.manager.driver.find_element(By.ID, "t_search_link_35").click()
+        self.manager.selenium_find_text_in_link("Horatio Nelson").click()
 
         # Check we got a profile
         ok = (

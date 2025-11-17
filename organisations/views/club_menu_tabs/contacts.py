@@ -547,8 +547,11 @@ def add_contact_manual_htmx(request, club):
                     # create a new unregistered user with an internal system number
                     unreg_user = User(user_type=User.UserType.CONTACT)
                     unreg_user.system_number = NextInternalSystemNumber.next_available()
+                    unreg_user.username = unreg_user.system_number
                     unreg_user.first_name = form.cleaned_data["first_name"]
                     unreg_user.last_name = form.cleaned_data["last_name"]
+                    unreg_user.is_active = False
+                    unreg_user.is_abf_active = False
                     # unreg_user.internal_system_number = True
                     # unreg_user.added_by_club = club
                     # unreg_user.last_updated_by = request.user

@@ -557,42 +557,6 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
         # Wait for it
         time.sleep(3)
 
-    # def _selenium_wait(self, wait_event, element_id, timeout):
-    #     """Wait for something and return it"""
-    #     # Scroll to item
-    #     # element = self.driver.find_element(By.ID, element_id)
-    #     # self.driver.execute_script(
-    #     #     "window.scrollTo(0," + str(element.location["y"]) + ")"
-    #     # )
-    #     try:
-    #         ignored_exceptions = (
-    #             NoSuchElementException,
-    #             StaleElementReferenceException,
-    #         )
-    #         WebDriverWait(
-    #             self.driver, timeout, ignored_exceptions=ignored_exceptions
-    #         ).until(wait_event)
-    #         return self.driver.find_element(By.ID, element_id)
-    #     except TimeoutException:
-    #         print(
-    #             "****************************************************************************************************************************"
-    #         )
-    #         print(
-    #             "** Timeout Exception in _selenium_wait() - may be expected behaviour"
-    #         )
-    #         print(f"** Waited for '{element_id}'. Wait event was '{wait_event_str}'")
-    #         stack = inspect.stack()
-    #         calling_lineno = stack[2][0].f_lineno
-    #         calling_file = stack[2][0].f_code.co_filename
-    #         print(f"** We got here from {calling_file} at line {calling_lineno}.")
-    #         print(
-    #             f"** Consider adding self.manager.sleep() before you call wait_for* and checking that '{element_id}' is present"
-    #         )
-    #         print(
-    #             "****************************************************************************************************************************"
-    #         )
-    #         return False
-
     def _selenium_wait(self, wait_event, wait_event_str, element_id, timeout):
         """Wait for something and return it"""
         try:
@@ -619,6 +583,7 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
             print(
                 f"** Consider adding self.manager.sleep() before you call wait_for* and checking that '{element_id}' is present"
             )
+            print("** If this behaviour was expected, consider looking for something that is there rather than isn't.")
             print(
                 "****************************************************************************************************************************"
             )
