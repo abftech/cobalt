@@ -21,11 +21,11 @@ class Migration(migrations.Migration):
             model_name='user',
             name='covid_status',
         ),
-        # migrations.AddField(
-        #     model_name='unregistereduser',
-        #     name='is_active',
-        #     field=models.BooleanField(default=True),
-        # ),
+        migrations.AddField(
+            model_name='unregistereduser',
+            name='is_active',
+            field=models.BooleanField(default=True),
+        ),
         migrations.AddField(
             model_name='unregistereduser',
             name='old_mpc_id',
