@@ -281,6 +281,7 @@ def sync_players():
                 user.first_name = item["GivenNames"]
                 user.last_name = item["Surname"]
                 user.username = abf_number
+                user.is_active = False
 #                user.last_updated_by = SYSTEM_ACCOUNT
                 added_count += 1
 
@@ -376,6 +377,7 @@ def sync_mp_trans(full_sync=False):
 
     batch_size = 5000
     rewind = 500_000
+    errors = 0
 
     # Get new data only unless we are doing a full sync
     min_batch = (
@@ -396,7 +398,27 @@ def sync_mp_trans(full_sync=False):
     while data_returned:
         data_returned = False
         print(f"Processing {min_batch} to {max_batch}")
-        for item in masterpoint_query_list(f"mpci-trans/{min_batch}/{max_batch}"):
+        data = masterpoint_query_list(f"mpci-trans/{min_batch}/{max_batch}")
+
+        # Load the foreign keys in one hit
+        player_list = []
+        mp_batch_list = []
+        for item in data:
+            player_list.append(item["PlayerID"])
+            mp_batch_list.append(item["MPBatchID"])
+
+        players = User.all_objects.filter(old_mpc_id__in=player_list)
+        mp_batches = MPBatch.objects.filter(old_mpc_id__in=mp_batch_list)
+
+        player_dict = {}
+        for player in players:
+            player_dict[player.old_mpc_id] = player.id
+
+        mp_batch_dict = {}
+        for mp_batch in mp_batches:
+            mp_batch_dict[mp_batch.old_mpc_id] = mp_batch.id
+
+        for item in data:
             data_returned = True
 
             mp_trans = (
@@ -409,28 +431,20 @@ def sync_mp_trans(full_sync=False):
             mp_trans.source = item["Source"]
             mp_trans.is_approved = item["IsApproved"] == "Y"
 
-            # validate and add system number
-            player = (
-                User.objects.filter(old_mpc_id=item["PlayerID"]).first()
-                or User.unreg_objects.filter(old_mpc_id=item["PlayerID"]).first()
-            )
-            if player:
-                mp_trans.system_number = player.system_number
-            else:
-                print(
-                    f"No matching user found for PlayerID={item['PlayerID']}. MPTransID={item['TranID']}"
-                )
+            try:
+                # add link to user
+                mp_trans.user_id = player_dict[mp_trans.old_mpc_player_id]
+            except KeyError:
+                print(f"Error looking for {mp_trans.old_mpc_player_id} in Player dictionary")
+                errors += 1
                 continue
 
-            # link to mp_batch
-            mp_batch = MPBatch.objects.filter(old_mpc_id=item["MPBatchID"]).first()
-
-            if mp_batch:
-                mp_trans.mp_batch = mp_batch
-            else:
-                print(
-                    f"No matching batch found for BatchID={item['MPBatchID']}. MPTransID={item['TranID']}"
-                )
+            try:
+                # link to MP Batch
+                mp_trans.mp_batch_id = mp_batch_dict[mp_trans.old_mp_batch_id]
+            except KeyError:
+                print(f"Error looking for {mp_trans.old_mp_batch_id} in Batch ID dictionary")
+                errors += 1
                 continue
 
             mp_trans.save()
@@ -438,6 +452,7 @@ def sync_mp_trans(full_sync=False):
         min_batch = max_batch + 1
         max_batch = max_batch + batch_size
 
+    print(f"Finished with {errors} errors")
     _print_timing(start_time)
 
 
@@ -478,16 +493,16 @@ class Command(BaseCommand):
         print("Running mpc_sync")
 
         # Order matters, we need to link to foreign keys so they need to exist first
-        sync_clubs()
-        sync_players()
-        sync_charge_types()
-        sync_events(masterpoint_query_list("mpci-events"))
-        sync_events(masterpoint_query_list("mpci-deleted-events"), force_closed=True)
-        sync_green_point_achievement_bands()
-        sync_periods()
-        sync_ranks()
+        # sync_clubs()
+        # sync_players()
+        # sync_charge_types()
+        # sync_events(masterpoint_query_list("mpci-events"))
+        # sync_events(masterpoint_query_list("mpci-deleted-events"), force_closed=True)
+        # sync_green_point_achievement_bands()
+        # sync_periods()
+        # sync_ranks()
         # sync_promotions()
         # sync_mp_batches()
-        # sync_mp_trans(full_sync=False)
+        sync_mp_trans(full_sync=False)
         # sync_mpc_club_membership_history()
 

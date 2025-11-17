@@ -59,16 +59,17 @@ class MPTranAdmin(admin.ModelAdmin):
 
     autocomplete_fields = [
         "mp_batch",
+        "user",
     ]
 
-    readonly_fields = ("linked_user",)
+    # readonly_fields = ("linked_user",)
 
-    def linked_user(self, instance):
-        """ link to user, needs readonly_fields = ("linked_user",) added above """
+    # def linked_user(self, instance):
+    #     """ link to user, needs readonly_fields = ("linked_user",) added above """
+    #
+    #     return link_to_user_or_unregistered_user(instance.system_number)
 
-        return link_to_user_or_unregistered_user(instance.system_number)
-
-    linked_user.short_description = "Link to User"
+    # linked_user.short_description = "Link to User"
 
 class MPBatchAdmin(admin.ModelAdmin):
     """Admin class for model MPBatch"""

@@ -507,8 +507,13 @@ class MasterpointDjango(MasterpointFactory):
     def _get_masterpoints_by_colour(self, system_number):
         """ returns the total masterpoints for a user, broken down by colour """
 
+        player = User.all_objects.filter(system_number=system_number).first()
+
+        if not player:
+            return 0, 0, 0, 0
+
         # Get Green, Red and Gold masterpoints for this system_number
-        total_mps = MPTran.objects.filter(system_number=system_number).values("mp_colour").order_by("mp_colour").annotate(total=Sum("mp_amount"))
+        total_mps = MPTran.objects.filter(user=player).values("mp_colour").order_by("mp_colour").annotate(total=Sum("mp_amount"))
 
         green = 0
         red = 0
@@ -657,7 +662,7 @@ class MasterpointDjango(MasterpointFactory):
 
         # Get the details
         start_date = datetime.now(tz=TZ) - relativedelta(years=years)
-        details = MPTran.objects.filter(system_number=system_number).filter(mp_batch__posted_date__gte=start_date).order_by("-mp_batch__posted_date").select_related("mp_batch", "mp_batch__club", "mp_batch__masterpoint_event")
+        details = MPTran.objects.filter(user__system_number=system_number).filter(mp_batch__posted_date__gte=start_date).order_by("-mp_batch__posted_date").select_related("mp_batch", "mp_batch__club", "mp_batch__masterpoint_event")
 
         # we need to construct the balance to show
         counter = summary["TotalMPs"]

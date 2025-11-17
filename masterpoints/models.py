@@ -255,7 +255,8 @@ class MPTran(models.Model):
     old_mpc_id = models.PositiveIntegerField(db_index=True)
     old_mpc_player_id = models.PositiveIntegerField()
     """ temporary - here for any debugging """
-    system_number = models.PositiveIntegerField(db_index=True)
+    # system_number = models.PositiveIntegerField(db_index=True)
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
     mp_colour = models.CharField(max_length=1, choices=MPColours.choices)
     mp_amount = models.DecimalField(decimal_places=2, max_digits=10)
     source = models.CharField(max_length=1, choices=MPSource.choices)
@@ -265,7 +266,7 @@ class MPTran(models.Model):
     is_approved = models.BooleanField()
 
     def __str__(self):
-        return f"{self.system_number} - {self.mp_colour} - {self.mp_amount}"
+        return f"{self.user} - {self.mp_colour} - {self.mp_amount}"
 
 
 class ClubMembershipHistory(models.Model):
