@@ -17,14 +17,14 @@
         <th>Status
       </thead>
       <tbody>
-        {% for m in matches %}
+        {% for match in matches %}
 
         <tr>
-          <td><a href="view/{{ m.ABFNumber }}"> {{ m.GivenNames }} </a>
-          <td><a href="view/{{ m.ABFNumber }}"> {{ m.Surname }} </a>
-          <td><a href="view/{{ m.ABFNumber }}"> {{ m.ABFNumber }} </a>
-          <td><a href="view/{{ m.ABFNumber }}"> {{ m.ClubName }} </a>
-          <td> {% if m.IsActive == "Y" %} Active {% else %} Inactive {% endif %}
+          <td><a href="view/{{ match.system_number }}"> {{ match.first_name }} </a>
+          <td><a href="view/{{ match.system_number }}"> {{ match.last_name }} </a>
+          <td><a href="view/{{ match.system_number }}"> {{ match.system_number }} </a>
+          <td><a href="view/{{ match.system_number }}"> {{ match.home_club }} </a>
+          <td> {% if match.is_abf_active %} Active {% else %} Inactive {% endif %}
         </tr>
 
         {% endfor %}

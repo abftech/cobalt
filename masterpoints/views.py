@@ -18,7 +18,7 @@ from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 from reportlab.platypus import Table, TableStyle, Image, Paragraph
 
-from cobalt.settings import GLOBAL_MPSERVER, MP_USE_DJANGO
+from cobalt.settings import MP_USE_DJANGO
 from .factories import masterpoint_factory_creator, masterpoint_query_list
 
 
@@ -100,37 +100,15 @@ def masterpoints_detail_html(request, system_number=None, years=1):
 
 @login_required()
 def masterpoints_search(request):
-    if request.method == "POST":
-        system_number = request.POST["system_number"]
-        last_name = request.POST["last_name"]
-        first_name = request.POST["first_name"]
-        if system_number:
-            return redirect("view/%s/" % system_number)
-        else:
-            if not first_name:  # last name only
-                matches = requests.get(
-                    "%s/lastname_search/%s" % (GLOBAL_MPSERVER, last_name)
-                ).json()
-            elif not last_name:  # first name only
-                matches = requests.get(
-                    "%s/firstname_search/%s" % (GLOBAL_MPSERVER, first_name)
-                ).json()
-            else:  # first and last names
-                matches = requests.get(
-                    "%s/firstlastname_search/%s/%s"
-                    % (GLOBAL_MPSERVER, first_name, last_name)
-                ).json()
-            if len(matches) == 1:
-                system_number = matches[0]["ABFNumber"]
-                return redirect("view/%s/" % system_number)
-            else:
-                return render(
-                    request,
-                    "masterpoints/masterpoints_search_results.html",
-                    {"matches": matches},
-                )
-    else:
-        return redirect("view/%s/" % request.user.system_number)
+    """ Called from the masterpoints page to search fo other users """
+
+    if request.method != "POST":
+        return redirect(f"view/{request.user.system_number}/")
+    system_number = request.POST["system_number"]
+    last_name = request.POST["last_name"]
+    first_name = request.POST["first_name"]
+    mp_source = masterpoint_factory_creator()
+    return mp_source.masterpoint_search(request, system_number, last_name, first_name)
 
 
 def system_number_lookup(request):

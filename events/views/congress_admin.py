@@ -22,6 +22,7 @@ from events.views.core import (
     get_completed_congresses_with_money_due,
     fix_closed_congress,
 )
+from masterpoints.factories import masterpoint_factory_creator
 from notifications.models import BlockNotification, BatchID, BatchActivity, Recipient
 from notifications.views.core import (
     contact_member,
@@ -796,25 +797,16 @@ def get_player_mp_stats(player):
     Get summary data
     """
 
-    qry = "%s/mps/%s" % (
-        GLOBAL_MPSERVER,
-        player.system_number,
-    )
-    try:
-        r = requests.get(qry, timeout=5).json()
-    except Exception as exc:
-        print(exc)
-        r = []
+    mp_source = masterpoint_factory_creator()
+    mps, active = mp_source.mp_total_and_status(player)
 
-    if len(r) == 0:
-        return "Unknown ABF no", "Unknown ABF no"
-    is_active = r[0]["IsActive"]
-    if is_active == "Y":
-        is_active = "Active"
+    if mps is None:
+        mps = 0
+
+    if active:
+        return mps, "Active"
     else:
-        is_active = "Inactive"
-    return r[0]["TotalMPs"], is_active
-
+        return mps, "Inactive"
 
 @login_required()
 def admin_event_log(request, event_id):

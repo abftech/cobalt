@@ -8,12 +8,14 @@ import requests
 from dateutil.relativedelta import relativedelta
 from django.contrib import messages
 from django.db.models import Sum, Q
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from requests import JSONDecodeError
 
 from accounts.models import User, UnregisteredUser
 from cobalt.settings import GLOBAL_MPSERVER, MP_USE_FILE, MP_USE_DJANGO, TIME_ZONE
 from masterpoints.models import MPTran, Rank
+from organisations.models import Organisation
+from utils.views.general import masterpoint_query
 
 TZ = pytz.timezone(TIME_ZONE)
 
@@ -417,6 +419,88 @@ class MasterpointDB(MasterpointFactory):
 
         return True, active_matches
 
+    def mp_total_and_status(self, player):
+        """ return total masterpoints and abf active status """
+
+        qry = "%s/mps/%s" % (
+            GLOBAL_MPSERVER,
+            player.system_number,
+        )
+        try:
+            r = requests.get(qry, timeout=5).json()
+        except Exception as exc:
+            print(exc)
+            r = []
+
+        if len(r) == 0:
+            return "Unknown ABF no", "Unknown ABF no"
+        is_active = r[0]["IsActive"]
+        if is_active == "Y":
+            is_active = "Active"
+        else:
+            is_active = "Inactive"
+        return r[0]["TotalMPs"], is_active
+
+    def masterpoint_search(self, request, system_number, last_name, first_name):
+        """ Called by the masterpoints page on the side menu to show masterpoints for a searched user or the logged in user """
+
+        if system_number:
+            return redirect("view/%s/" % system_number)
+        else:
+            if not first_name:  # last name only
+                matches = requests.get(
+                    "%s/lastname_search/%s" % (GLOBAL_MPSERVER, last_name)
+                ).json()
+            elif not last_name:  # first name only
+                matches = requests.get(
+                    "%s/firstname_search/%s" % (GLOBAL_MPSERVER, first_name)
+                ).json()
+            else:  # first and last names
+                matches = requests.get(
+                    "%s/firstlastname_search/%s/%s"
+                    % (GLOBAL_MPSERVER, first_name, last_name)
+                ).json()
+            if len(matches) == 1:
+                system_number = matches[0]["ABFNumber"]
+                return redirect("view/%s/" % system_number)
+            else:
+                # Convert format
+                matches_reformat = []
+                for item in matches:
+                    matches_reformat.append(
+                        {
+                            "first_name": item["GivenNames"],
+                            "last_name": item["Surname"],
+                            "is_abf_active": item["IsActive"] == "Y",
+                            "system_number": item["ABFNumber"],
+                            "home_club": item["ClubName"],
+                        }
+                    )
+
+                return render(
+                    request,
+                    "masterpoints/masterpoints_search_results.html",
+                    {"matches": matches_reformat},
+                )
+
+    def club_name_search(self, request, club_name_search):
+
+        # Try to load data from MP Server
+        qry = f"{GLOBAL_MPSERVER}/clubNameSearch/{club_name_search}"
+        club_list = masterpoint_query(qry)
+
+        # We get 11 rows but only show 10 so we know if there is more data or not
+        more_data = False
+        if len(club_list) > 10:
+            more_data = True
+            club_list = club_list[:10]
+
+        return render(
+            request,
+            "organisations/admin_club_search_htmx.html",
+            {"club_list": club_list, "more_data": more_data},
+        )
+
 class MasterpointDjango(MasterpointFactory):
     """Concrete implementation of a masterpoint factory using local tables in Django to get the data"""
 
@@ -717,6 +801,55 @@ class MasterpointDjango(MasterpointFactory):
 
         return (True, matches) if matches else (False, "No match found")
 
+    def mp_total_and_status(self, player):
+        """ return total masterpoints and abf active status """
+
+        total_mps = MPTran.objects.filter(system_number=player.system_number).aggregate(total=Sum("mp_amount"))
+        print(total_mps)
+
+        total_mps = MPTran.objects.filter(system_number=player.system_number).aggregate(Sum("mp_amount"))["mp_amount__sum"]
+
+        return total_mps, player.is_abf_active
+
+    def masterpoint_search(self, request, system_number, last_name, first_name):
+        """ Called by the masterpoints page on the side menu to show masterpoints for a searched user or the logged in user """
+
+        if system_number:
+            return redirect("view/%s/" % system_number)
+        else:
+            matches = User.all_objects.exclude(user_type=User.UserType.CONTACT)
+            if not first_name:  # last name only
+                matches = matches.filter(last_name__istartswith=last_name)
+            elif not last_name:  # first name only
+                matches = matches.filter(first_name__istartswith=first_name)
+            else:  # first and last names
+                matches = matches.filter(Q(first_name__istartswith=first_name) & Q(last_name__istartswith=last_name))
+            if matches.count() == 1:
+                return redirect("view/%s/" % matches.first().system_number)
+            else:
+                print(matches)
+                return render(
+                    request,
+                    "masterpoints/masterpoints_search_results.html",
+                    {"matches": matches},
+                )
+
+    def club_name_search(self, request, club_name_search):
+
+        club_list = Organisation.objects.filter(name__icontains=club_name_search)[:11]
+
+        # We get 11 rows but only show 10 so we know if there is more data or not
+        more_data = False
+        if len(club_list) > 10:
+            more_data = True
+            club_list = club_list[:10]
+
+        return render(
+            request,
+            "organisations/admin_club_search_htmx.html",
+            {"club_list": club_list, "more_data": more_data},
+        )
+
 class MasterpointFile(MasterpointFactory):
     """Concrete implementation of a masterpoint factory using a file to get the data"""
 
@@ -781,7 +914,6 @@ class MasterpointFile(MasterpointFactory):
             "IsActive": result[6],
             "home_club": None,
         }
-
 
 def masterpoint_factory_creator():
     print(f"{MP_USE_DJANGO=}")
