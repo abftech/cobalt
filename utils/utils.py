@@ -1,6 +1,9 @@
+from typing import Union
+
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import decimal
 
+from django.db.models import QuerySet
 from django.http import HttpRequest
 
 from cobalt.settings import GLOBAL_CURRENCY_SYMBOL
@@ -8,7 +11,7 @@ from cobalt.settings import GLOBAL_CURRENCY_SYMBOL
 
 def cobalt_paginator(
     request: HttpRequest,
-    events_list: list,
+    events_list: Union[list, QuerySet],
     items_per_page: int = 30,
     page_no: int = None,
 ) -> Paginator.page:
@@ -52,16 +55,10 @@ def cobalt_round(number):
 
     cent = decimal.Decimal("0.01")
     dec_input = (
-        number if type(number) == type(cent) else decimal.Decimal(f"{number:.4f}")
+        number if type(number) is type(cent) else decimal.Decimal(f"{number:.4f}")
     )
 
-    result = float(dec_input.quantize(cent, rounding=decimal.ROUND_UP))
-
-    return result
-
-    # return float(
-    #     decimal.Decimal(float(number)).quantize(cent, rounding=decimal.ROUND_UP)
-    # )
+    return float(dec_input.quantize(cent, rounding=decimal.ROUND_UP))
 
 
 def cobalt_currency(number):

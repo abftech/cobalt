@@ -6,7 +6,7 @@
 {% load humanize %}
 {% load cobalt_tags %}
 
-<h3>All Transactions for {{ event }}</h3>
+<h3>All Transactions for {{ event|default_if_none:"<b>Deleted Event</b>" }}</h3>
 {% if use_filtered_view %}
     <h4>Date Range is Not Applied to This View</h4>
 

@@ -1,4 +1,5 @@
 import datetime
+from types import SimpleNamespace
 
 from django.db.models import Sum, Min
 from django.db.models.functions import TruncDate
@@ -555,16 +556,18 @@ def transaction_event_details_htmx(request, club):
     use_filtered_view = request.POST.get("use_filtered_view")
 
     # Get transactions and paginate
-    event = get_object_or_404(Event, pk=request.POST.get("event_id"))
+    # Event will be None if the event has been deleted. Template handles this.
+    event_id = request.POST.get("event_id")
+    event = Event.objects.filter(pk=event_id).first()
     event_transactions = OrganisationTransaction.objects.filter(
-        organisation=club, event_id=event.id
+        organisation=club, event_id=event_id
     ).order_by("-created_date")
     things = cobalt_paginator(request, event_transactions)
 
     # Set up HTMX data
 
     hx_post = reverse("organisations:transaction_event_details_htmx")
-    hx_vars = f"club_id: {club.id}, event_id:{event.id}"
+    hx_vars = f"club_id: {club.id}, event_id:{event_id}"
 
     if use_filtered_view:
         hx_target = "#id_filtered_transactions"
@@ -583,6 +586,46 @@ def transaction_event_details_htmx(request, club):
             "hx_post": hx_post,
             "hx_target": hx_target,
             "hx_vars": hx_vars,
+        },
+    )
+
+
+@check_club_menu_access(check_payments=True)
+def transaction_congress_details_deleted_events_htmx(request, club):
+    """Show transactions relating to events that have been deleted within a date range"""
+
+    start_date = request.POST.get("start_date")
+    end_date = request.POST.get("end_date")
+
+    start_datetime, end_datetime = start_end_date_to_datetime(start_date, end_date)
+
+    # Get org transactions where the event_id doesn't match an event
+    inner_query = Event.objects.all().values("id")
+    event_payments = (
+        OrganisationTransaction.objects.filter(organisation=club)
+        .exclude(event_id__in=inner_query)
+        .filter(created_date__lte=end_datetime)
+        .filter(created_date__gte=start_datetime)
+        .filter(type__in=["Entry to an event", "Refund"])
+        .order_by("-pk")
+    )
+    things = cobalt_paginator(request, event_payments)
+
+    hx_post = reverse("organisations:transaction_congress_details_deleted_events_htmx")
+    hx_vars = f"club_id: {club.id}, start_date:'{start_date}', end_date:'{end_date}'"
+    hx_target = "#id_filtered_transactions"
+
+    return render(
+        request,
+        "organisations/club_menu/finance/transaction_congress_detail_deleted_events_htmx.html",
+        {
+            "things": things,
+            "club": club,
+            "start_date": start_date,
+            "end_date": end_date,
+            "hx_post": hx_post,
+            "hx_vars": hx_vars,
+            "hx_target": hx_target,
         },
     )
 
@@ -1147,6 +1190,8 @@ def organisation_transactions_filtered_data_congresses(
             "things": things,
             "balance_at_end_date": balance_at_end_date,
             "end_datetime": end_datetime,
+            "start_date": start_date,
+            "end_date": end_date,
             "congresses_total": congresses_total,
             "hx_target": hx_data["hx_target"],
             "hx_post": hx_data["hx_post"],

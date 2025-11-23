@@ -723,6 +723,11 @@ urlpatterns = [
         name="transaction_congress_details_htmx",
     ),
     path(
+        "finance/transaction-congress-details-deleted-events",
+        organisations.views.club_menu_tabs.finance.transaction_congress_details_deleted_events_htmx,
+        name="transaction_congress_details_deleted_events_htmx",
+    ),
+    path(
         "finance/movement-report-session-details",
         organisations.views.club_menu_tabs.finance.movement_report_session_details_htmx,
         name="movement_report_session_details_htmx",
