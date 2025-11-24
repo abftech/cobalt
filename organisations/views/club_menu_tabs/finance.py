@@ -559,9 +559,19 @@ def transaction_event_details_htmx(request, club):
     # Event will be None if the event has been deleted. Template handles this.
     event_id = request.POST.get("event_id")
     event = Event.objects.filter(pk=event_id).first()
-    event_transactions = OrganisationTransaction.objects.filter(
-        organisation=club, event_id=event_id
-    ).order_by("-created_date")
+
+    # If we get an event_id = -1 then we don't have an event id, we can only show all deleted entries
+    if int(event_id) == -1:
+        event_transactions = (
+            OrganisationTransaction.objects.filter(organisation=club)
+            .filter(type__in=["Entry to an event", "Refund"])
+            .order_by("-created_date")
+        )
+    else:
+        event_transactions = OrganisationTransaction.objects.filter(
+            organisation=club, event_id=event_id
+        ).order_by("-created_date")
+
     things = cobalt_paginator(request, event_transactions)
 
     # Set up HTMX data
@@ -990,6 +1000,7 @@ def organisation_transactions_filtered_data_movement_queries(
             type__in=[
                 "Settlement",
                 "Entry to an event",
+                "Refund",
                 "Club Payment",
                 "Club Membership",
             ]

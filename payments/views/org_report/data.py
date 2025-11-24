@@ -344,8 +344,8 @@ def event_payments_summary_by_date_range(club, start_date, end_date):
                 total_event_payments_dict[this_id] - event_payment["amount"]
             )
         else:
-            congress_name = mark_safe("<b>Unknown Congress</b>")
-            event_name = mark_safe("<b>Deleted Event</b>")
+            congress_name = "Unknown Congress"
+            event_name = "Deleted Event"
             start_date = start_datetime.date()
             amount_outside_range = 0
         event_payment_dict[this_id] = {
