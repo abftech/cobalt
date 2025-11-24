@@ -34,7 +34,7 @@
             <!-- START DATE -->
             <label class="mx-4">
                 Start Date
-                <input type="date" name="start_date" id="id_start_date" class="form-control" value="{{ -90|cobalt_add_days|date:"Y-m-d" }}" required>
+                <input type="date" name="start_date" id="id_start_date" class="form-control" value="{% now "Y-m-0" %}1" required>
             </label>
 
             <!-- END DATE -->
@@ -204,6 +204,9 @@
             }
 
         });
+
+    // when we load kick off the search
+        $('#id_filter_submit_button').click();
 
     });
 </script>

@@ -28,9 +28,14 @@
                         <td class="text-left">{{ thing.congress_name }}</td>
                         <td class="text-left"><a
                             href="#"
-                            hx-post="{% url 'organisations:transaction_event_details_htmx' %}"
                             hx-target="#id_filtered_transactions"
-                            hx-vars="club_id: {{ club.id }}, event_id: {{ thing.id }}, use_filtered_view: 1"
+                            {% if thing.id %}
+                                hx-post="{% url 'organisations:transaction_event_details_htmx' %}"
+                                hx-vars="club_id: {{ club.id }}, event_id: {{ thing.id }}, use_filtered_view: 1"
+                            {% else %}
+                                hx-post="{% url 'organisations:transaction_event_details_htmx' %}"
+                                hx-vars="club_id: {{ club.id }}, event_id:-1, use_filtered_view: 1"
+                            {% endif %}
                         >
                             {{ thing.event_name }}
                         </a>

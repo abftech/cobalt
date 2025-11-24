@@ -309,7 +309,7 @@ def event_payments_summary_by_date_range(club, start_date, end_date):
 
     event_payments = (
         OrganisationTransaction.objects.filter(organisation=club)
-        .filter(event_id__isnull=False)
+        .filter(type__in=["Refund", "Entry to an event"])
         .filter(created_date__gte=start_datetime, created_date__lte=end_datetime)
         .values("event_id")
         .annotate(amount=Sum("amount"))
