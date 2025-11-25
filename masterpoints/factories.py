@@ -11,7 +11,7 @@ from django.db.models import Sum, Q
 from django.shortcuts import redirect, render
 from requests import JSONDecodeError
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from cobalt.settings import GLOBAL_MPSERVER, MP_USE_FILE, MP_USE_DJANGO, TIME_ZONE
 from masterpoints.models import MPTran, Rank
 from organisations.models import Organisation

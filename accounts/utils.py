@@ -4,7 +4,7 @@ New file to avoid circulare reference issue on imports
 check_system_number(...) moved from accounts/view/admin.py
 """
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from masterpoints.views import user_summary
 
 

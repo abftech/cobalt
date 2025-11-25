@@ -14,7 +14,6 @@ from django.utils import timezone
 
 from accounts.models import (
     User,
-    UnregisteredUser,
     NextInternalSystemNumber,
 )
 from cobalt.settings import GLOBAL_ORG, GLOBAL_MPSERVER

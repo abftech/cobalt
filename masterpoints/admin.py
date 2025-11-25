@@ -3,7 +3,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from utils.views.cobalt_django_admin import link_to_user_or_unregistered_user
 from .models import (
     ChargeType,

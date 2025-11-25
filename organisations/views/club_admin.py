@@ -19,10 +19,8 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from accounts.models import (
-    User,
-    UnregisteredUser,
-)
+from accounts.models import User
+
 from club_sessions.models import SessionEntry
 from club_sessions.views.core import bridge_credits_for_club
 from cobalt.settings import (
@@ -487,7 +485,7 @@ def activity_invitations_htmx(request, club):
     system_number = request.POST.get("system_number")
     member_details = get_member_details(club, system_number)
 
-    un_reg = get_object_or_404(UnregisteredUser, system_number=system_number)
+    un_reg = get_object_or_404(User, system_number=system_number)
 
     return render(
         request,

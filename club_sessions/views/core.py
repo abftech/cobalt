@@ -9,7 +9,7 @@ import logging
 from django.db import transaction
 from django.db.models import Sum, Max
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from club_sessions.models import (
     SessionEntry,
     SessionTypePaymentMethodMembership,

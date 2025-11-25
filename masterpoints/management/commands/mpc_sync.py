@@ -4,7 +4,7 @@ import time
 from django.core.management.base import BaseCommand
 from django.db.models import Max
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from masterpoints.factories import masterpoint_query_list
 from masterpoints.models import (
     ChargeType,

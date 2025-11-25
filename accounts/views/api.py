@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from fcm_django.models import FCMDevice
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from cobalt.settings import ALL_SYSTEM_ACCOUNTS
 from masterpoints.views import search_mpc_users_by_name
 

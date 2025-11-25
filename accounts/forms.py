@@ -15,7 +15,7 @@ from accounts.utils import check_system_number
 
 from cobalt.settings import GLOBAL_ORG
 from masterpoints.factories import masterpoint_factory_creator
-from .models import User, UnregisteredUser, SystemCard
+from .models import User, SystemCard
 from django.core.exceptions import ValidationError
 
 
@@ -204,7 +204,7 @@ class UnregisteredUserForm(forms.ModelForm):
     """Form to edit an Unregistered User"""
 
     class Meta:
-        model = UnregisteredUser
+        model = User
         fields = [
             "first_name",
             "last_name",

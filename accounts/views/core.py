@@ -12,7 +12,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 
 from accounts.forms import UserRegisterForm
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from accounts.tokens import account_activation_token
 from cobalt.settings import GLOBAL_TITLE, ALL_SYSTEM_ACCOUNTS
 from logs.views import log_event

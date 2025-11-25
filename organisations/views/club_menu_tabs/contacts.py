@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from accounts.models import (
     NextInternalSystemNumber,
-    UnregisteredUser, User,
+    User,
 )
 from accounts.views.api import search_for_user_in_cobalt_and_mpc
 from cobalt.settings import (

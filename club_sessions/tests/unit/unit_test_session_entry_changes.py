@@ -2,7 +2,7 @@ from copy import copy, deepcopy
 from decimal import Decimal
 from typing import Union
 
-from accounts.models import UnregisteredUser, User
+from accounts.models import User
 from club_sessions.models import Session, SessionType, SessionEntry, SessionMiscPayment
 from club_sessions.views.core import (
     bridge_credits_for_club,

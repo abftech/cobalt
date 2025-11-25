@@ -25,10 +25,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from os import path
 
-from accounts.models import (
-    UnregisteredUser,
-    User,
-)
+from accounts.models import User
 from organisations.club_admin_core import (
     delete_contact,
 )

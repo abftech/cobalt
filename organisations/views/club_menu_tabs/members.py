@@ -17,7 +17,7 @@ from accounts.views.admin import invite_to_join
 from accounts.views.core import add_un_registered_user_with_mpc_data
 from accounts.views.api import search_for_user_in_cobalt_and_mpc
 from accounts.forms import UnregisteredUserForm
-from accounts.models import User, UnregisteredUser, UserAdditionalInfo
+from accounts.models import User, UserAdditionalInfo
 from club_sessions.models import SessionEntry
 from cobalt.settings import (
     ALL_SYSTEM_ACCOUNTS,
@@ -573,7 +573,7 @@ def _cancel_membership(request, club, system_number):
 def delete_un_reg_htmx(request, club):
     """Remove an unregistered user from club membership"""
 
-    un_reg = get_object_or_404(UnregisteredUser, pk=request.POST.get("un_reg_id"))
+    un_reg = get_object_or_404(User, pk=request.POST.get("un_reg_id"))
     _cancel_membership(request, club, un_reg.system_number)
 
     return list_htmx(request, message=f"{un_reg.full_name} membership deleted.")
@@ -740,7 +740,7 @@ def un_reg_edit_htmx(request, club):
     """Edit unregistered member details"""
 
     un_reg_id = request.POST.get("un_reg_id")
-    un_reg = get_object_or_404(UnregisteredUser, pk=un_reg_id)
+    un_reg = get_object_or_404(User, pk=un_reg_id)
 
     # Get first membership record for this user and this club
     membership = MemberMembershipType.objects.filter(

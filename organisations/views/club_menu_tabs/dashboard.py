@@ -2,7 +2,7 @@ from dateutil.relativedelta import relativedelta
 from django.shortcuts import render
 from django.utils import timezone
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from organisations.decorators import check_club_menu_access
 from organisations.models import MemberMembershipType
 from rbac.models import RBACUserGroup

@@ -11,7 +11,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from cobalt.settings import (
     COBALT_HOSTNAME,
     RECAPTCHA_SITE_KEY,

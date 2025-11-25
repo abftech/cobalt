@@ -39,7 +39,7 @@ from post_office import mail as po_email
 
 from cobalt.settings import MEDIA_ROOT
 
-from accounts.models import User, UserAdditionalInfo, UnregisteredUser
+from accounts.models import User, UserAdditionalInfo
 from cobalt.settings import (
     COBALT_HOSTNAME,
     DISABLE_PLAYPEN,

@@ -13,7 +13,7 @@ from cobalt.settings import (
     GLOBAL_ORG,
 )
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from organisations.models import Organisation, OrgEmailTemplate
 
 
@@ -559,7 +559,7 @@ class UnregisteredBlockedEmail(models.Model):
 
     """
 
-    un_registered_user = models.ForeignKey(UnregisteredUser, on_delete=models.CASCADE)
+    un_registered_user = models.ForeignKey(User, on_delete=models.CASCADE)
     email = models.EmailField()
 
     def __str__(self):

@@ -7,7 +7,7 @@ from selenium.common import NoSuchElementException
 from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 
-from accounts.models import UnregisteredUser, UserAdditionalInfo, User, NextInternalSystemNumber
+from accounts.models import UserAdditionalInfo, User, NextInternalSystemNumber
 from cobalt.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION_NAME
 from organisations.models import Organisation, ClubMemberLog, MemberClubDetails
 from rbac.core import (

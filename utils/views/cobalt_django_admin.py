@@ -1,7 +1,7 @@
 from django.urls import reverse
 from django.utils.html import format_html
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 
 
 def link_to_user_or_unregistered_user(system_number: int):

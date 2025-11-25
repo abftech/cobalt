@@ -9,7 +9,7 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from accounts.views.core import get_user_or_unregistered_user_from_system_number
 from club_sessions.forms import SessionForm, UserSessionForm
 from club_sessions.models import (

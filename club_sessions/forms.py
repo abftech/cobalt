@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django_summernote.widgets import SummernoteInplaceWidget
 
-from accounts.models import UnregisteredUser, User
+from accounts.models import User
 from club_sessions.views.core import PLAYING_DIRECTOR, SITOUT, VISITOR
 from club_sessions.models import Session, SessionType, SessionEntry
 from cobalt.settings import BRIDGE_CREDITS

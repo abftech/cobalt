@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
-from accounts.models import UnregisteredUser, User
+from accounts.models import User
 from accounts.views.admin import invite_to_join
 from cobalt.settings import COBALT_HOSTNAME, GLOBAL_TITLE
 from organisations.decorators import check_club_menu_access
@@ -166,7 +166,7 @@ def invite_user_to_join_htmx(request, club):
     """Invite an unregistered user to sign up"""
 
     un_reg_id = request.POST.get("un_reg_id")
-    un_reg = get_object_or_404(UnregisteredUser, pk=un_reg_id)
+    un_reg = get_object_or_404(User, pk=un_reg_id)
 
     email = club_email_for_member(club, un_reg.system_number)
 
@@ -234,12 +234,8 @@ def get_club_members_from_system_number_list(
     for player in combined_set:
         if player.system_number in membership_type_dict:
             player.membership = membership_type_dict[player.system_number]
-        if type(player) is User:
-            player.status = f"{GLOBAL_TITLE} User"
-        elif type(player) is UnregisteredUser:
-            player.status = "Unregistered User"
-        else:
-            player.status = "Unknown Type"
+
+        player.status = player.get_user_type_display()
 
     combined_list = list(combined_set)
 

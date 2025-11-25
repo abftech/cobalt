@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from cobalt.settings import GLOBAL_TITLE, GLOBAL_ORG
 from logs.views import log_event
 
@@ -99,7 +99,7 @@ def user_signed_up_list(request):
 
 
 def invite_to_join(
-    un_reg: UnregisteredUser,
+    un_reg: User,
     email: str,
     requested_by_user: User,
     requested_by_org: Organisation,

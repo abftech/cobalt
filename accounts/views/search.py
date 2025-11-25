@@ -5,7 +5,7 @@ from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from cobalt.settings import (
     RBAC_EVERYONE,
     TBA_PLAYER,

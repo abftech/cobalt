@@ -25,11 +25,8 @@ from django.urls import reverse
 from django.utils import timezone
 from django.template.loader import render_to_string
 
-from accounts.models import (
-    User,
-    UnregisteredUser,
-    UserAdditionalInfo,
-)
+from accounts.models import User
+
 from cobalt.settings import (
     BLEACH_ALLOWED_TAGS,
     BLEACH_ALLOWED_ATTRIBUTES,
@@ -2871,7 +2868,7 @@ def convert_existing_memberships_for_club(club):
         try:
             convert_existing_membership(club, membership)
             ok_count += 1
-        except UnregisteredUser.DoesNotExist:
+        except User.DoesNotExist:
             error_count += 1
             logger.error(
                 f"Unable to convert MemberMembershipType {membership} for {club}, no matching user"

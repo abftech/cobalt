@@ -9,7 +9,7 @@ from datetime import timedelta
 from django.core.management.base import BaseCommand
 
 from club_sessions.models import Session, SessionEntry, SessionMiscPayment
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from organisations.models import Organisation
 from payments.models import OrgPaymentMethod, MemberTransaction
 

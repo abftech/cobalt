@@ -6,7 +6,7 @@ from django.shortcuts import render
 from fcm_django.models import FCMDevice
 
 from accounts.forms import UserSettingsForm
-from accounts.models import APIToken, UnregisteredUser
+from accounts.models import APIToken
 from notifications.models import UnregisteredBlockedEmail
 from notifications.views.user import notifications_in_english
 from organisations.club_admin_core import (
