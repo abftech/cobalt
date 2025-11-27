@@ -1,7 +1,7 @@
 import datetime
 from types import SimpleNamespace
 
-from django.db.models import Sum, Min
+from django.db.models import Sum, Min, Q
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
@@ -254,8 +254,6 @@ def pay_member_from_organisation(
         action=f"Paid {GLOBAL_CURRENCY_SYMBOL}{amount:,.2f} to {member}",
     ).save()
 
-    # notify user
-    # COB-768 JPG 15-12-23: Change in message text
     msg = f"""{club} (administrator {request.user}) has paid {GLOBAL_CURRENCY_SYMBOL}{amount:,.2f} to your {BRIDGE_CREDITS}
     account for {description}.
         <br><br>If you have any queries please contact {club} in the first instance.
@@ -562,9 +560,18 @@ def transaction_event_details_htmx(request, club):
 
     # If we get an event_id = -1 then we don't have an event id, we can only show all deleted entries
     if int(event_id) == -1:
+        # Unlike the real events, for deleted events we restrict to the search dates
+        start_date = request.POST.get("start_date")
+        end_date = request.POST.get("end_date")
+
+        start_datetime, end_datetime = start_end_date_to_datetime(start_date, end_date)
+
         event_transactions = (
             OrganisationTransaction.objects.filter(organisation=club)
             .filter(type__in=["Entry to an event", "Refund"])
+            .exclude(event_id__isnull=False)
+            .exclude(club_session_id__isnull=False)
+            .filter(created_date__gte=start_datetime, created_date__lte=end_datetime)
             .order_by("-created_date")
         )
     else:
@@ -999,14 +1006,13 @@ def organisation_transactions_filtered_data_movement_queries(
         base_query.exclude(
             type__in=[
                 "Settlement",
-                "Entry to an event",
-                "Refund",
                 "Club Payment",
                 "Club Membership",
             ]
         )
-        .exclude(event_id__isnull=False)
-        .exclude(club_session_id__isnull=False)
+        .exclude(
+            Q(type__in=["Entry to an event", "Refund"]) & Q(event_id__isnull=False)
+        )
         .aggregate(total=Sum("amount"))
     )
 

@@ -225,17 +225,14 @@ def organisation_transactions_by_date_range(
     # special case of 'Other Artificial' for the movement report
     if transaction_type:
         if transaction_type == "Other Artificial":
-            organisation_transactions = (
-                organisation_transactions.exclude(
-                    type__in=[
-                        "Settlement",
-                        "Entry to an event",
-                        "Club Payment",
-                        "Club Membership",
-                    ]
-                )
-                .exclude(event_id__isnull=False)
-                .exclude(club_session_id__isnull=False)
+            organisation_transactions = organisation_transactions.exclude(
+                type__in=[
+                    "Settlement",
+                    "Club Payment",
+                    "Club Membership",
+                ]
+            ).exclude(
+                Q(type__in=["Entry to an event", "Refund"]) & Q(event_id__isnull=False)
             )
 
         elif transaction_type != "all":
@@ -311,9 +308,20 @@ def event_payments_summary_by_date_range(club, start_date, end_date):
         OrganisationTransaction.objects.filter(organisation=club)
         .filter(type__in=["Refund", "Entry to an event"])
         .filter(created_date__gte=start_datetime, created_date__lte=end_datetime)
+        .exclude(event_id__isnull=True)
         .values("event_id")
         .annotate(amount=Sum("amount"))
     )
+
+    event_payments2 = (
+        OrganisationTransaction.objects.filter(organisation=club)
+        .filter(type__in=["Refund", "Entry to an event"])
+        .filter(created_date__gte=start_datetime, created_date__lte=end_datetime)
+        .exclude(event_id__isnull=True)
+    )
+
+    for x in event_payments2:
+        print(x, x.amount, x.member)
 
     # get event names mapping
     event_names_dict = event_names_for_date_range(club, start_datetime, end_datetime)
