@@ -1010,6 +1010,7 @@ def organisation_transactions_filtered_data_movement_queries(
                 "Club Membership",
             ]
         )
+        .exclude(club_session_id__isnull=False)
         .exclude(
             Q(type__in=["Entry to an event", "Refund"]) & Q(event_id__isnull=False)
         )
