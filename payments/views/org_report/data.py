@@ -225,14 +225,19 @@ def organisation_transactions_by_date_range(
     # special case of 'Other Artificial' for the movement report
     if transaction_type:
         if transaction_type == "Other Artificial":
-            organisation_transactions = organisation_transactions.exclude(
-                type__in=[
-                    "Settlement",
-                    "Club Payment",
-                    "Club Membership",
-                ]
-            ).exclude(
-                Q(type__in=["Entry to an event", "Refund"]) & Q(event_id__isnull=False)
+            organisation_transactions = (
+                organisation_transactions.exclude(
+                    type__in=[
+                        "Settlement",
+                        "Club Payment",
+                        "Club Membership",
+                    ]
+                )
+                .exclude(
+                    Q(type__in=["Entry to an event", "Refund"])
+                    & Q(event_id__isnull=False)
+                )
+                .exclude(club_session_id__isnull=False)
             )
 
         elif transaction_type != "all":
