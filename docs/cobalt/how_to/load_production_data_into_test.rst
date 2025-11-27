@@ -94,7 +94,7 @@ Set up Database
 
 Now connect to the database server::
 
-    ./manage.py db_shell
+    ./manage.py dbshell
     psql (17.5, server 17.4)
     SSL connection (protocol: TLSv1.3, cipher: TLS_AES_256_GCM_SHA384, compression: off, ALPN: postgresql)
     Type "help" for help.
