@@ -70,6 +70,26 @@ def _details_headings(details_sheet, formats, show_balance=True):
         details_sheet.set_column("L:L", 15)
 
 
+def _details_headings_short(details_sheet, formats):
+    """common headings without event and session id"""
+
+    # Now do data headings
+    details_sheet.write(11, 0, "Date/Time", formats.detail_row_title)
+    details_sheet.set_column("A:A", 25)
+    details_sheet.write(11, 1, "Counterparty", formats.detail_row_title)
+    details_sheet.set_column("B:B", 35)
+    details_sheet.write(11, 2, "Reference", formats.detail_row_title)
+    details_sheet.set_column("C:C", 25)
+    details_sheet.write(11, 3, "Id", formats.detail_row_title_number)
+    details_sheet.set_column("D:D", 10)
+    details_sheet.write(11, 4, "Transaction Type", formats.detail_row_title)
+    details_sheet.set_column("E:E", 25)
+    details_sheet.write(11, 5, "Description", formats.detail_row_title)
+    details_sheet.set_column("F:F", 70)
+    details_sheet.write(11, 10, "Amount", formats.detail_row_title_number)
+    details_sheet.set_column("G:G", 15)
+
+
 def _organisation_transactions_xls_download_details(
     formats, details_sheet, request, club, start_date, end_date, description_search=None
 ):
@@ -210,11 +230,11 @@ def _organisation_transactions_xls_download_membership(
         title=f"Download for {start_date} to {end_date}",
         subtitle="Memberships",
         subtitle_style=formats.h1_success,
-        width=10,
+        width=6,
     )
 
     # Now do data headings
-    _details_headings(details_sheet, formats, show_balance=False)
+    _details_headings_short(details_sheet, formats)
 
     # Get data
     start_datetime, end_datetime = start_end_date_to_datetime(start_date, end_date)
@@ -241,11 +261,54 @@ def _organisation_transactions_xls_download_membership(
         details_sheet.write(row_no, 3, org_tran.id, formats.detail_row_number)
         details_sheet.write(row_no, 4, org_tran.type, formats.detail_row_data)
         details_sheet.write(row_no, 5, org_tran.description, formats.detail_row_data)
-        details_sheet.write(row_no, 6, "", formats.detail_row_data)
-        details_sheet.write(row_no, 7, "", formats.detail_row_data)
-        details_sheet.write(row_no, 8, "", formats.detail_row_data)
-        details_sheet.write(row_no, 9, "", formats.detail_row_data)
-        details_sheet.write(row_no, 10, org_tran.amount, formats.detail_row_money)
+        details_sheet.write(row_no, 6, org_tran.amount, formats.detail_row_money)
+
+
+def _organisation_transactions_xls_download_settlement(
+    formats, details_sheet, request, club, start_date, end_date
+):
+    """sub of organisation_transactions_xls_download to handle the settlement tab"""
+
+    _organisation_transactions_xls_header(
+        request,
+        club,
+        details_sheet,
+        formats,
+        title=f"Download for {start_date} to {end_date}",
+        subtitle="Settlements",
+        subtitle_style=formats.h1_success,
+        width=6,
+    )
+
+    # Now do data headings
+    _details_headings_short(details_sheet, formats)
+
+    # Get data
+    start_datetime, end_datetime = start_end_date_to_datetime(start_date, end_date)
+
+    settlement_transactions = OrganisationTransaction.objects.filter(
+        organisation=club,
+        created_date__gte=start_datetime,
+        created_date__lte=end_datetime,
+        type="Settlement",
+    )
+
+    # Data rows
+    for row_no, org_tran in enumerate(settlement_transactions, start=12):
+        details_sheet.write(
+            row_no,
+            0,
+            org_tran.created_date.strftime("%Y-%m-%d %H:%M:%S"),
+            formats.detail_row_data,
+        )
+        details_sheet.write(
+            row_no, 1, f"{org_tran.other_organisation}", formats.detail_row_data
+        )
+        details_sheet.write(row_no, 2, org_tran.reference_no, formats.detail_row_data)
+        details_sheet.write(row_no, 3, org_tran.id, formats.detail_row_number)
+        details_sheet.write(row_no, 4, org_tran.type, formats.detail_row_data)
+        details_sheet.write(row_no, 5, org_tran.description, formats.detail_row_data)
+        details_sheet.write(row_no, 6, org_tran.amount, formats.detail_row_money)
 
 
 def _organisation_transactions_xls_download_other(
@@ -564,6 +627,7 @@ def organisation_transactions_xls_download(
     events_sheet = workbook.add_worksheet("Events")
     combined_sheet = workbook.add_worksheet("Combined")
     membership_sheet = workbook.add_worksheet("Membership")
+    settlement_sheet = workbook.add_worksheet("Settlements")
     other_sheet = workbook.add_worksheet("Other")
 
     # Create styles
@@ -597,6 +661,11 @@ def organisation_transactions_xls_download(
     # Membership tab
     _organisation_transactions_xls_download_membership(
         formats, membership_sheet, request, club, start_date, end_date
+    )
+
+    # Membership tab
+    _organisation_transactions_xls_download_settlement(
+        formats, settlement_sheet, request, club, start_date, end_date
     )
 
     # Other tab
