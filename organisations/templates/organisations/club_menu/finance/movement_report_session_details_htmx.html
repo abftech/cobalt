@@ -24,9 +24,13 @@
                 <tr>
                     <td class="text-left cobalt-no-wrap">{{ thing.day|cobalt_nice_date_short }}</td>
                     <td class="text-left">
-                        <a href="{% url "club_sessions:manage_session" session_id=thing.club_session_id %}" target="_blank">
+                        {% if "Session not found" in thing.session_description  %}
                             {{ thing.session_description }}
-                        </a>
+                        {% else %}
+                            <a href="{% url "club_sessions:manage_session" session_id=thing.club_session_id %}" target="_blank">
+                                {{ thing.session_description }}
+                            </a>
+                        {% endif %}
                     </td>
                     <td class="text-right font-weight-bold">{{ thing.total|cobalt_currency_colour }}</td>
                 </tr>
