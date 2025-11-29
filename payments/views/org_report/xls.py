@@ -86,7 +86,7 @@ def _details_headings_short(details_sheet, formats):
     details_sheet.set_column("E:E", 25)
     details_sheet.write(11, 5, "Description", formats.detail_row_title)
     details_sheet.set_column("F:F", 70)
-    details_sheet.write(11, 10, "Amount", formats.detail_row_title_number)
+    details_sheet.write(11, 6, "Amount", formats.detail_row_title_number)
     details_sheet.set_column("G:G", 15)
 
 
