@@ -15,6 +15,7 @@ def release_notes_view(request):
                 "DEV - Faster way to get Production data into a development environment",
                 "Calendar - allow multiple selections",
                 "Viewer for 500 errors and middleware to capture if debug is on",
+                "Fixes for club admin finance breakdown report",
             ],
         },
         {

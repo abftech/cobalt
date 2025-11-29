@@ -185,8 +185,8 @@ def delete_event_ajax(request):
     event.delete()
 
     # COB-799 - update any member or organisation transactions referencing this event
-    MemberTransaction.objects.filter(event_id=event_id).update(event_id=None)
-    OrganisationTransaction.objects.filter(event_id=event_id).update(event_id=None)
+    # MemberTransaction.objects.filter(event_id=event_id).update(event_id=None)
+    # OrganisationTransaction.objects.filter(event_id=event_id).update(event_id=None)
 
     log_event(
         user=request.user,

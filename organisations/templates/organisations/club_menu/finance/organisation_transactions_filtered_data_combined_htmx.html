@@ -55,7 +55,7 @@
                         <td class="text-left">{{ thing.description }}</td>
                         <td class="text-right" style="white-space:nowrap; overflow:hidden">
                             {% if thing.amount_outside_range and thing.amount_outside_range != 0 %}
-                                <button class="btn btn-xs btn-danger" data-toggle="tooltip" title="Payments of {{ thing.amount_outside_range|cobalt_currency_colour }} were made outside the selected date range">!</button>
+                                <button class="btn btn-xs btn-danger" data-toggle="tooltip" title="Payments of {{ thing.amount_outside_range }} were made outside the selected date range">!</button>
                             {% endif %}
                             {{ thing.amount|cobalt_currency_colour }}
                         </td>

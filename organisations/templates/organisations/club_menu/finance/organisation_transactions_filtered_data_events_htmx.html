@@ -25,19 +25,35 @@
                 {% for thing in things %}
                     <tr>
                         <td class="text-left">{{ thing.start_date }}</td>
-                        <td class="text-left">{{ thing.congress_name }}</td>
+                        <td class="text-left">
+                            {% if thing.congress_name == "Unknown Congress" %}
+                                <b>{{ thing.congress_name }}</b>
+                            {% else %}
+                                {{ thing.congress_name }}
+                            {% endif %}
+                        </td>
                         <td class="text-left"><a
                             href="#"
-                            hx-post="{% url 'organisations:transaction_event_details_htmx' %}"
                             hx-target="#id_filtered_transactions"
-                            hx-vars="club_id: {{ club.id }}, event_id: {{ thing.id }}, use_filtered_view: 1"
+                            {% if thing.id %}
+                                hx-post="{% url 'organisations:transaction_event_details_htmx' %}"
+                                hx-vars="club_id: {{ club.id }}, event_id: {{ thing.id }}, use_filtered_view: 1"
+                            {% else %}
+                                hx-post="{% url 'organisations:transaction_event_details_htmx' %}"
+                                hx-vars="club_id: {{ club.id }}, event_id:-1, use_filtered_view: 1"
+                                hx-include="#id_start_date, #id_end_date"
+                            {% endif %}
                         >
-                            {{ thing.event_name }}
+                            {% if thing.event_name == "Deleted Event" %}
+                                <b>{{ thing.event_name }}</b>
+                            {% else %}
+                                {{ thing.event_name }}
+                            {% endif %}
                         </a>
                         </td>
                         <td class="text-right">
                             {% if thing.amount_outside_range != 0 %}
-                                <button class="btn btn-xs btn-danger" data-toggle="tooltip" title="Payments of {{ thing.amount_outside_range|cobalt_currency_colour }} were made outside the selected date range">!</button>
+                                <button class="btn btn-xs btn-danger" data-toggle="tooltip" title="Payments of {{ thing.amount_outside_range }} were made outside the selected date range">!</button>
                             {% endif %}
                             {{ thing.amount|cobalt_currency_colour }}
                         </td>

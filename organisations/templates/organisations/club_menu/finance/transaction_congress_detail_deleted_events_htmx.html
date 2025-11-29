@@ -1,0 +1,55 @@
+{#------------------------------------------------------------------------#}
+{#                                                                        #}
+{# Show the payments for deleted events                                   #}
+{#                                                                        #}
+{#------------------------------------------------------------------------#}
+{% load humanize %}
+{% load cobalt_tags %}
+
+<h3>Event Entry and Refund Payments for Deleted Congress Events</h3>
+<h3>From {{ start_date }} to {{ end_date }}</h3>
+
+<div class="table-responsive">
+    <table class="table table-condensed table-hover">
+        <thead>
+            <tr class="text-primary">
+                <th></th>
+                <th class="text-left">Payment Date</th>
+                <th class="text-left">Event ID</th>
+                <th class="text-left">Player</th>
+                <th class="text-left">Description</th>
+                <th class="text-right">Payment Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for thing in things %}
+
+                <tr
+                    _="on click put '' into .trans_detail_class"
+                    hx-post="{% url "organisations:transaction_details_htmx" %}"
+                    hx-vars="club_id:{{ club.id }}, trans_id:{{ thing.id }}"
+                    hx-target="#trans_dets_{{ thing.id }}"
+                >
+                    <td><i class="material-icons text-primary">info</i></td>
+                    <td class="text-left">{{ thing.created_date|cobalt_nice_date_short }}</td>
+                    <td class="text-left">
+                        {{ thing.event_id|default_if_none:"-" }}
+                    </td>
+                    <td class="text-left">{{ thing.member }}</td>
+                    <td class="text-left">{{ thing.description }}</td>
+                    <td class="text-right">{{ thing.amount|cobalt_currency_colour }}</td>
+                </tr>
+
+                <!-- HIDDEN ROW FOR DETAILS WHEN CLICKED ON -->
+                <tr class="trans_detail_class" id="trans_dets_{{ thing.id }}"
+                    _="on click put '' into me"
+                >
+                </tr>
+
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+{% include 'utils/pagination_footer_htmx.html' %}

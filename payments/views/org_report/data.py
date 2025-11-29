@@ -1,7 +1,8 @@
-from datetime import datetime
+from datetime import datetime, date
 
 from django.db.models import Sum, Q
 from django.forms import model_to_dict
+from django.utils.safestring import mark_safe
 
 from club_sessions.models import Session
 from events.models import Event
@@ -169,7 +170,12 @@ def _organisation_transactions_by_date_range_augment_data(
 
     # Event name
     if organisation_transaction.event_id:
-        organisation_transaction.event_name = f"{event_names_dict[organisation_transaction.event_id]['congress_name']} - {event_names_dict[organisation_transaction.event_id]['event_name']}"
+        try:
+            organisation_transaction.event_name = f"{event_names_dict[organisation_transaction.event_id]['congress_name']} - {event_names_dict[organisation_transaction.event_id]['event_name']}"
+        except KeyError:
+            organisation_transaction.event_name = (
+                f"Deleted event with id={organisation_transaction.event_id}"
+            )
     else:
         organisation_transaction.event_name = ""
 
@@ -223,12 +229,14 @@ def organisation_transactions_by_date_range(
                 organisation_transactions.exclude(
                     type__in=[
                         "Settlement",
-                        "Entry to an event",
                         "Club Payment",
                         "Club Membership",
                     ]
                 )
-                .exclude(event_id__isnull=False)
+                .exclude(
+                    Q(type__in=["Entry to an event", "Refund"])
+                    & Q(event_id__isnull=False)
+                )
                 .exclude(club_session_id__isnull=False)
             )
 
@@ -303,8 +311,9 @@ def event_payments_summary_by_date_range(club, start_date, end_date):
 
     event_payments = (
         OrganisationTransaction.objects.filter(organisation=club)
-        .filter(event_id__isnull=False)
+        .filter(type__in=["Refund", "Entry to an event"])
         .filter(created_date__gte=start_datetime, created_date__lte=end_datetime)
+        .exclude(event_id__isnull=True)
         .values("event_id")
         .annotate(amount=Sum("amount"))
     )
@@ -330,14 +339,25 @@ def event_payments_summary_by_date_range(club, start_date, end_date):
     event_payment_dict = {}
     for event_payment in event_payments:
         this_id = event_payment["event_id"]
+        if this_id in event_names_dict:
+            congress_name = event_names_dict[this_id]["congress_name"]
+            event_name = event_names_dict[this_id]["event_name"]
+            start_date = event_names_dict[this_id]["start_date"]
+            amount_outside_range = (
+                total_event_payments_dict[this_id] - event_payment["amount"]
+            )
+        else:
+            congress_name = "Unknown Congress"
+            event_name = "Deleted Event"
+            start_date = start_datetime.date()
+            amount_outside_range = 0
         event_payment_dict[this_id] = {
             "id": this_id,
             "amount": event_payment["amount"],
-            "congress_name": event_names_dict[this_id]["congress_name"],
-            "event_name": event_names_dict[this_id]["event_name"],
-            "start_date": event_names_dict[this_id]["start_date"],
-            "amount_outside_range": total_event_payments_dict[this_id]
-            - event_payment["amount"],
+            "congress_name": congress_name,
+            "event_name": event_name,
+            "start_date": start_date,
+            "amount_outside_range": amount_outside_range,
         }
 
     # We can't select on start date order as we use an annotation, so sort it now by date
@@ -371,6 +391,18 @@ def congress_payments_summary_by_date_range(club, start_date, end_date):
         .annotate(amount=Sum("amount"))
     )
 
+    # inner_query = Event.objects.all().values("id")
+    # event_payments = (
+    #     OrganisationTransaction.objects.filter(organisation=club)
+    #     .exclude(event_id__in=inner_query)
+    #     .filter(created_date__lte=end_datetime)
+    #     .filter(created_date__gte=start_datetime)
+    #     # .filter(type__in=["Entry to an event", "Refund"])
+    #     # .order_by("-pk")
+    #     .values("event_id")
+    #     .annotate(amount=Sum("amount"))
+    # )
+
     # get congress names mapping
     congress_name_dict, event_to_congress_dict = congress_names_for_date_range(
         club, start_datetime, end_datetime
@@ -395,7 +427,30 @@ def congress_payments_summary_by_date_range(club, start_date, end_date):
     # One congress can have multiple events. Go through at the event level
     for event_payment in event_payments:
         # get congress id for this event
-        congress_id = event_to_congress_dict[event_payment["event_id"]]
+        try:
+            congress_id = event_to_congress_dict[event_payment["event_id"]]
+        except KeyError:
+            # This event has been deleted (almost certainly) so we don't know the congress - create a fake one
+            congress_id = -1
+
+            inner_query = Event.objects.all().values("id")
+            start_date_display = (
+                OrganisationTransaction.objects.filter(organisation=club)
+                .exclude(event_id__in=inner_query)
+                .filter(created_date__lte=end_datetime)
+                .filter(created_date__gte=start_datetime)
+                .filter(type__in=["Entry to an event", "Refund"])
+                .order_by("-pk")
+                .last()
+                .created_date.date()
+            )
+
+            congress_name_dict[congress_id] = {
+                "congress_name": mark_safe("<b>Deleted Events</b>"),
+                "start_date": start_date_display,
+            }
+            total_event_payments_dict[event_payment["event_id"]] = 0
+
         # If already in dictionary then add this event to the totals
         if congress_id in congress_payment_dict:
             congress_payment_dict[congress_id]["amount"] += event_payment["amount"]
