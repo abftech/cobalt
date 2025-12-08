@@ -1,3 +1,6 @@
+import random
+import string
+
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
@@ -135,6 +138,14 @@ def invite_to_join(
         kwargs={"system_number": un_reg.system_number, "email": email},
     )
 
+    # Create the identifier used for email links if not present
+    if not un_reg.identifier or un_reg.identifier == "NOTSET":
+        un_reg.identifier = "".join(
+            random.SystemRandom().choice(string.ascii_letters + string.digits)
+            for _ in range(10)
+        )
+        un_reg.save()
+
     context = {
         "name": un_reg.first_name,
         "title": f"Sign Up for {GLOBAL_TITLE}",
@@ -149,10 +160,10 @@ def invite_to_join(
         context=context,
         apply_default_template_for_club=requested_by_org,
     ):
-        un_reg.last_registration_invite_sent = timezone.now()
-        un_reg.last_registration_invite_by_user = requested_by_user
-        un_reg.last_registration_invite_by_club = requested_by_org
-        un_reg.save()
+        # un_reg.last_registration_invite_sent = timezone.now()
+        # un_reg.last_registration_invite_by_user = requested_by_user
+        # un_reg.last_registration_invite_by_club = requested_by_org
+        # un_reg.save()
         return True
 
     return False

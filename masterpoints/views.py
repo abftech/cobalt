@@ -19,7 +19,7 @@ from reportlab.pdfgen import canvas
 from reportlab.platypus import Table, TableStyle, Image, Paragraph
 
 from cobalt.settings import MP_USE_DJANGO
-from .factories import masterpoint_factory_creator, masterpoint_query_list
+from .factories import masterpoint_factory_creator, masterpoint_query_list, MasterpointDB
 
 
 #####
@@ -120,7 +120,8 @@ def system_number_lookup(request):
     if request.method == "GET":
         system_number = request.GET["system_number"]
 
-        mp_source = masterpoint_factory_creator()
+        # Talk to MPC for data
+        mp_source = MasterpointDB()
         return HttpResponse(mp_source.system_number_lookup(system_number))
 
 

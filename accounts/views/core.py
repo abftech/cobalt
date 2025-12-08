@@ -16,7 +16,7 @@ from accounts.models import User
 from accounts.tokens import account_activation_token
 from cobalt.settings import GLOBAL_TITLE, ALL_SYSTEM_ACCOUNTS
 from logs.views import log_event
-from masterpoints.factories import masterpoint_factory_creator
+from masterpoints.factories import masterpoint_factory_creator, MasterpointDB
 from masterpoints.views import user_summary
 from notifications.views.core import send_cobalt_email_with_template
 from organisations.models import Organisation
@@ -66,7 +66,8 @@ def register_user(request, system_number=None, email=None):
     # Try to pre-fill the form if we got data - happens from the invite to join link
     if system_number:
         form.fields["username"].initial = system_number
-        mp_source = masterpoint_factory_creator()
+        # During transition, we want to get new members from the MPC
+        mp_source = MasterpointDB()
         ret = mp_source.system_number_lookup(system_number)
         try:
             form.fields["first_name"].initial = ret.split(" ")[0]

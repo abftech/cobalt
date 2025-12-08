@@ -665,13 +665,25 @@ def _augment_member_details(member_qs, sort_option="last_desc"):
     system_numbers = [member.system_number for member in members]
 
     users = User.all_objects.filter(system_number__in=system_numbers).exclude(user_type=User.UserType.CONTACT)
-    player_dict = {
-        player.system_number: {
+
+
+    player_dict = {}
+
+    for player in users:
+
+        if player.user_type == User.UserType.USER:
+            user_type = f"{GLOBAL_TITLE} User"
+        elif player.user_type == User.UserType.UNREGISTERED:
+            user_type = "Unregistered User"
+        elif player.user_type == User.UserType.CONTACT:
+            user_type = "Contact"
+        else:
+            user_type = ""
+
+        player_dict[player.system_number] = {
             "first_name": player.first_name,
             "last_name": player.last_name,
-            "user_type": (
-                f"{GLOBAL_TITLE} User" if player.user_type == User.UserType.USER else User.UserType.UNREGISTERED
-            ),
+            "user_type": user_type,
             "user_or_unreg_id": player.id,
             "user_or_unreg": player,
             "user_email": player.email if player.user_type == User.UserType.USER else None,
@@ -679,8 +691,6 @@ def _augment_member_details(member_qs, sort_option="last_desc"):
                 True if player.user_type == User.UserType.CONTACT else False
             ),
         }
-        for player in users
-    }
 
     for member in members:
         if member.system_number in player_dict:

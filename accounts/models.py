@@ -215,6 +215,12 @@ class User(AbstractUser):
     old_mpc_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
     """ Temporary link to old Masterpoint Centre record, required for MPC work """
 
+    identifier = models.CharField(
+        max_length=10,
+        default="NOTSET",
+    )
+    """ random string identifier to use in emails to handle preferences. Can't use the pk obviously """
+
     all_objects = models.Manager()
     objects = UserManager()
     unreg_objects = UnRegManager()
@@ -230,6 +236,15 @@ class User(AbstractUser):
             return self.first_name
         else:
             return f"{self.full_name} ({GLOBAL_ORG}: {self.system_number})"
+
+    def save(self, *args, **kwargs):
+        """create identifier on first save"""
+        if not self.pk:
+            self.identifier = "".join(
+                random.SystemRandom().choice(string.ascii_letters + string.digits)
+                for _ in range(10)
+            )
+        super(User, self).save(*args, **kwargs)
 
     @property
     def full_name(self):
