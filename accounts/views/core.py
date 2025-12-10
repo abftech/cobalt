@@ -87,8 +87,8 @@ def _register_handle_valid_form(form, request):
     un_reg = User.unreg_objects.filter(username=user.username).first()
 
     if un_reg:
-        # If we have a matching unregistered user, remove it
-        un_reg.delete()
+        # If we have a matching unregistered user, then use that instead
+        user = un_reg
 
     user.user_type = User.UserType.USER
     user.is_abf_active = True
