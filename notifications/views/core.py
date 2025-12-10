@@ -2,6 +2,7 @@ import logging
 import re
 import mimetypes
 from datetime import datetime, date
+from html import escape
 from threading import Thread
 from itertools import chain
 from urllib.parse import urlencode
@@ -2416,7 +2417,7 @@ def compose_email_content_preview_htmx(request, club, batch):
         context["title"] = batch.description
 
     batch_content = get_object_or_404(BatchContent, batch=batch)
-    context["email_body"] = batch_content.email_body
+    context["email_body"] = escape(batch_content.email_body)
 
     if batch.template:
         org_template = batch.template
