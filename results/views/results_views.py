@@ -243,7 +243,10 @@ def usebio_mp_pairs_results_summary_view_single_field(
 
         # This may break for ties
         position = int(item["PLACE"])
-        masterpoints = int(item["MASTER_POINTS_AWARDED"]) / 100.0
+        try:
+            masterpoints = int(item["MASTER_POINTS_AWARDED"]) / 100.0
+        except KeyError:
+            masterpoints = 0
         pair_number = item["PAIR_NUMBER"]
         percentage = item["PERCENTAGE"]
 
