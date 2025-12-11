@@ -1464,8 +1464,8 @@ def bulk_invite_to_join_htmx(request, club):
 
     members = MemberMembershipType.objects.filter(
         membership_type__organisation=club
-    ).values("system_number")
-    unregistered = User.unreg_objects.filter(system_number__in=members)
+    ).filter(membership_state__in=["CUR", "DUE"]).values("system_number")
+    unregistered = User.unreg_objects.filter(system_number__in=members).exclude(deceased=True)
 
     if "send_invites" in request.POST:
 

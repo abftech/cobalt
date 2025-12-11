@@ -87,8 +87,11 @@ def _register_handle_valid_form(form, request):
     un_reg = User.unreg_objects.filter(username=user.username).first()
 
     if un_reg:
-        # If we have a matching unregistered user, then use that instead
+        # If we have a matching unregistered user, then use that instead, use the provided email address
+        email = user.email
         user = un_reg
+        user.email = email
+        user.set_password(form.cleaned_data["password1"])
 
     user.user_type = User.UserType.USER
     user.is_abf_active = True
