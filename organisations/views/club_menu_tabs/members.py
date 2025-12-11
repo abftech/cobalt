@@ -1467,20 +1467,12 @@ def bulk_invite_to_join_htmx(request, club):
     ).values("system_number")
     unregistered = User.unreg_objects.filter(system_number__in=members)
 
-    two_weeks = timezone.now() - timezone.timedelta(weeks=2)
-
-    can_invite = unregistered.filter(
-        Q(last_registration_invite_sent__lte=two_weeks)
-        | Q(last_registration_invite_sent=None)
-    )
-    cannot_invite = unregistered.filter(last_registration_invite_sent__gt=two_weeks)
-
     if "send_invites" in request.POST:
 
         success = 0
         failure = 0
 
-        for member in can_invite:
+        for member in unregistered:
             club_email = club_email_for_member(club, member.system_number)
             if club_email and invite_to_join(member, club_email, request.user, club):
                 success += 1
@@ -1494,7 +1486,7 @@ def bulk_invite_to_join_htmx(request, club):
     return render(
         request,
         "organisations/club_menu/members/bulk_invite_to_join_htmx.html",
-        {"can_invite": can_invite, "cannot_invite": cannot_invite},
+        {"can_invite": unregistered},
     )
 
 

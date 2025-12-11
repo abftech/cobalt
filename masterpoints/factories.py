@@ -809,10 +809,10 @@ class MasterpointDjango(MasterpointFactory):
     def mp_total_and_status(self, player):
         """ return total masterpoints and abf active status """
 
-        total_mps = MPTran.objects.filter(system_number=player.system_number).aggregate(total=Sum("mp_amount"))
+        total_mps = MPTran.objects.filter(user=player).aggregate(total=Sum("mp_amount"))
         print(total_mps)
 
-        total_mps = MPTran.objects.filter(system_number=player.system_number).aggregate(Sum("mp_amount"))["mp_amount__sum"]
+        total_mps = MPTran.objects.filter(user=player).aggregate(Sum("mp_amount"))["mp_amount__sum"]
 
         return total_mps, player.is_abf_active
 
