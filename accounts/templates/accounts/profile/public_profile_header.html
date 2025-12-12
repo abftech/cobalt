@@ -32,7 +32,7 @@
             </p>
 
             <!-- MEMBER TO MEMBER EMAIL -->
-            {% if profile.receive_member_to_member_emails %}
+            {% if profile.user_type == "U" and profile.receive_member_to_member_emails %}
                 <a
                     href="{% url "notifications:member_to_member_email" member_id=profile.id %}"
                     class="btn btn-success btn-sm"
