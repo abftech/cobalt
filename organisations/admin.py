@@ -230,6 +230,7 @@ class MemberClubOptionsAdmin(admin.ModelAdmin):
 
     autocomplete_fields = [
         "club",
+        "user",
     ]
 
 
