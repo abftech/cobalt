@@ -32,7 +32,7 @@ class OrganisationAdmin(admin.ModelAdmin):
         "last_updated_by",
         "default_secondary_payment_method",
     ]
-    search_fields = ["name"]
+    search_fields = ["name", "=org_id"]
 
 
 @admin.register(MembershipType)

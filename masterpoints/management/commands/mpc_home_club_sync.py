@@ -39,6 +39,9 @@ class Command(BaseCommand):
         min_batch = 0
         max_batch = batch_size
 
+        already_member = 0
+        not_already_member = 0
+
         data_returned = True
 
         while data_returned:
@@ -67,14 +70,17 @@ class Command(BaseCommand):
                     continue
 
                 # Get the club
-                club = Organisation.objects.filter(org_id=item["HomeClubID"]).first()
+                club = Organisation.objects.filter(old_mpc_id=item["HomeClubID"]).first()
 
                 if not club:
-                    print(f"Club not found with Club No={item['HomeClubID']}")
+                    print(f"Club not found with MPC Club ID={item['HomeClubID']}")
                     continue
 
                 # See if this user is already a member
-                member_membership_type = MemberMembershipType.objects.filter(mem)
+                if MemberMembershipType.objects.filter(system_number=abf_number, membership_type__organisation=club, membership_state__in=["CUR", "DUE"]).exists():
+                    print(f"{user} is already a current member of {club}")
+                    already_member += 1
+                    continue
 
                 # Get the default membership type
                 membership_type = MembershipType.objects.filter(organisation=club).filter(is_default=True).first()
@@ -93,9 +99,15 @@ class Command(BaseCommand):
                     )
                     membership_type.save()
 
-                #
+                    not_already_member += 1
+
+                # Create a member_membership_type record for this user
+                MemberMembershipType(membership_type=membership_type, system_number=abf_number, membership_state="CUR", home_club=True, last_modified_by=SYSTEM_ACCOUNT).save()
+
 
             min_batch = max_batch + 1
             max_batch = max_batch + batch_size
+
+        print(f"Finished. Already members={already_member}. Added members={not_already_member}")
 
         _print_timing(start_time)
