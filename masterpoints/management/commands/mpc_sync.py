@@ -291,14 +291,29 @@ def sync_players():
         min_batch = max_batch + 1
         max_batch = max_batch + batch_size
 
-    unmatched_users = User.objects.filter(old_mpc_id__isnull=True).count()
+    unmatched_users = User.objects.filter(old_mpc_id__isnull=True)
     unmatched_unreg_users = User.unreg_objects.filter(
         old_mpc_id__isnull=True
-    ).count()
+    )
     print(f"Added: {added_count}. Skipped: {skipped_count}.")
     print(
-        f"Unmatched Users: {unmatched_users}. Unmatched Unregistered Users: {unmatched_unreg_users}"
+        f"Unmatched Users: {unmatched_users.count()}. Unmatched Unregistered Users: {unmatched_unreg_users.count()}"
     )
+
+    if unmatched_users:
+        print("Unmatched Users")
+        print("===============")
+        for user in unmatched_users:
+            print(user)
+        print()
+
+    if unmatched_unreg_users:
+        print("Unmatched Unregistered Users")
+        print("============================")
+        for user in unmatched_unreg_users:
+            print(user)
+        print()
+
     _print_timing(start_time)
 
 def sync_mp_batches():

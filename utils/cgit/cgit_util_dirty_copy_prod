@@ -81,5 +81,9 @@ printf "Loading the data into the local database...\n"
 pg_restore -d $LOCAL_DB_NAME --no-owner --no-privileges --role=cobalt -v ~/abf_backup/cobalt_prod_dump.$(date '+%Y-%m-%d')
 
 # sanitise the data
+source ~/bin/cobalt-common-variables.sh
 export RDS_DB_NAME=$LOCAL_DB_NAME
+
+./manage.py migrate
+
 ./manage.py sanitise_production_data_for_testing
