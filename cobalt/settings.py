@@ -181,6 +181,11 @@ MAINTENANCE_MODE = set_value("MAINTENANCE_MODE", "OFF")
 RECAPTCHA_SITE_KEY = set_value("RECAPTCHA_SITE_KEY")
 RECAPTCHA_SECRET_KEY = set_value("RECAPTCHA_SECRET_KEY")
 
+# Unregistered users don't have emails, it is a close call between making email optional
+# or using an email address to identify that we haven't set it.
+# It is more likely to cause problems by making email optional.
+UNREGISTERED_USER_NOT_SET_EMAIL = "noemail@notset.com"
+
 #########################################
 # Dynamic settings.                     #
 #########################################

@@ -282,7 +282,6 @@ def sync_players():
                 user.last_name = item["Surname"]
                 user.username = abf_number
                 user.is_active = False
-#                user.last_updated_by = SYSTEM_ACCOUNT
                 added_count += 1
 
             user.old_mpc_id = item["PlayerID"]

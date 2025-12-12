@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from django.db import IntegrityError
 
 from accounts.models import User, UnregisteredUser
+from cobalt.settings import UNREGISTERED_USER_NOT_SET_EMAIL
 
 """ temporary script to move unregistered users across to become Users """
 
@@ -12,7 +13,7 @@ class Command(BaseCommand):
 
         for player in UnregisteredUser.all_objects.all():
             new_user = User()
-            new_user.email = "fixlater@broken.com"
+            new_user.email = UNREGISTERED_USER_NOT_SET_EMAIL
             new_user.system_number = player.system_number
             if player.internal_system_number:
                 new_user.user_type = User.UserType.CONTACT
