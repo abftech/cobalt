@@ -233,10 +233,7 @@ def organisation_transactions_by_date_range(
                         "Club Membership",
                     ]
                 )
-                .exclude(
-                    Q(type__in=["Entry to an event", "Refund"])
-                    & Q(event_id__isnull=False)
-                )
+                .exclude(event_id__isnull=False)
                 .exclude(club_session_id__isnull=False)
             )
 
@@ -311,7 +308,6 @@ def event_payments_summary_by_date_range(club, start_date, end_date):
 
     event_payments = (
         OrganisationTransaction.objects.filter(organisation=club)
-        .filter(type__in=["Refund", "Entry to an event"])
         .filter(created_date__gte=start_datetime, created_date__lte=end_datetime)
         .exclude(event_id__isnull=True)
         .values("event_id")
@@ -390,18 +386,6 @@ def congress_payments_summary_by_date_range(club, start_date, end_date):
         .values("event_id")
         .annotate(amount=Sum("amount"))
     )
-
-    # inner_query = Event.objects.all().values("id")
-    # event_payments = (
-    #     OrganisationTransaction.objects.filter(organisation=club)
-    #     .exclude(event_id__in=inner_query)
-    #     .filter(created_date__lte=end_datetime)
-    #     .filter(created_date__gte=start_datetime)
-    #     # .filter(type__in=["Entry to an event", "Refund"])
-    #     # .order_by("-pk")
-    #     .values("event_id")
-    #     .annotate(amount=Sum("amount"))
-    # )
 
     # get congress names mapping
     congress_name_dict, event_to_congress_dict = congress_names_for_date_range(
