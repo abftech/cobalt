@@ -925,9 +925,9 @@ def edit_session(request, event_id, session_id):
         if session.session_date:
             initial["session_date"] = session.session_date.strftime("%d/%m/%Y")
         if session.session_start:
-            initial["session_start"] = session.session_start.strftime("%I:%M %p")
+            initial["session_start"] = session.session_start.strftime("%H:%M")
         if session.session_end:
-            initial["session_end"] = session.session_end.strftime("%I:%M %p")
+            initial["session_end"] = session.session_end.strftime("%H:%M")
 
         form = SessionForm(instance=event, initial=initial)
 
