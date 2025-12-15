@@ -24,7 +24,6 @@
                         <form method="POST">
                             {% csrf_token %}
                             <input type="hidden" name="event" id="id_event" value="{{ event.id }}">
-
                             <div class="row">
                                 <div class="col-md-4">
                                     <span class="cobalt-form-error" id="id_session_date_errors">{{ form.session_date.errors|striptags }}</span>
@@ -48,24 +47,6 @@
                                     </div>
                                 </div>
                             </div>
-
-
-
-                            <!-- <div class="row">
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label class="bmd-label-static" style="font-size:11px">Start Date</label>
-                  <input type="text" name="from_date" id="id_from_date" class="form-control datepicker" value="26/10/2020">
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label class="bmd-label-static" style="font-size:11px">End Date</label>
-                  <input type="text" name="to_date" id="id_to_date" class="form-control datepicker" value="30/10/2020">
-                </div>
-              </div>
-            </div> -->
-
 
                             <div class="row">
                                 <div class="col text-center">
@@ -92,12 +73,13 @@
 
             $('#id_session_date').datetimepicker({
                 format: 'DD/MM/YYYY',
-                {% if event.congress.start_date %}
-                    minDate: moment('{{ event.congress.start_date|date:"d/m/Y" }}', "DD/MM/YYYY"),
-                {% endif %}
-                {% if event.congress.start_date %}
-                    maxDate: moment('{{ event.congress.end_date|date:"d/m/Y" }}', "DD/MM/YYYY"),
-                {% endif %}
+            {# This causes the date to change - moved to server side validation #}
+{#                {% if event.congress.start_date %}#}
+{#                    minDate: moment('{{ event.congress.start_date|date:"d/m/Y" }}', "DD/MM/YYYY"),#}
+{#                {% endif %}#}
+{#                {% if event.congress.end_date %}#}
+{#                    maxDate: moment('{{ event.congress.end_date|date:"d/m/Y" }}', "DD/MM/YYYY"),#}
+{#                {% endif %}#}
             });
             $('#id_session_start').datetimepicker({
                 format: 'HH:mm',

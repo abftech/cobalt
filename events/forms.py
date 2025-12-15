@@ -443,6 +443,21 @@ class SessionForm(forms.ModelForm):
             "session_end",
         )
 
+    def clean_session_date(self):
+        session_date = self.cleaned_data["session_date"]
+        congress = self.instance.event.congress
+
+        # Validate session_date is while congress is running
+        if congress.start_date and session_date < congress.start_date:
+            raise ValidationError(
+                f"Session cannot start before congress start date: {congress.start_date}"
+            )
+        if congress.end_date and session_date > congress.end_date:
+            raise ValidationError(
+                f"Session cannot start after congress end date: {congress.end_date}"
+            )
+        return session_date
+
 
 class CongressMasterForm(forms.ModelForm):
     class Meta:
