@@ -423,7 +423,6 @@ def congress_payments_summary_by_date_range(club, start_date, end_date):
                 .exclude(event_id__in=inner_query)
                 .filter(created_date__lte=end_datetime)
                 .filter(created_date__gte=start_datetime)
-                .filter(type__in=["Entry to an event", "Refund"])
                 .order_by("-pk")
                 .last()
                 .created_date.date()
