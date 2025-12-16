@@ -28,10 +28,12 @@ from .models import (
 class CongressMasterAdmin(admin.ModelAdmin):
     """Admin class for model CongressMaster"""
 
-    search_fields = ["org"]
-    autocomplete_fields = [
-        "org",
-    ]
+    pass
+
+    search_fields = ["name"]
+    # autocomplete_fields = [
+    #     "org",
+    # ]
 
 
 @admin.register(Congress)

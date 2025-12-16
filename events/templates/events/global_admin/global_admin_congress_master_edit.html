@@ -54,7 +54,11 @@
                     <div class="card">
                         <div class="card-header card-header-danger">
                             <h2>Congress Conveners</h2>
-                            <a href="{% url "rbac:group_view" group_id=rbac_group_id %}" class="btn btn-sm btn-secondary">View in RBAC</a>
+                            {% if rbac_group_id %}
+                                <a href="{% url "rbac:group_view" group_id=rbac_group_id %}" class="btn btn-sm btn-secondary">View in RBAC</a>
+                            {% else %}
+                                <h3>No RBAC Group Found</h3>
+                            {% endif %}
                         </div>
                         <div class="card-body">
                             <ul>

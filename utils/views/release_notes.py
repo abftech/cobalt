@@ -8,6 +8,13 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.2.6",
+            "notes": [
+                "Fix for Django admin search for congress master",
+                "Handle no rbac group found for old congress master screen",
+            ],
+        },
+        {
             "release": "6.2.5",
             "notes": [
                 "Fix for results view MASTER_POINTS_AWARDED issue",

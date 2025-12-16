@@ -445,6 +445,7 @@ class SessionForm(forms.ModelForm):
 
     def clean_session_date(self):
         session_date = self.cleaned_data["session_date"]
+
         congress = self.instance.event.congress
 
         # Validate session_date is while congress is running
