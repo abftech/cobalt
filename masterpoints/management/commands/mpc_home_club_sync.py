@@ -41,6 +41,7 @@ class Command(BaseCommand):
 
         already_member = 0
         not_already_member = 0
+        error_count = 0
 
         data_returned = True
 
@@ -57,6 +58,7 @@ class Command(BaseCommand):
                 else:
                     print("Skipping record with no ABF number")
                     print(item)
+                    error_count += 1
                     continue
 
                 # Convert string to number
@@ -67,6 +69,7 @@ class Command(BaseCommand):
 
                 if not user:
                     print(f"User not found for ABF Number: {abf_number}")
+                    error_count += 1
                     continue
 
                 # Get the club
@@ -74,6 +77,7 @@ class Command(BaseCommand):
 
                 if not club:
                     print(f"Club not found with MPC Club ID={item['HomeClubID']}")
+                    error_count += 1
                     continue
 
                 # See if this user is already a member
@@ -108,6 +112,6 @@ class Command(BaseCommand):
             min_batch = max_batch + 1
             max_batch = max_batch + batch_size
 
-        print(f"Finished. Already members={already_member}. Added members={not_already_member}")
+        print(f"Finished. Already members={already_member}. Added members={not_already_member}. Error count={error_count}")
 
         _print_timing(start_time)

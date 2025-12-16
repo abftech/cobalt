@@ -14,7 +14,7 @@ from requests import JSONDecodeError
 from accounts.models import User
 from cobalt.settings import GLOBAL_MPSERVER, MP_USE_FILE, MP_USE_DJANGO, TIME_ZONE
 from masterpoints.models import MPTran, Rank
-from organisations.models import Organisation
+from organisations.models import Organisation, MemberMembershipType
 from utils.views.general import masterpoint_query
 
 TZ = pytz.timezone(TIME_ZONE)
@@ -629,6 +629,8 @@ class MasterpointDjango(MasterpointFactory):
                                    red_gold_needed__lte=red + gold).last()
 
         rank_name = rank.rank_name if rank else "Unknown"
+
+        home_club = MemberMembershipType.objects.filter(home_club=True, system_number=)
 
         return {
             'ABFNumber': system_number,

@@ -518,7 +518,7 @@ class Command(BaseCommand):
         sync_green_point_achievement_bands()
         sync_periods()
         sync_ranks()
-        sync_promotions()
+        # sync_promotions()
         sync_mp_batches()
         sync_mp_trans(full_sync=False)
         sync_mpc_club_membership_history()
