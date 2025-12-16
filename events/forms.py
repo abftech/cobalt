@@ -443,6 +443,11 @@ class SessionForm(forms.ModelForm):
             "session_end",
         )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        event = kwargs.pop("event")
+        self.event = event
+
     def clean_session_date(self):
         session_date = self.cleaned_data["session_date"]
 
