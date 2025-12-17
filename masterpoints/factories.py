@@ -630,7 +630,7 @@ class MasterpointDjango(MasterpointFactory):
 
         rank_name = rank.rank_name if rank else "Unknown"
 
-        home_club = MemberMembershipType.objects.filter(home_club=True, system_number=)
+        home_club = MemberMembershipType.objects.filter(home_club=True, system_number=user.system_number).select_related("membership_type__organisation").first()
 
         return {
             'ABFNumber': system_number,
@@ -643,7 +643,7 @@ class MasterpointDjango(MasterpointFactory):
             'TotalRed': red,
             'TotalGreen': green,
             'RankName': rank_name,
-            'home_club': 'Home Club is Hardcoded',
+            'home_club': home_club.__str__(),
         }
 
     def masterpoints_detail(self, request, system_number=None, years=1):

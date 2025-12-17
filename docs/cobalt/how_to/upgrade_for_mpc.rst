@@ -23,9 +23,18 @@ Steps for Test
 Steps for Production
 ====================
 
+Prep
+----
+
 #. Before you start, build a new Production environment (cobalt-production-green), point it to a Test database
-#. Install the latest code on the new system and put it into Maintenance Mode
+#. Also build a new SES environment (cobalt-ses-production-blue)
+#. Install the latest code on the new systems and put them into Maintenance Mode
+#. Login to both systems
 #. Take a copy of `notifications.unregistered_blocked_email`
+
+Upgrade
+-------
+
 #. Put Production system (cobalt-production-blue) into Maintenance Mode
 #. Take a database snapshot
 #. Build a new RDS Instance from the snapshot
@@ -33,7 +42,6 @@ Steps for Production
 #. Ensure MP_USE_DJANGO is NOT set. This will take too long. Continue using the MPC for a few days until the sync has run and the data is present.
 #. Upgrade DNS so myabf.com.au and www.myabf.com.au both point at cobalt-production-green
 #. Convert users: ./manage.py temp_copy_unreg_to_user
-#. Run ./manage.py mpc_sync
 #. Test
 #. Bring system out of Maintenance Mode
 #. Enter `notifications.unregistered_blocked_email` data back in
