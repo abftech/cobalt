@@ -40,10 +40,10 @@ Upgrade
 #. Using another browser/computer check that a normal user cannot login
 #. Take a database snapshot. In the AWS Console, go to RDS, Select `production-blue` then **Actions** - **Take Snapshot**
 #. Build a new RDS Instance from the snapshot. Click on the snapshot and go to **Actions** - **Restore Snapshot**. Accept all default values except for the engine size which is in **Instance configuration**. Set this to `db.t3.small`. Set `db instance identifier` to `cobalt-production-green`
+#. Run migrations. `eb ssh cobalt-production-green`. Set RDS environment variables. Run `./manage.py migrate`
 #. Point cobalt-production-green at the new RDS instance. Set **RDS_DB_NAME** to `ebdb`. Set **RDS_HOSTNAME** to the hostname of the new database server (cobalt-production-green). Set **RDS_USERNAME** to `postgres`. Set **RDS_PASSWORD** to the password used by cobalt-production-blue.
 #. Do the same for cobalt-ses-production-blue
 #. Ensure MP_USE_DJANGO is NOT set. This will take too long. Continue using the MPC for a few days until the sync has run and the data is present.
-#. Run migrations. `eb ssh cobalt-production-green`. Run `./manage.py migrate`
 #. Change DNS so myabf.com.au and www.myabf.com.au both point at cobalt-production-green
 #. Change DNS so ses.myabf.com.au points at cobalt-ses-production-blue
 #. Convert users. `eb ssh cobalt-production-green`. Run `./manage.py temp_copy_unreg_to_user`
@@ -93,11 +93,11 @@ Step     Time
 5        20 mins*
 6        5 mins
 7        5 mins
-8        0 mins
-9        5 mins
+8        5 mins
+9        0 mins
 10       2 mins
 11       2 mins
-12       10 mins
+12       10 mins*
 13 Test  Unknown, allow 1 hour
 14       5 mins
 15       5 mins
@@ -106,6 +106,7 @@ Step     Time
 
 4 - timed at 8 minutes
 5 - timed at 14 and 16 minutes
+12 - timed at 4 minutes
 
 Outage time excluding testing: **1 hour 29 minutes**
 Total outage time: **2 hours 29 minutes**
