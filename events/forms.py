@@ -444,23 +444,25 @@ class SessionForm(forms.ModelForm):
         )
 
     def __init__(self, *args, **kwargs):
+        congress = kwargs.pop("congress", None)
         super().__init__(*args, **kwargs)
-        event = kwargs.pop("event")
-        self.event = event
+        self.congress = congress
 
     def clean_session_date(self):
         session_date = self.cleaned_data["session_date"]
 
-        congress = self.instance.event.congress
+        # Don't validate if we don't have a congress
+        if not self.congress:
+            return session_date
 
         # Validate session_date is while congress is running
-        if congress.start_date and session_date < congress.start_date:
+        if self.congress.start_date and session_date < self.congress.start_date:
             raise ValidationError(
-                f"Session cannot start before congress start date: {congress.start_date}"
+                f"Session cannot start before congress start date: {self.congress.start_date}"
             )
-        if congress.end_date and session_date > congress.end_date:
+        if self.congress.end_date and session_date > self.congress.end_date:
             raise ValidationError(
-                f"Session cannot start after congress end date: {congress.end_date}"
+                f"Session cannot start after congress end date: {self.congress.end_date}"
             )
         return session_date
 

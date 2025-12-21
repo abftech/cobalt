@@ -616,14 +616,15 @@ def transaction_congress_details_deleted_events_htmx(request, club):
 
     start_datetime, end_datetime = start_end_date_to_datetime(start_date, end_date)
 
-    # Get org transactions where the event_id doesn't match an event
+    # Get org transactions where the event_id doesn't match an event, but we have an event id
+    # This may need to add a date restriction to the inner query to reduce the number of events included
     inner_query = Event.objects.all().values("id")
     event_payments = (
         OrganisationTransaction.objects.filter(organisation=club)
         .exclude(event_id__in=inner_query)
+        .exclude(event_id__isnull=True)
         .filter(created_date__lte=end_datetime)
         .filter(created_date__gte=start_datetime)
-        .filter(type__in=["Entry to an event", "Refund"])
         .order_by("-pk")
     )
     things = cobalt_paginator(request, event_payments)

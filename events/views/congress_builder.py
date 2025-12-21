@@ -901,7 +901,7 @@ def edit_session(request, event_id, session_id):
         return rbac_forbidden(request, role)
 
     if request.method == "POST":
-        form = SessionForm(request.POST, instance=session)
+        form = SessionForm(request.POST, instance=session, congress=event.congress)
         if form.is_valid():
             session.session_date = form.cleaned_data["session_date"]
             session.session_start = form.cleaned_data["session_start"]

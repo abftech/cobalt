@@ -40,6 +40,11 @@ class Command(BaseCommand):
         Congress.objects.all().update(contact_email="a@b.com")
         FCMDevice.objects.all().delete()
 
+        # Prevent Stripe payments going through for membership renewals etc
+        # Note: this does not prevent Stripe activity with production, but it does mean
+        # a new real card has to be registered, any stored cards for members will be gone.
+        User.objects.all().update(stripe_customer_id=None)
+
         print("Changing password...")
         mark = User.objects.filter(username="Mark").first()
         mark.set_password("F1shcake")
