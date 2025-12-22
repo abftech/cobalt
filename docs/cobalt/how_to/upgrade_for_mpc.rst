@@ -114,4 +114,5 @@ Step     Time
 14 - timed at 4 minutes
 
 Outage time excluding testing: **1 hour 31 minutes**
+
 Total outage time: **2 hours 31 minutes**
