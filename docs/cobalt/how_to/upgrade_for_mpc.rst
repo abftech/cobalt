@@ -45,12 +45,12 @@ Upgrade
 #. Point cobalt-production-green at the new RDS instance. Set **RDS_DB_NAME** to `ebdb`. Set **RDS_HOSTNAME** to the hostname of the new database server (cobalt-production-green). Set **RDS_USERNAME** to `postgres`. Set **RDS_PASSWORD** to the password used by cobalt-production-blue.
 #. Do the same for cobalt-ses-production-blue
 #. Ensure MP_USE_DJANGO is NOT set. This will take too long. Continue using the MPC for a few days until the sync has run and the data is present.
-#. Add production Stripe credentials to cobalt-production-green. NOT to cobalt-ses-production-blue.
+#. Add production Stripe credentials to cobalt-production-green. NOT to cobalt-ses-production-blue. Remove the credentials from cobalt-production-blue.
 #. Change DNS so myabf.com.au and www.myabf.com.au both point at cobalt-production-green
 #. Change DNS so ses.myabf.com.au points at cobalt-ses-production-blue
 #. Convert users. `eb ssh cobalt-production-green`. Run `./manage.py temp_copy_unreg_to_user`
 #. Test
-#. Bring systems out of Maintenance Mode
+#. Bring new systems out of Maintenance Mode
 #. Set number of instances for Production to 2. Do this through the AWS console to set min and max.
 #. Enter `notifications.unregistered_blocked_email` data back in
 
@@ -58,6 +58,8 @@ Steps for Production - Fail Back
 ================================
 
 #. Put cobalt-production-green and cobalt-ses-production-blue into maintenance mode
+#. Remove Stripe credentials from cobalt-production-green
+#. Add Stripe credentials to cobalt-production-blue
 #. Revert DNS changes
 #. Take cobalt-production-blue out of Maintenance Mode
 #. If the new system was available to users, then check recent activity, especially entries and payments
@@ -111,7 +113,7 @@ Step     Time
 
 5 - timed at 14 and 16 minutes
 
-14 - timed at 4 minutes
+13 - timed at 4 minutes
 
 Outage time excluding testing: **1 hour 31 minutes**
 
