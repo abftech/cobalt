@@ -27,7 +27,7 @@
                                     <input type="submit" name="stop_auto" value="Stop Auto Top Up" id="cobalt-button" class="btn btn-success center-text">
                                 </div>
                                 <div class="ml-auto">
-                                    <button class="btn btn-info center-text" onclick="history.back();">Cancel</button>
+                                    <a class="btn btn-info center-text" href="{% url "payments:statement" %}">Cancel</a>
                                 </div>
                             </div>
                         </form>
