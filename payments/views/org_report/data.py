@@ -105,6 +105,33 @@ def congress_names_for_date_range(club, start_datetime, end_datetime):
     for congress_name in congress_names:
         event_to_congress_dict[congress_name["id"]] = congress_name["congress_id"]
 
+    # For deleted events we won't get a congress name - see if anything is missing
+    for event_id in event_ids:
+
+        # Check event_to_congress dict
+        if event_id not in event_to_congress_dict:
+            event_to_congress_dict[event_id] = -1
+
+        # Check congress_name dict
+        if event_id not in congress_name_dict:
+            inner_query = Event.objects.filter(
+                congress__congress_master__org=club
+            ).values("id")
+            start_date_display = (
+                OrganisationTransaction.objects.filter(organisation=club)
+                .exclude(event_id__in=inner_query)
+                .filter(created_date__lte=end_datetime)
+                .filter(created_date__gte=start_datetime)
+                .order_by("-pk")
+                .last()
+                .created_date.date()
+            )
+            congress_name_dict[-1] = {
+                "congress_id": -1,
+                "congress_name": mark_safe("<b>Deleted Event(s)</b>"),
+                "start_date": start_date_display,
+            }
+
     return congress_name_dict, event_to_congress_dict
 
 
@@ -411,35 +438,16 @@ def congress_payments_summary_by_date_range(club, start_date, end_date):
     # One congress can have multiple events. Go through at the event level
     for event_payment in event_payments:
         # get congress id for this event
-        try:
-            congress_id = event_to_congress_dict[event_payment["event_id"]]
-        except KeyError:
-            # This event has been deleted (almost certainly) so we don't know the congress - create a fake one
-            congress_id = -1
-
-            inner_query = Event.objects.all().values("id")
-            start_date_display = (
-                OrganisationTransaction.objects.filter(organisation=club)
-                .exclude(event_id__in=inner_query)
-                .filter(created_date__lte=end_datetime)
-                .filter(created_date__gte=start_datetime)
-                .order_by("-pk")
-                .last()
-                .created_date.date()
-            )
-
-            congress_name_dict[congress_id] = {
-                "congress_name": mark_safe("<b>Deleted Events</b>"),
-                "start_date": start_date_display,
-            }
-            total_event_payments_dict[event_payment["event_id"]] = 0
+        congress_id = event_to_congress_dict[event_payment["event_id"]]
 
         # If already in dictionary then add this event to the totals
         if congress_id in congress_payment_dict:
             congress_payment_dict[congress_id]["amount"] += event_payment["amount"]
-            congress_payment_dict[congress_id][
-                "amount_outside_range"
-            ] += total_event_payments_dict[event_payment["event_id"]]
+            congress_payment_dict[congress_id]["amount_outside_range"] += (
+                total_event_payments_dict[event_payment["event_id"]]
+                - event_payment["amount"]
+            )
+
             congress_payment_dict[congress_id]["amount_outside_range"] -= event_payment[
                 "amount"
             ]

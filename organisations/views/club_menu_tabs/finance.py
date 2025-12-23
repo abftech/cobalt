@@ -618,7 +618,7 @@ def transaction_congress_details_deleted_events_htmx(request, club):
 
     # Get org transactions where the event_id doesn't match an event, but we have an event id
     # This may need to add a date restriction to the inner query to reduce the number of events included
-    inner_query = Event.objects.all().values("id")
+    inner_query = Event.objects.filter(congress__congress_master__org=club).values("id")
     event_payments = (
         OrganisationTransaction.objects.filter(organisation=club)
         .exclude(event_id__in=inner_query)
