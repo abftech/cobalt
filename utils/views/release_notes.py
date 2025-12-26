@@ -8,6 +8,12 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.2.5",
+            "notes": [
+                "Fix for results view MASTER_POINTS_AWARDED issue",
+            ],
+        },
+        {
             "release": "6.2.4",
             "notes": [
                 "Congress admin - update event_id on payment records if entry is moved",
