@@ -8,6 +8,12 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.3.0",
+            "notes": [
+                "Remove use of UnregisteredUsers ahead of Masterpoints work",
+            ],
+        },
+        {
             "release": "6.2.5",
             "notes": [
                 "Fix for results view MASTER_POINTS_AWARDED issue",
