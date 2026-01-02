@@ -1,5 +1,7 @@
 import bleach
 from datetime import date, timedelta
+
+from dateutil.relativedelta import relativedelta
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
@@ -260,7 +262,7 @@ class Organisation(models.Model):
         today = timezone.now().date()
         renewal_date = self.next_renewal_date
         if renewal_date == today:
-            end_date = renewal_date + timedelta(years=1) - timedelta(days=1)
+            end_date = renewal_date + relativedelta(years=1) - timedelta(days=1)
         else:
             end_date = renewal_date - timedelta(days=1)
         return end_date
