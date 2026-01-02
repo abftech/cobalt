@@ -12,6 +12,9 @@ def release_notes_view(request):
             "notes": [
                 "Fix for Django admin search for congress master",
                 "Handle no rbac group found for old congress master screen",
+                "Fix edit sessions view for events",
+                "Fix bug in adding member if renewal date = today",
+                "Club reporting for deleted events",
             ],
         },
         {
