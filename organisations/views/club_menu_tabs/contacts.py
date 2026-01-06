@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from accounts.models import (
     NextInternalSystemNumber,
-    UnregisteredUser,
+    User,
 )
 from accounts.views.api import search_for_user_in_cobalt_and_mpc
 from cobalt.settings import (
@@ -205,7 +205,7 @@ def edit_htmx(request, club, message=None):
         if form.is_valid() and name_form_ok:
             form.save()
             if name_form:
-                unreg = UnregisteredUser.all_objects.get(
+                unreg = User.all_objects.exclude(user_type=User.UserType.USER).get(
                     system_number=contact_details.system_number
                 )
                 unreg.first_name = name_form.cleaned_data["first_name"]
@@ -545,14 +545,16 @@ def add_contact_manual_htmx(request, club):
                 with transaction.atomic():
 
                     # create a new unregistered user with an internal system number
-                    unreg_user = UnregisteredUser()
+                    unreg_user = User(user_type=User.UserType.CONTACT)
                     unreg_user.system_number = NextInternalSystemNumber.next_available()
+                    unreg_user.username = unreg_user.system_number
                     unreg_user.first_name = form.cleaned_data["first_name"]
                     unreg_user.last_name = form.cleaned_data["last_name"]
-                    unreg_user.origin = "Manual"
-                    unreg_user.internal_system_number = True
-                    unreg_user.added_by_club = club
-                    unreg_user.last_updated_by = request.user
+                    unreg_user.is_active = False
+                    unreg_user.is_abf_active = False
+                    # unreg_user.internal_system_number = True
+                    # unreg_user.added_by_club = club
+                    # unreg_user.last_updated_by = request.user
                     unreg_user.save()
 
                     # create a new member details record
@@ -587,13 +589,13 @@ def add_contact_manual_htmx(request, club):
 
                 if source == "mpc":
                     # need to create a new unregistered user
-                    unreg_user = UnregisteredUser()
+                    unreg_user = User(user_type=User.UserType.UNREGISTERED)
                     unreg_user.system_number = system_number
+                    unreg_user.username = system_number
                     unreg_user.first_name = request.POST.get("first_name")
                     unreg_user.last_name = request.POST.get("last_name")
-                    unreg_user.origin = "MCP"
-                    unreg_user.added_by_club = club
-                    unreg_user.last_updated_by = request.user
+                    # unreg_user.added_by_club = club
+                    # unreg_user.last_updated_by = request.user
                     unreg_user.save()
 
                 add_contact_with_system_number(
@@ -688,14 +690,13 @@ def add_individual_internal_htmx(request, club):
             with transaction.atomic():
 
                 # create a new unregistered user with an internal system number
-                unreg_user = UnregisteredUser()
+                unreg_user = User(user_type=User.UserType.CONTACT)
                 unreg_user.system_number = NextInternalSystemNumber.next_available()
                 unreg_user.first_name = form.cleaned_data["first_name"]
                 unreg_user.last_name = form.cleaned_data["last_name"]
-                unreg_user.origin = "Manual"
-                unreg_user.internal_system_number = True
-                unreg_user.added_by_club = club
-                unreg_user.last_updated_by = request.user
+                # unreg_user.internal_system_number = True
+                # unreg_user.added_by_club = club
+                # unreg_user.last_updated_by = request.user
                 unreg_user.save()
 
                 # create a new member details record

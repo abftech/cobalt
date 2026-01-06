@@ -9,7 +9,7 @@ import logging
 from django.db import transaction
 from django.db.models import Sum, Max
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from club_sessions.models import (
     SessionEntry,
     SessionTypePaymentMethodMembership,
@@ -175,7 +175,7 @@ def load_session_entry_static(session, club):
 
     # Get Users and UnregisteredUsers
     users = User.objects.filter(system_number__in=system_number_list)
-    un_regs = UnregisteredUser.objects.filter(system_number__in=system_number_list)
+    un_regs = User.unreg_objects.filter(system_number__in=system_number_list)
 
     # Convert to a dictionary
     mixed_dict = {}
@@ -1720,13 +1720,15 @@ def change_user_on_session_entry(
             if not status:
                 return f"Error looking up {GLOBAL_ORG} Number: {system_number}"
 
-            UnregisteredUser(
+            User(
+                user_type=User.UserType.UNREGISTERED,
+                username=system_number,
                 system_number=system_number,
-                last_updated_by=director,
+                # last_updated_by=director,
                 last_name=return_value[1],
                 first_name=return_value[0],
                 origin="Manual",
-                added_by_club=club,
+                # added_by_club=club,
             ).save()
             ClubLog(
                 organisation=club,

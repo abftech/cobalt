@@ -9,7 +9,7 @@ from django.utils.safestring import SafeString
 from fcm_django.models import FCMDevice
 from post_office import mail as po_email
 
-from accounts.models import User, UnregisteredUser, UserAdditionalInfo
+from accounts.models import User, UserAdditionalInfo
 from cobalt.settings import (
     DEFAULT_FROM_EMAIL,
     GLOBAL_TITLE,
@@ -432,10 +432,7 @@ def club_user_email_admin_htmx(request, message=None):
     user_type = request.POST.get("user_type")
     user_id = request.POST.get("user_id")
 
-    if user_type == "user":
-        user = get_object_or_404(User, pk=user_id)
-    else:
-        user = get_object_or_404(UnregisteredUser, pk=user_id)
+    user = get_object_or_404(User, pk=user_id)
 
     membership_details = MemberClubDetails.objects.filter(
         system_number=user.system_number

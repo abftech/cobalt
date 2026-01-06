@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import render
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from cobalt.settings import AWS_REGION_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 from notifications.views.core import remove_email_from_blocked_list
 from organisations.models import MemberClubEmail
@@ -115,7 +115,7 @@ def admin_aws_suppression(request):
     un_reg_emails_system_number_list = un_reg_emails.values("system_number")
 
     # Get the matching unregistered users
-    un_reg_qs = UnregisteredUser.objects.filter(
+    un_reg_qs = User.unreg_objects.filter(
         system_number__in=un_reg_emails_system_number_list
     )
 

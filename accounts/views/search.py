@@ -5,7 +5,7 @@ from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from cobalt.settings import (
     RBAC_EVERYONE,
     TBA_PLAYER,
@@ -499,7 +499,7 @@ def _get_exclude_list_and_base_values(request):
 
     if unregistered:
         exclude_list = []
-        base_queryset = UnregisteredUser.objects.all()
+        base_queryset = User.unreg_objects.all()
     else:
         # ignore system accounts
         exclude_list = [RBAC_EVERYONE, TBA_PLAYER, ABF_USER]

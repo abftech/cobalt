@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from fcm_django.models import FCMDevice
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from cobalt.settings import ALL_SYSTEM_ACCOUNTS
 from masterpoints.views import search_mpc_users_by_name
 
@@ -83,7 +83,7 @@ def search_for_user_in_cobalt_and_mpc(
     registered_users = registered_users[:11]
 
     # Cobalt unregistered users
-    un_registered_users = UnregisteredUser.objects.all()
+    un_registered_users = User.unreg_objects.all()
     if first_name_search:
         un_registered_users = un_registered_users.filter(
             first_name__istartswith=first_name_search
@@ -154,7 +154,7 @@ def search_for_user_in_cobalt_and_mpc(
             already_present.append(registered_user.system_number)
 
     # Check real un_registered
-    really_un_registered = UnregisteredUser.objects.filter(
+    really_un_registered = User.unreg_objects.filter(
         system_number__in=check_user_list
     )
     for un_registered_user in really_un_registered[:10]:

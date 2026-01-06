@@ -14,8 +14,8 @@ from django.contrib.auth.forms import UserCreationForm
 from accounts.utils import check_system_number
 
 from cobalt.settings import GLOBAL_ORG
-from masterpoints.factories import masterpoint_factory_creator
-from .models import User, UnregisteredUser, SystemCard
+from masterpoints.factories import masterpoint_factory_creator, MasterpointDB
+from .models import User, SystemCard
 from django.core.exceptions import ValidationError
 
 
@@ -46,7 +46,8 @@ class UserRegisterForm(UserCreationForm):
     def clean_username(self):
         """Final check that system number is valid and available. System_number is submitted as username"""
         system_number = self.cleaned_data["username"]
-        mp_source = masterpoint_factory_creator()
+        # Point to MPC for now as source of truth
+        mp_source = MasterpointDB()
         if mp_source.system_number_valid(system_number):
             return system_number
 
@@ -204,7 +205,7 @@ class UnregisteredUserForm(forms.ModelForm):
     """Form to edit an Unregistered User"""
 
     class Meta:
-        model = UnregisteredUser
+        model = User
         fields = [
             "first_name",
             "last_name",

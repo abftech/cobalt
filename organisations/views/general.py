@@ -197,12 +197,12 @@ def club_staff(user):
 def replace_unregistered_user_with_real_user(real_user: User):
     """All the data is keyed off system_number so all we really need to do is to delete club emails.
 
-    The calling function deletes the unregistered user"""
+    """
 
     # NOTE: under club admin this is no longer an issue, as clubs can maintain their own
     # email address for members.
 
-    # Member*Club*Email.objects.filter(system_number=real_user.system_number).delete()
+    # MemberClubEmail.objects.filter(system_number=real_user.system_number).delete()
 
     # Logs
     clubs = MemberMembershipType.objects.filter(system_number=real_user.system_number)

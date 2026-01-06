@@ -19,10 +19,8 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from accounts.models import (
-    User,
-    UnregisteredUser,
-)
+from accounts.models import User
+
 from club_sessions.models import SessionEntry
 from club_sessions.views.core import bridge_credits_for_club
 from cobalt.settings import (
@@ -487,7 +485,7 @@ def activity_invitations_htmx(request, club):
     system_number = request.POST.get("system_number")
     member_details = get_member_details(club, system_number)
 
-    un_reg = get_object_or_404(UnregisteredUser, system_number=system_number)
+    un_reg = get_object_or_404(User, system_number=system_number)
 
     return render(
         request,
@@ -595,7 +593,7 @@ def search_tab_name_htmx(request, club):
         users = users.filter(last_name__istartswith=last_name_search)
 
     # Unregistered
-    un_regs = UnregisteredUser.all_objects.filter(system_number__in=system_number_list)
+    un_regs = User.all_objects.exclude(user_type=User.UserType.USER).filter(system_number__in=system_number_list)
 
     if first_name_search:
         un_regs = un_regs.filter(first_name__istartswith=first_name_search)
@@ -637,7 +635,7 @@ def search_tab_email_htmx(request, club):
 
     users = User.objects.filter(system_number__in=system_number_list)
 
-    un_regs = UnregisteredUser.objects.filter(system_number__in=system_number_list)
+    un_regs = User.unreg_objects.filter(system_number__in=system_number_list)
 
     user_list = list(chain(users, un_regs))
 

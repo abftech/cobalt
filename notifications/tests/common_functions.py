@@ -89,7 +89,8 @@ def _check_email_sent_tests_list_emails(debug, emails):
         logger.debug(f"There are {mail_count} emails. Email list follows")
         for email in emails:
             logger.debug(
-                f"To: {email.context['name']}   Subject: {email.context['title']}"
+                # f"To: {email.context['name']}   Subject: {email.context['title']}"
+                f"{email} - Check later. Cannot get context"
             )
 
 

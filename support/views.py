@@ -11,7 +11,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from cobalt.settings import (
     COBALT_HOSTNAME,
     RECAPTCHA_SITE_KEY,
@@ -256,11 +256,11 @@ def _global_search_people(request, query, searchparams, include_people):
     registered = User.objects.filter(q_string)
 
     # Unregistered users holds both unregistered users and contacts who have fake system_numbers assigned
-    unregistered = UnregisteredUser.all_objects.filter(q_string)
+    unregistered = User.all_objects.exclude(user_type=User.UserType.USER).filter(q_string)
 
     # Don't include contacts (have internal system numbers) unless an admin
     if not email_admin:
-        unregistered = unregistered.exclude(internal_system_number=True)
+        unregistered = unregistered.exclude(user_type=User.UserType.CONTACT)
 
     # Augment with membership data
     registered_with_memberships = _add_memberships_to_queryset(registered, email_admin)

@@ -144,6 +144,7 @@ NEW_RELIC_APP_ID = set_value("NEW_RELIC_APP_ID", "601323710")
 
 # Masterpoint source
 MP_USE_FILE = set_value("MP_USE_FILE", None)
+MP_USE_DJANGO = set_value("MP_USE_DJANGO", None)
 
 # database
 RDS_DB_NAME = set_value("RDS_DB_NAME")
@@ -180,6 +181,11 @@ MAINTENANCE_MODE = set_value("MAINTENANCE_MODE", "OFF")
 RECAPTCHA_SITE_KEY = set_value("RECAPTCHA_SITE_KEY")
 RECAPTCHA_SECRET_KEY = set_value("RECAPTCHA_SECRET_KEY")
 
+# Unregistered users don't have emails, it is a close call between making email optional
+# or using an email address to identify that we haven't set it.
+# It is more likely to cause problems by making email optional.
+UNREGISTERED_USER_NOT_SET_EMAIL = "noemail@notset.com"
+
 #########################################
 # Dynamic settings.                     #
 #########################################
@@ -209,6 +215,7 @@ if os.name == "posix":
 #########################################
 
 INSTALLED_APPS = [
+    # Our apps
     "calendar_app",
     "api",
     "notifications",
@@ -228,6 +235,7 @@ INSTALLED_APPS = [
     "utils",
     "tests",
     "xero",
+    # Django contrib
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -235,12 +243,14 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.humanize",
+    "django.contrib.postgres",
+    "django.contrib.admindocs",
+    # 3rd party apps
     "django_summernote",
     "crispy_forms",
     "crispy_bootstrap4",
     "widget_tweaks",
     "django_extensions",
-    "django.contrib.admindocs",
     "post_office",
     "django_ses",
     "django_otp",

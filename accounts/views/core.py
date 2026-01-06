@@ -12,11 +12,11 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 
 from accounts.forms import UserRegisterForm
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from accounts.tokens import account_activation_token
 from cobalt.settings import GLOBAL_TITLE, ALL_SYSTEM_ACCOUNTS
 from logs.views import log_event
-from masterpoints.factories import masterpoint_factory_creator
+from masterpoints.factories import masterpoint_factory_creator, MasterpointDB
 from masterpoints.views import user_summary
 from notifications.views.core import send_cobalt_email_with_template
 from organisations.models import Organisation
@@ -66,7 +66,8 @@ def register_user(request, system_number=None, email=None):
     # Try to pre-fill the form if we got data - happens from the invite to join link
     if system_number:
         form.fields["username"].initial = system_number
-        mp_source = masterpoint_factory_creator()
+        # During transition, we want to get new members from the MPC
+        mp_source = MasterpointDB()
         ret = mp_source.system_number_lookup(system_number)
         try:
             form.fields["first_name"].initial = ret.split(" ")[0]
@@ -80,9 +81,26 @@ def register_user(request, system_number=None, email=None):
 
 
 def _register_handle_valid_form(form, request):
+    # Check for an unregistered user
     user = form.save(commit=False)
+
+    un_reg = User.unreg_objects.filter(username=user.username).first()
+
+    if un_reg:
+        # If we have a matching unregistered user, then use that instead, use the provided email address
+        email = user.email
+        user = un_reg
+        user.email = email
+        user.set_password(form.cleaned_data["password1"])
+
+    user.user_type = User.UserType.USER
+    user.is_abf_active = True
     user.is_active = False  # not active until email confirmed
     user.system_number = user.username
+
+    # Update club records
+    replace_unregistered_user_with_real_user(user)
+
     user.save()
 
     _check_duplicate_email(user)
@@ -108,9 +126,6 @@ def _register_handle_valid_form(form, request):
     send_cobalt_email_with_template(
         to_address=to_email, context=context, priority="now"
     )
-
-    # Check if we have a matching UnregisteredUser object and copy data across
-    _check_unregistered_user_match(user)
 
     return render(
         request, "accounts/core/register_complete.html", {"email_address": to_email}
@@ -353,26 +368,6 @@ def _check_duplicate_email(user):
 
     return others_same_email.exists()
 
-
-def _check_unregistered_user_match(user):
-    """See if there is already a user with this system_id in UnregisteredUser and cut across data"""
-
-    unregistered_user = UnregisteredUser.objects.filter(
-        system_number=user.system_number
-    ).first()
-
-    if not unregistered_user:
-        return
-
-    # Call the callbacks
-
-    # Organisations
-    replace_unregistered_user_with_real_user(user)
-
-    # Now delete the unregistered user, we don't need it anymore. This will also delete any UnregisteredBlockedEmail
-    unregistered_user.delete()
-
-
 def add_un_registered_user_with_mpc_data(
     system_number: int, club: Organisation, added_by: User, origin: str = "Manual"
 ) -> (str, dict):
@@ -382,7 +377,7 @@ def add_un_registered_user_with_mpc_data(
     # do nothing if user already exists
     if User.objects.filter(system_number=system_number).exists():
         return "user", None
-    if UnregisteredUser.objects.filter(system_number=system_number).exists():
+    if User.unreg_objects.filter(system_number=system_number).exists():
         return "un_reg", None
 
     # Get data from the MPC
@@ -392,14 +387,15 @@ def add_un_registered_user_with_mpc_data(
         return None, None
 
     # Create user
-    UnregisteredUser(
+    User(
+        user_type=User.UserType.UNREGISTERED,
         system_number=system_number,
-        last_updated_by=added_by,
+        username=system_number,
+ #       last_updated_by=added_by,
         last_name=details["Surname"],
         first_name=details["GivenNames"],
         # email=mpc_email,
-        origin=origin,
-        added_by_club=club,
+        # added_by_club=club,
     ).save()
 
     return "new", details
@@ -418,7 +414,7 @@ def get_user_or_unregistered_user_from_system_number(system_number):
     if user:
         return user
 
-    return UnregisteredUser.objects.filter(system_number=system_number).first()
+    return User.unreg_objects.filter(system_number=system_number).first()
 
 
 def get_email_address_and_name_from_system_number(
@@ -452,7 +448,7 @@ def get_email_address_and_name_from_system_number(
         return None, None
 
     # try Unregistered user
-    un_reg = UnregisteredUser.objects.filter(system_number=system_number).first()
+    un_reg = User.unreg_objects.filter(system_number=system_number).first()
 
     if not un_reg:
         return None, None
@@ -473,7 +469,7 @@ def get_users_or_unregistered_users_from_system_number_list(system_number_list):
 
     # Get Users and UnregisteredUsers
     users = User.objects.filter(system_number__in=system_number_list)
-    un_regs = UnregisteredUser.objects.filter(system_number__in=system_number_list)
+    un_regs = User.unreg_objects.filter(system_number__in=system_number_list)
 
     # Convert to a dictionary
     mixed_dict = {}
@@ -518,7 +514,7 @@ def get_users_or_unregistered_users_from_email_list(email_list):
     club_member_dict = {
         system_no: club_email for (system_no, club_email) in club_member_list
     }
-    un_regs = UnregisteredUser.objects.filter(
+    un_regs = User.unreg_objects.filter(
         system_number__in=club_member_dict,
     ).distinct()
     un_reg_dict = {un_reg.system_number: un_reg for un_reg in un_regs}
@@ -549,7 +545,7 @@ def get_user_statistics():
 
     users_with_auto_top_up = User.objects.filter(stripe_auto_confirmed="On").count()
 
-    un_registered_users = UnregisteredUser.objects.count()
+    un_registered_users = User.unreg_objects.count()
 
     return {
         "total_users": total_users,

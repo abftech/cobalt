@@ -2,6 +2,7 @@
 
 from django.contrib import admin
 
+from utils.views.cobalt_django_admin import link_to_user_or_unregistered_user
 from .models import (
     SessionType,
     SessionTypePaymentMethod,
@@ -67,7 +68,14 @@ class SessionEntryAdmin(admin.ModelAdmin):
         "member_tran",
         "payment_method",
     ]
+    readonly_fields = ("linked_user",)
 
+    def linked_user(self, instance):
+        """ link to user, needs readonly_fields = ("linked_user",) added above """
+
+        return link_to_user_or_unregistered_user(instance.system_number)
+
+    linked_user.short_description = "Link to User"
 
 class MemberOrganisationLinkAdmin(admin.ModelAdmin):
     """Admin class for model MemberOrganisationLink"""

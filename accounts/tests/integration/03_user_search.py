@@ -7,7 +7,7 @@ from selenium.common import NoSuchElementException
 from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 
-from accounts.models import UnregisteredUser, UserAdditionalInfo, User
+from accounts.models import UserAdditionalInfo, User, NextInternalSystemNumber
 from cobalt.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION_NAME
 from organisations.models import Organisation, ClubMemberLog, MemberClubDetails
 from rbac.core import (
@@ -80,14 +80,14 @@ class UserSearch:
         ).save()
 
         # Create Unregistered user
-        self.unreg_user = UnregisteredUser()
+        self.unreg_user = User(user_type=User.UserType.UNREGISTERED)
         self.unreg_user.system_number = 123456789
+        self.unreg_user.username = 123456789
         self.unreg_user.first_name = "Sherlock"
         self.unreg_user.last_name = "Balvenie"
-        self.unreg_user.origin = "Manual"
-        self.unreg_user.internal_system_number = False
-        self.unreg_user.added_by_club = self.club
-        self.unreg_user.last_updated_by = self.manager.alan
+        # self.unreg_user.internal_system_number = False
+       # self.unreg_user.added_by_club = self.club
+       # self.unreg_user.last_updated_by = self.manager.alan
         self.unreg_user.save()
 
         # create 2 member detail records
@@ -108,14 +108,14 @@ class UserSearch:
         _block_email("sherlock.balvenie@fake.com")
 
         # Create Contact
-        self.contact = UnregisteredUser()
+        self.contact = User(user_type=User.UserType.CONTACT)
         self.contact.system_number = 23456789
+        self.contact.username = 23456789
         self.contact.first_name = "David"
         self.contact.last_name = "Attenborough"
-        self.contact.origin = "Manual"
-        self.contact.internal_system_number = True
-        self.contact.added_by_club = self.club
-        self.contact.last_updated_by = self.manager.alan
+        # self.contact.internal_system_number = True
+     #   self.contact.added_by_club = self.club
+     #   self.contact.last_updated_by = self.manager.alan
         self.contact.save()
 
         # Create 2 memberships
@@ -215,11 +215,11 @@ class UserSearch:
         )
 
         # Click on link to go to profile
-        self.manager.driver.find_element(By.CLASS_NAME, "t_unreg").click()
+        self.manager.selenium_find_text_in_link("Sherlock Balvenie").click()
 
         # Check we got a profile
         ok = (
-            self.manager.driver.current_url.find("accounts/unregistered_public-profile")
+            self.manager.driver.current_url.find("accounts/public-profile")
             > 0
         )
 
@@ -254,7 +254,9 @@ class UserSearch:
         log_entry = ClubMemberLog.objects.latest("id")
 
         # Get membership record
-        unreg = UnregisteredUser.all_objects.last()
+        latest_internal_number = NextInternalSystemNumber.objects.last().number
+        unreg = User.contact_objects.filter(system_number=latest_internal_number-1).first()
+
         membership_details = MemberClubDetails.objects.last()
 
         ok = (
@@ -308,11 +310,11 @@ class UserSearch:
         )
 
         # Click on link to go to profile
-        self.manager.driver.find_element(By.CLASS_NAME, "t_unreg").click()
+        self.manager.selenium_find_text_in_link("Horatio Nelson").click()
 
         # Check we got a profile
         ok = (
-            self.manager.driver.current_url.find("accounts/unregistered_public-profile")
+            self.manager.driver.current_url.find("accounts/public-profile")
             > 0
         )
 
@@ -381,7 +383,7 @@ class UserSearch:
 
         # Go to the profile
         url = self.manager.base_url + reverse(
-            "accounts:unregistered_public_profile", kwargs={"pk": self.unreg_user.id}
+            "accounts:public_profile", kwargs={"pk": self.unreg_user.id}
         )
         self.manager.driver.get(url)
 
@@ -412,6 +414,7 @@ class UserSearch:
         remove_block = self.manager.selenium_wait_for_clickable(
             "t_remove_block_membership"
         )
+
         remove_block.click()
 
         # give it a second
@@ -434,7 +437,7 @@ class UserSearch:
 
         # Go to the profile
         url = self.manager.base_url + reverse(
-            "accounts:unregistered_public_profile", kwargs={"pk": self.contact.id}
+            "accounts:public_profile", kwargs={"pk": self.contact.id}
         )
         self.manager.driver.get(url)
 

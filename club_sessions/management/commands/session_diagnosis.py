@@ -9,7 +9,7 @@ from datetime import timedelta
 from django.core.management.base import BaseCommand
 
 from club_sessions.models import Session, SessionEntry, SessionMiscPayment
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from organisations.models import Organisation
 from payments.models import OrgPaymentMethod, MemberTransaction
 
@@ -111,7 +111,7 @@ class Command(BaseCommand):
                 player_name = player.full_name
                 player_id = player.id
             else:
-                player = UnregisteredUser.objects.filter(
+                player = User.unreg_objects.filter(
                     system_number=se.system_number
                 ).first()
                 if player:

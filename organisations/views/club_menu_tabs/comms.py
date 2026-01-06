@@ -7,7 +7,7 @@ from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from accounts.views.core import get_users_or_unregistered_users_from_email_list
 from cobalt.settings import COBALT_HOSTNAME
 from notifications.forms import OrgEmailForm
@@ -199,7 +199,7 @@ def _send_email_to_tags(request, club, tags, email_form, club_template, attachme
     members = User.objects.filter(system_number__in=tag_system_numbers)
 
     # Get unregistered
-    un_regs = UnregisteredUser.objects.filter(system_number__in=tag_system_numbers)
+    un_regs = User.unreg_objects.filter(system_number__in=tag_system_numbers)
 
     # get club level email
 

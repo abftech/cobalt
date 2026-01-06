@@ -45,15 +45,23 @@ _cgit_test_handle_db
 # Start Stripe and Django in terminal windows
 if [ "$STRIPE" == "1" ]; then
   osascript -e 'tell app "Terminal"
-    do script "cobalt; utils/cgit/tools/test_stripe.sh"
+    do script " cobalt; utils/cgit/tools/test_stripe.sh"
 end tell'
 fi
 
 # To debug we want to run pycharm so don't start the server here
 if [ "$DJANGO" == "1" ]; then
+
+  # Temp hack for running multiple environments for MPC
+  if pwd | grep c2mpc; then
   osascript -e 'tell app "Terminal"
-    do script "cobalt; utils/cgit/tools/test_manage.sh"
+    do script " mpc; utils/cgit/tools/test_manage.sh"
 end tell'
+else
+  osascript -e 'tell app "Terminal"
+    do script " cobalt; utils/cgit/tools/test_manage.sh"
+end tell'
+  fi
   echo "Waiting for Webserver to start..."
 else
   echo "Debugging enabled. Please start your webserver"

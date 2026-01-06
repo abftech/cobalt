@@ -6,7 +6,7 @@ from django.shortcuts import render
 from fcm_django.models import FCMDevice
 
 from accounts.forms import UserSettingsForm
-from accounts.models import APIToken, UnregisteredUser
+from accounts.models import APIToken
 from notifications.models import UnregisteredBlockedEmail
 from notifications.views.user import notifications_in_english
 from organisations.club_admin_core import (
@@ -111,7 +111,7 @@ def developer_settings_delete_token_htmx(request):
 def unregistered_user_settings(request, identifier):
     """allow an unregistered user to control their email preferences"""
 
-    unregistered = UnregisteredUser.objects.filter(identifier=identifier).first()
+    unregistered = User.unreg_objects.filter(identifier=identifier).first()
 
     if not unregistered:
         return HttpResponse("Invalid identifier")

@@ -14,7 +14,6 @@ from django.utils import timezone
 
 from accounts.models import (
     User,
-    UnregisteredUser,
     NextInternalSystemNumber,
 )
 from cobalt.settings import GLOBAL_ORG, GLOBAL_MPSERVER
@@ -547,7 +546,7 @@ def _map_csv_to_columns(mapping, csv, strict=False):
                                 None,
                             )
 
-                        internal_in_use = UnregisteredUser.all_objects.filter(
+                        internal_in_use = User.all_objects.exclude(user_type=User.UserType.USER).filter(
                             system_number=system_number
                         ).exists()
 
@@ -1342,20 +1341,21 @@ def process_member_import(
             added_users += added
         else:
             # See if we have an unregistered user already
-            un_reg = UnregisteredUser.objects.filter(
+            un_reg = User.unreg_objects.filter(
                 system_number=club_member["system_number"]
             ).first()
 
             if not un_reg:
                 # Create a new unregistered user
 
-                UnregisteredUser(
+                User(
+                    user_type=User.UserType.UNREGISTERED,
                     system_number=club_member["system_number"],
+                    username=club_member["system_number"],
                     first_name=club_member["first_name"],
                     last_name=club_member["last_name"],
-                    origin=origin,
-                    last_updated_by=user,
-                    added_by_club=club,
+                    # last_updated_by=user,
+                    # added_by_club=club,
                 ).save()
 
             added, error = add_member_to_membership(
@@ -1531,7 +1531,7 @@ def process_contact_import(
                 ).first()
 
                 if not user_match:
-                    un_reg = UnregisteredUser.all_objects.filter(
+                    un_reg = User.all_objects.exclude(user_type=User.UserType.USER).filter(
                         system_number=contact["system_number"]
                     ).first()
 
@@ -1547,13 +1547,15 @@ def process_contact_import(
 
                         #  create an unregistered user
 
-                        UnregisteredUser(
+                        User(
+                            user_type=User.UserType.UNREGISTERED,
                             system_number=contact["system_number"],
+                            username=contact["system_number"],
                             first_name=contact["first_name"],
                             last_name=contact["last_name"],
-                            origin=origin,
-                            last_updated_by=user,
-                            added_by_club=club,
+                            # origin=origin,
+                            # last_updated_by=user,
+                            # added_by_club=club,
                         ).save()
 
         else:
@@ -1562,14 +1564,13 @@ def process_contact_import(
             with transaction.atomic():
 
                 # create a new unregistered user with an internal system number
-                unreg_user = UnregisteredUser()
+                unreg_user = User(user_type=User.UserType.CONTACT)
                 unreg_user.system_number = NextInternalSystemNumber.next_available()
                 unreg_user.first_name = contact["first_name"]
                 unreg_user.last_name = contact["last_name"]
-                unreg_user.origin = "CSV"
-                unreg_user.internal_system_number = True
-                unreg_user.added_by_club = club
-                unreg_user.last_updated_by = user
+                # unreg_user.internal_system_number = True
+                # unreg_user.added_by_club = club
+                # unreg_user.last_updated_by = user
                 unreg_user.save()
 
                 contact["system_number"] = unreg_user.system_number

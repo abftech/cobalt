@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
+from accounts.managers import UserManager, ContactManager, UnRegManager
 from cobalt.settings import (
     AUTO_TOP_UP_MAX_AMT,
     GLOBAL_ORG,
@@ -20,13 +21,12 @@ from cobalt.settings import (
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, RegexValidator
-from django.db import models, transaction
-
-
+from django.db import models
 def no_future(value):
     today = date.today()
     if value > today:
         raise ValidationError("Date cannot be in the future.")
+
 
 
 class User(AbstractUser):
@@ -34,11 +34,106 @@ class User(AbstractUser):
     User class based upon AbstractUser.
     """
 
-    class CovidStatus(models.TextChoices):
-        UNSET = "US", "Unset"
-        USER_CONFIRMED = "UC", "User Confirmed"
-        ADMIN_CONFIRMED = "AC", "Administrator Confirmed"
-        USER_EXEMPT = "AV", "User Medically Exempt from Vaccination"
+    """
+    [{"ORDINAL_POSITION":1,"COLUMN_NAME":"PlayerID","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"NO"
+,{"ORDINAL_POSITION":2,"COLUMN_NAME":"ABFNumber","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":10,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":3,"COLUMN_NAME":"ABFNumberRaw","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":4,"COLUMN_NAME":"Title","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":10,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":5,"COLUMN_NAME":"Surname","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":50,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":6,"COLUMN_NAME":"GivenNames","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":50,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":7,"COLUMN_NAME":"RankID","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":8,"COLUMN_NAME":"HomeClubID","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":9,"COLUMN_NAME":"DOBDay","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":2,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":10,"COLUMN_NAME":"DOBMonth","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":2,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":11,"COLUMN_NAME":"DOBYear","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":2,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":12,"COLUMN_NAME":"Address1","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":100,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":13,"COLUMN_NAME":"Address2","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":100,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":14,"COLUMN_NAME":"AddressState","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":3,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":15,"COLUMN_NAME":"AddressPostcode","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":10,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":16,"COLUMN_NAME":"Gender","DATA_TYPE":"char","CHARACTER_MAXIMUM_LENGTH":1,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":17,"COLUMN_NAME":"IsActive","DATA_TYPE":"char","CHARACTER_MAXIMUM_LENGTH":1,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":18,"COLUMN_NAME":"TotalMPs","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":19,"COLUMN_NAME":"TotalGold","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":20,"COLUMN_NAME":"TotalRed","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":21,"COLUMN_NAME":"TotalGreen","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":22,"COLUMN_NAME":"ThisYearMPs","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":23,"COLUMN_NAME":"Y1Gold","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":24,"COLUMN_NAME":"Y1Red","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":25,"COLUMN_NAME":"Y1Green","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":26,"COLUMN_NAME":"Y2Gold","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":27,"COLUMN_NAME":"Y2Red","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":28,"COLUMN_NAME":"Y2Green","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":29,"COLUMN_NAME":"PriorGold","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":30,"COLUMN_NAME":"PriorRed","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":31,"COLUMN_NAME":"PriorGreen","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":32,"COLUMN_NAME":"Q1Gold","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":33,"COLUMN_NAME":"Q1Red","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":34,"COLUMN_NAME":"Q1Green","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":35,"COLUMN_NAME":"Q2Gold","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":36,"COLUMN_NAME":"Q2Red","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":37,"COLUMN_NAME":"Q2Green","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":38,"COLUMN_NAME":"Q3Gold","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":39,"COLUMN_NAME":"Q3Red","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":40,"COLUMN_NAME":"Q3Green","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":41,"COLUMN_NAME":"Q4Gold","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":42,"COLUMN_NAME":"Q4Red","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":43,"COLUMN_NAME":"Q4Green","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":44,"COLUMN_NAME":"Pre82Red","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":45,"COLUMN_NAME":"IsMcCutcheonEligible","DATA_TYPE":"char","CHARACTER_MAXIMUM_LENGTH":1,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":46,"COLUMN_NAME":"McCutcheonState","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":3,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":47,"COLUMN_NAME":"YearStartRankID","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":48,"COLUMN_NAME":"LastPromotionPeriodID","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":49,"COLUMN_NAME":"McCutcheonMPs","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":50,"COLUMN_NAME":"McCutcheonRank","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":51,"COLUMN_NAME":"IsRegistrationCardRequired","DATA_TYPE":"char","CHARACTER_MAXIMUM_LENGTH":1,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":52,"COLUMN_NAME":"YearDeletedOrInactive","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":4,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":53,"COLUMN_NAME":"YearAgoGold","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":54,"COLUMN_NAME":"YearAgoRed","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":55,"COLUMN_NAME":"YearAgoGreen","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":56,"COLUMN_NAME":"PreferredFirstName","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":50,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":57,"COLUMN_NAME":"PreviousRankID","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":58,"COLUMN_NAME":"IntraGreenPeriod","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":59,"COLUMN_NAME":"IntraRedPeriod","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":60,"COLUMN_NAME":"IntraGreenYTD","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":61,"COLUMN_NAME":"IntraRedYTD","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":62,"COLUMN_NAME":"GPAThisPeriod","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":63,"COLUMN_NAME":"GPAThisYTD","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":64,"COLUMN_NAME":"PeriodGreen","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":65,"COLUMN_NAME":"PeriodRed","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":66,"COLUMN_NAME":"PeriodGold","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":67,"COLUMN_NAME":"OldTotalGreen","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":68,"COLUMN_NAME":"OldTotalRed","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":69,"COLUMN_NAME":"OldTotalGold","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":70,"COLUMN_NAME":"EmailAddress","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":50,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":71,"COLUMN_NAME":"DateAdded","DATA_TYPE":"datetime","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":72,"COLUMN_NAME":"IsRankCertificateRequired","DATA_TYPE":"char","CHARACTER_MAXIMUM_LENGTH":1,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":73,"COLUMN_NAME":"LastYearMPs","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":74,"COLUMN_NAME":"PriorMPs","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":75,"COLUMN_NAME":"QuarterGreen","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":76,"COLUMN_NAME":"QuarterRed","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":77,"COLUMN_NAME":"QuarterGold","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":78,"COLUMN_NAME":"Comments","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":200,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":79,"COLUMN_NAME":"IsInactivationRequested","DATA_TYPE":"char","CHARACTER_MAXIMUM_LENGTH":1,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":80,"COLUMN_NAME":"OldAddress1","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":100,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":81,"COLUMN_NAME":"OldAddress2","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":100,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":82,"COLUMN_NAME":"OldAddressState","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":3,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":83,"COLUMN_NAME":"OldAddressPostcode","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":10,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":84,"COLUMN_NAME":"T_PriorMPs","DATA_TYPE":"money","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":85,"COLUMN_NAME":"OldYearStartRankID","DATA_TYPE":"int","CHARACTER_MAXIMUM_LENGTH":null,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":86,"COLUMN_NAME":"IsUsingAlias","DATA_TYPE":"char","CHARACTER_MAXIMUM_LENGTH":1,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":87,"COLUMN_NAME":"RealName","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":50,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":88,"COLUMN_NAME":"PhoneNumber","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":50,"IS_NULLABLE":"YES"
+,{"ORDINAL_POSITION":89,"COLUMN_NAME":"Is1000Club","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":1,"IS_NULLABLE":"NO"
+,{"ORDINAL_POSITION":90,"COLUMN_NAME":"IsPrinting1000ClubThisMonth","DATA_TYPE":"varchar","CHARACTER_MAXIMUM_LENGTH":1,"IS_NULLABLE":"NO"
+    """
+
+    class UserType(models.TextChoices):
+        USER = "U", "User"
+        """ A 'normal' registered user with a password and validated email address """
+        UNREGISTERED = "N", "Unregistered User"
+        """ A member of the ABF with a valid ABF number, but not a user of MyABF, can be converted to a User """
+        CONTACT = "C", "Contact"
+        """ A contact for an organisation who is not an ABF member """
 
     email = models.EmailField(unique=False)
     system_number = models.IntegerField(
@@ -47,6 +142,7 @@ class User(AbstractUser):
         unique=True,
         db_index=True,
     )
+    user_type = models.CharField(max_length=1, choices=UserType.choices, default=UserType.USER)
 
     deceased = models.BooleanField("Deceased", default=False)
     """ Player is deceased, status set by My ABF support """
@@ -111,11 +207,24 @@ class User(AbstractUser):
     windows_scrollbar = models.BooleanField(
         "Use Perfect Scrollbar on Windows", default=False
     )
-    last_activity = models.DateTimeField(blank="True", null=True)
+    last_activity = models.DateTimeField(blank=True, null=True)
 
-    covid_status = models.CharField(
-        choices=CovidStatus.choices, max_length=2, default=CovidStatus.UNSET
+    is_abf_active = models.BooleanField(default=True, blank=True)
+    """ Is this person an active member of the ABF """
+
+    old_mpc_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
+    """ Temporary link to old Masterpoint Centre record, required for MPC work """
+
+    identifier = models.CharField(
+        max_length=10,
+        default="NOTSET",
     )
+    """ random string identifier to use in emails to handle preferences. Can't use the pk obviously """
+
+    all_objects = models.Manager()
+    objects = UserManager()
+    unreg_objects = UnRegManager()
+    contact_objects = ContactManager()
 
     REQUIRED_FIELDS = [
         "system_number",
@@ -126,12 +235,21 @@ class User(AbstractUser):
         if self.id in (TBA_PLAYER, RBAC_EVERYONE, ABF_USER):
             return self.first_name
         else:
-            return "%s (%s: %s)" % (self.full_name, GLOBAL_ORG, self.system_number)
+            return f"{self.full_name} ({GLOBAL_ORG}: {self.system_number})"
+
+    def save(self, *args, **kwargs):
+        """create identifier on first save"""
+        if not self.pk:
+            self.identifier = "".join(
+                random.SystemRandom().choice(string.ascii_letters + string.digits)
+                for _ in range(10)
+            )
+        super(User, self).save(*args, **kwargs)
 
     @property
     def full_name(self):
         """Returns the person's full name."""
-        return "%s %s" % (self.first_name, self.last_name)
+        return f"{self.first_name} {self.last_name}"
 
     @property
     def href(self):
@@ -170,11 +288,11 @@ class UnregisteredUser(models.Model):
     provided it, but ironically shown to the club that did and editable.
     """
 
-    # Import here to avoid circular dependencies
     from organisations.models import Organisation
 
     ORIGINS = [
         ("MPC", "Masterpoints Centre Import"),
+        ("MPCS", "Masterpoints Centre Sync"),
         ("Pianola", "Pianola Import"),
         ("CSV", "CSV Import"),
         ("Manual", "Manual Entry"),
@@ -224,6 +342,11 @@ class UnregisteredUser(models.Model):
         default="NOTSET",
     )
     """ random string identifier to use in emails to handle preferences. Can't use the pk obviously """
+
+    is_active = models.BooleanField(default=True)
+
+    old_mpc_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
+    """ Temporary link to old Masterpoint Centre record, required for MPC work """
 
     # Managers: objects excludes internal system number records, all_objects does not
     all_objects = models.Manager()
@@ -330,6 +453,8 @@ class UserAdditionalInfo(models.Model):
     as the User is getting overloaded and is accessed constantly by Django so we should
     try to keep it clean.
     """
+    # Import here to avoid circular dependencies
+    from organisations.models import Organisation
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     email_hard_bounce = models.BooleanField(default=False)
@@ -343,6 +468,9 @@ class UserAdditionalInfo(models.Model):
     """ sort order for the club menu members tab list """
     last_club_visited = models.IntegerField(null=True, blank=True)
     """ used to store which club was last visited for users with access to multiple clubs """
+    last_registration_invite_sent = models.DateTimeField(
+        "Last Registration Invite Sent", blank=True, null=True
+    )
 
     def __str__(self):
         return self.user.__str__()
@@ -401,6 +529,9 @@ class NextInternalSystemNumber(models.Model):
     def is_internal(cls, number):
         """Checks whether the number is an internal system number"""
         return number >= cls._first_number
+
+    def __str__(self):
+        return self.number
 
 
 class SystemCard(models.Model):

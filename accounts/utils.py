@@ -4,7 +4,7 @@ New file to avoid circulare reference issue on imports
 check_system_number(...) moved from accounts/view/admin.py
 """
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from masterpoints.views import user_summary
 
 
@@ -27,7 +27,7 @@ def check_system_number(system_number):
     summary = user_summary(system_number)
     is_valid = bool(summary)
     is_in_use_member = User.objects.filter(system_number=system_number).exists()
-    is_in_use_un_reg = UnregisteredUser.objects.filter(
+    is_in_use_un_reg = User.unreg_objects.filter(
         system_number=system_number
     ).exists()
 

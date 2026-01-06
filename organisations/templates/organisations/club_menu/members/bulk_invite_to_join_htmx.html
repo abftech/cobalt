@@ -4,39 +4,13 @@
     </div>
     <div class="card-body">
 
-        {% if not can_invite %}
-            <p>There is nobody who can be invited at this point.</p>
-
-            <p>The following people were invited within the last two week. You can invite them manually from the members area:</p>
-
-            <ul>
-                {% for member in cannot_invite %}
-                    <li>{{ member }}</li>
-                {% endfor %}
-            </ul>
-
-        {% else %}
-
             <p>Invite the following to join up:</p>
-
 
             <ul>
                 {% for member in can_invite %}
                     <li>{{ member }}</li>
                 {% endfor %}
             </ul>
-
-            {% if cannot_invite %}
-                <p>The following people were invited within the last two weeks and cannot be bulk invited again.
-                    You can invite them manually through the member edit page.</p>
-
-                <ul>
-                    {% for member in cannot_invite %}
-                        <li>{{ member }}</li>
-                    {% endfor %}
-                </ul>
-
-            {% endif %}
 
             <div class="col text-center">
                 <button class="btn btn-warning"
@@ -45,8 +19,6 @@
                     hx-vars="'send_invites': 1"
                 >Bulk Invite</button>
             </div>
-
-        {% endif %}
 
     </div>
 </div>

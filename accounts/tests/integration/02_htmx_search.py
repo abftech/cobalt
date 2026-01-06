@@ -109,6 +109,7 @@ class HTMXSearch:
 
     def a1_test_inline_callback_ff(self):
         """Test the inline callback - search for fiona freckle"""
+
         _search_ff_helper(
             "Inline exclude self",
             self.manager,

@@ -2,7 +2,7 @@ from dateutil.relativedelta import relativedelta
 from django.shortcuts import render
 from django.utils import timezone
 
-from accounts.models import User, UnregisteredUser
+from accounts.models import User
 from organisations.decorators import check_club_menu_access
 from organisations.models import MemberMembershipType
 from rbac.models import RBACUserGroup
@@ -17,7 +17,7 @@ def dashboard_members_htmx(request, club):
     ).values_list("system_number")
     myabf_members = User.objects.filter(system_number__in=club_members).count()
     visitors = 0
-    un_regs = UnregisteredUser.objects.filter(system_number__in=club_members).count()
+    un_regs = User.unreg_objects.filter(system_number__in=club_members).count()
 
     return render(
         request,

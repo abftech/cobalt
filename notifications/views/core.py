@@ -40,7 +40,7 @@ from post_office import mail as po_email
 
 from cobalt.settings import MEDIA_ROOT
 
-from accounts.models import User, UserAdditionalInfo, UnregisteredUser
+from accounts.models import User, UserAdditionalInfo
 from cobalt.settings import (
     COBALT_HOSTNAME,
     DISABLE_PLAYPEN,
@@ -1021,9 +1021,7 @@ def send_cobalt_email_to_system_number(
         )
         return
 
-    un_registered_user = UnregisteredUser.objects.filter(
-        system_number=system_number
-    ).first()
+    un_registered_user = User.unreg_objects.filter(system_number=system_number).first()
     if un_registered_user:
         unregistered_identifier = un_registered_user.identifier
     else:

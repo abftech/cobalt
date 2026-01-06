@@ -9,7 +9,7 @@ from .models import (
     UserPaysFor,
     APIToken,
     UserAdditionalInfo,
-    SystemCard,
+    SystemCard, NextInternalSystemNumber,
 )
 
 
@@ -20,20 +20,21 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ["last_name", "first_name", "system_number", "email"]
     # We use loginas to for admins to take over a user session
     change_form_template = "loginas/change_form.html"
+    list_filter = ["user_type", ]
 
 
 @admin.register(UnregisteredUser)
 class UnregisteredUserAdmin(admin.ModelAdmin):
     """Admin class for model UnregisteredUser"""
 
-    search_fields = ["last_name", "first_name", "system_number"]
+    search_fields = ["last_name", "first_name", "=system_number", "=old_mpc_id"]
 
-    autocomplete_fields = [
-        "last_updated_by",
-        "last_registration_invite_by_user",
-        "last_registration_invite_by_club",
-        "added_by_club",
-    ]
+    # autocomplete_fields = [
+    #     "last_updated_by",
+    #     "last_registration_invite_by_user",
+    #     "last_registration_invite_by_club",
+    #     "added_by_club",
+    # ]
 
     list_filter = ["internal_system_number"]
 
@@ -57,6 +58,12 @@ class UserPaysForAdmin(admin.ModelAdmin):
         "lucky_person",
     ]
 
+
+@admin.register(NextInternalSystemNumber)
+class NextInternalSystemNumberAdmin(admin.ModelAdmin):
+    """Admin class for model NextInternalSystemNumber"""
+
+    pass
 
 @admin.register(APIToken)
 class APITokenAdmin(admin.ModelAdmin):

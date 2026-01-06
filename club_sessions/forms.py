@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django_summernote.widgets import SummernoteInplaceWidget
 
-from accounts.models import UnregisteredUser, User
+from accounts.models import User
 from club_sessions.views.core import PLAYING_DIRECTOR, SITOUT, VISITOR
 from club_sessions.models import Session, SessionType, SessionEntry
 from cobalt.settings import BRIDGE_CREDITS
@@ -155,7 +155,7 @@ class UserSessionForm(forms.Form):
             self.is_valid_number = True
             self.player_type = "Registered User"
         else:
-            self.player = UnregisteredUser.objects.filter(
+            self.player = User.unreg_objects.filter(
                 system_number=session_entry.system_number
             ).first()
             self.is_user = False

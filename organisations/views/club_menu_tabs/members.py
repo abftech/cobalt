@@ -17,7 +17,7 @@ from accounts.views.admin import invite_to_join
 from accounts.views.core import add_un_registered_user_with_mpc_data
 from accounts.views.api import search_for_user_in_cobalt_and_mpc
 from accounts.forms import UnregisteredUserForm
-from accounts.models import User, UnregisteredUser, UserAdditionalInfo
+from accounts.models import User, UserAdditionalInfo
 from club_sessions.models import SessionEntry
 from cobalt.settings import (
     ALL_SYSTEM_ACCOUNTS,
@@ -458,7 +458,7 @@ def report_all_csv(request, club_id):
     users = User.objects.filter(system_number__in=club_members_list)
 
     # Get un reg users
-    un_regs = UnregisteredUser.objects.filter(system_number__in=club_members_list)
+    un_regs = User.unreg_objects.filter(system_number__in=club_members_list)
 
     # Get local emails (if set) and turn into a dictionary
     club_emails = MemberClubEmail.objects.filter(system_number__in=club_members_list)
@@ -531,7 +531,7 @@ def report_all_csv(request, club_id):
                 email,
                 email_source,
                 "Unregistered",
-                un_reg.origin,
+                "-",
                 user_tags,
             ]
         )
@@ -573,7 +573,7 @@ def _cancel_membership(request, club, system_number):
 def delete_un_reg_htmx(request, club):
     """Remove an unregistered user from club membership"""
 
-    un_reg = get_object_or_404(UnregisteredUser, pk=request.POST.get("un_reg_id"))
+    un_reg = get_object_or_404(User, pk=request.POST.get("un_reg_id"))
     _cancel_membership(request, club, un_reg.system_number)
 
     return list_htmx(request, message=f"{un_reg.full_name} membership deleted.")
@@ -740,7 +740,7 @@ def un_reg_edit_htmx(request, club):
     """Edit unregistered member details"""
 
     un_reg_id = request.POST.get("un_reg_id")
-    un_reg = get_object_or_404(UnregisteredUser, pk=un_reg_id)
+    un_reg = get_object_or_404(User, pk=un_reg_id)
 
     # Get first membership record for this user and this club
     membership = MemberMembershipType.objects.filter(
@@ -1226,18 +1226,19 @@ def add_un_reg_htmx(request, club):
         return list_htmx(request, message=message)
 
     # User may already be registered, the form will allow this
-    if UnregisteredUser.objects.filter(
+    if User.unreg_objects.filter(
         system_number=form.cleaned_data["system_number"],
     ).exists():
         message = "User already existed."  # don't change the fields
     else:
-        UnregisteredUser(
+        User(
+            user_type=User.UserType.UNREGISTERED,
+            username=form.cleaned_data["system_number"],
             system_number=form.cleaned_data["system_number"],
-            last_updated_by=request.user,
+            # last_updated_by=request.user,
             last_name=form.cleaned_data["last_name"],
             first_name=form.cleaned_data["first_name"],
-            origin="Manual",
-            added_by_club=club,
+            # added_by_club=club,
         ).save()
         ClubLog(
             organisation=club,
@@ -1313,7 +1314,7 @@ def _check_member_errors(club):
         .filter(email_hard_bounce=True)
         .values("system_number")
     )
-    un_regs = UnregisteredUser.objects.filter(system_number__in=un_regs_bounces)
+    un_regs = User.unreg_objects.filter(system_number__in=un_regs_bounces)
 
     return list(chain(users, un_regs))
 
@@ -1463,23 +1464,15 @@ def bulk_invite_to_join_htmx(request, club):
 
     members = MemberMembershipType.objects.filter(
         membership_type__organisation=club
-    ).values("system_number")
-    unregistered = UnregisteredUser.objects.filter(system_number__in=members)
-
-    two_weeks = timezone.now() - timezone.timedelta(weeks=2)
-
-    can_invite = unregistered.filter(
-        Q(last_registration_invite_sent__lte=two_weeks)
-        | Q(last_registration_invite_sent=None)
-    )
-    cannot_invite = unregistered.filter(last_registration_invite_sent__gt=two_weeks)
+    ).filter(membership_state__in=["CUR", "DUE"]).values("system_number")
+    unregistered = User.unreg_objects.filter(system_number__in=members).exclude(deceased=True)
 
     if "send_invites" in request.POST:
 
         success = 0
         failure = 0
 
-        for member in can_invite:
+        for member in unregistered:
             club_email = club_email_for_member(club, member.system_number)
             if club_email and invite_to_join(member, club_email, request.user, club):
                 success += 1
@@ -1493,7 +1486,7 @@ def bulk_invite_to_join_htmx(request, club):
     return render(
         request,
         "organisations/club_menu/members/bulk_invite_to_join_htmx.html",
-        {"can_invite": can_invite, "cannot_invite": cannot_invite},
+        {"can_invite": unregistered},
     )
 
 
@@ -1721,7 +1714,7 @@ def club_admin_edit_member_htmx(request, club, message=None):
                     form.save()
 
                 if name_form and name_form.has_changed():
-                    unreg = UnregisteredUser.all_objects.get(
+                    unreg = User.all_objects.exclude(user_type=User.UserType.USER).get(
                         system_number=member_details.system_number
                     )
                     unreg.first_name = name_form.cleaned_data["first_name"]
@@ -2358,7 +2351,7 @@ def club_admin_add_member_detail_htmx(request, club):
     if user:
         user_type = "REG"
     else:
-        user = UnregisteredUser.objects.filter(
+        user = User.unreg_objects.filter(
             system_number=system_number,
         ).last()
         if user:

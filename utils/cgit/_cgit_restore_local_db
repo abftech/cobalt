@@ -28,5 +28,6 @@ then
   echo "An error occurred"
 fi
 
+./manage.py migrate
 export RDS_DB_NAME=prod_load
 ./manage.py sanitise_production_data_for_testing

@@ -57,21 +57,32 @@ Get Environment Variables
 
 Run::
 
-    eb printenv cobalt-test-black | tr -d " " | tr "\n" ","
+    eb printenv cobalt-test-black > /tmp/cobalt-test-black.txt
+
+Edit `/tmp/cobalt-test-black.txt` to put single quotes around the SECRET_KEY and replace AWS_ACCESS_KEY_ID
+which has stars with a placeholder value.
+
+Now run::
+
+    cat /tmp/cobalt-test-black.txt | tr -d " " | tr "\n" ","
 
 This will give you a comma delimited list of the current variable. It will remove spaces so some minor
-editing could be required for email display names etc. It will also replace the AWS_ACCESS_KEY_ID with
-stars so you will need to get that directly from the AWS Console.
+editing could be required for email display names etc.
 
 Create Environment
 ===================
 
 Run `eb create` and give it the environment variables that you just extracted::
 
-    eb create cobalt-test-white --keyname cobalt --envvars API_KEY_PREFIX=test_,etc,etc
+    eb create cobalt-test-white --keyname cobalt -i t3.large --envvars API_KEY_PREFIX=test_,etc,etc
 
 If you want to specify other parameters you can look them up. For example -i t3.medium will specify the
 EC2 server size.
+
+Edit Variables
+==============
+
+Go into the AWS console and fix the **AWS_ACCESS_KEY_ID** and the spaces in email display names.
 
 DNS
 ===
