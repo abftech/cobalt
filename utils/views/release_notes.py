@@ -8,6 +8,17 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.3.1",
+            "notes": [
+                "DEV - Merge release 6.2.x into 6.3.x",
+            ],
+        },        {
+            "release": "6.3.0",
+            "notes": [
+                "Remove use of UnregisteredUsers ahead of Masterpoints work",
+            ],
+        },
+        {
             "release": "6.2.6",
             "notes": [
                 "Fix for Django admin search for congress master",
