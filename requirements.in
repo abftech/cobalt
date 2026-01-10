@@ -74,6 +74,9 @@ django-filter==25.1
 # Django health check
 django_health_check==3.18.3
 
+# pg lock is used to do table locks for updating MemberTransaction and OrganisationTransaction
+django-pglock==1.8.0
+
 #########################
 # Comms packages        #
 #########################

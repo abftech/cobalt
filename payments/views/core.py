@@ -36,11 +36,14 @@ from decimal import Decimal
 from json import JSONDecodeError
 
 import datetime
+
+import pglock
 import pytz
 import requests
 import stripe
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 from django.db.models import Sum, F
 from django.http import HttpResponse, JsonResponse
 from django.template.loader import get_template
@@ -122,7 +125,6 @@ def get_balance(member):
 
     """
 
-    # JPG - needs to take an update lock !!
     last_tran = (
         MemberTransaction.objects.filter(member=member).order_by("created_date").last()
     )
@@ -806,25 +808,27 @@ def update_account(
         MemberTransaction
 
     """
+    with transaction.atomic():
+        pglock.model("payments.MemberTransaction")
 
-    # Get new balance
-    balance = get_balance(member) + float(amount)
+        # Get new balance
+        balance = get_balance(member) + float(amount)
 
-    # Create new MemberTransaction entry
-    act = MemberTransaction()
-    act.member = member
-    act.amount = amount
-    act.stripe_transaction = stripe_transaction
-    act.other_member = other_member
-    act.organisation = organisation
-    act.balance = balance
-    act.description = description
-    act.type = payment_type
-    act.event_id = event_id
-    if session:
-        act.club_session_id = session.id
+        # Create new MemberTransaction entry
+        act = MemberTransaction()
+        act.member = member
+        act.amount = amount
+        act.stripe_transaction = stripe_transaction
+        act.other_member = other_member
+        act.organisation = organisation
+        act.balance = balance
+        act.description = description
+        act.type = payment_type
+        act.event_id = event_id
+        if session:
+            act.club_session_id = session.id
 
-    act.save()
+        act.save()
 
     return act
 
@@ -856,24 +860,28 @@ def update_organisation(
         session (club_sessions.models.Session, optional): club_session.session linked to this transaction
     """
 
-    # JPG - needs to take an update lock !!
-    last_tran = OrganisationTransaction.objects.filter(organisation=organisation).last()
-    balance = last_tran.balance if last_tran else 0.0
-    act = OrganisationTransaction()
-    act.organisation = organisation
-    act.member = member
-    act.amount = amount
-    act.other_organisation = other_organisation
-    act.balance = float(balance) + float(amount)
-    act.description = description
-    act.type = payment_type
-    act.bank_settlement_amount = bank_settlement_amount
-    if session:
-        act.club_session_id = session.id
-    if event:
-        act.event_id = event.id
+    with transaction.atomic():
+        pglock.model("payments.OrganisationTransaction")
 
-    act.save()
+        last_tran = OrganisationTransaction.objects.filter(
+            organisation=organisation
+        ).last()
+        balance = last_tran.balance if last_tran else 0.0
+        act = OrganisationTransaction()
+        act.organisation = organisation
+        act.member = member
+        act.amount = amount
+        act.other_organisation = other_organisation
+        act.balance = float(balance) + float(amount)
+        act.description = description
+        act.type = payment_type
+        act.bank_settlement_amount = bank_settlement_amount
+        if session:
+            act.club_session_id = session.id
+        if event:
+            act.event_id = event.id
+
+        act.save()
 
     return act
 

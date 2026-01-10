@@ -8,11 +8,19 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.3.2",
+            "notes": [
+                "Add table lock to payment updates to prevent incorrect balance problems",
+                "Return to deleting FCM devices if errors are found when sending messages",
+            ],
+        },
+        {
             "release": "6.3.1",
             "notes": [
                 "DEV - Merge release 6.2.x into 6.3.x",
             ],
-        },        {
+        },
+        {
             "release": "6.3.0",
             "notes": [
                 "Remove use of UnregisteredUsers ahead of Masterpoints work",

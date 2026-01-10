@@ -50,6 +50,8 @@ django==5.2.8
     #   django-health-check
     #   django-ninja
     #   django-otp
+    #   django-pgactivity
+    #   django-pglock
     #   django-post-office
     #   django-ses
     #   django-summernote
@@ -72,6 +74,10 @@ django-loginas==0.3.11
 django-ninja==0.16.1
     # via -r requirements.in
 django-otp==1.1.1
+    # via -r requirements.in
+django-pgactivity==1.8.0
+    # via django-pglock
+django-pglock==1.8.0
     # via -r requirements.in
 django-post-office @ git+https://github.com/abftech/django-post_office
     # via -r requirements.in

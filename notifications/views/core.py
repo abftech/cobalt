@@ -992,7 +992,7 @@ def send_fcm_message(
     else:
         logger.error(f"Error from FCM for {fcm_device.user} - {rc}")
         logger.error(f"Deleting FCM device {fcm_device.name} for {fcm_device.user}")
-        # fcm_device.delete()
+        fcm_device.delete()
         return False
 
 

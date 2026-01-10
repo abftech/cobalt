@@ -257,6 +257,8 @@ INSTALLED_APPS = [
     "django_otp.plugins.otp_totp",
     "loginas",
     "fcm_django",
+    "pglock",
+    "pgactivity",
 ]
 
 MIDDLEWARE = [
