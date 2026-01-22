@@ -546,9 +546,11 @@ def _map_csv_to_columns(mapping, csv, strict=False):
                                 None,
                             )
 
-                        internal_in_use = User.all_objects.exclude(user_type=User.UserType.USER).filter(
-                            system_number=system_number
-                        ).exists()
+                        internal_in_use = (
+                            User.all_objects.exclude(user_type=User.UserType.USER)
+                            .filter(system_number=system_number)
+                            .exists()
+                        )
 
                         if not internal_in_use:
                             if spec.get("required", False) or strict:
@@ -1068,10 +1070,14 @@ def import_mpc_htmx(request, club):
 
     if "save" not in request.POST:
         form = CSVUploadForm(club=club)
+        # See if there is existing data
+        existing_data = MemberMembershipType.objects.filter(
+            membership_type__organisation=club
+        ).exists()
         return render(
             request,
             "organisations/club_menu/members/mpc_htmx.html",
-            {"form": form, "club": club},
+            {"form": form, "club": club, "existing_data": existing_data},
         )
 
     form = MPCForm(request.POST, club=club)
@@ -1105,21 +1111,25 @@ def import_mpc_htmx(request, club):
                 "system_number": system_no_as_int,
                 "first_name": club_member["GivenNames"],
                 "last_name": club_member["Surname"],
-                "address1": club_member["Address1"]
-                if "Address1" in club_member
-                else None,
-                "address2": club_member["Address2"]
-                if "Address2" in club_member
-                else None,
-                "state": club_member["AddressState"][:3]
-                if "AddressState" in club_member
-                else None,
-                "postcode": club_member["AddressPostcode"]
-                if "AddressPostcode" in club_member
-                else None,
-                "preferred_phone": club_member["PhoneNumber"]
-                if "PhoneNumber" in club_member
-                else None,
+                "address1": (
+                    club_member["Address1"] if "Address1" in club_member else None
+                ),
+                "address2": (
+                    club_member["Address2"] if "Address2" in club_member else None
+                ),
+                "state": (
+                    club_member["AddressState"][:3]
+                    if "AddressState" in club_member
+                    else None
+                ),
+                "postcode": (
+                    club_member["AddressPostcode"]
+                    if "AddressPostcode" in club_member
+                    else None
+                ),
+                "preferred_phone": (
+                    club_member["PhoneNumber"] if "PhoneNumber" in club_member else None
+                ),
                 "email": email_address,
                 "membership_type": None,
             }
@@ -1531,9 +1541,11 @@ def process_contact_import(
                 ).first()
 
                 if not user_match:
-                    un_reg = User.all_objects.exclude(user_type=User.UserType.USER).filter(
-                        system_number=contact["system_number"]
-                    ).first()
+                    un_reg = (
+                        User.all_objects.exclude(user_type=User.UserType.USER)
+                        .filter(system_number=contact["system_number"])
+                        .first()
+                    )
 
                     if not un_reg:
 

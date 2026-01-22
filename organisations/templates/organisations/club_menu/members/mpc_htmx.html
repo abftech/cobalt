@@ -14,6 +14,22 @@
         <div class="row">
             <div class="col-md-6 mx-auto">
 
+                {% if existing_data %}
+                    <div class="card">
+                        <div class="card-header card-header-danger">
+                            <h2>Warning</h2>
+                        </div>
+                        <div class="card-body">
+                            <p><b>You have existing membership information already set up.</b></p>
+                            <p>This will overwrite your data with the data that is set up in the Masterpoint Centre.
+                                Names, addresses, phone numbers and email addresses will be overridden.</p>
+                            <p>Only do this is you believe the data in the Masterpoint Centre is more accurate
+                                than the data currently in MyABF.</p>
+                            <p><b>This cannot be undone.</b></p>
+                        </div>
+                    </div>
+                {% endif %}
+
                 <form
                     hx-post='{% url "organisations:club_menu_tab_members_import_mpc_htmx" %}'
                     hx-target='#id_panel_members'
