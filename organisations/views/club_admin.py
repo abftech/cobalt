@@ -593,7 +593,9 @@ def search_tab_name_htmx(request, club):
         users = users.filter(last_name__istartswith=last_name_search)
 
     # Unregistered
-    un_regs = User.all_objects.exclude(user_type=User.UserType.USER).filter(system_number__in=system_number_list)
+    un_regs = User.all_objects.exclude(user_type=User.UserType.USER).filter(
+        system_number__in=system_number_list
+    )
 
     if first_name_search:
         un_regs = un_regs.filter(first_name__istartswith=first_name_search)
@@ -602,6 +604,7 @@ def search_tab_name_htmx(request, club):
         un_regs = un_regs.filter(last_name__istartswith=last_name_search)
 
     user_list = list(chain(users, un_regs))
+    print(user_list)
 
     if mode == "members":
         for user in user_list:

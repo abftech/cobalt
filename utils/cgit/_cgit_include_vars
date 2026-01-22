@@ -9,4 +9,4 @@ NC='\033[0m' # No Color
 # Elastic Beanstalk environments
 COBALT_TEST=cobalt-test-white
 COBALT_UAT=cobalt-uat-orange
-COBALT_PRODUCTION=cobalt-production-blue
+COBALT_PRODUCTION=cobalt-production-green

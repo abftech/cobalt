@@ -14,7 +14,7 @@ ENV_FILE=/tmp/prod_env
 SCRIPT_FILE=/tmp/db_dump.sh
 
 printf "Downloading the environment variables...\n"
-eb printenv cobalt-production-blue > $ENV_FILE
+eb printenv cobalt-production-green > $ENV_FILE
 
 # Environment variable
 PGPASSWORD=$(grep RDS_PASSWORD $ENV_FILE | awk '{print $3}')

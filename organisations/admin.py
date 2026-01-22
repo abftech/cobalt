@@ -64,11 +64,12 @@ class MemberMembershipTypeAdmin(admin.ModelAdmin):
     readonly_fields = ("linked_user",)
 
     def linked_user(self, instance):
-        """ link to user, needs readonly_fields = ("linked_user",) added above """
+        """link to user, needs readonly_fields = ("linked_user",) added above"""
 
         return link_to_user_or_unregistered_user(instance.system_number)
 
     linked_user.short_description = "Link to User"
+
 
 @admin.register(ClubLog)
 class ClubLogAdmin(admin.ModelAdmin):
@@ -93,8 +94,9 @@ class MemberClubEmailAdmin(admin.ModelAdmin):
     ]
 
     readonly_fields = ("linked_user",)
+
     def linked_user(self, instance):
-        """ link to user, needs readonly_fields = ("linked_user",) added above """
+        """link to user, needs readonly_fields = ("linked_user",) added above"""
 
         return link_to_user_or_unregistered_user(instance.system_number)
 
@@ -121,14 +123,17 @@ class MemberClubTagAdmin(admin.ModelAdmin):
         "club_tag",
     ]
 
+    search_fields = ["system_number"]
+
     readonly_fields = ("linked_user",)
 
     def linked_user(self, instance):
-        """ link to user, needs readonly_fields = ("linked_user",) added above """
+        """link to user, needs readonly_fields = ("linked_user",) added above"""
 
         return link_to_user_or_unregistered_user(instance.system_number)
 
     linked_user.short_description = "Link to User"
+
 
 @admin.register(Visitor)
 class VisitorAdmin(admin.ModelAdmin):
@@ -211,7 +216,7 @@ class MemberClubDetailsAdmin(admin.ModelAdmin):
     readonly_fields = ("linked_user",)
 
     def linked_user(self, instance):
-        """ link to user, needs readonly_fields = ("linked_user",) added above """
+        """link to user, needs readonly_fields = ("linked_user",) added above"""
 
         return link_to_user_or_unregistered_user(instance.system_number)
 
@@ -250,7 +255,7 @@ class ClubMemberLogAdmin(admin.ModelAdmin):
     readonly_fields = ("linked_user",)
 
     def linked_user(self, instance):
-        """ link to user, needs readonly_fields = ("linked_user",) added above """
+        """link to user, needs readonly_fields = ("linked_user",) added above"""
 
         return link_to_user_or_unregistered_user(instance.system_number)
 

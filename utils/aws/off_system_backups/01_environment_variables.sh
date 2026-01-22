@@ -50,7 +50,7 @@ export TEMP_DB_SERVER=offsystem-temp
 
 # Find the Elastic Beanstalk environment to use
 printf "\nLooking for name of Production Elastic Beanstalk environment...\n"
-EB_ENV=$(eb list | grep cobalt-production-blue)
+EB_ENV=$(eb list | grep cobalt-production-green)
 export EB_ENV
 printf "Found ${YELLOW}$EB_ENV${NC}\n"
 

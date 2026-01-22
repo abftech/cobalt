@@ -664,8 +664,7 @@ def _augment_member_details(member_qs, sort_option="last_desc"):
     members = list(member_qs)
     system_numbers = [member.system_number for member in members]
 
-    users = User.all_objects.filter(system_number__in=system_numbers).exclude(user_type=User.UserType.CONTACT)
-
+    users = User.all_objects.filter(system_number__in=system_numbers)
 
     player_dict = {}
 
@@ -686,10 +685,10 @@ def _augment_member_details(member_qs, sort_option="last_desc"):
             "user_type": user_type,
             "user_or_unreg_id": player.id,
             "user_or_unreg": player,
-            "user_email": player.email if player.user_type == User.UserType.USER else None,
-            "internal": (
-                True if player.user_type == User.UserType.CONTACT else False
+            "user_email": (
+                player.email if player.user_type == User.UserType.USER else None
             ),
+            "internal": (True if player.user_type == User.UserType.CONTACT else False),
         }
 
     for member in members:
@@ -1014,9 +1013,7 @@ def _augment_contact_details(club, contact_qs, sort_option="last_desc"):
                 )
             ),
             "user_or_unreg_id": player.id,
-            "internal": (
-                True if player.user_type == User.UserType.CONTACT else False
-            ),
+            "internal": (True if player.user_type == User.UserType.CONTACT else False),
             "blocking_membership": player.system_number in blocking_system_numbers,
         }
         for player in users
@@ -2789,9 +2786,7 @@ def convert_existing_membership(club, membership):
         is_user = True
         deceased = user.deceased
     else:
-        unreg_user = User.unreg_objects.get(
-            system_number=membership.system_number
-        )
+        unreg_user = User.unreg_objects.get(system_number=membership.system_number)
         # will raise an exception if not found
         is_user = False
         deceased = unreg_user.deceased
@@ -3135,9 +3130,11 @@ def convert_contact_to_member(
             system_number=a_system_number,
         ).last()
         if not u_or_u:
-            u_or_u = User.all_objects.exclude(user_type=User.UserType.USER).filter(
-                system_number=a_system_number
-            ).last()
+            u_or_u = (
+                User.all_objects.exclude(user_type=User.UserType.USER)
+                .filter(system_number=a_system_number)
+                .last()
+            )
         return u_or_u
 
     # can only be changing system numbers because current is internal
@@ -3576,7 +3573,9 @@ def get_members_for_renewal(
     system_numbers = [member.system_number for member in member_list]
 
     users = User.objects.filter(system_number__in=system_numbers)
-    unreg_users = User.all_objects.exclude(user_type=User.UserType.USER).filter(system_number__in=system_numbers)
+    unreg_users = User.all_objects.exclude(user_type=User.UserType.USER).filter(
+        system_number__in=system_numbers
+    )
 
     # NOTE: Options records are created when someone looks at their profile, so we
     # need to check for people who have blocked (default is allow).

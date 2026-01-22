@@ -12,6 +12,7 @@ def release_notes_view(request):
             "notes": [
                 "Add table lock to payment updates to prevent incorrect balance problems",
                 "Return to deleting FCM devices if errors are found when sending messages",
+                "Fix for adding tagged contacts to emails",
             ],
         },
         {
