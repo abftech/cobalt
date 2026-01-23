@@ -18,7 +18,7 @@ export NC='\033[0m' # No Color
 # Hard coded values               #
 ###################################
 # AWS Name for the database - not the hostname
-DB_NAME=production-blue
+DB_NAME=cobalt-production-green
 
 # Turn off AWS pagination
 export AWS_PAGER=""
