@@ -85,7 +85,14 @@
                 </div>
                 <div class="row pb-4">
                     <div class="col-4 justify-content-center align-self-center pt-3">
-                        Use full club membership management
+                        <p>Use full club membership management</p>
+
+                        <p><i>If this is checked then MyABF will manage all of your club members
+                            (not just home members for capitation fee purposes). It will track what period
+                            they are paid to, and will lapse members unpaid by the specified date.
+                            You will need to issue annual renewals to maintain your members.
+                        </i></p>
+
                     </div>
                     <div class="col-2">
                         <div class="form-check">
@@ -127,3 +134,40 @@
     </div>
 
 </div>
+
+<script>
+    $(document).ready( function () {
+
+            // confirm dialog if turning on full membership
+
+            // checkbox
+        const full_membership_flag = $("#id_full_club_admin");
+
+            // on change check things
+        full_membership_flag.on("click", function(evt) {
+
+               // if we are on, then handle it
+            if (full_membership_flag.is(":checked")) {
+
+                   // warning dialog
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You are turning on full member management.  This means My ABF will manage all your club members (not just your home members for capitation fee purposes).  It will track what period they are paid to, and will lapse members unpaid by the specified date.  You will need to issue annual renewals to maintain your members.   Are you sure you want to turn on Full Member Management?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, turn it on'
+                }).then((result) => {
+
+                       // user chickened out, so remove the checkbox tick
+                    if (!result.value) {
+                        full_membership_flag.prop('checked', false);
+                    }
+                });
+            }
+        });
+
+    });
+
+</script>
