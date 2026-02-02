@@ -128,6 +128,7 @@ def contact_logged_out(request):
 
     form = HelpdeskLoggedOutContactForm(request.POST or None)
     is_human = True  # Innocent until proven guilty
+    is_sensible = True  # Innocent until proven guilty
 
     if request.method == "POST" and form.is_valid():
 
@@ -141,7 +142,9 @@ def contact_logged_out(request):
 
         is_human = bool(result_json.get("success"))
 
-        if is_human:
+        is_sensible = _is_sensible_check(form)
+
+        if is_human and is_sensible:
 
             ticket = form.save()
             notify_user_new_ticket_by_form(request, ticket)
@@ -162,8 +165,27 @@ def contact_logged_out(request):
             "form": form,
             "site_key": RECAPTCHA_SITE_KEY,
             "is_human": is_human,
+            "is_sensible": is_sensible,
         },
     )
+
+
+def _is_sensible_check(form):
+    """Check for spammers getting passed the Recaptcha tests"""
+
+    name = form.cleaned_data["reported_by_name"]
+    title = form.cleaned_data["title"]
+    description = form.cleaned_data["description"]
+
+    for item in [name, title, description]:
+        # Check for single word with multiple capital letters
+        if (
+            len(item.split()) == 1
+            and sum(character.isupper() for character in item) > 2
+        ):
+            return False
+
+    return True
 
 
 @login_required
@@ -256,7 +278,9 @@ def _global_search_people(request, query, searchparams, include_people):
     registered = User.objects.filter(q_string)
 
     # Unregistered users holds both unregistered users and contacts who have fake system_numbers assigned
-    unregistered = User.all_objects.exclude(user_type=User.UserType.USER).filter(q_string)
+    unregistered = User.all_objects.exclude(user_type=User.UserType.USER).filter(
+        q_string
+    )
 
     # Don't include contacts (have internal system numbers) unless an admin
     if not email_admin:

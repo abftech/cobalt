@@ -49,6 +49,9 @@
     {% if not is_human %}
         <h2>Form not submitted. Google thinks you are a robot</h2>
     {% endif %}
+    {% if not is_sensible %}
+        <h2>Form not submitted.</h2>
+    {% endif %}
     <div>
         <div class="inner">
             <form id="contactform" method="post">
