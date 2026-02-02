@@ -11,6 +11,8 @@ def release_notes_view(request):
             "release": "6.3.3",
             "notes": [
                 "Warn before syncing data from MPC if there is existing data",
+                "Additional warning when turning on full club management",
+                "Handle spam for Helpdesk module",
             ],
         },
         {
