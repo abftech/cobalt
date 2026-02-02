@@ -8,6 +8,12 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.3.3",
+            "notes": [
+                "Warn before syncing data from MPC if there is existing data",
+            ],
+        },
+        {
             "release": "6.3.2",
             "notes": [
                 "Add table lock to payment updates to prevent incorrect balance problems",
