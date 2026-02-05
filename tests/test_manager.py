@@ -17,6 +17,7 @@ from selenium.common.exceptions import (
     StaleElementReferenceException,
 )
 from selenium.webdriver import Keys
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.select import Select
 from termcolor import colored
 from django.db import transaction
@@ -29,6 +30,7 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
+from webdriver_manager.chrome import ChromeDriverManager
 
 from accounts.models import User
 
@@ -87,7 +89,9 @@ def run_methods(class_instance):
             ):
                 print(error)
                 traceback.print_exc()
-                print("\n\nAn error occurred. Description above. Pausing so you can check the web browser (if appropriate).")
+                print(
+                    "\n\nAn error occurred. Description above. Pausing so you can check the web browser (if appropriate)."
+                )
                 time.sleep(55555)
                 raise error
 
@@ -528,7 +532,11 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
             options.timeouts = {"implicit": 5000}
             if headless:
                 options.headless = True
-            self.driver = webdriver.Chrome(options=options)
+
+            # Use ChromeDriverManager to automatically get the right version - avoids having to deal with brew upgrade
+            self.driver = webdriver.Chrome(
+                service=Service(ChromeDriverManager().install()), options=options
+            )
 
         elif browser == "firefox":
             options = FirefoxOptions()
@@ -583,7 +591,9 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
             print(
                 f"** Consider adding self.manager.sleep() before you call wait_for* and checking that '{element_id}' is present"
             )
-            print("** If this behaviour was expected, consider looking for something that is there rather than isn't.")
+            print(
+                "** If this behaviour was expected, consider looking for something that is there rather than isn't."
+            )
             print(
                 "****************************************************************************************************************************"
             )

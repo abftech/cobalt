@@ -351,7 +351,7 @@ def club_menu_go_to_tab(
 
 def login_and_go_to_club_menu(
     manager: CobaltTestManagerIntegration,
-    org_id: int,
+    org_id: str,
     user: User,
     test_description: str,
     test_name: str,

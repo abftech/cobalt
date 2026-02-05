@@ -1,5 +1,9 @@
 import time
+from datetime import timedelta
 
+from django.utils.timezone import now
+
+from organisations.models import Organisation
 from organisations.tests.integration.common_functions import (
     club_menu_go_to_tab,
     login_and_go_to_club_menu,
@@ -35,16 +39,104 @@ class ClubMembers:
         self.manager = manager
         self.client = self.manager.client
 
-    def a1_import_members(self):
-        """Import Members to this club"""
+    # def a1_import_members(self):
+    #     """Import Members to this club"""
+    #
+    #     # Login as Colin (no update access to members)
+    #     login_and_go_to_club_menu(
+    #         manager=self.manager,
+    #         org_id=SUNSHINE_ID,
+    #         user=self.manager.colin,
+    #         test_description="Login as Colin and go to club menu. Colin doesn't have update access to members.",
+    #         test_name=f"Login as Colin and go to club menu for {club_names[SUNSHINE_ID]}",
+    #         reverse_result=False,
+    #     )
+    #
+    #     # Go to Members tab
+    #     club_menu_go_to_tab(
+    #         manager=self.manager,
+    #         tab="members",
+    #         title_id="id_member_list_tab",
+    #         test_name=f"Go to Members tab as Colin for {club_names[SUNSHINE_ID]}",
+    #         test_description="Starting from the dashboard of Club Menu we click on the Members tab "
+    #         "and confirm that we get there.",
+    #     )
+    #
+    #     ok = not bool(self.manager.selenium_wait_for("t_member_tab_add", timeout=5))
+    #
+    #     self.manager.save_results(
+    #         status=ok,
+    #         output=f"Clicked on Membership tab for {club_names[SUNSHINE_ID]} as Colin. Shouldn't get the Add sub-tab. "
+    #         f"Outcome: {ok}",
+    #         test_name=f"Colin cannot add members for {club_names[SUNSHINE_ID]}",
+    #         test_description=f"Colin goes to the members tab for {club_names[SUNSHINE_ID]}. "
+    #         f"He shouldn't see Add as an option as he doesn't have access.",
+    #     )
+    #
+    #     # Login as Eric
+    #     login_and_go_to_club_menu(
+    #         manager=self.manager,
+    #         org_id=SUNSHINE_ID,
+    #         user=self.manager.eric,
+    #         test_description="Login as Eric (admin) and go to club menu",
+    #         test_name="Login as Eric and go to club menu",
+    #         reverse_result=False,
+    #     )
+    #
+    #     # Go to Members tab
+    #     club_menu_go_to_tab(
+    #         manager=self.manager,
+    #         tab="members",
+    #         title_id="id_member_list_tab",
+    #         test_name=f"Go to Members tab as Eric for {club_names[SUNSHINE_ID]}",
+    #         test_description="Starting from the dashboard of Club Menu we click on the Members tab "
+    #         "and confirm that we get there.",
+    #     )
+    #
+    #     ok = bool(self.manager.selenium_wait_for("t_member_tab_add"))
+    #
+    #     self.manager.save_results(
+    #         status=ok,
+    #         output=f"Clicked on Membership tab for {club_names[SUNSHINE_ID]} as Eric (admin). Should get the Add sub-tab. "
+    #         f"Outcome: {ok}",
+    #         test_name=f"Eric can add members for {club_names[SUNSHINE_ID]}",
+    #         test_description=f"Eric goes to the members tab for {club_names[SUNSHINE_ID]}. "
+    #         f"He should see Add as an option as he does have access.",
+    #     )
+    #
+    #     # Import from MPC
+    #     # Click Add
+    #     self.manager.selenium_wait_for("t_member_tab_add").click()
+    #     # Click MPC Import
+    #     self.manager.selenium_wait_for("t_mpc_import").click()
+    #     # Click Save
+    #     self.manager.selenium_wait_for("t_mpc_import_save").click()
+    #
+    #     ok = bool(self.manager.selenium_wait_for_text("Import Complete", "members", 20))
+    #
+    #     self.manager.save_results(
+    #         status=ok,
+    #         output=f"Ran MPC import for {club_names[SUNSHINE_ID]} as Eric (admin). Got 'Import Complete'"
+    #         f"Outcome: {ok}",
+    #         test_name=f"Eric imports members from MPC for {club_names[SUNSHINE_ID]}",
+    #         test_description=f"Eric imports members from MPC for {club_names[SUNSHINE_ID]}. "
+    #         f"He should be able to do this successfully.",
+    #     )
 
-        # Login as Colin (no update access to members)
+    def a2_import_members_csv(self):
+        """Import members from CSV files"""
+
+        fantasy_bc = Organisation.objects.filter(name="Fantasy Bridge Club").first()
+
+        print(fantasy_bc)
+
+        # Login as Alan
         login_and_go_to_club_menu(
             manager=self.manager,
-            org_id=SUNSHINE_ID,
-            user=self.manager.colin,
-            test_description="Login as Colin and go to club menu. Colin doesn't have update access to members.",
-            test_name=f"Login as Colin and go to club menu for {club_names[SUNSHINE_ID]}",
+            org_id=fantasy_bc.org_id,
+            user=self.manager.alan,
+            test_description="Login as Alan (admin) and go to club menu",
+            test_name="Login as Alan and go to club menu",
             reverse_result=False,
         )
 
@@ -53,38 +145,7 @@ class ClubMembers:
             manager=self.manager,
             tab="members",
             title_id="id_member_list_tab",
-            test_name=f"Go to Members tab as Colin for {club_names[SUNSHINE_ID]}",
-            test_description="Starting from the dashboard of Club Menu we click on the Members tab "
-            "and confirm that we get there.",
-        )
-
-        ok = not bool(self.manager.selenium_wait_for("t_member_tab_add", timeout=5))
-
-        self.manager.save_results(
-            status=ok,
-            output=f"Clicked on Membership tab for {club_names[SUNSHINE_ID]} as Colin. Shouldn't get the Add sub-tab. "
-            f"Outcome: {ok}",
-            test_name=f"Colin cannot add members for {club_names[SUNSHINE_ID]}",
-            test_description=f"Colin goes to the members tab for {club_names[SUNSHINE_ID]}. "
-            f"He shouldn't see Add as an option as he doesn't have access.",
-        )
-
-        # Login as Eric
-        login_and_go_to_club_menu(
-            manager=self.manager,
-            org_id=SUNSHINE_ID,
-            user=self.manager.eric,
-            test_description="Login as Eric (admin) and go to club menu",
-            test_name="Login as Eric and go to club menu",
-            reverse_result=False,
-        )
-
-        # Go to Members tab
-        club_menu_go_to_tab(
-            manager=self.manager,
-            tab="members",
-            title_id="id_member_list_tab",
-            test_name=f"Go to Members tab as Eric for {club_names[SUNSHINE_ID]}",
+            test_name=f"Go to Members tab as Alan for {fantasy_bc}",
             test_description="Starting from the dashboard of Club Menu we click on the Members tab "
             "and confirm that we get there.",
         )
@@ -93,188 +154,33 @@ class ClubMembers:
 
         self.manager.save_results(
             status=ok,
-            output=f"Clicked on Membership tab for {club_names[SUNSHINE_ID]} as Eric (admin). Should get the Add sub-tab. "
+            output=f"Clicked on Membership tab for {fantasy_bc} as Alan (admin). Should get the Add sub-tab. "
             f"Outcome: {ok}",
-            test_name=f"Eric can add members for {club_names[SUNSHINE_ID]}",
-            test_description=f"Eric goes to the members tab for {club_names[SUNSHINE_ID]}. "
+            test_name=f"Alan can add members for {fantasy_bc}",
+            test_description=f"Alan goes to the members tab for {fantasy_bc}. "
             f"He should see Add as an option as he does have access.",
         )
 
-        # Import from MPC
+        # Create CSV
+        with open("/tmp/members.csv", "w") as csv:
+            csv.write(
+                "ABF Number, First Name, Last Name, Email, Membership Type, Address 1, Address 2, State, Postcode, Preferred Phone, Other Phone, Date of Birth, Club Membership Number, Joined Date, Left Date, Emergency Contact, Notes, Membership Start Date, Membership End Date\n"
+            )
+
+            membership_start_date = now() - timedelta(days=7)
+            membership_end_date = now() - timedelta(days=7) + timedelta(days=365)
+            csv.write(
+                f"620254, Julie, Guthrie, email@madeup.com, Standard, 1 High St, Low Country, NSW, 2000,,,,, 2000-01-01,,Harry Potter,These are notes, {membership_start_date}, {membership_end_date}\n"
+            )
+
+        # Import from CSV
         # Click Add
         self.manager.selenium_wait_for("t_member_tab_add").click()
         # Click MPC Import
-        self.manager.selenium_wait_for("t_mpc_import").click()
-        # Click Save
-        self.manager.selenium_wait_for("t_mpc_import_save").click()
+        self.manager.selenium_wait_for("t_csv_upload").click()
+        # find file button
+        file_button = self.manager.selenium_wait_for("file-upload")
 
-        ok = bool(self.manager.selenium_wait_for_text("Import Complete", "members", 20))
+        file_button.send_keys("/tmp/members.csv")
 
-        self.manager.save_results(
-            status=ok,
-            output=f"Ran MPC import for {club_names[SUNSHINE_ID]} as Eric (admin). Got 'Import Complete'"
-            f"Outcome: {ok}",
-            test_name=f"Eric imports members from MPC for {club_names[SUNSHINE_ID]}",
-            test_description=f"Eric imports members from MPC for {club_names[SUNSHINE_ID]}. "
-            f"He should be able to do this successfully.",
-        )
-
-    # def a2_add_edit_delete_club_members(self):
-    #
-    #     # We are on the members tab already
-    #
-    #     # Click Add
-    #     self.manager.selenium_wait_for("t_member_tab_add").click()
-    #     # Click Add Member
-    #     self.manager.selenium_wait_for("t_member_add_individual_member").click()
-    #     # First name Ian
-    #     self.manager.selenium_wait_for("id_member_first_name_search").click()
-    #     self.manager.selenium_wait_for_clickable(
-    #         "id_member_first_name_search"
-    #     ).send_keys("ian")
-    #     # last name Thomson
-    #     self.manager.selenium_wait_for("id_member_last_name_search").click()
-    #     self.manager.selenium_wait_for_clickable(
-    #         "id_member_last_name_search"
-    #     ).send_keys("thomson")
-    #     # click on user
-    #     self.manager.sleep()
-    #     self.manager.selenium_wait_for("id_show_add_mpc_modal_148911").click()
-    #     # Click on add in modal
-    #     self.manager.selenium_wait_for_clickable("t_add_unreg_member").click()
-    #
-    #     ok = bool(
-    #         self.manager.selenium_wait_for_text(
-    #             "User added. Club membership added.", "id_panel_members"
-    #         )
-    #     )
-    #
-    #     self.manager.save_results(
-    #         status=ok,
-    #         output=f"Eric added Betty as a member to {club_names[SUNSHINE_ID]}."
-    #         f"Outcome: {ok}",
-    #         test_name=f"Eric adds Betty as member of {club_names[SUNSHINE_ID]}",
-    #         test_description=f"Eric uses the manual entry screen for {club_names[SUNSHINE_ID]}. "
-    #         f"to add Betty as a member.",
-    #     )
-
-    # # Search for Betty
-    # cobalt_htmx_user_search(
-    #     manager=self.manager,
-    #     search_button_id="id_add_member_item",
-    #     user_system_id=self.manager.betty.system_number,
-    #     search_id="add_member",
-    # )
-    #
-    # # Click Save
-    # self.manager.selenium_wait_for_clickable("t_member_add_member_button").click()
-    #
-    # ok = bool(
-    #     self.manager.selenium_wait_for_text(
-    #         "Betty Bunting added as a member", "members"
-    #     )
-    # )
-    #
-    # self.manager.save_results(
-    #     status=ok,
-    #     output=f"Eric added Betty as a member to {club_names[SUNSHINE_ID]}."
-    #     f"Outcome: {ok}",
-    #     test_name=f"Eric adds Betty as member of {club_names[SUNSHINE_ID]}",
-    #     test_description=f"Eric uses the manual entry screen for {club_names[SUNSHINE_ID]}. "
-    #     f"to add Betty as a member.",
-    # )
-    #
-    # # Now add unregistered - We need to use a real user!!! Use Ian Thomson
-    #
-    # # Click Add
-    # self.manager.selenium_wait_for("t_member_tab_add").click()
-    # # Click Add Un Reg
-    # self.manager.selenium_wait_for("t_member_add_individual_un_reg").click()
-    #
-    # # Enter system number
-    # self.manager.selenium_wait_for("id_system_number").send_keys("148911")
-    #
-    # # Enter email
-    # self.manager.selenium_wait_for("id_mpc_email").send_keys("a@b.com")
-    #
-    # # Dunno.
-    # time.sleep(2)
-    #
-    # # Click Save
-    # self.manager.selenium_wait_for_clickable("t_member_add_un_reg_button").click()
-    #
-    # ok = bool(self.manager.selenium_wait_for_text("User added.", "members"))
-    #
-    # self.manager.save_results(
-    #     status=ok,
-    #     output=f"Eric added Ian Thomson as an unregistered member to {club_names[SUNSHINE_ID]}. "
-    #     f"Outcome: {ok}",
-    #     test_name=f"Eric adds Ian Thomson as member of {club_names[SUNSHINE_ID]}",
-    #     test_description=f"Eric uses the manual entry screen for {club_names[SUNSHINE_ID]}. "
-    #     f"to add Ian Thomson (148911) as an unregistered member. We unfortunately need to "
-    #     f"use a real person for this or the lookup with the MPC won't work.",
-    # )
-    #
-    # # Edit Member
-    #
-    # # Click List - easier to go to Members tab again
-    # club_menu_go_to_tab(
-    #     manager=self.manager,
-    #     tab="members",
-    #     title_id="id_member_list_tab",
-    #     test_name=f"Go to Members tab as Eric for {club_names[SUNSHINE_ID]}",
-    #     test_description="Return to the Members tab as Eric.",
-    # )
-    #
-    # # Click on Betty
-    # self.manager.selenium_wait_for(f"t_edit_member_{self.manager.betty.id}").click()
-    #
-    # # Click on Membership Type
-    # self.manager.selenium_wait_for("id_membership_type").click()
-    #
-    # # click on Youth
-    # self.manager.driver.find_element_by_xpath("//option[. = 'Youth']").click()
-    #
-    # # Save
-    # self.manager.driver.find_element_by_name("save").click()
-    #
-    # # Look for success
-    #
-    # ok = bool(
-    #     self.manager.selenium_wait_for_text("Betty Bunting updated", "members")
-    # )
-    #
-    # self.manager.save_results(
-    #     status=ok,
-    #     output=f"Eric edited Betty, a member of {club_names[SUNSHINE_ID]}. "
-    #     f"Outcome: {ok}",
-    #     test_name=f"Eric edits Betty as member of {club_names[SUNSHINE_ID]}.",
-    #     test_description=f"Eric edits Betty, a member of for {club_names[SUNSHINE_ID]}. "
-    #     f"Changes membership type to 'Youth'",
-    # )
-    #
-    # # Cancel Membership
-    #
-    # # Click on Betty
-    # self.manager.selenium_wait_for(f"t_edit_member_{self.manager.betty.id}").click()
-    #
-    # # Wait for Cancel button
-    # self.manager.selenium_wait_for_clickable("id_delete_user_1").click()
-    #
-    # # Click on Confirm
-    # self.manager.selenium_wait_for_clickable("id_delete_button_memdel").click()
-    #
-    # # Check for message
-    # ok = bool(
-    #     self.manager.selenium_wait_for_text(
-    #         "Betty Bunting membership deleted", "members"
-    #     )
-    # )
-    #
-    # self.manager.save_results(
-    #     status=ok,
-    #     output=f"Eric cancelled Betty's membership of {club_names[SUNSHINE_ID]}. "
-    #     f"Outcome: {ok}",
-    #     test_name=f"Eric cancels Betty as member of {club_names[SUNSHINE_ID]}.",
-    #     test_description=f"Eric cancels Betty's membership of {club_names[SUNSHINE_ID]}. ",
-    # )
+        self.manager.sleep()

@@ -21,10 +21,10 @@
                     <tr>
                         <td>
                             <button class="btn bg-primary btn-block"
-                                id="t_member_add_individual_member"
-                                hx-post="{% url "organisations:club_menu_tab_members_add_any_member_htmx" %}"
-                                hx-target="#id_member_add_tab"
-                                hx-vars="club_id:{{ club.id }}"
+                                    id="t_member_add_individual_member"
+                                    hx-post="{% url "organisations:club_menu_tab_members_add_any_member_htmx" %}"
+                                    hx-target="#id_member_add_tab"
+                                    hx-vars="club_id:{{ club.id }}"
                             >Add Member</button>
                         </td>
                         <td class="text-left pl-5">
@@ -34,9 +34,9 @@
                     <tr>
                         <td>
                             <button class="btn bg-primary btn-block"
-                                id="t_mpc_import"
-                                hx-post="{% url "organisations:club_menu_tab_members_import_mpc_htmx" %}"
-                                hx-target="#id_member_add_tab"
+                                    id="t_mpc_import"
+                                    hx-post="{% url "organisations:club_menu_tab_members_import_mpc_htmx" %}"
+                                    hx-target="#id_member_add_tab"
                             >MPC Import</button>
                         </td>
                         <td class="text-left pl-5">
@@ -46,8 +46,9 @@
                     <tr>
                         <td>
                             <button class="btn bg-primary btn-block"
-                                hx-post="{% url "organisations:club_menu_tab_members_upload_csv" %}"
-                                hx-target="#id_member_add_tab"
+                                    id="t_csv_upload"
+                                    hx-post="{% url "organisations:club_menu_tab_members_upload_csv" %}"
+                                    hx-target="#id_member_add_tab"
                             >CSV Upload</button>
                         </td>
                         <td class="text-left pl-5">
@@ -60,8 +61,8 @@
                         <tr>
                             <td>
                                 <button class="btn btn-warning btn-block"
-                                    hx-post="{% url "organisations:club_menu_tab_members_bulk_invite_to_join_htmx" %}"
-                                    hx-target="#id_member_add_tab"
+                                        hx-post="{% url "organisations:club_menu_tab_members_bulk_invite_to_join_htmx" %}"
+                                        hx-target="#id_member_add_tab"
                                 >Bulk Invite</button>
                             </td>
                             <td class="text-left pl-5">
