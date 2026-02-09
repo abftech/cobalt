@@ -25,6 +25,7 @@ pre-commit
 
 # Tests
 coverage
+webdriver-manager
 
 # Tools
 pylint

@@ -126,9 +126,8 @@ class ClubMembers:
     def a2_import_members_csv(self):
         """Import members from CSV files"""
 
+        # Get bridge club
         fantasy_bc = Organisation.objects.filter(name="Fantasy Bridge Club").first()
-
-        print(fantasy_bc)
 
         # Login as Alan
         login_and_go_to_club_menu(
@@ -167,10 +166,10 @@ class ClubMembers:
                 "ABF Number, First Name, Last Name, Email, Membership Type, Address 1, Address 2, State, Postcode, Preferred Phone, Other Phone, Date of Birth, Club Membership Number, Joined Date, Left Date, Emergency Contact, Notes, Membership Start Date, Membership End Date\n"
             )
 
-            membership_start_date = now() - timedelta(days=7)
-            membership_end_date = now() - timedelta(days=7) + timedelta(days=365)
+            membership_start_date = now()
+            membership_end_date = now() + timedelta(days=365)
             csv.write(
-                f"620254, Julie, Guthrie, email@madeup.com, Standard, 1 High St, Low Country, NSW, 2000,,,,, 2000-01-01,,Harry Potter,These are notes, {membership_start_date}, {membership_end_date}\n"
+                f"620254, Julie, Guthrie, email@madeup.com,Standard, 1 High St, Low Country, NSW, 2000,,,,, 2000-01-01,,Harry Potter,These are notes, {membership_start_date}, {membership_end_date}\n"
             )
 
         # Import from CSV
@@ -182,5 +181,8 @@ class ClubMembers:
         file_button = self.manager.selenium_wait_for("file-upload")
 
         file_button.send_keys("/tmp/members.csv")
+
+        # click the submit button
+        self.manager.selenium_wait_for("upload_pianola").click()
 
         self.manager.sleep()
