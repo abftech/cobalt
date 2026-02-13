@@ -166,10 +166,12 @@ class ClubMembers:
                 "ABF Number, First Name, Last Name, Email, Membership Type, Address 1, Address 2, State, Postcode, Preferred Phone, Other Phone, Date of Birth, Club Membership Number, Joined Date, Left Date, Emergency Contact, Notes, Membership Start Date, Membership End Date\n"
             )
 
-            membership_start_date = now()
-            membership_end_date = now() + timedelta(days=365)
+            membership_start_date = now().date().strftime("%d/%m/%Y")
+            membership_end_date = (
+                (now() + timedelta(days=365)).date().strftime("%d/%m/%Y")
+            )
             csv.write(
-                f"620254, Julie, Guthrie, email@madeup.com,Standard, 1 High St, Low Country, NSW, 2000,,,,, 2000-01-01,,Harry Potter,These are notes, {membership_start_date}, {membership_end_date}\n"
+                f"620254, Julie, Guthrie, email@madeup.com,Standard, 1 High St, Low Country, NSW, 2000,,,,,2000-01-01,,Harry Potter,These are notes,{membership_start_date},{membership_end_date}\n"
             )
 
         # Import from CSV
