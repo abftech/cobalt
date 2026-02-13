@@ -135,6 +135,18 @@ GENERIC_MEMBER_MAPPING = {
         "type": "date",
         "opt_column": True,
     },
+    "auto_pay_date": {
+        "title": "Auto Pay Date",
+        "csv_col": 19,
+        "type": "date",
+        "opt_column": True,
+    },
+    "lapse_date": {
+        "title": "Lapse Date",
+        "csv_col": 20,
+        "type": "date",
+        "opt_column": True,
+    },
 }
 
 # Mapping for generic CSV member imports
@@ -693,7 +705,7 @@ def _map_csv_to_columns(mapping, csv, strict=False):
                 # no type specified (ie string)
                 item[attr_name] = _str_value(source)
 
-    return (True, None, item)
+    return True, None, item
 
 
 def _augment_member_details(club, system_number, new_details, overwrite=False):

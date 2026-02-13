@@ -47,13 +47,20 @@ def _csv_upload_helper(
     # Create CSV
     with open("/tmp/members.csv", "w") as csv:
         csv.write(
-            "ABF Number, First Name, Last Name, Email, Membership Type, Address 1, Address 2, State, Postcode, Preferred Phone, Other Phone, Date of Birth, Club Membership Number, Joined Date, Left Date, Emergency Contact, Notes, Membership Start Date, Membership End Date\n"
+            "ABF Number, First Name, Last Name, Email, Membership Type, Address 1, Address 2, State, Postcode, Preferred Phone, Other Phone, Date of Birth, Club Membership Number, Joined Date, Left Date, Emergency Contact, Notes, Membership Start Date, Membership End Date, Auto Pay Date, Lapse Date\n"
         )
 
         membership_start_date = now().date().strftime("%d/%m/%Y")
-        membership_end_date = datetime.date(year=now().year + 1, month=1, day=1)
+        membership_end_date = datetime.date(
+            year=now().year + 1, month=1, day=1
+        ).strftime("%d/%m/%Y")
+        membership_auto_pay_date = (
+            (now() + timedelta(days=5)).date().strftime("%d/%m/%Y")
+        )
+        membership_lapse_date = (now() + timedelta(days=10)).date().strftime("%d/%m/%Y")
+
         csv.write(
-            f"{system_number}, {first_name}, {last_name}, email@madeup.com,Standard, 1 High St, Low Country, NSW, 2000,,,,,2000-01-01,,Harry Potter,These are notes,{membership_start_date},{membership_end_date}\n"
+            f"{system_number}, {first_name}, {last_name}, email@madeup.com,Standard, 1 High St, Low Country, NSW, 2000,,,,,2000-01-01,,Harry Potter,These are notes,{membership_start_date},{membership_end_date},{membership_auto_pay_date},{membership_lapse_date}\n"
         )
 
     # Import from CSV
@@ -69,6 +76,8 @@ def _csv_upload_helper(
     # click the submit button
     manager.selenium_wait_for("upload_pianola").click()
 
+    manager.sleep()
+
     # Wait
     manager.selenium_find_text_on_page("Import Complete")
 
@@ -82,13 +91,40 @@ def _csv_upload_helper(
     if expect_to_fail:
         status = not status
 
+    output = manager.selenium_wait_for("t_import_warnings").text
+
     manager.save_results(
         status=status,
         test_name=f"Member CSV Upload - {test_name}",
         test_description=f"Import {first_name} {last_name} - {system_number}. {expect_to_fail=}",
+        output=output,
     )
 
-    manager.sleep()
+    if expect_to_fail:
+        return
+
+    # Check start and end dates
+    manager.save_results(
+        status=membership.start_date.strftime("%d/%m/%Y") == membership_start_date,
+        test_name=f"Member CSV Upload - {test_name} Start Date",
+        test_description=f"Import {first_name} {last_name} - {system_number}. {expect_to_fail=}",
+        output=f"{membership.start_date=} {membership_start_date=}",
+    )
+
+    # TODO - See if this is a timezone issue
+    print(f"{membership.end_date=}")
+    print(f"{membership.end_date + timedelta(days=1)}")
+    print(f"{(membership.end_date + timedelta(days=1)).strftime("%d/%m/%Y")}")
+    print(f"{membership_end_date}")
+
+    # logic for end date is it will use the day before, not the day provided
+    manager.save_results(
+        status=membership.end_date.strftime("%d/%m/%Y") == membership_end_date,
+        # status=(membership.end_date + timedelta(days=1)).strftime("%d/%m/%Y") == membership_end_date,
+        test_name=f"Member CSV Upload - {test_name} End Date",
+        test_description=f"Import {first_name} {last_name} - {system_number}. {expect_to_fail=}",
+        output=f"Dates are expected to be out by one. {membership.end_date=} {membership_end_date=}",
+    )
 
 
 class ClubMembers:
@@ -246,4 +282,14 @@ class ClubMembers:
             fantasy_bc,
             "Invalid ABF No",
             expect_to_fail=True,
+        )
+
+        # Check Start and End Dates
+        _csv_upload_helper(
+            self.manager,
+            data[2]["system_number"],
+            data[2]["first_name"],
+            data[2]["last_name"],
+            fantasy_bc,
+            "Check Start and End Dates",
         )
