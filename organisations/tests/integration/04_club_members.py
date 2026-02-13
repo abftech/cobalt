@@ -1,9 +1,10 @@
+import datetime
 import time
 from datetime import timedelta
 
 from django.utils.timezone import now
 
-from organisations.models import Organisation
+from organisations.models import Organisation, MemberMembershipType
 from organisations.tests.integration.common_functions import (
     club_menu_go_to_tab,
     login_and_go_to_club_menu,
@@ -30,6 +31,64 @@ club_names = {
     SUNSHINE_ID: "Sunshine Coast Contract Bridge Club Inc",  # QLD
     WAVERLEY_ID: "Waverley Bridge Club",  # VIC
 }
+
+
+def _csv_upload_helper(
+    manager,
+    system_number,
+    first_name,
+    last_name,
+    bridge_club,
+    test_name,
+    expect_to_fail=False,
+):
+    """helper to upload a CSV and check it works. Only processes one row. Must already be on the upload page"""
+
+    # Create CSV
+    with open("/tmp/members.csv", "w") as csv:
+        csv.write(
+            "ABF Number, First Name, Last Name, Email, Membership Type, Address 1, Address 2, State, Postcode, Preferred Phone, Other Phone, Date of Birth, Club Membership Number, Joined Date, Left Date, Emergency Contact, Notes, Membership Start Date, Membership End Date\n"
+        )
+
+        membership_start_date = now().date().strftime("%d/%m/%Y")
+        membership_end_date = datetime.date(year=now().year + 1, month=1, day=1)
+        csv.write(
+            f"{system_number}, {first_name}, {last_name}, email@madeup.com,Standard, 1 High St, Low Country, NSW, 2000,,,,,2000-01-01,,Harry Potter,These are notes,{membership_start_date},{membership_end_date}\n"
+        )
+
+    # Import from CSV
+    # Click Add
+    manager.selenium_wait_for("t_member_tab_add").click()
+    # Click MPC Import
+    manager.selenium_wait_for("t_csv_upload").click()
+    # find file button
+    file_button = manager.selenium_wait_for("file-upload")
+
+    file_button.send_keys("/tmp/members.csv")
+
+    # click the submit button
+    manager.selenium_wait_for("upload_pianola").click()
+
+    # Wait
+    manager.selenium_find_text_on_page("Import Complete")
+
+    # Check membership was created
+    membership = MemberMembershipType.objects.filter(
+        membership_type__organisation=bridge_club, system_number=system_number
+    ).first()
+
+    status = bool(membership)
+
+    if expect_to_fail:
+        status = not status
+
+    manager.save_results(
+        status=status,
+        test_name=f"Member CSV Upload - {test_name}",
+        test_description=f"Import {first_name} {last_name} - {system_number}. {expect_to_fail=}",
+    )
+
+    manager.sleep()
 
 
 class ClubMembers:
@@ -160,31 +219,31 @@ class ClubMembers:
             f"He should see Add as an option as he does have access.",
         )
 
-        # Create CSV
-        with open("/tmp/members.csv", "w") as csv:
-            csv.write(
-                "ABF Number, First Name, Last Name, Email, Membership Type, Address 1, Address 2, State, Postcode, Preferred Phone, Other Phone, Date of Birth, Club Membership Number, Joined Date, Left Date, Emergency Contact, Notes, Membership Start Date, Membership End Date\n"
-            )
+        # Have to use real data for now as need valid ABF numbers
+        data = [
+            {"system_number": 136131, "first_name": "David", "last_name": "Fryda"},
+            {"system_number": 101, "first_name": "Betty", "last_name": "Bunting"},
+            {"system_number": 24732, "first_name": "Pauline", "last_name": "Gumby"},
+            {"system_number": 35238, "first_name": "Warren", "last_name": "Lazer"},
+        ]
 
-            membership_start_date = now().date().strftime("%d/%m/%Y")
-            membership_end_date = (
-                (now() + timedelta(days=365)).date().strftime("%d/%m/%Y")
-            )
-            csv.write(
-                f"620254, Julie, Guthrie, email@madeup.com,Standard, 1 High St, Low Country, NSW, 2000,,,,,2000-01-01,,Harry Potter,These are notes,{membership_start_date},{membership_end_date}\n"
-            )
+        # Basic success
+        _csv_upload_helper(
+            self.manager,
+            data[0]["system_number"],
+            data[0]["first_name"],
+            data[0]["last_name"],
+            fantasy_bc,
+            "Valid data",
+        )
 
-        # Import from CSV
-        # Click Add
-        self.manager.selenium_wait_for("t_member_tab_add").click()
-        # Click MPC Import
-        self.manager.selenium_wait_for("t_csv_upload").click()
-        # find file button
-        file_button = self.manager.selenium_wait_for("file-upload")
-
-        file_button.send_keys("/tmp/members.csv")
-
-        # click the submit button
-        self.manager.selenium_wait_for("upload_pianola").click()
-
-        self.manager.sleep()
+        # Invalid ABF
+        _csv_upload_helper(
+            self.manager,
+            data[1]["system_number"],
+            data[1]["first_name"],
+            data[1]["last_name"],
+            fantasy_bc,
+            "Invalid ABF No",
+            expect_to_fail=True,
+        )
