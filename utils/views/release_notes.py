@@ -13,6 +13,7 @@ def release_notes_view(request):
                 "Warn before syncing data from MPC if there is existing data",
                 "Additional warning when turning on full club management",
                 "Handle spam for Helpdesk module",
+                "Change some uses of Due Date in memberships to Lapse Date for clarity",
             ],
         },
         {

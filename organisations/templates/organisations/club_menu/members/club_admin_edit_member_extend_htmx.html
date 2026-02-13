@@ -52,14 +52,14 @@ This will be rendered in the action pane of the club admin edit member window
                         </div>
 
                         <div class="col-2 justify-content-center align-self-center pt-3 optional_payment_method">
-                            Due date
+                            Auto pay date
                         </div>
                         <div class="col-3 optional_payment_method">
-                            <div id="div_id_due_date" class="form-group">
-                                <span class="cobalt-form-error" id="id_new_date_errors">
-                                    {{ form.due_date.errors|striptags }}
+                            <div id="div_id_auto_pay_date" class="form-group">
+                                <span class="cobalt-form-error" id="id_auto_pay_date_errors">
+                                    {{ form.auto_pay_date.errors|striptags }}
                                 </span>
-                                {% render_cobalt_datepicker form.due_date %}
+                                {% render_cobalt_datepicker form.auto_pay_date %}
                             </div>
                         </div>
                     </div>
@@ -92,14 +92,14 @@ This will be rendered in the action pane of the club admin edit member window
 
                     <div class="row pb-2">
                         <div class="col-2 justify-content-center align-self-center pt-3 optional_payment_method">
-                            Auto pay date
+                            Lapse date
                         </div>
                         <div class="col-3 optional_payment_method">
-                            <div id="div_id_auto_pay_date" class="form-group">
-                                <span class="cobalt-form-error" id="id_auto_pay_date_errors">
-                                    {{ form.auto_pay_date.errors|striptags }}
+                            <div id="div_id_due_date" class="form-group">
+                                <span class="cobalt-form-error" id="id_new_date_errors">
+                                    {{ form.due_date.errors|striptags }}
                                 </span>
-                                {% render_cobalt_datepicker form.auto_pay_date %}
+                                {% render_cobalt_datepicker form.due_date %}
                             </div>
                         </div>
 

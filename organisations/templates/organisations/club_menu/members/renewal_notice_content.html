@@ -44,6 +44,21 @@
         </td>
     </tr>
 
+    {% if renewal_parameters.auto_pay_date and member_details.user_type != 'Unregistered User' %}
+
+        <tr>
+            <td>Auto pay:</td>
+            <td>
+                {% if member_details.allow_auto_pay %}
+                    {{ renewal_parameters.auto_pay_date }}
+                {% else %}
+                    <b>Disabled</b>
+                {% endif %}
+            </td>
+        </tr>
+
+    {% endif %}
+
     {% if renewal_parameters.is_paid %}
         {# --- paid --- #}
 
@@ -63,7 +78,7 @@
         {# --- not paid --- #}
 
         <tr>
-            <td>Due:</td>
+            <td>Lapse Date:</td>
             <td>
                 {% if renewal_parameters.due_date %}
                     {{ renewal_parameters.due_date }}
@@ -72,21 +87,6 @@
                 {% endif %}
             </td>
         </tr>
-
-        {% if renewal_parameters.auto_pay_date and member_details.user_type != 'Unregistered User' %}
-
-            <tr>
-                <td>Auto pay:</td>
-                <td>
-                    {% if member_details.allow_auto_pay %}
-                        {{ renewal_parameters.auto_pay_date }}
-                    {% else %}
-                        <b>Disabled</b>
-                    {% endif %}
-                </td>
-            </tr>
-
-        {% endif %}
 
     {% endif %}
 </table>
@@ -134,5 +134,9 @@
         {% endif %}
 
     {% endif %}
+
+    <p style="font-size: 90%;">Your membership is due for payment by {{ renewal_parameters.auto_pay_date }}.
+        Note that your membership will lapse if it remains unpaid on {{ renewal_parameters.due_date }}.
+    </p>
 
 {% endif %}
