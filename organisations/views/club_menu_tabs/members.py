@@ -1,5 +1,5 @@
 import csv
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import logging
 from itertools import chain
 from threading import Thread
@@ -253,6 +253,95 @@ def add_htmx(request, club, message=None):
             "has_errors": has_errors,
             "has_unregistered": club_has_unregistered_members(club),
             "message": message,
+            "full_membership_mgmt": club.full_club_admin,
+        },
+    )
+
+
+@check_club_menu_access(check_members=True)
+def tools_htmx(request, club):
+    """Tools sub menu"""
+
+    # Check level of access
+    member_admin = rbac_user_has_role(request.user, f"orgs.members.{club.id}.edit")
+
+    has_errors = _check_member_errors(club)
+
+    return render(
+        request,
+        "organisations/club_menu/members/tools_htmx.html",
+        {
+            "club": club,
+            "member_admin": member_admin,
+            "has_errors": has_errors,
+            "full_membership_mgmt": club.full_club_admin,
+        },
+    )
+
+
+@check_club_menu_access(check_members=True)
+def tools_auto_pay_htmx(request, club):
+    """Bulk change auto pay dates"""
+
+    if "auto_date" in request.POST:
+        # Submitted form
+        auto_date_str = request.POST.get("auto_date")
+        auto_date = datetime.strptime(auto_date_str, "%Y-%m-%d")
+
+        # Get the ids of the membership types to include
+        membership_ids_to_update_dict = {
+            key: value
+            for key, value in request.POST.items()
+            if key.startswith("membership_id_")
+        }
+
+        # Convert to list
+        membership_ids_to_update_list = []
+        for key in membership_ids_to_update_dict:
+            membership_id = int(key.replace("membership_id_", ""))
+            membership_ids_to_update_list.append(membership_id)
+
+        # Get the data to update
+        memberships = MemberMembershipType.objects.filter(
+            is_paid=False,
+            membership_type__organisation=club,
+            membership_type_id__in=membership_ids_to_update_list,
+            membership_state__in=[
+                MemberMembershipType.MEMBERSHIP_STATE_CURRENT,
+                MemberMembershipType.MEMBERSHIP_STATE_FUTURE,
+                MemberMembershipType.MEMBERSHIP_STATE_DUE,
+            ],
+        )
+
+        # We don't need to check if the users are set up for auto pay, that is handled in the auto pay script
+
+        # Update the auto pay date
+        count = memberships.update(auto_pay_date=auto_date)
+        return render(
+            request,
+            "organisations/club_menu/members/tools_auto_pay_complete_htmx.html",
+            {"count": count},
+        )
+
+    # Blank form
+    membership_types = MembershipType.objects.filter(
+        organisation=club,
+        does_not_renew=False,
+    )
+
+    # Check level of access
+    member_admin = rbac_user_has_role(request.user, f"orgs.members.{club.id}.edit")
+
+    has_errors = _check_member_errors(club)
+
+    return render(
+        request,
+        "organisations/club_menu/members/tools_auto_pay_htmx.html",
+        {
+            "club": club,
+            "member_admin": member_admin,
+            "has_errors": has_errors,
+            "membership_types": membership_types,
             "full_membership_mgmt": club.full_club_admin,
         },
     )
@@ -1462,10 +1551,14 @@ def add_misc_payment_pay(request, club, member, amount, misc_description):
 def bulk_invite_to_join_htmx(request, club):
     """Invite multiple people to join MyABF"""
 
-    members = MemberMembershipType.objects.filter(
-        membership_type__organisation=club
-    ).filter(membership_state__in=["CUR", "DUE"]).values("system_number")
-    unregistered = User.unreg_objects.filter(system_number__in=members).exclude(deceased=True)
+    members = (
+        MemberMembershipType.objects.filter(membership_type__organisation=club)
+        .filter(membership_state__in=["CUR", "DUE"])
+        .values("system_number")
+    )
+    unregistered = User.unreg_objects.filter(system_number__in=members).exclude(
+        deceased=True
+    )
 
     if "send_invites" in request.POST:
 

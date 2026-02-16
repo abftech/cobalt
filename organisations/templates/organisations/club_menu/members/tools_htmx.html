@@ -1,0 +1,44 @@
+{% load humanize %}
+{% load cobalt_tags %}
+
+<div class="card">
+    <div class="card-header card-header-info">
+        <h2>Members</h2>
+        {% include "organisations/club_menu/members/nav_htmx.html" with selected="tools" %}
+    </div>
+
+    <div class="card-body table-responsive">
+        {% if full_membership_mgmt %}
+            <h2>Tools</h2>
+            <div id="member-tools">
+                <table class="table table-condensed table-hover">
+                    <tr>
+                        <td class="text-left">
+                            <button
+                                class="btn btn-primary btn-sm"
+                                hx-post="{% url "organisations:club_menu_tab_members_tools_auto_pay_htmx" %}"
+                                hx-vars="club_id:{{ club.id }}"
+                                hx-target="#member-tools"
+                            >
+                                Set Auto Pay Date
+                            </button>
+                        </td>
+                        <td class="text-left">Set the Auto Pay date by membership type</td>
+                    </tr>
+                    <tr>
+                        <td class="text-left">
+                            <button class="btn btn-primary btn-sm">
+                                Set Lapse Date
+                            </button>
+                        </td>
+                        <td class="text-left">Set the Lapse date by membership type</td>
+                    </tr>
+                </table>
+
+            </div>
+        {% else %}
+            <h4>There are currently no tools available for simple membership management, only for full membership management.</h4>
+        {% endif %}
+    </div>
+</div>
+

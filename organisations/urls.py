@@ -367,6 +367,16 @@ urlpatterns = [
         name="club_menu_tab_members_add_member_search_htmx",
     ),
     path(
+        "club-menu/tabs/members-tools",
+        organisations.views.club_menu_tabs.members.tools_htmx,
+        name="club_menu_tab_members_tools_htmx",
+    ),
+    path(
+        "club-menu/tabs/members-tools-auto-pay",
+        organisations.views.club_menu_tabs.members.tools_auto_pay_htmx,
+        name="club_menu_tab_members_tools_auto_pay_htmx",
+    ),
+    path(
         "club-menu/tabs/members-reports",
         organisations.views.club_menu_tabs.members.reports_htmx,
         name="club_menu_tab_members_reports_htmx",

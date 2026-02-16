@@ -14,6 +14,7 @@ def release_notes_view(request):
                 "Additional warning when turning on full club management",
                 "Handle spam for Helpdesk module",
                 "Change some uses of Due Date in memberships to Lapse Date for clarity",
+                "Logging for off system backups",
             ],
         },
         {

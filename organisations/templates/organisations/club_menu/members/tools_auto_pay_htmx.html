@@ -1,0 +1,61 @@
+{% load humanize %}
+{% load cobalt_tags %}
+
+<button
+    class="btn btn-outline-secondary btn-sm"
+    hx-post="{% url "organisations:club_menu_tab_members_tools_htmx" %}"
+    hx-target="#id_panel_members"
+><< Back</button>
+
+<h3>Bulk Change Auto Pay Date</h3>
+
+<p><i>This will change the date that auto payment occurs for members who are set up to pay using Bridge Credits.</i></p>
+<form
+    hx-post="{% url 'organisations:club_menu_tab_members_tools_auto_pay_htmx' %}"
+    hx-vars='{ "club_id": {{ club.id }} }'
+    hx-target="#member-tools">
+    <div class="row pb-2">
+        <div class="col-2 justify-content-center align-self-center pt-3">
+            New Auto Pay Date
+        </div>
+        <div class="col-md-2">
+            <div class="form-group">
+                <input type="date"
+                       id="id_auto_date"
+                       name="auto_date"
+                       class="form-control"
+                       min="{% now "Y-m-d" %}"
+                       required="required"
+                >
+            </div>
+        </div>
+    </div>
+    <div class="table-responsive" id="membership_types">
+        <table class="table table-condensed table-hover">
+            <thead>
+                <tr>
+                    <th class="text-left">Membership Type</th>
+                    <th class="text-left">Include</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for membership_type in membership_types %}
+                    <tr>
+                        <td class="text-left">{{ membership_type.name }}</td>
+                        <td class="text-left"><input type="checkbox" checked="checked" name="membership_id_{{ membership_type.id }}" class="membership_types"></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="text-center">
+        <button
+            type="submit"
+            class="btn btn-info"
+        >
+            Save
+        </button>
+    </div>
+
+</form>
