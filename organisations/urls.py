@@ -372,8 +372,8 @@ urlpatterns = [
         name="club_menu_tab_members_tools_htmx",
     ),
     path(
-        "club-menu/tabs/members-tools-auto-pay",
-        organisations.views.club_menu_tabs.members.tools_auto_pay_htmx,
+        "club-menu/tabs/members-tools-auto-pay-or-due-date",
+        organisations.views.club_menu_tabs.members.tools_auto_pay_or_due_date_htmx,
         name="club_menu_tab_members_tools_auto_pay_htmx",
     ),
     path(

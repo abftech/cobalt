@@ -17,7 +17,7 @@
                             <button
                                 class="btn btn-primary btn-sm"
                                 hx-post="{% url "organisations:club_menu_tab_members_tools_auto_pay_htmx" %}"
-                                hx-vars="club_id:{{ club.id }}"
+                                hx-vars='{ club_id:{{ club.id }}, which_date: "auto" }'
                                 hx-target="#member-tools"
                             >
                                 Set Auto Pay Date
@@ -27,7 +27,12 @@
                     </tr>
                     <tr>
                         <td class="text-left">
-                            <button class="btn btn-primary btn-sm">
+                            <button
+                                class="btn btn-primary btn-sm"
+                                hx-post="{% url "organisations:club_menu_tab_members_tools_auto_pay_htmx" %}"
+                                hx-vars='{ club_id:{{ club.id }}, which_date: "due" }'
+                                hx-target="#member-tools"
+                            >
                                 Set Lapse Date
                             </button>
                         </td>

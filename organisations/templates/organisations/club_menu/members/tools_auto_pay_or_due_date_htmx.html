@@ -7,22 +7,38 @@
     hx-target="#id_panel_members"
 ><< Back</button>
 
-<h3>Bulk Change Auto Pay Date</h3>
+<h3>Bulk Change
+    {% if which_date == "auto" %}
+        Auto Pay Date
+    {% elif which_date == "due" %}
+        Lapse Date
+    {% endif %}
+</h3>
 
-<p><i>This will change the date that auto payment occurs for members who are set up to pay using Bridge Credits.</i></p>
+<p><i>
+    {% if which_date == "auto" %}
+        This will change the date that auto payment occurs for members who are set up to pay using Bridge Credits.
+    {% elif which_date == "due" %}
+        This will change the date that memberships lapse if they are unpaid.
+    {% endif %}
+</i></p>
 <form
     hx-post="{% url 'organisations:club_menu_tab_members_tools_auto_pay_htmx' %}"
-    hx-vars='{ "club_id": {{ club.id }} }'
+    hx-vars='{ "club_id": {{ club.id }}, "which_date": "{{ which_date }}" }'
     hx-target="#member-tools">
     <div class="row pb-2">
         <div class="col-2 justify-content-center align-self-center pt-3">
-            New Auto Pay Date
+            {% if which_date == "auto" %}
+                New Auto Pay Date
+            {% elif which_date == "due" %}
+                New Lapse Date
+            {% endif %}
         </div>
         <div class="col-md-2">
             <div class="form-group">
                 <input type="date"
                        id="id_auto_date"
-                       name="auto_date"
+                       name="auto_pay_or_due_date"
                        class="form-control"
                        min="{% now "Y-m-d" %}"
                        required="required"

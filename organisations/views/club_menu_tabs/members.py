@@ -280,13 +280,16 @@ def tools_htmx(request, club):
 
 
 @check_club_menu_access(check_members=True)
-def tools_auto_pay_htmx(request, club):
-    """Bulk change auto pay dates"""
+def tools_auto_pay_or_due_date_htmx(request, club):
+    """Bulk change auto-pay dates or due dates"""
 
-    if "auto_date" in request.POST:
+    # We handle either due date or auto-pay - see which one this is for
+    which_date = request.POST.get("which_date")
+
+    if "auto_pay_or_due_date" in request.POST:
         # Submitted form
-        auto_date_str = request.POST.get("auto_date")
-        auto_date = datetime.strptime(auto_date_str, "%Y-%m-%d")
+        auto_or_due_date_str = request.POST.get("auto_pay_or_due_date")
+        auto_or_due_date = datetime.strptime(auto_or_due_date_str, "%Y-%m-%d")
 
         # Get the ids of the membership types to include
         membership_ids_to_update_dict = {
@@ -313,17 +316,34 @@ def tools_auto_pay_htmx(request, club):
             ],
         )
 
-        # We don't need to check if the users are set up for auto pay, that is handled in the auto pay script
+        # We don't need to check if the users are set up for auto-pay, that is handled in the auto-pay script
 
-        # Update the auto pay date
-        count = memberships.update(auto_pay_date=auto_date)
+        if which_date == "auto":
+            # Update the auto-pay date
+            count = memberships.update(auto_pay_date=auto_or_due_date)
+        elif which_date == "due":
+            # Update the due date
+            count = memberships.update(due_date=auto_or_due_date)
+
+        for x in memberships:
+            print(x.id, x)
+
+        # See who was updated
+        system_numbers = memberships.values_list("system_number", flat=True)
+        members = User.all_objects.filter(system_number__in=system_numbers)
+
         return render(
             request,
-            "organisations/club_menu/members/tools_auto_pay_complete_htmx.html",
-            {"count": count},
+            "organisations/club_menu/members/tools_auto_pay_or_due_date_complete_htmx.html",
+            {
+                "count": count,
+                "which_date": which_date,
+                "members": members,
+                "auto_or_due_date": auto_or_due_date,
+            },
         )
 
-    # Blank form
+    # First time here so show blank form
     membership_types = MembershipType.objects.filter(
         organisation=club,
         does_not_renew=False,
@@ -336,13 +356,14 @@ def tools_auto_pay_htmx(request, club):
 
     return render(
         request,
-        "organisations/club_menu/members/tools_auto_pay_htmx.html",
+        "organisations/club_menu/members/tools_auto_pay_or_due_date_htmx.html",
         {
             "club": club,
             "member_admin": member_admin,
             "has_errors": has_errors,
             "membership_types": membership_types,
             "full_membership_mgmt": club.full_club_admin,
+            "which_date": which_date,
         },
     )
 
