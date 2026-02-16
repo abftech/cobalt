@@ -183,9 +183,9 @@ def tab_settings_htmx(request, club, session):
 
     # Reload sessions tab if we change anything, also send the description and date in case they have changed
     if "save_settings" in request.POST:
-        response[
-            "HX-Trigger"
-        ] = f"""{{"reload_sessions": "true", "new_title": "{session.description}", "new_date": "{session.session_date:%-d %b %Y}" }}"""
+        response["HX-Trigger"] = (
+            f"""{{"reload_sessions": "true", "new_title": "{session.description}", "new_date": "{session.session_date:%-d %b %Y}" }}"""
+        )
 
     return response
 
@@ -430,11 +430,11 @@ def edit_session_entry_extras_htmx(request, club, session, session_entry, messag
     )
 
     # let template know if this is a registered user
-    if type(player) == User:
+    if player.user_type == User.UserType.USER:
         player.is_user = True
 
     # remove IOU and bridge credits unless a registered user
-    if type(player) != User:
+    if player.user_type != User.UserType.USER:
         payment_methods = payment_methods.exclude(
             payment_method__in=["IOU", "Bridge Credits"]
         )
@@ -815,10 +815,14 @@ def toggle_paid_misc_session_payment_htmx(request, club, session, session_entry)
     )
 
     # Check user type and action - shouldn't ever happen
-    if type(user) != User and session_misc_payment.payment_method in [
-        bridge_credits,
-        iou,
-    ]:
+    if (
+        user.user_type == User.UserType.USER
+        and session_misc_payment.payment_method
+        in [
+            bridge_credits,
+            iou,
+        ]
+    ):
         return edit_session_entry_extras_htmx(
             request,
             message=f"Not a registered user. Cannot pay with {session_misc_payment.payment_method}.",
@@ -970,7 +974,9 @@ def process_off_system_payments_htmx(request, club, session):
     ).update(is_paid=True)
 
     # mark misc payments for this session as paid
-    SessionMiscPayment.objects.filter(session_entry__session=session,).exclude(
+    SessionMiscPayment.objects.filter(
+        session_entry__session=session,
+    ).exclude(
         payment_method__in=[bridge_credits, ious]
     ).update(payment_made=True)
 

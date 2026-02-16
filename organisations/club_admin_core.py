@@ -3592,13 +3592,17 @@ def get_members_for_renewal(
     player_dict = {
         player.system_number: {
             "user_type": (
-                f"{GLOBAL_TITLE} User" if type(player) is User else "Unregistered User"
+                f"{GLOBAL_TITLE} User"
+                if player.user_type == User.UserType.USER
+                else "Unregistered User"
             ),
             "user_or_unreg": player,
-            "user_email": player.email if type(player) is User else None,
+            "user_email": (
+                player.email if player.user_type == User.UserType.USER else None
+            ),
             "allow_auto_pay": (
                 (player.system_number not in system_numbers_blocking_auto_pay)
-                and (type(player) is User)
+                and (player.user_type == User.UserType.USER)
             ),
         }
         for player in chain(users, unreg_users)
@@ -3789,7 +3793,7 @@ def get_outstanding_memberships(club, sort_option="name_asc"):
             ),
             "allow_auto_pay": (
                 (player.system_number not in system_numbers_blocking_auto_pay)
-                and (type(player) is User)
+                and (player.user_type == User.UserType.USER)
             ),
         }
         for player in chain(users, unreg)
