@@ -75,6 +75,7 @@ from organisations.club_admin_core import (
     send_renewal_notice,
     _format_renewal_notice_email,
     MEMBERSHIP_STATES_TERMINAL,
+    MEMBERSHIP_STATES_ACTIVE,
 )
 from organisations.decorators import check_club_menu_access
 from organisations.forms import (
@@ -1994,6 +1995,69 @@ def _refresh_renewal_menu(request, club, message=None):
         {
             "club_id": club.id,
             "message": message,
+        },
+    )
+
+
+@check_club_menu_access(check_members=True)
+def club_admin_edit_member_change_current_membership_htmx(request, club):
+    """Hack to allow admins to change the current membership - remove once underlying problem is found"""
+
+    # Get system number from Post
+    system_number = int(request.POST.get("system_number"))
+
+    # Check access for this user
+    member_admin = rbac_user_has_role(request.user, f"orgs.members.{club.id}.edit")
+
+    if not member_admin:
+        return club_admin_edit_member_htmx(
+            request, message="You are not a member admin. Permission denied"
+        )
+
+    member_details = get_member_details(club, system_number)
+
+    # See if we are to perform an update
+    if "update" in request.POST:
+        new_membership_id = request.POST.get("new_latest_membership")
+        new_latest_membership = MemberMembershipType.objects.filter(
+            membership_type__organisation=club,
+            system_number=system_number,
+            pk=new_membership_id,
+        ).first()
+
+        if not new_latest_membership:
+            return club_admin_edit_member_htmx(
+                request, message="No matching membership found"
+            )
+
+        member_details.latest_membership = new_latest_membership
+        member_details.save()
+
+        log_member_change(
+            club,
+            system_number,
+            request.user,
+            f"Changed current members for {system_number} to {new_latest_membership}",
+        )
+
+        return club_admin_edit_member_htmx(request, message="Latest membership updated")
+
+    # Get valid options for drop down
+    member_membership_types = MemberMembershipType.objects.filter(
+        membership_type__organisation=club,
+        system_number=system_number,
+        membership_state__in=MEMBERSHIP_STATES_ACTIVE
+        + [MemberMembershipType.MEMBERSHIP_STATE_FUTURE],
+    )
+
+    return render(
+        request,
+        "organisations/club_menu/members/club_admin_edit_member_change_current_membership_htmx.html",
+        {
+            "club": club,
+            "system_number": system_number,
+            "member_membership_types": member_membership_types,
+            "member_details": member_details,
         },
     )
 

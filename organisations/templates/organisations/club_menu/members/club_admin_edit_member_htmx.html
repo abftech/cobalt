@@ -229,6 +229,18 @@
                                     </button>
                                 {% endif %}
 
+                                <!-- SELECT CURRENT MEMBERSHIP -->
+                                {% if 'edit_current_membership' in valid_actions and member_admin %}
+                                    <button
+                                        class="btn btn-sm btn-primary"
+                                        hx-post="{% url 'organisations:club_admin_edit_member_change_current_membership_htmx' %}"
+                                        hx-vars="club_id:{{ club.id }}, system_number:{{ member_details.system_number }}"
+                                        hx-target="#id_action_pane"
+                                    >
+                                        Change Latest Membership
+                                    </button>
+                                {% endif %}
+
                                 <!-- REINSTATE-->
                                 {% include 'organisations/club_menu/members/club_admin_edit_member_action_button.html' with action_name='reinstate' label='Reinstate previous status' %}
 

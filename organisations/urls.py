@@ -850,6 +850,11 @@ urlpatterns = [
         name="club_admin_edit_member_change_htmx",
     ),
     path(
+        "club-admin/edit-member/change-current-membership/",
+        organisations.views.club_menu_tabs.members.club_admin_edit_member_change_current_membership_htmx,
+        name="club_admin_edit_member_change_current_membership_htmx",
+    ),
+    path(
         "club-admin/edit-member/extend/",
         organisations.views.club_menu_tabs.members.club_admin_edit_member_extend_htmx,
         name="club_admin_edit_member_extend_htmx",

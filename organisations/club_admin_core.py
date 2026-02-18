@@ -1496,6 +1496,18 @@ def get_valid_actions(member_details):
     ):
         valid_actions.append("change_status")
 
+    # Check if editing the current membership is valid - need to have more than one choice
+    if (
+        MemberMembershipType.objects.filter(
+            membership_type__organisation=member_details.club,
+            system_number=member_details.system_number,
+            membership_state__in=MEMBERSHIP_STATES_ACTIVE
+            + [MemberMembershipType.MEMBERSHIP_STATE_FUTURE],
+        ).count()
+        > 1
+    ):
+        valid_actions.append("edit_current_membership")
+
     return valid_actions
 
 
