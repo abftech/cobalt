@@ -76,8 +76,6 @@ def _csv_upload_helper(
     # click the submit button
     manager.selenium_wait_for("upload_pianola").click()
 
-    manager.sleep()
-
     # Wait
     manager.selenium_find_text_on_page("Import Complete")
 
