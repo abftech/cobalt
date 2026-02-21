@@ -326,9 +326,6 @@ def tools_auto_pay_or_due_date_htmx(request, club):
             # Update the due date
             count = memberships.update(due_date=auto_or_due_date)
 
-        for x in memberships:
-            print(x.id, x)
-
         # See who was updated
         system_numbers = memberships.values_list("system_number", flat=True)
         members = User.all_objects.filter(system_number__in=system_numbers)
