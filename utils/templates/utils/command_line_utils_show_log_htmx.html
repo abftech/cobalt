@@ -16,7 +16,6 @@
                  hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
                  hx-vars='"pid":{{ pid }}'
                  hx-target="#id_log_viewer"
-{#            hx-trigger="click"#}
                  hx-trigger="load delay:2s, click"
             >Refresh
         {% else %}
