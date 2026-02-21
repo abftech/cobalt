@@ -185,6 +185,8 @@ protobuf==6.33.0
     #   googleapis-common-protos
     #   grpcio-status
     #   proto-plus
+psutil==7.2.2
+    # via -r requirements.in
 psycopg2-binary==2.9.10
     # via -r requirements.in
 pyasn1==0.6.1

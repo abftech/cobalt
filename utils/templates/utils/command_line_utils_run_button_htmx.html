@@ -1,0 +1,31 @@
+
+<button
+        class="btn btn-sm btn-primary"
+        hx-target="#id_btn_{{ action }}"
+
+
+{#        If process is running don't allow button to be pressed again. Reload every second#}
+        {% if running %}
+
+                disabled
+                hx-trigger="load delay:2s"
+                hx-post="{% url "utils:command_line_utils_check_process_running_button_htmx" %}"
+                hx-vars='"pid": "{{ pid }}", "action": "{{ action }}"'
+
+        {% else %}
+
+{#        if process is not running then show normal button #}
+
+                hx-post="{% url "utils:command_line_utils" %}"
+                hx-vars='"action": "{{ action }}"'
+                hx-include="#input_{{ action }}"
+        {% endif %}
+
+>
+        Run {{ process.pid }}
+</button>
+{% if running %}
+        Running...
+{% else %}
+        Complete
+{% endif %}

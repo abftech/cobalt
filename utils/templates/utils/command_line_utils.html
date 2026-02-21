@@ -1,0 +1,127 @@
+{#------------------------------------------------------------------------#}
+{#                                                                        #}
+{# Run command line utilities from the web page                           #}
+{#                                                                        #}
+{#------------------------------------------------------------------------#}
+{% extends 'base.html' %}
+{% block title %}- IT Command Line{% endblock %}
+{% load cobalt_tags %}
+{% block content %}
+
+    <!-- BREADCRUMBS -->
+
+    <nav aria-label="breadcrumb" role="navigation" xmlns="http://www.w3.org/1999/html">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url "rbac:admin_menu" %}">Admin</a></li>
+            <li class="breadcrumb-item"><a href="{% url "rbac:admin_menu" %}#it">IT</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Command Line Utilities</li>
+        </ol>
+    </nav>
+
+    <div id="ignore_cobalt_save"></div>
+
+    <div class="card">
+        <div class="card-header card-header-primary">
+            <h2>Command Line Utilities</h2>
+            <p>This lets admins run commands that were written to be run by IT admin staff.</p>
+        </div>
+        <div class="card-body table-responsive">
+
+            <div class="row pb-5">
+                <form id='form'
+                      hx-encoding='multipart/form-data'
+                      hx-post='{% url "utils:command_line_upload_csv" %}'
+                      hx-target='#id_csv_message'
+                >
+
+                    <input type='file'
+                           accept=".csv"
+                           name='csv_file'
+                           id="file-upload"
+                           class="form-control"
+                           onchange="$('#upload_button').click();"
+                    >
+
+                    <button id="upload_button"
+                            style="display:none;"
+                            class="btn btn-sm btn-success"
+                    >Upload
+                    </button>
+                </form>
+                <div id="id_csv_message"></div>
+            </div>
+
+            <table class="table table-condensed table-hover">
+                <thead class="text-primary">
+                    <tr>
+                        <th class="text-left">Command</th>
+                        <th class="text-left">Description</th>
+                        <th class="text-left">Arguments</th>
+                        <th class="text-left">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for key, data in commands.items %}
+                        <tr>
+                            <td class="text-left">{{ key }}</td>
+                            <td class="text-left">{{ data.description }}</td>
+                            <td class="text-left">
+                                {% if data.arguments %}
+                                    {{ data.arguments }}: <input type="text" id="id_input_{{ key }}" name="input_{{ key }}" class="file_field">
+                                {% endif %}
+                            </td>
+                            <td class="text-left">
+                                <span id="id_btn_{{ key }}">
+                                    <button
+                                        class="btn btn-sm btn-primary"
+                                        hx-post="{% url "utils:command_line_utils" %}"
+                                        hx-target="#id_btn_{{ key }}"
+                                        hx-vars='"action": "{{ key }}"'
+                                        {% if data.arguments %}hx-include="#id_input_{{ key }}"{% endif %}
+                                    >
+                                        Run
+                                    </button>
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div
+        id="id_log_viewer">
+
+        <div
+            hx-trigger="show_log_data from:body"
+            hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
+            hx-vals='js:{"pid": event.detail.value}'
+            hx-target="#id_log_viewer"
+        >
+
+        </div>
+    </div>
+
+    <script>
+        function show_log_handler(evt){
+                // when the button is executed it returns a trigger that we listen to
+                // to show the log file div
+                // we get passed the pid of the running process
+            if (typeof evt.detail.value !== 'undefined') {
+                htmx.trigger("#id_log_viewer", "show_log_data", {value: evt.detail.value});
+            }
+        }
+
+        function update_filename_handler(evt){
+                // update input fields with the file name once it has been uploaded
+            $(".file_field").val(evt.detail.value);
+        }
+
+        $(document).ready( function () {
+            document.body.addEventListener("show_log", show_log_handler);
+            document.body.addEventListener("set_filename", update_filename_handler);
+        });
+    </script>
+
+{% endblock %}

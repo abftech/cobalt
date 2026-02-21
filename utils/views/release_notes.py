@@ -15,6 +15,7 @@ def release_notes_view(request):
                 "Handle spam for Helpdesk module",
                 "Change some uses of Due Date in memberships to Lapse Date for clarity",
                 "Logging for off system backups",
+                "Ability to run ./manage.py commands from web browser",
             ],
         },
         {

@@ -4,6 +4,12 @@ import utils.views.cobalt_batch
 import utils.views.general
 import utils.views.monitoring
 import utils.views.slugs
+from utils.views.command_line_utils import (
+    command_line_utils,
+    command_line_utils_show_log_htmx,
+    command_line_utils_check_process_running_button_htmx,
+    command_line_upload_csv,
+)
 from utils.views.release_notes import release_notes_view
 
 app_name = "utils"  # pylint: disable=invalid-name
@@ -84,6 +90,26 @@ urlpatterns = [
         "release-notes-view",
         release_notes_view,
         name="release_notes_view",
+    ),
+    path(
+        "command-line-utils",
+        command_line_utils,
+        name="command_line_utils",
+    ),
+    path(
+        "command-line-upload-csv",
+        command_line_upload_csv,
+        name="command_line_upload_csv",
+    ),
+    path(
+        "command-line-utils-show-log-htmx",
+        command_line_utils_show_log_htmx,
+        name="command_line_utils_show_log_htmx",
+    ),
+    path(
+        "command-line-utils-check-process-running-button-htmx",
+        command_line_utils_check_process_running_button_htmx,
+        name="command_line_utils_check_process_running_button_htmx",
     ),
     # path(
     #     "timeout",

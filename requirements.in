@@ -51,6 +51,9 @@ humanize==4.12.3
 # Web requests - used for Masterpoints backend
 requests==2.32.4
 
+# PSUtil is used to run ./manage.py commands through the web page
+psutil==7.2.2
+
 ######################
 # Django packages    #
 ######################

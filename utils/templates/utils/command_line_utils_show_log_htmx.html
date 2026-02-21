@@ -1,0 +1,32 @@
+<div
+    hx-trigger="show_log_data from:body"
+    hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
+    hx-vals='js:{"pid": event.detail.value}'
+    hx-target="#id_log_viewer"
+></div>
+
+
+<h3>Log Output</h3>
+<div class="row">
+    <div class="col-12">
+
+        {% if running %}
+            Process running, auto reloading every 2 seconds...
+            <div class="btn btn-sm btn-info"
+                 hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
+                 hx-vars='"pid":{{ pid }}'
+                 hx-target="#id_log_viewer"
+{#            hx-trigger="click"#}
+                 hx-trigger="load delay:2s, click"
+            >Refresh
+        {% else %}
+            Process Finished
+        {% endif %}
+    </div>
+</div>
+</div>
+<textarea cols="100" rows="30" style="resize: both;">
+    {{ log }}
+</textarea>
+
+</div>
