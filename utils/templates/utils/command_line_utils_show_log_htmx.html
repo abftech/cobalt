@@ -5,12 +5,7 @@
     hx-target="#id_log_viewer"
 ></div>
 
-<div
-    hx-trigger="click"
-    hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
-    hx-vals='{"pid": 1}'
-    hx-target="#id_log_viewer"
->CLICK</div>
+
 
 
 <h3>Log Output</h3>
@@ -27,9 +22,23 @@
             >Refresh
         {% else %}
             Process Finished
+            <div class="row">
+                <div class="col-5">
+                    <div
+                        class="btn btn-info btn-sm"
+                        hx-trigger="click"
+                        hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
+                        hx-vars='{"pid": {{ pid }}'
+                        hx-target="#id_log_viewer"
+                    >Refresh Log</div>
+
+                </div>
+            </div>
         {% endif %}
     </div>
 </div>
+
+
 </div>
 <textarea cols="100" rows="30" style="resize: both;">
     {{ log }}
