@@ -18,18 +18,26 @@ COMMANDS = {
     "auto_pay_batch": {
         "description": "Run the nightly auto pay script for memberships",
         "arguments": None,
+        "update": False,  # Some command lines take a --update parameter
+        "separate_log_file": False,  # Some commands put the logs elsewhere
     },
     "transfer_club_pp_balances": {
         "description": "Transfer club PP balances to Bridge Credits.",
         "arguments": "filename",
+        "update": True,
+        "separate_log_file": True,
     },
     "remove_club_contacts": {
         "description": "Delete contacts for a club.",
         "arguments": "filename",
+        "update": True,
+        "separate_log_file": True,
     },
     "remove_club_members": {
         "description": "Delete memberships for a club.",
         "arguments": "filename",
+        "update": True,
+        "separate_log_file": True,
     },
 }
 

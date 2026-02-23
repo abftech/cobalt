@@ -27,28 +27,32 @@
         </div>
         <div class="card-body table-responsive">
 
-            <div class="row pb-5">
-                <form id='form'
-                      hx-encoding='multipart/form-data'
-                      hx-post='{% url "utils:command_line_upload_csv" %}'
-                      hx-target='#id_csv_message'
-                >
+            <p>For options that need a file as input, upload a file here first.</p>
 
-                    <input type='file'
-                           accept=".csv"
-                           name='csv_file'
-                           id="file-upload"
-                           class="form-control"
-                           onchange="$('#upload_button').click();"
+            <div class="row pb-5">
+                <div class="col-12">
+                    <form id='form'
+                          hx-encoding='multipart/form-data'
+                          hx-post='{% url "utils:command_line_upload_csv" %}'
+                          hx-target='#id_csv_message'
                     >
 
-                    <button id="upload_button"
-                            style="display:none;"
-                            class="btn btn-sm btn-success"
-                    >Upload
-                    </button>
-                </form>
-                <div id="id_csv_message"></div>
+                        <input type='file'
+                               accept=".csv"
+                               name='csv_file'
+                               id="file-upload"
+                               class="form-control"
+                               onchange="$('#upload_button').click();"
+                        >
+
+                        <button id="upload_button"
+                                style="display:none;"
+                                class="btn btn-sm btn-success"
+                        >Upload
+                        </button>
+                    </form>
+                    <div id="id_csv_message"></div>
+                </div>
             </div>
 
             <table class="table table-condensed table-hover">
@@ -57,6 +61,7 @@
                         <th class="text-left">Command</th>
                         <th class="text-left">Description</th>
                         <th class="text-left">Arguments</th>
+                        <th class="text-left">Update</th>
                         <th class="text-left">Action</th>
                     </tr>
                 </thead>
@@ -71,13 +76,18 @@
                                 {% endif %}
                             </td>
                             <td class="text-left">
+                                {% if data.update %}
+                                    <input type="checkbox" name="checkbox_{{ key }}" id="id_checkbox_{{ key }}">
+                                {% endif %}
+                            </td>
+                            <td class="text-left">
                                 <span id="id_btn_{{ key }}">
                                     <button
                                         class="btn btn-sm btn-primary"
                                         hx-post="{% url "utils:command_line_utils" %}"
                                         hx-target="#id_btn_{{ key }}"
                                         hx-vars='"action": "{{ key }}"'
-                                        {% if data.arguments %}hx-include="#id_input_{{ key }}"{% endif %}
+                                        {% if data.arguments %}hx-include="#id_input_{{ key }},#id+checkbox_{{ key }}"{% endif %}
                                     >
                                         Run
                                     </button>
