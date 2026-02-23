@@ -599,7 +599,10 @@ class MemberClubDetails(models.Model):
     system_number = models.IntegerField("%s Number" % GLOBAL_ORG)
 
     latest_membership = models.ForeignKey(
-        MemberMembershipType, on_delete=models.SET_NULL, null=True
+        MemberMembershipType,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="Active Membership",
     )
     """ The most recent MemberMembershipRecord for this member, may not be current """
 

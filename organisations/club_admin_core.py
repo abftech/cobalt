@@ -1497,16 +1497,26 @@ def get_valid_actions(member_details):
         valid_actions.append("change_status")
 
     # Check if editing the current membership is valid - need to have more than one choice
+    # We allow editing if there are more than one current states available (no idea how that happens)
+    # or the latest period is not current and there is at least one period that is current
     if (
         MemberMembershipType.objects.filter(
             membership_type__organisation=member_details.club,
             system_number=member_details.system_number,
-            membership_state__in=MEMBERSHIP_STATES_ACTIVE
-            + [MemberMembershipType.MEMBERSHIP_STATE_FUTURE],
+            membership_state=MemberMembershipType.MEMBERSHIP_STATE_CURRENT,
         ).count()
         > 1
+        or member_details.latest_membership.membership_state
+        != MemberMembershipType.MEMBERSHIP_STATE_CURRENT
+        and MemberMembershipType.objects.filter(
+            membership_type__organisation=member_details.club,
+            system_number=member_details.system_number,
+            membership_state=MemberMembershipType.MEMBERSHIP_STATE_CURRENT,
+        ).count()
+        > 0
     ):
         valid_actions.append("edit_current_membership")
+        print("Added to valid")
 
     return valid_actions
 

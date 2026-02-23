@@ -4,9 +4,9 @@
 {#                                                                        #}
 {#------------------------------------------------------------------------#}
 
-<h3>Edit Current Membership</h3>
+<h3>Edit Active Membership</h3>
 
-<p>This allows you to change the currently linked membership for this user. This should only be required in rare cases.
+<p>This allows you to change the active membership for this user. This should only be required in rare cases.
     Do not change this unless you are sure of what you are doing.</p>
 
 <form
@@ -17,7 +17,7 @@
     <div class="row">
 
         <p class="font-weight-bold pt-2" style="font-size: larger">
-            Latest Membership:&nbsp; &nbsp;
+            Active Membership:&nbsp; &nbsp;
         </p>
         <select class="selectpicker" data-style="btn btn-primary btn-round btn-sm" data-width="auto" id="id_new_latest_membership" name="new_latest_membership">
             {% for member_membership_type in member_membership_types %}

@@ -2043,8 +2043,7 @@ def club_admin_edit_member_change_current_membership_htmx(request, club):
     member_membership_types = MemberMembershipType.objects.filter(
         membership_type__organisation=club,
         system_number=system_number,
-        membership_state__in=MEMBERSHIP_STATES_ACTIVE
-        + [MemberMembershipType.MEMBERSHIP_STATE_FUTURE],
+        membership_state=MemberMembershipType.MEMBERSHIP_STATE_CURRENT,
     )
 
     return render(
