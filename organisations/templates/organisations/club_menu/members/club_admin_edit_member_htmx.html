@@ -230,7 +230,8 @@
                                 {% endif %}
 
                                 <!-- SELECT CURRENT MEMBERSHIP -->
-                                {% if 'edit_current_membership' in valid_actions and member_admin %}
+                            <!-- FOR NOW THIS IS ONLY AVAILABLE TO ADMINS -->
+                                {% if 'edit_current_membership' in valid_actions and member_admin  and request.user.is_superuser %}
                                     <button
                                         class="btn btn-sm btn-primary"
                                         hx-post="{% url 'organisations:club_admin_edit_member_change_current_membership_htmx' %}"

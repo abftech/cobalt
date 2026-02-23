@@ -16,6 +16,7 @@ def release_notes_view(request):
                 "Change some uses of Due Date in memberships to Lapse Date for clarity",
                 "Logging for off system backups",
                 "Ability to run ./manage.py commands from web browser",
+                "Ability to edit active memberships",
             ],
         },
         {
