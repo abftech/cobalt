@@ -1516,7 +1516,6 @@ def get_valid_actions(member_details):
         > 0
     ):
         valid_actions.append("edit_current_membership")
-        print("Added to valid")
 
     return valid_actions
 
