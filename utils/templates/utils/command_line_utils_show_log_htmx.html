@@ -3,6 +3,13 @@
     hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
     hx-vals='js:{"pid": event.detail.value}'
     hx-target="#id_log_viewer"
+></div>
+
+<div
+    hx-trigger="click"
+    hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
+    hx-vals='{"pid": 1}'
+    hx-target="#id_log_viewer"
 >CLICK</div>
 
 
