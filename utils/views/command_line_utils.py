@@ -1,3 +1,4 @@
+import logging
 import os
 import pathlib
 import subprocess
@@ -10,6 +11,8 @@ from django.utils.timezone import now
 from psutil import NoSuchProcess
 
 from rbac.decorators import rbac_check_role
+
+logger = logging.getLogger("cobalt")
 
 COMMANDS = {
     "auto_pay_batch": {
@@ -43,6 +46,8 @@ def _check_process_is_running(pid):
     # See if still running
     running = process.status() == psutil.STATUS_RUNNING
 
+    logger.info(f"Checking for process {pid} running. {running}")
+
     # Can get zombie process for some reason
     if process.status() == psutil.STATUS_ZOMBIE:
         process.terminate()
@@ -56,7 +61,7 @@ def command_line_utils(request):
     # Get requested action, will be None first time we are called
     action = request.POST.get("action")
 
-    # Validate to ensure only premitted commands can be run
+    # Validate to ensure only permitted commands can be run
     if action and action not in COMMANDS:
         return HttpResponse("Invalid action")
 
@@ -67,10 +72,6 @@ def command_line_utils(request):
             identifier = f"input_{action}"
             filename = request.POST.get(identifier)
             cmd = f"{cmd} /tmp/{filename}"
-            print(cmd)
-            print(filename)
-            print(identifier)
-            print(request.POST)
 
         # start process externally
         process = subprocess.Popen(
@@ -81,6 +82,8 @@ def command_line_utils(request):
             stderr=None,
             close_fds=True,
         )
+
+        logger.info(f"Started process: ./manage.py {cmd}")
 
         # Build response - we return a button
         response = render(
@@ -108,6 +111,9 @@ def command_line_utils_show_log_htmx(request):
 
     log = pathlib.Path("/tmp/out.txt").read_text()
 
+    logger.info(f"Reading logfile for {pid}")
+    logger.info(log)
+
     return render(
         request,
         "utils/command_line_utils_show_log_htmx.html",
@@ -124,6 +130,8 @@ def command_line_utils_check_process_running_button_htmx(request):
     action = request.POST.get("action")
 
     running = _check_process_is_running(pid)
+
+    logger.info(f"Checking for button - {running}")
 
     return render(
         request,

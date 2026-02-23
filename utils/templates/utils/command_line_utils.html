@@ -108,8 +108,10 @@
                 // when the button is executed it returns a trigger that we listen to
                 // to show the log file div
                 // we get passed the pid of the running process
+            console.log("Inside show log handler");
             if (typeof evt.detail.value !== 'undefined') {
                 htmx.trigger("#id_log_viewer", "show_log_data", {value: evt.detail.value});
+                console.log("Triggering show_log_data on id_log_viewer");
             }
         }
 
