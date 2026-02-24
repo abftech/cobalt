@@ -69,18 +69,17 @@ def command_line_utils(request):
     # Get requested action, will be None first time we are called
     action = request.POST.get("action")
 
-    print(request.POST)
-
     # Validate to ensure only permitted commands can be run
     if action and action not in COMMANDS:
         return HttpResponse("Invalid action")
+
+    identifier = f"input_{action}"
+    filename = request.POST.get(identifier)
 
     # If we have an action then this is a request to run something
     if action:
         cmd = action
         if COMMANDS[action]["arguments"]:
-            identifier = f"input_{action}"
-            filename = request.POST.get(identifier)
             cmd = f"{cmd} /tmp/{filename}"
 
         if (
@@ -108,9 +107,18 @@ def command_line_utils(request):
             {"pid": process.pid, "action": action, "running": True},
         )
 
-        # Trigger showing the log file on the web page
-        response["HX-Trigger"] = f"""{{"show_log": {process.pid}}}"""
+        # Alternate log file
+        if COMMANDS[action]["separate_log_file"] and filename:
+            alternate_logfile = f"/tmp/{filename[:-4]}-log{filename[-4:]}"
+        else:
+            alternate_logfile = None
 
+        # Trigger showing the log file on the web page
+        response["HX-Trigger"] = (
+            f"""{{"show_log": {{"pid":{process.pid}, "alternate_log": "{alternate_logfile}" }} }}"""
+        )
+
+        print(response["HX-Trigger"])
         return response
 
     # Blank page first time called
@@ -122,13 +130,15 @@ def command_line_utils_show_log_htmx(request):
     """Show the log file for running process"""
 
     pid = int(request.POST.get("pid"))
+    alternate_logfile = request.POST.get("alternate_logfile")
 
+    log = alternate_logfile or "/tmp/out.txt"
     running = _check_process_is_running(pid)
 
-    log = pathlib.Path("/tmp/out.txt").read_text()
+    log = pathlib.Path(log).read_text()
 
     logger.info(f"Reading logfile for {pid}")
-    logger.info(log)
+    # logger.info(log)
 
     return render(
         request,

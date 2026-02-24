@@ -5,9 +5,6 @@
     hx-target="#id_log_viewer"
 ></div>
 
-
-
-
 <h3>Log Output</h3>
 <div class="row">
     <div class="col-12">
@@ -16,7 +13,7 @@
             Process running, auto reloading every 2 seconds...
             <div class="btn btn-sm btn-info"
                  hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
-                 hx-vars='"pid":{{ pid }}'
+                 hx-vars='"pid":{{ pid }},"alternate_logfile":"{{ alternate_logfile }}"'
                  hx-target="#id_log_viewer"
                  hx-trigger="load delay:2s, click"
             >Refresh
@@ -24,13 +21,23 @@
             Process Finished
             <div class="row">
                 <div class="col-5">
-                    <div
+                    <button
                         class="btn btn-info btn-sm"
                         hx-trigger="click"
                         hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
-                        hx-vars='{"pid": {{ pid }}'
+                        hx-vars='"pid":{{ pid }},"alternate_logfile":"{{ alternate_logfile }}"'
                         hx-target="#id_log_viewer"
-                    >Refresh Log</div>
+                    >Refresh Log</button>
+
+                </div>
+                <div class="col-5">
+                    <div
+                        class="btn btn-danger btn-sm"
+                        hx-trigger="click"
+                        hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
+                        hx-vars='"pid":{{ pid }},"alternate_logfile":"{{ alternate_logfile }}"'
+                        hx-target="#id_log_viewer"
+                    >Alternate Log</div>
 
                 </div>
             </div>
