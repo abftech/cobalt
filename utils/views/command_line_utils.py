@@ -69,6 +69,8 @@ def command_line_utils(request):
     # Get requested action, will be None first time we are called
     action = request.POST.get("action")
 
+    print(request.POST)
+
     # Validate to ensure only permitted commands can be run
     if action and action not in COMMANDS:
         return HttpResponse("Invalid action")
@@ -80,6 +82,12 @@ def command_line_utils(request):
             identifier = f"input_{action}"
             filename = request.POST.get(identifier)
             cmd = f"{cmd} /tmp/{filename}"
+
+        if (
+            COMMANDS[action]["update"]
+            and request.POST.get(f"checkbox_{action}") == "on"
+        ):
+            cmd = f"{cmd} --update"
 
         # start process externally
         process = subprocess.Popen(

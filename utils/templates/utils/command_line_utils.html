@@ -87,7 +87,7 @@
                                         hx-post="{% url "utils:command_line_utils" %}"
                                         hx-target="#id_btn_{{ key }}"
                                         hx-vars='"action": "{{ key }}"'
-                                        {% if data.arguments %}hx-include="#id_input_{{ key }},#id+checkbox_{{ key }}"{% endif %}
+                                        {% if data.arguments %}hx-include="#id_input_{{ key }},#id_checkbox_{{ key }}"{% endif %}
                                     >
                                         Run
                                     </button>
