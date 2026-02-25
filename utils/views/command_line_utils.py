@@ -140,15 +140,15 @@ def command_line_utils_show_log_htmx(request):
     print(alternate_logfile)
 
     if alternate_logfile:
-        log = alternate_logfile
+        log_path = alternate_logfile
     else:
-        log = "/tmp/out.txt"
+        log_path = "/tmp/out.txt"
 
     running = _check_process_is_running(pid)
 
-    print(log)
+    print(log_path)
 
-    log = pathlib.Path(log).read_text()
+    log = pathlib.Path(log_path).read_text()
 
     logger.info(f"Reading logfile for {pid}")
     # logger.info(log)

@@ -1,7 +1,7 @@
 <div
     hx-trigger="show_log_data from:body, click"
     hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
-    hx-vals='js:{"pid": event.detail.value}'
+    hx-vals='js:{"pid": event.detail.pid}'
     hx-target="#id_log_viewer"
 ></div>
 
