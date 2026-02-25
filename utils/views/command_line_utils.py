@@ -21,6 +21,12 @@ COMMANDS = {
         "update": False,  # Some command lines take a --update parameter
         "separate_log_file": False,  # Some commands put the logs elsewhere
     },
+    "update_membership_status": {
+        "description": "Run the nightly membership status script",
+        "arguments": None,
+        "update": False,
+        "separate_log_file": False,
+    },
     "transfer_club_pp_balances": {
         "description": "Transfer club PP balances to Bridge Credits.",
         "arguments": "filename",
@@ -131,27 +137,27 @@ def command_line_utils_show_log_htmx(request):
     (not STDOUT) so we allow a parameter to be passed that specifies that location."""
 
     pid = int(request.POST.get("pid"))
+    # App specific log file rather than STDOUT
     alternate_logfile = request.POST.get("alternate_logfile")
+    # Whether to use STDOUT or the alternative log file
+    use_alternate = request.POST.get("use_alternate")
     if alternate_logfile == "":
         alternate_logfile = None
 
-    print(request.POST)
-    print("ok")
-    print(alternate_logfile)
-
-    if alternate_logfile:
-        log_path = alternate_logfile
+    if use_alternate:
+        log_path = alternate_logfile or "/tmp/out.txt"
     else:
         log_path = "/tmp/out.txt"
 
     running = _check_process_is_running(pid)
 
-    print(log_path)
-
-    log = pathlib.Path(log_path).read_text()
+    try:
+        log = pathlib.Path(log_path).read_text()
+    except FileNotFoundError:
+        # Can be too fast for the log file to exist
+        log = "Log file not ready yet, press refresh"
 
     logger.info(f"Reading logfile for {pid}")
-    # logger.info(log)
 
     return render(
         request,

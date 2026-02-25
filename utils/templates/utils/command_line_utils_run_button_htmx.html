@@ -1,5 +1,6 @@
 
 <button
+        id="id_btn_btn_{{ action }}"
         class="btn btn-sm btn-primary"
         hx-target="#id_btn_{{ action }}"
 
@@ -16,13 +17,19 @@
 
 {#        if process is not running then show normal button #}
 
+                id="id_btn_btn_{{ action }}"
+                class="btn btn-sm btn-primary entry_field"
                 hx-post="{% url "utils:command_line_utils" %}"
+                hx-target="#id_btn_{{ action }}"
                 hx-vars='"action": "{{ action }}"'
-                hx-include="#input_{{ action }}"
+                hx-include="#id_input_{{ action }},#id_checkbox_{{ action }}"
+
+                >
+                        Run
+                </button>
+
         {% endif %}
 
->
-        Run {{ process.pid }}
 </button>
 {% if running %}
         Running...

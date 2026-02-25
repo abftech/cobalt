@@ -1,7 +1,7 @@
 <div
     hx-trigger="show_log_data from:body, click"
     hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
-    hx-vals='js:{"pid": event.detail.pid}'
+    hx-vals='js:{"pid": event.detail.pid, "alternate_logfile": event.detail.alternate_logfile}'
     hx-target="#id_log_viewer"
 ></div>
 
@@ -29,15 +29,17 @@
                     >Refresh Log</button>
 
                 </div>
-                <div class="col-5">
-                    <button
-                        class="btn btn-danger btn-sm"
-                        hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
-                        hx-vars='"pid":{{ pid }},"alternate_logfile":"{{ alternate_logfile }}"'
-                        hx-target="#id_log_viewer"
-                    >Alternate Log</button>
+                {% if alternate_logfile != "None" %}
+                    <div class="col-5">
+                        <button
+                            class="btn btn-danger btn-sm"
+                            hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
+                            hx-vars='"pid":{{ pid }},"alternate_logfile":"{{ alternate_logfile }}","use_alternate":1'
+                            hx-target="#id_log_viewer"
+                        >Alternate Log</button>
 
-                </div>
+                    </div>
+                {% endif %}
             </div>
         {% endif %}
     </div>
@@ -45,7 +47,7 @@
 
 
 </div>
-<textarea cols="100" rows="30" style="resize: both;">
+<textarea cols="100" rows="30" style="resize: both; font-family: 'Courier New'; font-size: small">
     {{ log }}
 </textarea>
 
