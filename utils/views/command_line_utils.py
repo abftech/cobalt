@@ -115,7 +115,7 @@ def command_line_utils(request):
 
         # Trigger showing the log file on the web page
         response["HX-Trigger"] = (
-            f"""{{"show_log": {{"pid":{process.pid}, "alternate_log": "{alternate_logfile}" }} }}"""
+            f"""{{"show_log": {{"pid":{process.pid}, "alternate_logfile": "{alternate_logfile}" }} }}"""
         )
 
         print(response["HX-Trigger"])
@@ -127,13 +127,26 @@ def command_line_utils(request):
 
 @rbac_check_role("system.admin.edit")
 def command_line_utils_show_log_htmx(request):
-    """Show the log file for running process"""
+    """Show the log file for running process. Some commands write their log to a different location
+    (not STDOUT) so we allow a parameter to be passed that specifies that location."""
 
     pid = int(request.POST.get("pid"))
     alternate_logfile = request.POST.get("alternate_logfile")
+    if alternate_logfile == "":
+        alternate_logfile = None
 
-    log = alternate_logfile or "/tmp/out.txt"
+    print(request.POST)
+    print("ok")
+    print(alternate_logfile)
+
+    if alternate_logfile:
+        log = alternate_logfile
+    else:
+        log = "/tmp/out.txt"
+
     running = _check_process_is_running(pid)
+
+    print(log)
 
     log = pathlib.Path(log).read_text()
 
@@ -143,7 +156,12 @@ def command_line_utils_show_log_htmx(request):
     return render(
         request,
         "utils/command_line_utils_show_log_htmx.html",
-        {"log": log, "running": running, "pid": pid},
+        {
+            "log": log,
+            "running": running,
+            "pid": pid,
+            "alternate_logfile": alternate_logfile,
+        },
     )
 
 

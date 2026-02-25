@@ -2037,7 +2037,7 @@ def club_admin_edit_member_change_current_membership_htmx(request, club):
             f"Changed current members for {system_number} to {new_latest_membership}",
         )
 
-        return club_admin_edit_member_htmx(request, message="Latest membership updated")
+        return club_admin_edit_member_htmx(request, message="Active membership updated")
 
     # Get valid options for drop down
     member_membership_types = MemberMembershipType.objects.filter(

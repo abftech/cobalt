@@ -23,7 +23,6 @@
                 <div class="col-5">
                     <button
                         class="btn btn-info btn-sm"
-                        hx-trigger="click"
                         hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
                         hx-vars='"pid":{{ pid }},"alternate_logfile":"{{ alternate_logfile }}"'
                         hx-target="#id_log_viewer"
@@ -31,13 +30,12 @@
 
                 </div>
                 <div class="col-5">
-                    <div
+                    <button
                         class="btn btn-danger btn-sm"
-                        hx-trigger="click"
                         hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
                         hx-vars='"pid":{{ pid }},"alternate_logfile":"{{ alternate_logfile }}"'
                         hx-target="#id_log_viewer"
-                    >Alternate Log</div>
+                    >Alternate Log</button>
 
                 </div>
             </div>
