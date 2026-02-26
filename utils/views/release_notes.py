@@ -17,7 +17,7 @@ def release_notes_view(request):
                 "Logging for off system backups",
                 "Ability to run ./manage.py commands from web browser",
                 "Ability to edit active memberships",
-                "add counter to event summary admin screen",
+                "Add counter to event summary admin screen",
             ],
         },
         {
