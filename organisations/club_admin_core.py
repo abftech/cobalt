@@ -3809,7 +3809,7 @@ def get_outstanding_memberships(club, sort_option="name_asc"):
             "user_or_unreg": player,
             "user_type": (
                 f"{GLOBAL_TITLE} User"
-                if isinstance(player, User)
+                if player.user_type == User.UserType.USER
                 else "Unregistered User"
             ),
             "allow_auto_pay": (
