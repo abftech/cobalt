@@ -18,26 +18,31 @@
                  hx-trigger="load delay:2s, click"
             >Refresh
         {% else %}
-            Process Finished
-            <div class="row">
-                <div class="col-5">
-                    <button
-                        class="btn btn-info btn-sm"
-                        hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
-                        hx-vars='"pid":{{ pid }},"alternate_logfile":"{{ alternate_logfile }}"'
-                        hx-target="#id_log_viewer"
-                    >Refresh Log</button>
+            <span _="on load wait 5s then transition opacity to 0 then remove me">
+                Process Finished
+            </span>
+            <div class="row ml-5">
 
-                </div>
+
+                <button
+                    class="btn btn-info btn-sm ml-5"
+                    hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
+                    hx-vars='"pid":{{ pid }},"alternate_logfile":"{{ alternate_logfile }}"'
+                    hx-target="#id_log_viewer"
+                >Refresh Log</button>
+
                 {% if alternate_logfile != "None" %}
-                    <div class="col-5">
-                        <button
-                            class="btn btn-danger btn-sm"
-                            hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
-                            hx-vars='"pid":{{ pid }},"alternate_logfile":"{{ alternate_logfile }}","use_alternate":1'
-                            hx-target="#id_log_viewer"
-                        >Alternate Log</button>
-
+                    <button
+                        class="btn btn-warning btn-sm ml-5"
+                        hx-post="{% url "utils:command_line_utils_show_log_htmx" %}"
+                        hx-vars='"pid":{{ pid }},"alternate_logfile":"{{ alternate_logfile }}","use_alternate":1'
+                        hx-target="#id_log_viewer"
+                    >Alternate Log</button>
+                    <a
+                        class="btn btn-danger btn-sm ml-5"
+                        href="{% url "utils:command_line_utils_download_csv_log" alternate_logfile=file_no_path %}"
+                        target="_blank"
+                    >CSV Download</a>
                     </div>
                 {% endif %}
             </div>

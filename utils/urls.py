@@ -9,6 +9,7 @@ from utils.views.command_line_utils import (
     command_line_utils_show_log_htmx,
     command_line_utils_check_process_running_button_htmx,
     command_line_upload_csv,
+    command_line_utils_download_csv_log,
 )
 from utils.views.release_notes import release_notes_view
 
@@ -111,9 +112,9 @@ urlpatterns = [
         command_line_utils_check_process_running_button_htmx,
         name="command_line_utils_check_process_running_button_htmx",
     ),
-    # path(
-    #     "timeout",
-    #     utils.views.general.timeout,
-    #     name="timeout",
-    # ),
+    path(
+        "command-line-utils-download-csv-log/<str:alternate_logfile>/",
+        command_line_utils_download_csv_log,
+        name="command_line_utils_download_csv_log",
+    ),
 ]

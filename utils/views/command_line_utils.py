@@ -1,8 +1,10 @@
+import csv
 import logging
 import os
 import pathlib
 import subprocess
 import uuid
+from os.path import basename
 
 import psutil
 from django.http import HttpResponse
@@ -124,7 +126,6 @@ def command_line_utils(request):
             f"""{{"show_log": {{"pid":{process.pid}, "alternate_logfile": "{alternate_logfile}" }} }}"""
         )
 
-        print(response["HX-Trigger"])
         return response
 
     # Blank page first time called
@@ -159,6 +160,8 @@ def command_line_utils_show_log_htmx(request):
 
     logger.info(f"Reading logfile for {pid}")
 
+    file_no_path = basename(alternate_logfile)
+
     return render(
         request,
         "utils/command_line_utils_show_log_htmx.html",
@@ -167,6 +170,7 @@ def command_line_utils_show_log_htmx(request):
             "running": running,
             "pid": pid,
             "alternate_logfile": alternate_logfile,
+            "file_no_path": file_no_path,
         },
     )
 
@@ -216,3 +220,17 @@ def command_line_upload_csv(request):
     response["HX-Trigger"] = f"""{{"set_filename": "{filename}"}}"""
 
     return response
+
+
+@rbac_check_role("system.admin.edit")
+def command_line_utils_download_csv_log(request, alternate_logfile):
+    """from the button to download the CSV of the alternate log file"""
+
+    # Validate - nothing in tmp is critical, but don't allow downloading anything else
+    if alternate_logfile.find("..") > 0:
+        return HttpResponse("Error")
+
+    with open(f"/tmp/{alternate_logfile}", "r") as f:
+        response = HttpResponse(f.read(), content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{alternate_logfile}"'
+        return response
