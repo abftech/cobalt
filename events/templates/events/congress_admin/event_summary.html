@@ -27,6 +27,13 @@
                     <div class="card">
                         <div class="card-header card-header-info">
                             <h2>{{ event.event_name }}</h2>
+
+                            <h4>{{ event_entries|length }} entr{{ event_entries|length|pluralize:"y,ies" }}
+                                {% if event.max_entries %}
+                                    out of a maximum of {{ event.max_entries }}
+                                {% endif %}
+                            </h4>
+
                             <div class="float-left">
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-primary dropdown-toggle btn-round" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
