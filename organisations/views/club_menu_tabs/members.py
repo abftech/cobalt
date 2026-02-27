@@ -305,16 +305,21 @@ def tools_auto_pay_or_due_date_htmx(request, club):
             membership_id = int(key.replace("membership_id_", ""))
             membership_ids_to_update_list.append(membership_id)
 
+        # Build states to include - always include FUTURE and DUE; only include CURRENT if checkbox ticked
+        include_current_periods = "include_current_periods" in request.POST
+        membership_states = [
+            MemberMembershipType.MEMBERSHIP_STATE_FUTURE,
+            MemberMembershipType.MEMBERSHIP_STATE_DUE,
+        ]
+        if include_current_periods:
+            membership_states.append(MemberMembershipType.MEMBERSHIP_STATE_CURRENT)
+
         # Get the data to update
         memberships = MemberMembershipType.objects.filter(
             is_paid=False,
             membership_type__organisation=club,
             membership_type_id__in=membership_ids_to_update_list,
-            membership_state__in=[
-                MemberMembershipType.MEMBERSHIP_STATE_CURRENT,
-                MemberMembershipType.MEMBERSHIP_STATE_FUTURE,
-                MemberMembershipType.MEMBERSHIP_STATE_DUE,
-            ],
+            membership_state__in=membership_states,
         )
 
         # We don't need to check if the users are set up for auto-pay, that is handled in the auto-pay script
