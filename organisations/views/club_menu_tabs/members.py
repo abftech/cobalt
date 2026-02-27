@@ -2421,6 +2421,7 @@ def club_admin_edit_member_extend_htmx(request, club):
         default_due_date = club.next_renewal_date + timedelta(
             days=member_details.latest_membership.membership_type.grace_period_days
         )
+        default_auto_pay_date = max(date.today(), default_due_date - timedelta(days=7))
 
         initial_data = {
             "new_end_date": club.next_end_date.strftime("%Y-%m-%d"),
@@ -2430,7 +2431,7 @@ def club_admin_edit_member_extend_htmx(request, club):
                 else 0
             ),
             "due_date": default_due_date.strftime("%Y-%m-%d"),
-            "auto_pay_date": default_due_date.strftime("%Y-%m-%d"),
+            "auto_pay_date": default_auto_pay_date.strftime("%Y-%m-%d"),
             "payment_method": -1,
             "club_template": -1,
             "send_notice": True,
@@ -2979,6 +2980,9 @@ def bulk_renewals_htmx(request, club):
             default_due_date = default_start_date + timedelta(
                 days=membership_type.grace_period_days
             )
+            default_auto_pay_date = max(
+                date.today(), default_due_date - timedelta(days=7)
+            )
 
             defaults = {
                 "selected": False,
@@ -2986,7 +2990,7 @@ def bulk_renewals_htmx(request, club):
                 "membership_type_name": membership_type.name,
                 "fee": membership_type.annual_fee if membership_type.annual_fee else 0,
                 "due_date": default_due_date,
-                "auto_pay_date": default_due_date,
+                "auto_pay_date": default_auto_pay_date,
                 "start_date": default_start_date,
                 "end_date": default_end_date,
             }
