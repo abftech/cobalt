@@ -53,4 +53,56 @@
                 {% endfor %}
             </div>
 
+    <!-- CALENDAR DOWNLOAD CARD (only shown when event exists) -->
+            {% if event %}
+                <div class="card mx-5 mt-5 col-md-6 mx-auto">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="mb-0">Add to Calendar: {{ event.event_name }}</h4>
+                    </div>
+                    <div class="card-body">
+
+                        <a href="{{ ics_url }}" class="btn btn-primary mb-3"
+                           data-toggle="tooltip" data-placement="right"
+                           title="Works with Apple Calendar, Outlook, Google Calendar, Thunderbird, and most other calendar apps">
+                            <i class="material-icons" style="vertical-align:middle;">download</i>
+                            {% if calendar_sessions|length == 1 %}Download (ICS){% else %}Download All Sessions (ICS){% endif %}
+                        </a>
+
+                        {% if calendar_sessions %}
+                            <h4 class="mt-2 mb-3">Links for Specific Platforms</h4>
+                        {% endif %}
+
+                        {% if calendar_sessions %}
+                            {% for cal_session in calendar_sessions %}
+                                <div class="mb-2">
+                                    <strong>{{ cal_session.label }}</strong><br>
+                                    <a href="{{ cal_session.google_url }}" target="_blank" rel="noopener noreferrer"
+                                       class="btn btn-sm mr-2 mt-1" title="Add to Google Calendar"
+                                       style="color: #4285F4; border: 1px solid #4285F4; background-color: #e8f0fe;">
+                                        <i class="fab fa-google fa-lg"></i>
+                                    </a>
+                                    <a href="{{ cal_session.outlook_url }}" target="_blank" rel="noopener noreferrer"
+                                       class="btn btn-sm mr-2 mt-1" title="Add to Outlook (personal)"
+                                       style="color: #00A4EF; border: 1px solid #00A4EF; background-color: #e3f4fd;">
+                                        <i class="fab fa-microsoft fa-lg"></i>
+                                    </a>
+                                    <a href="{{ cal_session.office365_url }}" target="_blank" rel="noopener noreferrer"
+                                       class="btn btn-sm mt-1" title="Add to Office 365 (work)"
+                                       style="color: #0078D4; border: 1px solid #0078D4; background-color: #deedf9;">
+                                        <i class="fab fa-microsoft fa-lg"></i>
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+
+                    </div>
+                </div>
+            {% endif %}
+
+{% endblock %}
+
+{% block js %}
+    <script>
+        $('[data-toggle="tooltip"]').tooltip();
+    </script>
 {% endblock %}

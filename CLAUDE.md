@@ -125,6 +125,14 @@ Code is formatted and validated automatically via **git pre-commit hooks**. Do n
 
 Run `pre-commit install` after cloning. To run hooks manually: `pre-commit run --all-files`.
 
+### Python version
+
+The minimum supported Python version is **3.13**. Write code that targets 3.13+ features freely — do not add compatibility shims for older versions.
+
+### String formatting
+
+Always use **f-strings** for string interpolation. Do not use `%` formatting or `str.format()`. Do not concatenate strings with `+` when an f-string can be used instead.
+
 ---
 
 ## Testing
