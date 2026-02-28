@@ -87,3 +87,30 @@ class Error500(models.Model):
 
     def __str__(self):
         return self.summary
+
+
+class BatchStatus(models.Model):
+    """Record the outcome of each management command (batch job) run."""
+
+    STATUS_STARTED = "Started"
+    STATUS_SUCCESS = "Success"
+    STATUS_FAILED = "Failed"
+    STATUS_CHOICES = [
+        (STATUS_STARTED, "Running"),
+        (STATUS_SUCCESS, "Completed successfully"),
+        (STATUS_FAILED, "Failed"),
+    ]
+
+    command = models.CharField("Command", max_length=100)
+    run_date = models.DateTimeField("Run Date", default=timezone.now)
+    status = models.CharField(
+        "Status", max_length=10, choices=STATUS_CHOICES, default=STATUS_STARTED
+    )
+    summary = models.TextField("Summary", blank=True)
+
+    class Meta:
+        ordering = ["-run_date"]
+        verbose_name_plural = "Batch statuses"
+
+    def __str__(self):
+        return f"{self.command} - {self.run_date:%Y-%m-%d %H:%M} - {self.status}"

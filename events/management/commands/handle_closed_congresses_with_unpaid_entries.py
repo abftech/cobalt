@@ -4,7 +4,9 @@ Daily task to inform conveners about congresses which have finished and there ar
 also fixes congresses if they qualify.
 
 """
+
 import datetime
+import logging
 
 from dateutil.relativedelta import relativedelta
 from django.core.management.base import BaseCommand
@@ -19,6 +21,9 @@ from events.views.core import (
 
 # Set thresholds
 from notifications.views.core import send_cobalt_email_with_template
+from utils.models import BatchStatus
+
+logger = logging.getLogger("cobalt")
 
 FIRST_WARNING_DAYS = 2
 AUTO_FIX_UNLESS_OVERRIDDEN_DAYS = 7
@@ -170,47 +175,84 @@ def fix_congress_after_extension(congress, system_account):
 class Command(BaseCommand):
     def handle(self, *args, **options):
 
-        self.stdout.write(
-            self.style.SUCCESS("Handling closed congresses with problems...")
+        logger.info("Handling closed congresses with problems...")
+
+        batch = BatchStatus.objects.create(
+            command="handle_closed_congresses_with_unpaid_entries"
         )
+        summary_lines = []
 
-        congresses = get_completed_congresses_with_money_due()
+        try:
+            congresses = get_completed_congresses_with_money_due()
 
-        self.stdout.write(
-            self.style.SUCCESS(f"Found {len(congresses)} congress(es) to investigate")
-        )
+            logger.info(f"Found {len(congresses)} congress(es) to investigate")
+            summary_lines.append(
+                f"Found {len(congresses)} congress(es) with outstanding payments."
+            )
 
-        system_account = User.objects.get(pk=ABF_USER)
+            system_account = User.objects.get(pk=ABF_USER)
 
-        # Go through congresses
-        for congress in congresses:
+            first_warnings = 0
+            last_warnings = 0
+            normal_fixes = 0
+            extended_fixes = 0
 
-            # Check if just come up for follow up
-            if datetime.date.today() == congress.end_date + relativedelta(
-                days=FIRST_WARNING_DAYS
-            ):
-                send_first_warning(congress)
+            # Go through congresses
+            for congress in congresses:
 
-            # Check if just about to be automatically fixed
-            elif datetime.date.today() == congress.end_date + relativedelta(
-                days=AUTO_FIX_UNLESS_OVERRIDDEN_DAYS - 1
-            ):
-                send_last_warning(congress)
+                # Check if just come up for follow up
+                if datetime.date.today() == congress.end_date + relativedelta(
+                    days=FIRST_WARNING_DAYS
+                ):
+                    send_first_warning(congress)
+                    first_warnings += 1
 
-            # Auto close
-            elif (
-                datetime.date.today()
-                >= congress.end_date
-                + relativedelta(days=AUTO_FIX_UNLESS_OVERRIDDEN_DAYS)
-                and not congress.do_not_auto_close_congress
-            ):
-                fix_congress_normal(congress, system_account)
+                # Check if just about to be automatically fixed
+                elif datetime.date.today() == congress.end_date + relativedelta(
+                    days=AUTO_FIX_UNLESS_OVERRIDDEN_DAYS - 1
+                ):
+                    send_last_warning(congress)
+                    if not congress.do_not_auto_close_congress:
+                        last_warnings += 1
 
-            # Final closure regardless
-            # COB-776: Fixed to test for correct time delta
-            elif (
-                datetime.date.today()
-                >= congress.end_date + relativedelta(months=AUTO_FIX_REGARDLESS_MONTHS)
-                and congress.do_not_auto_close_congress
-            ):
-                fix_congress_after_extension(congress, system_account)
+                # Auto close
+                elif (
+                    datetime.date.today()
+                    >= congress.end_date
+                    + relativedelta(days=AUTO_FIX_UNLESS_OVERRIDDEN_DAYS)
+                    and not congress.do_not_auto_close_congress
+                ):
+                    fix_congress_normal(congress, system_account)
+                    normal_fixes += 1
+
+                # Final closure regardless
+                # COB-776: Fixed to test for correct time delta
+                elif (
+                    datetime.date.today()
+                    >= congress.end_date
+                    + relativedelta(months=AUTO_FIX_REGARDLESS_MONTHS)
+                    and congress.do_not_auto_close_congress
+                ):
+                    fix_congress_after_extension(congress, system_account)
+                    extended_fixes += 1
+
+            summary_lines.append(f"First warnings sent: {first_warnings}")
+            summary_lines.append(f"Last warnings sent: {last_warnings}")
+            summary_lines.append(f"Auto-fixed (normal): {normal_fixes}")
+            summary_lines.append(f"Auto-fixed (after extension): {extended_fixes}")
+
+        except Exception as e:
+            logger.exception(
+                "handle_closed_congresses_with_unpaid_entries failed with an unhandled exception"
+            )
+            batch.status = BatchStatus.STATUS_FAILED
+            summary_lines.append(f"\nERROR: {e}")
+            batch.summary = "\n".join(summary_lines)
+            batch.save()
+            raise
+
+        batch.status = BatchStatus.STATUS_SUCCESS
+        batch.summary = "\n".join(summary_lines)
+        batch.save()
+
+        logger.info("handle_closed_congresses_with_unpaid_entries finished")

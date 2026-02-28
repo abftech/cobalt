@@ -1010,8 +1010,9 @@ def close_old_tickets():
 
     if not inactive_tickets:
         logger.info("No tickets are old enough to close")
-        return
+        return 0
 
+    ticket_count = len(inactive_tickets)
     system_account = User.objects.get(pk=ABF_USER)
 
     for inactive_ticket in inactive_tickets:
@@ -1023,6 +1024,8 @@ def close_old_tickets():
         ).save()
         inactive_ticket.status = "Closed"
         inactive_ticket.save()
+
+    return ticket_count
 
 
 def get_support_statistics():

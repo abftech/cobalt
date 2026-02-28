@@ -45,6 +45,10 @@ We use HTMX extensively for partial page updates instead of a full SPA framework
 
 Keep models as short as possible. They should define fields, `__str__`, simple properties, and `Meta`. **Business logic belongs in views** (or in `*_core.py` helper modules alongside the app's views), not in model methods.
 
+### Register all new models in admin.py
+
+Every new model must be added to the app's `admin.py` file so it appears in the Django admin. Add the model to the import line and call `admin.site.register(MyModel)` for it.
+
 ### No Celery — use cron + management commands
 
 Background/scheduled work is handled by Django management commands run by cron on the EC2 instances. See examples in `notifications/management/commands/` and `organisations/management/commands/`.

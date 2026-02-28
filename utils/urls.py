@@ -11,6 +11,7 @@ from utils.views.command_line_utils import (
     command_line_upload_csv,
     command_line_utils_download_csv_log,
 )
+from utils.views.batch_status import batch_status_view
 from utils.views.release_notes import download_event_ics, release_notes_view
 
 app_name = "utils"  # pylint: disable=invalid-name
@@ -122,4 +123,5 @@ urlpatterns = [
         command_line_utils_download_csv_log,
         name="command_line_utils_download_csv_log",
     ),
+    path("batch-status", batch_status_view, name="batch_status_view"),
 ]

@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load cobalt_tags %}
+{% block title %}- Batch Status{% endblock %}
+{% block content %}
+
+    <nav aria-label="breadcrumb" role="navigation">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url "rbac:admin_menu" %}">Admin</a></li>
+            <li class="breadcrumb-item"><a href="{% url "rbac:admin_menu" %}#it">IT</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Batch Status</li>
+        </ol>
+    </nav>
+
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header card-header-info">
+                <h4 class="card-title">Batch Job Run History</h4>
+            </div>
+            <div class="card-body table-responsive">
+
+                <div class="mb-3">
+                    <a href="?status=" class="btn btn-sm {% if not current_status %}btn-info{% else %}btn-outline-info{% endif %}">All</a>
+                    <a href="?status=Success" class="btn btn-sm {% if current_status == 'Success' %}btn-success{% else %}btn-outline-success{% endif %}">Success</a>
+                    <a href="?status=Failed" class="btn btn-sm {% if current_status == 'Failed' %}btn-danger{% else %}btn-outline-danger{% endif %}">Failed</a>
+                    <a href="?status=Started" class="btn btn-sm {% if current_status == 'Started' %}btn-warning{% else %}btn-outline-warning{% endif %}">Running</a>
+                </div>
+
+                <table class="table table-condensed table-hover">
+                    <thead class="text-info">
+                        <tr>
+                            <th>Date/Time</th>
+                            <th>Command</th>
+                            <th>Status</th>
+                            <th class="text-left">Summary</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for thing in things %}
+                            <tr>
+                                <td>{{ thing.run_date|cobalt_nice_datetime }}</td>
+                                <td>{{ thing.command }}</td>
+                                <td>
+                                    {% if thing.status == "Success" %}
+                                        <span class="badge badge-success">{{ thing.status }}</span>
+                                    {% elif thing.status == "Failed" %}
+                                        <span class="badge badge-danger">{{ thing.status }}</span>
+                                    {% else %}
+                                        <span class="badge badge-warning">{{ thing.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-left">
+                                    {% if thing.summary %}
+                                    <pre style="font-size: 0.8em; max-height: 150px; overflow-y: auto; margin: 0; text-align: left;">{{ thing.summary }}</pre>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">No batch runs recorded yet.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                {% include 'utils/pagination_footer.html' %}
+
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
