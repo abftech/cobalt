@@ -13,10 +13,10 @@
     <ul class="nav nav-pills nav-pills-danger" role="tablist" id="guide-tabs">
         <li class="nav-item">
             <a class="nav-link nav-link-send-email nav-link-send-email-1 active"
-                data-toggle="tab"
-                href="#send-email-recipients"
-                role="tablist"
-                aria-expanded="true">
+               data-toggle="tab"
+               href="#send-email-recipients"
+               role="tablist"
+               aria-expanded="true">
                 1. Recipients
             </a>
         </li>
@@ -24,26 +24,26 @@
             <a class="nav-link nav-link-send-email nav-link-send-email-2
 
                 {# Only disable this if we have tags #}
-                {% if tag_form.tags.field.choices|length > 1 %}
-                    disabled
-                {% endif %}
-                "
-                id="nav-link-send-email-2" data-toggle="tab" href="#send-email-options" role="tablist" aria-expanded="false">
+                      {% if tag_form.tags.field.choices|length > 1 %}
+                          disabled
+                      {% endif %}
+                     "
+               id="nav-link-send-email-2" data-toggle="tab" href="#send-email-options" role="tablist" aria-expanded="false">
                 2. Options
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link nav-link-send-email nav-link-send-email-3
                 {# Only disable this if we have tags #}
-                {% if tag_form.tags.field.choices|length > 1 %}
-                    disabled
-                {% endif %}
-                "
-                id="nav-link-send-email-3"
-                data-toggle="tab"
-                href="#send-email-content"
-                role="tablist"
-                aria-expanded="false">
+                      {% if tag_form.tags.field.choices|length > 1 %}
+                          disabled
+                      {% endif %}
+                     "
+               id="nav-link-send-email-3"
+               data-toggle="tab"
+               href="#send-email-content"
+               role="tablist"
+               aria-expanded="false">
                 3. Content
             </a>
         </li>
@@ -98,9 +98,9 @@
                 <button class="btn btn-info btn-sm" id="go-to-tab2"
 
                     {# Only disable this if we have tags #}
-                    {% if tag_form.tags.field.choices|length > 1 %}
-                        disabled
-                    {% endif %}
+                        {% if tag_form.tags.field.choices|length > 1 %}
+                            disabled
+                        {% endif %}
                 >Next</button>
             </div>
 
@@ -131,9 +131,9 @@
 
                         <div class="form-group">
                             <select name="template" class=" form-control" id="id_template"
-                                hx-post="{% url "organisations:club_menu_tab_comms_from_and_reply_to_htmx" %}"
-                                hx-target="#from_and_reply_to"
-                                hx-vars="club_id:'{{ club.id }}'"
+                                    hx-post="{% url "organisations:club_menu_tab_comms_from_and_reply_to_htmx" %}"
+                                    hx-target="#from_and_reply_to"
+                                    hx-vars="club_id:'{{ club.id }}'"
                             >
                                 {% for index, value in email_form.fields.template.choices %}
                                     <option value="{{ index }}">{{ value }}</option>
@@ -200,10 +200,10 @@
 
             <div class="text-center">
                 <button class="btn btn-info btn-sm cobalt-save" disabled name="test" id="id_test_button"
-                    hx-post="{% url "organisations:club_menu_tab_comms_email_send_htmx" %}"
-                    hx-target="#email-test-response"
-                    hx-include="[id='email-multi-form']"
-                    hx-vars="test:'test'"
+                        hx-post="{% url "organisations:club_menu_tab_comms_email_send_htmx" %}"
+                        hx-target="#email-test-response"
+                        hx-include="[id='email-multi-form']"
+                        hx-vars="test:'test'"
                 >Test</button>
 
                 <button class="btn btn-success btn-sm cobalt-save" disabled name="send" id="id_send_button">Send</button>
@@ -214,6 +214,15 @@
 </form>
 
 <script>
+    // Sync Summernote's contenteditable back to the hidden textarea before
+    // HTMX serialises the form. Summernote's AutoSync only fires on
+    // summernote.change (user keystrokes), so navigating away and back, or
+    // closing/reopening the preview without typing, leaves the textarea stale.
+    function triggerPreview() {
+        $('#id_org_email_body').val($('#id_org_email_body').summernote('code'));
+        htmx.trigger("#email_preview", "preview");
+    }
+
     // Stackoverflow delay function
     function delay(callback, ms) {
         let timer = 0;
@@ -229,7 +238,7 @@
     // function to run when subject or content changes
     function email_subject_or_content_changed(){
         // trigger the preview to update
-        htmx.trigger("#email_preview", "preview");
+        triggerPreview();
 
         // check if we have subject and content and enable buttons
         if($('#id_subject').val() && $('#id_org_email_body').val()){
@@ -253,7 +262,7 @@
         $('#selected_attachments_list').append('<tr id="id_attach_li_' + id + '"><td>' + name + '</td><td><a class="btn btn-xs btn-danger text-white"  title="Remove" onclick="removeAttachmentfromList(' + id + ')">X</a></td></tr>');
 
         // refresh preview
-        htmx.trigger("#email_preview", "preview");
+        triggerPreview();
     }
 
     // remove attachment
@@ -262,7 +271,7 @@
         $("#id_attach_li_" + id).remove();
 
         // refresh preview
-        htmx.trigger("#email_preview", "preview");
+        triggerPreview();
         return false;
     }
 
@@ -286,7 +295,7 @@
                 $("#email_preview").show();
 
                 // update the preview div
-                htmx.trigger("#email_preview", "preview")
+                triggerPreview()
 
             } else {
                 $("#email_preview").hide();
@@ -335,7 +344,7 @@
             }
             // also show preview
             $("#email_preview").show();
-            htmx.trigger("#email_preview", "preview");
+            triggerPreview();
             return false;
         })
 

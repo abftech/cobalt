@@ -698,8 +698,8 @@ def email_preview_htmx(request):
         template = OrgEmailTemplate()
 
     # Get user input
-    title = request.POST.get("subject")
-    email_body = request.POST.get("org_email_body")
+    title = request.POST.get("subject", "")
+    email_body = request.POST.get("org_email_body") or ""
 
     # Apostrophe's blow up the iframe so change to code
     email_body = email_body.replace("'", "&#39;")
