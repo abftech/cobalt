@@ -170,7 +170,14 @@ def release_notes_view(request):
 
     release_notes = [
         {
-            "release": "6.3.3",
+            "release": "6.3.4",
+            "notes": [
+                "Logging for batch jobs",
+                "Email preview bug (maybe)",
+            ],
+        },
+        {
+            "release": "6.3.4",
             "notes": [
                 "Warn before syncing data from MPC if there is existing data",
                 "Additional warning when turning on full club management",
@@ -180,6 +187,7 @@ def release_notes_view(request):
                 "Ability to run ./manage.py commands from web browser",
                 "Ability to edit active memberships",
                 "Add counter to event summary admin screen",
+                "Default auto-pay date to 7 days",
             ],
         },
         {
