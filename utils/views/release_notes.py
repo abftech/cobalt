@@ -168,6 +168,10 @@ def _build_calendar_urls(event, sessions):
 def release_notes_view(request):
     """show the release notes"""
 
+    # To get a list of differences between this branch and develop you can run:
+    #
+    #  git log develop..HEAD --no-merges --format="%ad %s" --date=short
+
     release_notes = [
         {
             "release": "6.3.4",
