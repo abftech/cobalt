@@ -47,8 +47,8 @@ def _user_set_up_helper(user, club, membership_type, auto_top_up):
         user.auto_amount = 50
         user.save()
 
-        # add card using test visa data
-        stripe.Customer.create_source(user.stripe_customer_id, source="tok_visa")
+        # attach a test PaymentMethod (not a legacy Source) so PaymentMethod.list finds it
+        stripe.PaymentMethod.attach("pm_card_visa", customer=user.stripe_customer_id)
 
     # Create MemberClubDetails records
     member_club_details = MemberClubDetails(
@@ -64,8 +64,9 @@ def _test_outcome_helper(manager, test_name, user, club, amount, expect_stripe):
     last_member_tran = MemberTransaction.objects.last()
     last_org_tran = OrganisationTransaction.objects.last()
     member_membership = MemberMembershipType.objects.filter(
-        system_number=user.system_number
-    ).first()
+        system_number=user.system_number,
+        membership_type__organisation=club,
+    ).last()
 
     pay_status = (
         last_member_tran.member == user
@@ -107,7 +108,7 @@ def _test_outcome_helper(manager, test_name, user, club, amount, expect_stripe):
         status=status,
         test_name=f"Auto Pay Membership batch. {test_name}. Stripe Transaction",
         test_description="Check for Stripe transaction",
-        output=f"Stripe transaction is {stripe_trans}. Stripe user is '{stripe_trans.member}'. Expected user is '{user}'. Expect Stripe is {expect_stripe}.",
+        output=f"Stripe transaction is {stripe_trans}. Stripe user is '{stripe_trans.member if stripe_trans else None}'. Expected user is '{user}'. Expect Stripe is {expect_stripe}.",
     )
 
 

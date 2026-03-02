@@ -1,6 +1,45 @@
 from django.db import models
 
 
+class XeroInvoice(models.Model):
+    """Local record of an invoice issued through Xero"""
+
+    INVOICE_TYPE_CHOICES = [
+        ("ACCREC", "Accounts Receivable"),
+        ("ACCPAY", "Accounts Payable"),
+    ]
+
+    STATUS_CHOICES = [
+        ("DRAFT", "Draft"),
+        ("AUTHORISED", "Authorised"),
+        ("PAID", "Paid"),
+        ("VOIDED", "Voided"),
+    ]
+
+    organisation = models.ForeignKey(
+        "organisations.Organisation",
+        on_delete=models.PROTECT,
+        related_name="xero_invoices",
+    )
+    xero_invoice_id = models.CharField(max_length=100, unique=True)
+    invoice_number = models.CharField(max_length=50, blank=True, default="")
+    invoice_type = models.CharField(
+        max_length=10, choices=INVOICE_TYPE_CHOICES, default="ACCREC"
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(
+        max_length=15, choices=STATUS_CHOICES, default="AUTHORISED"
+    )
+    reference = models.CharField(max_length=255, blank=True, default="")
+    date = models.DateField()
+    due_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.invoice_number} - {self.organisation.name} - {self.amount}"
+
+
 class XeroCredentials(models.Model):
     """persistent store for Xero credentials"""
 

@@ -159,6 +159,82 @@ Test data is seeded with `python manage.py add_test_data`. Pre-populated test us
 
 Each app has tests in `<app>/tests/unit/` (unit) and `<app>/tests/integration/` (Selenium/client). See `tests/test_manager.py` for the test framework core.
 
+### Unit test class structure
+
+Unit test files live in `<app>/tests/unit/unit_test_*.py`. The test runner discovers them by glob and instantiates every class it finds. **Do not inherit from `django.test.TestCase`** — just define a plain class.
+
+```python
+from tests.test_manager import CobaltTestManagerUnit
+
+class MyFeatureTests:
+    def __init__(self, manager: CobaltTestManagerUnit):
+        self.manager = manager
+        # Create any fixtures needed across all tests in this class
+
+    def test_01_something(self):
+        result = do_something()
+        self.manager.save_results(
+            status=result == expected,          # bool
+            test_name="Human-readable name",
+            test_description="What this test checks",
+            output=f"Got {result!r}, expected {expected!r}",
+        )
+```
+
+Key rules:
+- `__init__` receives the `CobaltTestManagerUnit` instance; store it as `self.manager`.
+- Every method whose name starts with `test_` is auto-discovered and run.
+- Use `self.manager.save_results()` to record outcomes — no `assert` statements.
+- Pre-built users are available as `self.manager.alan`, `.betty`, `.colin`, etc.
+- All DB writes are wrapped in a rolled-back transaction, so tests are isolated from the live database.
+- Helper functions shared across multiple test files live in `tests/unit/general_test_functions.py`.
+
+### Mocking external APIs in unit tests
+
+Use `unittest.mock.patch.object` as a context manager to patch at the method level rather than at the `requests` level — this is cleaner and avoids token-refresh side effects:
+
+```python
+from unittest.mock import patch
+
+def test_something(self):
+    xero = XeroApi()
+    mock_response = {"Contacts": [{"ContactID": "abc"}]}
+    with patch.object(xero, "xero_api_post", return_value=mock_response) as mock_post:
+        result = xero.some_method(...)
+
+    # Inspect the payload that was sent
+    payload = mock_post.call_args[0][1]
+    self.manager.save_results(status=..., ...)
+```
+
+For tests that can run both mocked and live (e.g. toggled by a `MOCK_XERO_API` flag), use `contextlib.nullcontext` as the no-op alternative:
+
+```python
+from contextlib import nullcontext
+
+def _patch_post(xero, response):
+    if MOCK_XERO_API:
+        return patch.object(xero, "xero_api_post", return_value=response)
+    return nullcontext(None)
+```
+
+Tests that inspect `mock.call_args` (payload structure, URL parameters) must always run mocked. Guard them with an early return:
+
+```python
+def test_payload_structure(self):
+    if not MOCK_XERO_API:
+        self.manager.save_results(status=True, test_name="... [SKIPPED]", ...)
+        return
+    # ... patch and inspect ...
+```
+
+### Testing integrations with external services (Xero, Stripe, etc.)
+
+- **Default to mocked.** Tests that hit live external APIs are slow, require credentials, and create persistent data that cannot be rolled back.
+- **Use a sandbox/demo account** when live testing is necessary. Never run live API tests against production credentials.
+- **Data created via API calls is not rolled back** even though the Django DB transaction is. Live test runs will leave contacts, invoices, or payments in the external system.
+- **Document the flag clearly** at the top of the test file, including what credentials or IDs are needed for live mode and what tests will be skipped. See `xero/tests/unit/unit_test_xero_api.py` for the reference implementation of this pattern.
+
 ---
 
 ## Key Domain Concepts

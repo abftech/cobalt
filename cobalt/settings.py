@@ -158,6 +158,7 @@ USE_SQLITE = set_value("USE_SQLITE", 0)
 XERO_CLIENT_ID = set_value("XERO_CLIENT_ID")
 XERO_CLIENT_SECRET = set_value("XERO_CLIENT_SECRET")
 XERO_TENANT_NAME = "17 Ways"
+XERO_BANK_ACCOUNT_CODE = set_value("XERO_BANK_ACCOUNT_CODE", "not-set")
 
 DATABASES = {
     "default": {
