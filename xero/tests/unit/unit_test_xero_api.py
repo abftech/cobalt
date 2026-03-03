@@ -136,9 +136,7 @@ class XeroApiTests:
 
         # In live mode use the pre-configured contact UUID; in mock mode use a
         # placeholder that the patched API will accept without complaint.
-        self.contact_id = (
-            LIVE_XERO_CONTACT_ID if not MOCK_XERO_API else "mock-contact-uuid"
-        )
+        self.contact_id = "mock-contact-uuid" if MOCK_XERO_API else LIVE_XERO_CONTACT_ID
 
     # -----------------------------------------------------------------------
     # Contact: create
