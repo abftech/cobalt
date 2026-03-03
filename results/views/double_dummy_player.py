@@ -92,6 +92,7 @@ def _build_initial_state(hand, trump, declarer, level):
         "next_to_play": leader,
         "tricks_ns": 0,
         "tricks_ew": 0,
+        "tricks_sequence": [],
         "current_trick": [],
         "hands": hand,
         "game_over": False,
@@ -199,7 +200,7 @@ def _parse_par_contract(par_string):
         return None, None, None
 
 
-def _render_player(request, state, results_file_id, board_number):
+def _render_player(request, state, results_file_id, board_number, trick_pause=False):
     """Run solver calls and render the player.html fragment."""
     next_player = state["next_to_play"]
     led_suit_now = state["current_trick"][0]["suit"] if state["current_trick"] else None
@@ -208,7 +209,7 @@ def _render_player(request, state, results_file_id, board_number):
     solver_cards = []
     active_outcomes = {}
 
-    if not state["game_over"]:
+    if not state["game_over"] and not trick_pause:
         pbn = hands_to_pbn(state["hands"])
         trick_suits, trick_ranks = _build_trick_arrays(state["current_trick"])
 
@@ -231,7 +232,7 @@ def _render_player(request, state, results_file_id, board_number):
         (sc["suit"], sc["rank"]) for sc in solver_cards if sc["is_optimal"]
     }
 
-    if not state["game_over"]:
+    if not state["game_over"] and not trick_pause:
         legal_cards = _get_legal_cards(state["hands"][next_player], led_suit_now)
     else:
         legal_cards = {}
@@ -251,7 +252,11 @@ def _render_player(request, state, results_file_id, board_number):
         for suit_key, symbol, color in _suit_meta:
             cards = []
             for rank in state["hands"][dir_key].get(suit_key, []):
-                is_active = (dir_key == next_player) and not state["game_over"]
+                is_active = (
+                    not trick_pause
+                    and (dir_key == next_player)
+                    and not state["game_over"]
+                )
                 is_legal = is_active and (
                     suit_key in legal_cards and rank in legal_cards[suit_key]
                 )
@@ -274,6 +279,19 @@ def _render_player(request, state, results_file_id, board_number):
 
     trick_by_dir = {tc["direction"]: tc for tc in state["current_trick"]}
 
+    # Pre-compute absolute left positions for the trick pile so each card
+    # is offset by a fixed 4 px regardless of portrait vs landscape width.
+    _peek = 6  # px each card peeks out to the right of the previous
+    tricks_display = [
+        {"side": side, "left_px": i * _peek}
+        for i, side in enumerate(state.get("tricks_sequence", []))
+    ]
+    if tricks_display:
+        last_width = 48 if tricks_display[-1]["side"] == "EW" else 34
+        pile_width = tricks_display[-1]["left_px"] + last_width
+    else:
+        pile_width = 0
+
     return render(
         request,
         "results/double_dummy/player.html",
@@ -285,6 +303,9 @@ def _render_player(request, state, results_file_id, board_number):
             "results_file_id": results_file_id,
             "board_number": board_number,
             "directions": ["N", "E", "S", "W"],
+            "tricks_display": tricks_display,
+            "pile_width": pile_width,
+            "trick_pause": trick_pause,
         },
     )
 
@@ -415,8 +436,23 @@ def double_dummy_play_card_htmx(request, results_file_id, board_number):
             )
         state = _build_initial_state(hand, trump, declarer, level)
 
+    # ── Complete trick after pause ─────────────────────────────────────────
+    if action == "complete_trick":
+        if len(state.get("current_trick", [])) == 4:
+            winner = determine_trick_winner(state["current_trick"], state["trump"])
+            if winner in ("N", "S"):
+                state["tricks_ns"] += 1
+                state.setdefault("tricks_sequence", []).append("NS")
+            else:
+                state["tricks_ew"] += 1
+                state.setdefault("tricks_sequence", []).append("EW")
+            state["current_trick"] = []
+            state["trick_leader"] = winner
+            state["next_to_play"] = winner
+        # fall through to game_over check and render
+
     # ── Undo actions ───────────────────────────────────────────────────────
-    if action in ("undo_one", "undo_all"):
+    elif action in ("undo_one", "undo_all"):
         history = state.get("history", [])
         if history:
             if action == "undo_all":
@@ -463,14 +499,10 @@ def double_dummy_play_card_htmx(request, results_file_id, board_number):
 
         # Check trick completion
         if len(state["current_trick"]) == 4:
-            winner = determine_trick_winner(state["current_trick"], state["trump"])
-            if winner in ("N", "S"):
-                state["tricks_ns"] += 1
-            else:
-                state["tricks_ew"] += 1
-            state["current_trick"] = []
-            state["trick_leader"] = winner
-            state["next_to_play"] = winner
+            # Pause briefly so the user can see all 4 cards before clearing
+            return _render_player(
+                request, state, results_file_id, board_number, trick_pause=True
+            )
         else:
             state["next_to_play"] = next_direction(current_player)
 

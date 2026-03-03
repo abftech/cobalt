@@ -30,7 +30,7 @@
             </div>
         </div>
 
-        <div class="card-body p-2">
+        <div class="card-body p-2" style="position: relative;">
 
             {% if state.game_over %}
                 <div class="alert alert-success text-center">
@@ -115,11 +115,49 @@
                 </tr>
             </table>
 
+            {# ── Trick sequence visualiser (bottom-left of card body) ── #}
+            {% if tricks_display %}
+                <div style="position: absolute; left: 8px; bottom: 8px;
+                            width: {{ pile_width }}px; height: 48px;">
+                    {% for t in tricks_display %}
+                        {% if t.side == "NS" %}
+                            <div title="NS" style="
+                                                   position: absolute; left: {{ t.left_px }}px; top: 0;
+                                                   width: 34px; height: 48px;
+                                                   z-index: {{ forloop.counter }};
+                                                   background: repeating-linear-gradient(135deg, #0d47a1 0 3px, #1976d2 3px 7px);
+                                                   border: 1.5px solid #bbb; border-radius: 3px;
+                                                   box-shadow: inset 0 0 0 2px white, 2px 2px 3px rgba(0,0,0,0.35);
+                                                  "></div>
+                        {% else %}
+                            <div title="EW" style="
+                                                   position: absolute; left: {{ t.left_px }}px; bottom: 0;
+                                                   width: 48px; height: 34px;
+                                                   z-index: {{ forloop.counter }};
+                                                   background: repeating-linear-gradient(135deg, #b71c1c 0 3px, #e53935 3px 7px);
+                                                   border: 1.5px solid #bbb; border-radius: 3px;
+                                                   box-shadow: inset 0 0 0 2px white, 2px 2px 3px rgba(0,0,0,0.35);
+                                                  "></div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
         </div>
     </div>
 
+{# ── Auto-complete trick after pause ─────────────────────────────────── #}
+    {% if trick_pause %}
+        <div hx-post="{% url 'results:double_dummy_play_card_htmx' results_file_id=results_file_id board_number=board_number %}"
+             hx-include="#dd-state-form"
+             hx-vals='{"action":"complete_trick"}'
+             hx-target="#dd-player-container"
+             hx-swap="innerHTML"
+             hx-trigger="load delay:500ms"></div>
+    {% endif %}
+
 {# ── Rewind buttons ──────────────────────────────────────────────────── #}
-    {% if state.history %}
+    {% if state.history and not trick_pause %}
         <div class="text-center mt-2">
             <button type="button"
                     class="btn btn-sm btn-outline-secondary"

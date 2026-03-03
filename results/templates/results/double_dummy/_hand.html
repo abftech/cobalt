@@ -3,8 +3,9 @@
 {#  Matches the suit symbol and card font style of the main board page.  #}
 {#------------------------------------------------------------------------#}
 <div class="p-1" style="font-size: large;
-                        {% if direction == ntp and not state.game_over %}
-                            background-color: #fff3cd; border: 2px solid #ffc107; border-radius: 6px;
+                        border: 2px solid transparent; border-radius: 6px;
+                        {% if direction == ntp and not state.game_over and not trick_pause %}
+                            background-color: #fff3cd; border-color: #ffc107;
                         {% endif %}">
     <div class="font-weight-bold text-center mb-0">
         {% if direction == "N" %}North{% elif direction == "S" %}South{% elif direction == "E" %}East{% else %}West{% endif %}
@@ -32,31 +33,27 @@
                         <span style="display: inline-flex; flex-direction: column; align-items: center;">
 
                             {# Outcome label #}
-                            <small style="font-size: 0.55em; line-height: 1.1;
-                                          {% if card.is_active and card.is_legal %}
-                                              font-weight: bold;
-                                              color: {% if card.outcome == '=' or card.outcome|slice:':1' == '+' %}green{% else %}#cc0000{% endif %};
-                                          {% else %}
-                                              color: {% if card.outcome == '=' or card.outcome|slice:':1' == '+' %}#6aaa6a{% else %}{% if card.outcome %}#aaa{% else %}transparent{% endif %}{% endif %};
-                                          {% endif %}">
+                            <small style="font-size: 0.55em; line-height: 1.1; font-weight: bold;
+                                          color: {% if card.is_active and card.is_legal %}{% if card.outcome == '=' or card.outcome|slice:':1' == '+' %}green{% else %}#cc0000{% endif %}{% else %}{% if card.outcome == '=' or card.outcome|slice:':1' == '+' %}#6aaa6a{% else %}{% if card.outcome %}#aaa{% else %}transparent{% endif %}{% endif %}{% endif %};">
                                 {% if card.outcome %}{{ card.outcome }}{% else %}&nbsp;{% endif %}
                             </small>
 
-                            {# Rank #}
-                            {% if card.is_active and card.is_legal %}
-                                <button type="button"
-                                        style="font-size: 1em; min-width: 24px; padding: 0 3px; cursor: pointer; line-height: 1.3;
-                                               color: {{ suit_info.color }};
-                                               {% if card.is_optimal %}border: 2px solid green; background-color: #d4edda;{% else %}border-color: {{ suit_info.color }};{% endif %}"
-                                        class="btn btn-sm"
-                                        hx-post="{% url 'results:double_dummy_play_card_htmx' results_file_id=results_file_id board_number=board_number %}"
-                                        hx-include="#dd-state-form"
-                                        hx-vals='{"played_suit":"{{ suit_info.key }}","played_rank":"{{ card.rank }}"}'
-                                        hx-target="#dd-player-container"
-                                        hx-swap="innerHTML">{{ card.rank }}</button>
-                            {% else %}
-                                <span style="color: {{ suit_info.color }};">{{ card.rank }}</span>
-                            {% endif %}
+                            {# Rank — always same element/size; HTMX + cursor added when interactive #}
+                            <span style="display: inline-block; text-align: center;
+                                         font-size: 1em; min-width: 24px; padding: 0 3px; line-height: 1.3;
+                                         color: {{ suit_info.color }};
+                                         border: 2px solid transparent; border-radius: 3px;
+                                         {% if card.is_active and card.is_legal %}
+                                             cursor: pointer;
+                                             {% if card.is_optimal %}border-color: green; background-color: #d4edda;{% else %}border-color: {{ suit_info.color }};{% endif %}
+                                         {% endif %}"
+                                  {% if card.is_active and card.is_legal %}
+                                      hx-post="{% url 'results:double_dummy_play_card_htmx' results_file_id=results_file_id board_number=board_number %}"
+                                      hx-include="#dd-state-form"
+                                      hx-vals='{"played_suit":"{{ suit_info.key }}","played_rank":"{{ card.rank }}"}'
+                                      hx-target="#dd-player-container"
+                                      hx-swap="innerHTML"
+                                  {% endif %}>{{ card.rank }}</span>
 
                         </span>
                     {% endfor %}
