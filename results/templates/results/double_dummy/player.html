@@ -13,12 +13,20 @@
                     by {{ declarer }}
                     &mdash; NS: {{ state.tricks_ns }} / EW: {{ state.tricks_ew }}
                 </h5>
-                <button class="btn btn-sm btn-light"
-                        hx-get="{% url 'results:double_dummy_player_htmx' results_file_id=results_file_id board_number=board_number %}"
-                        hx-target="#dd-player-container"
-                        hx-swap="innerHTML">
-                    Reset
-                </button>
+                <div>
+                    <button class="btn btn-sm btn-light mr-1"
+                            hx-get="{% url 'results:double_dummy_player_htmx' results_file_id=results_file_id board_number=board_number %}"
+                            hx-target="#dd-player-container"
+                            hx-swap="innerHTML">
+                        Reset
+                    </button>
+                    <button class="btn btn-sm btn-light"
+                            hx-get="{% url 'results:double_dummy_player_htmx' results_file_id=results_file_id board_number=board_number %}?setup=1"
+                            hx-target="#dd-player-container"
+                            hx-swap="innerHTML">
+                        Change contract
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -29,15 +37,6 @@
                     <strong>Hand complete</strong> &mdash;
                     NS made {{ state.tricks_ns }} trick{% if state.tricks_ns != 1 %}s{% endif %},
                     EW made {{ state.tricks_ew }} trick{% if state.tricks_ew != 1 %}s{% endif %}.
-                </div>
-            {% else %}
-                <div class="text-center mb-2">
-                    <span class="badge badge-secondary">To play: <strong>{{ ntp }}</strong></span>
-                    {% if best_outcome %}
-                        <span class="badge {% if best_outcome == '=' or best_outcome|slice:':1' == '+' %}badge-success{% else %}badge-danger{% endif %} ml-2">
-                            Best: {{ best_outcome }}
-                        </span>
-                    {% endif %}
                 </div>
             {% endif %}
 
@@ -118,6 +117,30 @@
 
         </div>
     </div>
+
+{# ── Rewind buttons ──────────────────────────────────────────────────── #}
+    {% if state.history %}
+        <div class="text-center mt-2">
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    hx-post="{% url 'results:double_dummy_play_card_htmx' results_file_id=results_file_id board_number=board_number %}"
+                    hx-include="#dd-state-form"
+                    hx-vals='{"action":"undo_one"}'
+                    hx-target="#dd-player-container"
+                    hx-swap="innerHTML">
+                &#8592; Back 1 card
+            </button>
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary ml-1"
+                    hx-post="{% url 'results:double_dummy_play_card_htmx' results_file_id=results_file_id board_number=board_number %}"
+                    hx-include="#dd-state-form"
+                    hx-vals='{"action":"undo_all"}'
+                    hx-target="#dd-player-container"
+                    hx-swap="innerHTML">
+                &#8617; Back to start
+            </button>
+        </div>
+    {% endif %}
 
 {# ── Hidden state form (re-submitted with every card play) ──────────── #}
     <form id="dd-state-form">

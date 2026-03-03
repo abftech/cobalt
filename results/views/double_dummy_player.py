@@ -1,10 +1,12 @@
 """Double-dummy interactive hand player views.
 
 Two HTMX endpoints:
-  - double_dummy_player_htmx  (GET)  – renders contract selector
+  - double_dummy_player_htmx  (GET)  – renders contract selector (or starts
+    immediately with the par contract when one is available)
   - double_dummy_play_card_htmx (POST) – processes a card play, calls solver
 """
 
+import copy
 import json
 
 from django.contrib.auth.decorators import login_required
@@ -93,6 +95,7 @@ def _build_initial_state(hand, trump, declarer, level):
         "current_trick": [],
         "hands": hand,
         "game_over": False,
+        "history": [],
     }
 
 
@@ -196,6 +199,96 @@ def _parse_par_contract(par_string):
         return None, None, None
 
 
+def _render_player(request, state, results_file_id, board_number):
+    """Run solver calls and render the player.html fragment."""
+    next_player = state["next_to_play"]
+    led_suit_now = state["current_trick"][0]["suit"] if state["current_trick"] else None
+    level = state.get("level", 1)
+
+    solver_cards = []
+    active_outcomes = {}
+
+    if not state["game_over"]:
+        pbn = hands_to_pbn(state["hands"])
+        trick_suits, trick_ranks = _build_trick_arrays(state["current_trick"])
+
+        solver_cards = solve_board(
+            pbn, state["trump"], state["trick_leader"], trick_suits, trick_ranks
+        )
+        active_outcomes = {
+            (sc["suit"], sc["rank"]): _compute_outcome(
+                sc["score"],
+                next_player,
+                state["tricks_ns"],
+                state["tricks_ew"],
+                state["declarer"],
+                level,
+            )
+            for sc in solver_cards
+        }
+
+    is_optimal_set = {
+        (sc["suit"], sc["rank"]) for sc in solver_cards if sc["is_optimal"]
+    }
+
+    if not state["game_over"]:
+        legal_cards = _get_legal_cards(state["hands"][next_player], led_suit_now)
+    else:
+        legal_cards = {}
+
+    game_state_json = json.dumps(state)
+
+    _suit_meta = [
+        ("S", "♠", "black"),
+        ("H", "♥", "red"),
+        ("D", "♦", "red"),
+        ("C", "♣", "black"),
+    ]
+    rendered_hands = {}
+    for dir_key in ["N", "E", "S", "W"]:
+        suits = []
+        dir_outcomes = active_outcomes if dir_key == next_player else {}
+        for suit_key, symbol, color in _suit_meta:
+            cards = []
+            for rank in state["hands"][dir_key].get(suit_key, []):
+                is_active = (dir_key == next_player) and not state["game_over"]
+                is_legal = is_active and (
+                    suit_key in legal_cards and rank in legal_cards[suit_key]
+                )
+                is_optimal = (
+                    is_active and is_legal and (suit_key, rank) in is_optimal_set
+                )
+                cards.append(
+                    {
+                        "rank": rank,
+                        "is_active": is_active,
+                        "is_legal": is_legal,
+                        "is_optimal": is_optimal,
+                        "outcome": dir_outcomes.get((suit_key, rank), ""),
+                    }
+                )
+            suits.append(
+                {"key": suit_key, "symbol": symbol, "color": color, "cards": cards}
+            )
+        rendered_hands[dir_key] = suits
+
+    trick_by_dir = {tc["direction"]: tc for tc in state["current_trick"]}
+
+    return render(
+        request,
+        "results/double_dummy/player.html",
+        {
+            "state": state,
+            "game_state_json": game_state_json,
+            "rendered_hands": rendered_hands,
+            "trick_by_dir": trick_by_dir,
+            "results_file_id": results_file_id,
+            "board_number": board_number,
+            "directions": ["N", "E", "S", "W"],
+        },
+    )
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Views
 # ─────────────────────────────────────────────────────────────────────────────
@@ -203,8 +296,10 @@ def _parse_par_contract(par_string):
 
 @login_required()
 def double_dummy_player_htmx(request, results_file_id, board_number):
-    """GET – render the contract selector for the interactive hand player."""
+    """GET – start playing immediately with the par contract, or show contract selector.
 
+    Pass ?setup=1 to force the contract selector (e.g. from the "Change contract" button).
+    """
     results_file = get_object_or_404(ResultsFile, pk=results_file_id)
     usebio = parse_usebio_file(results_file)
 
@@ -229,6 +324,34 @@ def double_dummy_player_htmx(request, results_file_id, board_number):
     except Exception:
         pass
 
+    if not request.GET.get("setup"):
+        # Prefer a contract passed explicitly via query params (e.g. the pair's
+        # actual contract from the board detail view) over the par contract.
+        qs_level = request.GET.get("level")
+        qs_trump = request.GET.get("trump")
+        qs_declarer = request.GET.get("declarer")
+        try:
+            qs_level_int = int(qs_level) if qs_level else None
+        except (ValueError, TypeError):
+            qs_level_int = None
+
+        if (
+            qs_level_int
+            and 1 <= qs_level_int <= 7
+            and qs_trump in ("S", "H", "D", "C", "N")
+            and qs_declarer in ("N", "E", "S", "W")
+        ):
+            state = _build_initial_state(hand, qs_trump, qs_declarer, qs_level_int)
+            return _render_player(request, state, results_file_id, board_number)
+
+        # Fall back to the par contract
+        if preselect_level:
+            state = _build_initial_state(
+                hand, preselect_trump, preselect_declarer, preselect_level
+            )
+            return _render_player(request, state, results_file_id, board_number)
+
+    # Fallback: show the contract selector
     trumps = [
         ("S", "♠", "black"),
         ("H", "♥", "red"),
@@ -265,6 +388,7 @@ def double_dummy_play_card_htmx(request, results_file_id, board_number):
     raw_state = request.POST.get("game_state", "")
     played_suit = request.POST.get("played_suit", "")
     played_rank = request.POST.get("played_rank", "")
+    action = request.POST.get("action", "")
 
     if raw_state:
         try:
@@ -291,6 +415,19 @@ def double_dummy_play_card_htmx(request, results_file_id, board_number):
             )
         state = _build_initial_state(hand, trump, declarer, level)
 
+    # ── Undo actions ───────────────────────────────────────────────────────
+    if action in ("undo_one", "undo_all"):
+        history = state.get("history", [])
+        if history:
+            if action == "undo_all":
+                restored = history[0]
+                restored["history"] = []
+            else:
+                restored = history[-1]
+                restored["history"] = history[:-1]
+            return _render_player(request, restored, results_file_id, board_number)
+        return _render_player(request, state, results_file_id, board_number)
+
     # ── Process played card (if any) ───────────────────────────────────────
     if played_suit and played_rank and not state.get("game_over"):
         current_player = state["next_to_play"]
@@ -311,6 +448,10 @@ def double_dummy_play_card_htmx(request, results_file_id, board_number):
                 "<p class='text-danger'>Illegal card — must follow suit.</p>",
                 status=400,
             )
+
+        # Snapshot state before mutation so undo can restore it
+        snapshot = copy.deepcopy({k: v for k, v in state.items() if k != "history"})
+        state.setdefault("history", []).append(snapshot)
 
         # Remove card from hand
         player_hand[played_suit].remove(played_rank)
@@ -338,114 +479,4 @@ def double_dummy_play_card_htmx(request, results_file_id, board_number):
     if total_tricks == 13:
         state["game_over"] = True
 
-    # ── Solver calls ──────────────────────────────────────────────────────
-    next_player = state["next_to_play"]
-    led_suit_now = state["current_trick"][0]["suit"] if state["current_trick"] else None
-    level = state.get("level", 1)
-
-    # outcomes_by_dir: each direction's cards with empty-trick outcomes (all 4 hands)
-    outcomes_by_dir = {}
-    # solver_cards: active player's current-trick results (for is_optimal + best_outcome)
-    solver_cards = []
-
-    if not state["game_over"]:
-        pbn = hands_to_pbn(state["hands"])
-        trick_suits, trick_ranks = _build_trick_arrays(state["current_trick"])
-
-        # One empty-trick call per direction → outcome labels on all 4 hands
-        for direction in ["N", "E", "S", "W"]:
-            dir_cards = solve_board(pbn, state["trump"], direction, [], [])
-            outcomes_by_dir[direction] = {
-                (sc["suit"], sc["rank"]): _compute_outcome(
-                    sc["score"],
-                    direction,
-                    state["tricks_ns"],
-                    state["tricks_ew"],
-                    state["declarer"],
-                    level,
-                )
-                for sc in dir_cards
-            }
-
-        # Current-trick call for active player: accurate is_optimal flag
-        solver_cards = solve_board(
-            pbn, state["trump"], next_player, trick_suits, trick_ranks
-        )
-
-    is_optimal_set = {
-        (sc["suit"], sc["rank"]) for sc in solver_cards if sc["is_optimal"]
-    }
-
-    # ── Legal cards for active player ─────────────────────────────────────
-    if not state["game_over"]:
-        legal_cards = _get_legal_cards(state["hands"][next_player], led_suit_now)
-    else:
-        legal_cards = {}
-
-    game_state_json = json.dumps(state)
-
-    # ── Pre-process hands for template (no custom filters needed) ─────────
-    _suit_meta = [
-        ("S", "♠", "black"),
-        ("H", "♥", "red"),
-        ("D", "♦", "red"),
-        ("C", "♣", "black"),
-    ]
-    rendered_hands = {}
-    for dir_key in ["N", "E", "S", "W"]:
-        suits = []
-        dir_outcomes = outcomes_by_dir.get(dir_key, {})
-        for suit_key, symbol, color in _suit_meta:
-            cards = []
-            for rank in state["hands"][dir_key].get(suit_key, []):
-                is_active = (dir_key == next_player) and not state["game_over"]
-                is_legal = is_active and (
-                    suit_key in legal_cards and rank in legal_cards[suit_key]
-                )
-                is_optimal = (
-                    is_active and is_legal and (suit_key, rank) in is_optimal_set
-                )
-                cards.append(
-                    {
-                        "rank": rank,
-                        "is_active": is_active,
-                        "is_legal": is_legal,
-                        "is_optimal": is_optimal,
-                        "outcome": dir_outcomes.get((suit_key, rank), ""),
-                    }
-                )
-            suits.append(
-                {"key": suit_key, "symbol": symbol, "color": color, "cards": cards}
-            )
-        rendered_hands[dir_key] = suits
-
-    # Build current trick display keyed by direction
-    trick_by_dir = {tc["direction"]: tc for tc in state["current_trick"]}
-
-    # Best outcome for active player (first card from current-trick call = highest score)
-    best_outcome = None
-    if solver_cards:
-        best_sc = solver_cards[0]
-        best_outcome = _compute_outcome(
-            best_sc["score"],
-            next_player,
-            state["tricks_ns"],
-            state["tricks_ew"],
-            state["declarer"],
-            level,
-        )
-
-    return render(
-        request,
-        "results/double_dummy/player.html",
-        {
-            "state": state,
-            "game_state_json": game_state_json,
-            "rendered_hands": rendered_hands,
-            "trick_by_dir": trick_by_dir,
-            "results_file_id": results_file_id,
-            "board_number": board_number,
-            "best_outcome": best_outcome,
-            "directions": ["N", "E", "S", "W"],
-        },
-    )
+    return _render_player(request, state, results_file_id, board_number)

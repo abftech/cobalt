@@ -470,6 +470,19 @@ def usebio_mp_pairs_board_view(request, results_file_id, board_number, pair_id):
     total_boards = len(usebio["HANDSET"]["BOARD"])
     next_board = board_number + 1 if board_number < total_boards else None
 
+    # Extract the pair's contract for this board so the DDS player can use it
+    pair_contract_level = pair_contract_trump = pair_contract_declarer = None
+    if pair_id and pair_id != "0":
+        for row in board_data:
+            if pair_id in (row.get("ns_pair_number"), row.get("ew_pair_number")):
+                level, trump = _parse_usebio_contract(row.get("contract", ""))
+                played_by = row.get("played_by", "")
+                if level and trump and played_by in ("N", "E", "S", "W"):
+                    pair_contract_level = level
+                    pair_contract_trump = trump
+                    pair_contract_declarer = played_by
+                break
+
     return render(
         request,
         "results/usebio/usebio_results_board_detail.html",
@@ -492,8 +505,36 @@ def usebio_mp_pairs_board_view(request, results_file_id, board_number, pair_id):
             "total_boards": total_boards,
             "ns_flag": ns_flag,
             "total_boards_range": range(1, total_boards + 1),
+            "pair_contract_level": pair_contract_level,
+            "pair_contract_trump": pair_contract_trump,
+            "pair_contract_declarer": pair_contract_declarer,
         },
     )
+
+
+def _parse_usebio_contract(contract_str):
+    """Parse a USEBIO contract string into (level, trump).
+
+    Examples: "4S" -> (4, "S"), "3NT" -> (3, "N"), "5HX" -> (5, "H").
+    Returns (None, None) for passed-out boards or unparseable strings.
+    """
+    if not contract_str:
+        return None, None
+    s = contract_str.upper().strip()
+    if s in ("PASS", "PASSOUT", "P"):
+        return None, None
+    try:
+        level = int(s[0])
+        rest = s[1:]
+        if rest.startswith("NT"):
+            trump = "N"
+        elif rest and rest[0] in ("S", "H", "D", "C"):
+            trump = rest[0]
+        else:
+            return None, None
+        return level, trump
+    except (IndexError, ValueError):
+        return None, None
 
 
 def _insert_par_data_into_list(board_data, par_score, par_string, ns_flag):

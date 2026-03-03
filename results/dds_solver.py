@@ -111,7 +111,9 @@ def solve_board(
     Args:
         remaining_pbn (str): PBN string for remaining cards (from hands_to_pbn).
         trump_str (str): trump suit as "S"/"H"/"D"/"C"/"N" (NT).
-        first_str (str): direction of player to move as "N"/"E"/"S"/"W".
+        first_str (str): leader of the current trick as "N"/"E"/"S"/"W".
+            For an empty trick this is the player about to lead; for a
+            trick already in progress it is the hand that played first.
         trick_suits (list[int]|None): suits of cards already played in current
             trick (0–3 each), length 0–3. None means empty trick.
         trick_ranks (list[int]|None): ranks of cards already played in current
@@ -160,14 +162,24 @@ def solve_board(
         rank = RANK_INT_TO_STR.get(fut.rank[i], "?")
         if max_score is None:
             max_score = score
+        is_optimal = score == max_score
         results.append(
-            {
-                "suit": suit,
-                "rank": rank,
-                "score": score,
-                "is_optimal": score == max_score,
-            }
+            {"suit": suit, "rank": rank, "score": score, "is_optimal": is_optimal}
         )
+        # Expand equivalent cards (same suit, same score, encoded as a rank bitmask
+        # where bit r represents rank r, for r in 2..14).
+        equals = fut.equals[i]
+        for r in range(2, 15):
+            if equals & (1 << r):
+                eq_rank = RANK_INT_TO_STR.get(r, "?")
+                results.append(
+                    {
+                        "suit": suit,
+                        "rank": eq_rank,
+                        "score": score,
+                        "is_optimal": is_optimal,
+                    }
+                )
     return results
 
 
@@ -182,9 +194,6 @@ def determine_trick_winner(trick_cards, trump_str):
     Returns:
         Winning direction as "N"/"E"/"S"/"W".
     """
-    if not trick_cards:
-        return trick_cards[0]["direction"]
-
     led_suit = trick_cards[0]["suit"]
     winning_card = trick_cards[0]
 
