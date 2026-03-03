@@ -11,6 +11,19 @@
             {% csrf_token %}
 
             <div class="form-group">
+                <label class="font-weight-bold">Level</label><br>
+                <div class="btn-group" role="group" id="level-buttons">
+                    {% for lvl in levels %}
+                        <button type="button"
+                                class="btn btn-outline-secondary dd-level-btn"
+                                data-value="{{ lvl }}"
+                                onclick="ddSelectLevel(this)">{{ lvl }}</button>
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="level" id="dd-level-value" value="">
+            </div>
+
+            <div class="form-group mt-3">
                 <label class="font-weight-bold">Trump suit</label><br>
                 <div class="btn-group" role="group" id="trump-buttons">
                     {% for suit, symbol, color in trumps %}
@@ -52,13 +65,20 @@
                         hx-swap="innerHTML">
                     Start
                 </button>
-                <small class="text-muted ml-2">Select a trump and declarer to start</small>
+                <small class="text-muted ml-2">Select level, trump and declarer to start</small>
             </div>
         </form>
     </div>
 </div>
 
 <script>
+    function ddSelectLevel(btn) {
+        document.querySelectorAll('.dd-level-btn').forEach(b => b.classList.remove('btn-warning', 'active'));
+        btn.classList.add('btn-warning', 'active');
+        document.getElementById('dd-level-value').value = btn.dataset.value;
+        ddCheckStartReady();
+    }
+
     function ddSelectTrump(btn) {
         document.querySelectorAll('.dd-trump-btn').forEach(b => b.classList.remove('btn-primary', 'active'));
         btn.classList.add('btn-primary', 'active');
@@ -74,17 +94,20 @@
     }
 
     function ddCheckStartReady() {
+        const level = document.getElementById('dd-level-value').value;
         const trump = document.getElementById('dd-trump-value').value;
         const declarer = document.getElementById('dd-declarer-value').value;
-        document.getElementById('dd-start-btn').disabled = !(trump && declarer);
+        document.getElementById('dd-start-btn').disabled = !(level && trump && declarer);
     }
 
-    {% if preselect_trump %}
-        document.addEventListener('DOMContentLoaded', function() {
+    {% if preselect_level %}
+        (function() {
+            const lvlBtn = document.querySelector('.dd-level-btn[data-value="{{ preselect_level }}"]');
+            if (lvlBtn) ddSelectLevel(lvlBtn);
             const trumpBtn = document.querySelector('.dd-trump-btn[data-value="{{ preselect_trump }}"]');
             if (trumpBtn) ddSelectTrump(trumpBtn);
             const dirBtn = document.querySelector('.dd-dir-btn[data-value="{{ preselect_declarer }}"]');
             if (dirBtn) ddSelectDeclarer(dirBtn);
-        });
+        })();
     {% endif %}
 </script>

@@ -20,7 +20,11 @@ from results.dds_solver import (
     SUIT_STR_TO_INT,
 )
 from results.models import ResultsFile
-from results.views.core import dealer_and_vulnerability_for_board
+from results.views.core import (
+    dealer_and_vulnerability_for_board,
+    double_dummy_from_usebio,
+)
+from results.views.par_contract import par_score_and_contract
 from results.views.usebio import parse_usebio_file
 
 # Map full direction names (USEBIO) to single letters
@@ -65,13 +69,14 @@ def _load_hand_for_board(usebio, board_number):
     return None
 
 
-def _build_initial_state(hand, trump, declarer):
+def _build_initial_state(hand, trump, declarer, level):
     """Build the initial game-state dict from a hand dict.
 
     Args:
         hand: dict as returned by _load_hand_for_board
         trump: trump suit string "S"/"H"/"D"/"C"/"N"
         declarer: declarer direction "N"/"E"/"S"/"W"
+        level: contract level int 1-7
 
     Returns:
         game_state dict.
@@ -80,15 +85,45 @@ def _build_initial_state(hand, trump, declarer):
     return {
         "trump": trump,
         "declarer": declarer,
+        "level": level,
         "trick_leader": leader,
         "next_to_play": leader,
         "tricks_ns": 0,
         "tricks_ew": 0,
         "current_trick": [],
         "hands": hand,
-        "optimal_cards": [],
         "game_over": False,
     }
+
+
+def _compute_outcome(solver_score, first, tricks_ns, tricks_ew, declarer, level):
+    """Convert a libdds solver score to a contract outcome string.
+
+    Args:
+        solver_score: tricks first's side will take in remaining play (from SolveBoardPBN)
+        first: direction of player to move ("N"/"E"/"S"/"W")
+        tricks_ns: tricks NS has already won
+        tricks_ew: tricks EW has already won
+        declarer: declarer direction
+        level: contract level (1-7)
+
+    Returns:
+        outcome string: "+2", "=", "-1" etc.
+    """
+    if first in ("N", "S"):
+        final_ns = tricks_ns + solver_score
+    else:
+        final_ns = 13 - (tricks_ew + solver_score)
+
+    declarer_tricks = final_ns if declarer in ("N", "S") else 13 - final_ns
+    outcome = declarer_tricks - (level + 6)
+
+    if outcome > 0:
+        return f"+{outcome}"
+    elif outcome == 0:
+        return "="
+    else:
+        return str(outcome)
 
 
 def _get_legal_cards(hand_for_player, led_suit):
@@ -132,6 +167,35 @@ def _build_trick_arrays(current_trick):
     return trick_suits, trick_ranks
 
 
+def _parse_par_contract(par_string):
+    """Extract (level, trump, declarer) from a par_string.
+
+    Handles formats like:
+      "4N= by N for 430"
+      "5HX by EW for 100"
+      "4S= by N or 4H= by E for -620"   ← takes first contract
+
+    Returns (level_int, trump_str, declarer_str) or (None, None, None) on failure.
+    """
+    if not par_string:
+        return None, None, None
+    try:
+        first = par_string.split(" or ")[0].strip()
+        level = int(first[0])
+        trump = first[1]  # C/D/H/S/N
+        by_idx = first.find(" by ")
+        if by_idx < 0:
+            return None, None, None
+        index_field = by_idx + 4
+        declarer_raw = first[index_field:].split()[0]
+        declarer = {"NS": "N", "EW": "E"}.get(declarer_raw, declarer_raw)
+        if declarer not in ("N", "E", "S", "W"):
+            return None, None, None
+        return level, trump, declarer
+    except (IndexError, ValueError, AttributeError):
+        return None, None, None
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Views
 # ─────────────────────────────────────────────────────────────────────────────
@@ -152,6 +216,19 @@ def double_dummy_player_htmx(request, results_file_id, board_number):
 
     dealer, vulnerability = dealer_and_vulnerability_for_board(board_number)
 
+    preselect_level = preselect_trump = preselect_declarer = None
+    try:
+        for board in usebio["HANDSET"]["BOARD"]:
+            if int(board["BOARD_NUMBER"]) == board_number:
+                dd_table = double_dummy_from_usebio(board["HAND"])
+                _, par_string = par_score_and_contract(dd_table, vulnerability, dealer)
+                preselect_level, preselect_trump, preselect_declarer = (
+                    _parse_par_contract(par_string)
+                )
+                break
+    except Exception:
+        pass
+
     trumps = [
         ("S", "♠", "black"),
         ("H", "♥", "red"),
@@ -168,7 +245,11 @@ def double_dummy_player_htmx(request, results_file_id, board_number):
             "dealer": dealer,
             "vulnerability": vulnerability,
             "trumps": trumps,
+            "levels": list(range(1, 8)),
             "declarer_dirs": ["N", "E", "S", "W"],
+            "preselect_level": preselect_level,
+            "preselect_trump": preselect_trump,
+            "preselect_declarer": preselect_declarer,
         },
     )
 
@@ -196,6 +277,10 @@ def double_dummy_play_card_htmx(request, results_file_id, board_number):
         # Initial start — build state from USEBIO + form params
         trump = request.POST.get("trump", "N")
         declarer = request.POST.get("declarer", "N")
+        try:
+            level = max(1, min(7, int(request.POST.get("level", "1"))))
+        except (ValueError, TypeError):
+            level = 1
 
         results_file = get_object_or_404(ResultsFile, pk=results_file_id)
         usebio = parse_usebio_file(results_file)
@@ -204,7 +289,7 @@ def double_dummy_play_card_htmx(request, results_file_id, board_number):
             return HttpResponse(
                 f"<p class='text-danger'>Board {board_number} hand data not found.</p>"
             )
-        state = _build_initial_state(hand, trump, declarer)
+        state = _build_initial_state(hand, trump, declarer, level)
 
     # ── Process played card (if any) ───────────────────────────────────────
     if played_suit and played_rank and not state.get("game_over"):
@@ -253,29 +338,49 @@ def double_dummy_play_card_htmx(request, results_file_id, board_number):
     if total_tricks == 13:
         state["game_over"] = True
 
-    # ── Call solver for next optimal cards ────────────────────────────────
-    state["optimal_cards"] = []
+    # ── Solver calls ──────────────────────────────────────────────────────
+    next_player = state["next_to_play"]
+    led_suit_now = state["current_trick"][0]["suit"] if state["current_trick"] else None
+    level = state.get("level", 1)
+
+    # outcomes_by_dir: each direction's cards with empty-trick outcomes (all 4 hands)
+    outcomes_by_dir = {}
+    # solver_cards: active player's current-trick results (for is_optimal + best_outcome)
+    solver_cards = []
+
     if not state["game_over"]:
         pbn = hands_to_pbn(state["hands"])
         trick_suits, trick_ranks = _build_trick_arrays(state["current_trick"])
-        state["optimal_cards"] = solve_board(
-            pbn,
-            state["trump"],
-            state["next_to_play"],
-            trick_suits,
-            trick_ranks,
+
+        # One empty-trick call per direction → outcome labels on all 4 hands
+        for direction in ["N", "E", "S", "W"]:
+            dir_cards = solve_board(pbn, state["trump"], direction, [], [])
+            outcomes_by_dir[direction] = {
+                (sc["suit"], sc["rank"]): _compute_outcome(
+                    sc["score"],
+                    direction,
+                    state["tricks_ns"],
+                    state["tricks_ew"],
+                    state["declarer"],
+                    level,
+                )
+                for sc in dir_cards
+            }
+
+        # Current-trick call for active player: accurate is_optimal flag
+        solver_cards = solve_board(
+            pbn, state["trump"], next_player, trick_suits, trick_ranks
         )
 
-    # ── Compute legal cards for display ───────────────────────────────────
-    next_player = state["next_to_play"]
-    led_suit_now = state["current_trick"][0]["suit"] if state["current_trick"] else None
+    is_optimal_set = {
+        (sc["suit"], sc["rank"]) for sc in solver_cards if sc["is_optimal"]
+    }
+
+    # ── Legal cards for active player ─────────────────────────────────────
     if not state["game_over"]:
         legal_cards = _get_legal_cards(state["hands"][next_player], led_suit_now)
     else:
         legal_cards = {}
-
-    # Flatten optimal_cards to a set of (suit, rank) tuples for easy template lookup
-    optimal_set = {(c["suit"], c["rank"]) for c in state["optimal_cards"]}
 
     game_state_json = json.dumps(state)
 
@@ -289,6 +394,7 @@ def double_dummy_play_card_htmx(request, results_file_id, board_number):
     rendered_hands = {}
     for dir_key in ["N", "E", "S", "W"]:
         suits = []
+        dir_outcomes = outcomes_by_dir.get(dir_key, {})
         for suit_key, symbol, color in _suit_meta:
             cards = []
             for rank in state["hands"][dir_key].get(suit_key, []):
@@ -296,13 +402,16 @@ def double_dummy_play_card_htmx(request, results_file_id, board_number):
                 is_legal = is_active and (
                     suit_key in legal_cards and rank in legal_cards[suit_key]
                 )
-                is_optimal = (suit_key, rank) in optimal_set
+                is_optimal = (
+                    is_active and is_legal and (suit_key, rank) in is_optimal_set
+                )
                 cards.append(
                     {
                         "rank": rank,
                         "is_active": is_active,
                         "is_legal": is_legal,
                         "is_optimal": is_optimal,
+                        "outcome": dir_outcomes.get((suit_key, rank), ""),
                     }
                 )
             suits.append(
@@ -312,6 +421,19 @@ def double_dummy_play_card_htmx(request, results_file_id, board_number):
 
     # Build current trick display keyed by direction
     trick_by_dir = {tc["direction"]: tc for tc in state["current_trick"]}
+
+    # Best outcome for active player (first card from current-trick call = highest score)
+    best_outcome = None
+    if solver_cards:
+        best_sc = solver_cards[0]
+        best_outcome = _compute_outcome(
+            best_sc["score"],
+            next_player,
+            state["tricks_ns"],
+            state["tricks_ew"],
+            state["declarer"],
+            level,
+        )
 
     return render(
         request,
@@ -323,6 +445,7 @@ def double_dummy_play_card_htmx(request, results_file_id, board_number):
             "trick_by_dir": trick_by_dir,
             "results_file_id": results_file_id,
             "board_number": board_number,
+            "best_outcome": best_outcome,
             "directions": ["N", "E", "S", "W"],
         },
     )

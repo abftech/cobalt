@@ -144,7 +144,8 @@ def solve_board(
     fut = _FutureTricks()
 
     try:
-        res = dll.SolveBoardPBN(deal, -1, 2, 1, byref(fut), 0)
+        # solutions=3: return ALL legal cards with their scores (descending order)
+        res = dll.SolveBoardPBN(deal, -1, 3, 1, byref(fut), 0)
     except Exception:
         return []
 
@@ -159,9 +160,14 @@ def solve_board(
         rank = RANK_INT_TO_STR.get(fut.rank[i], "?")
         if max_score is None:
             max_score = score
-        # solutions=2 returns cards tied for best score; include all with max score
-        if score == max_score:
-            results.append({"suit": suit, "rank": rank, "score": score})
+        results.append(
+            {
+                "suit": suit,
+                "rank": rank,
+                "score": score,
+                "is_optimal": score == max_score,
+            }
+        )
     return results
 
 

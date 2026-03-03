@@ -193,7 +193,8 @@
                             <button class="btn btn-primary btn-sm"
                                     hx-get="{% url 'results:double_dummy_player_htmx' results_file_id=results_file.id board_number=board_number %}"
                                     hx-target="#dd-player-container"
-                                    hx-swap="innerHTML">
+                                    hx-swap="innerHTML"
+                                    _="on click hide me">
                                 Play this hand
                             </button>
                         </div>

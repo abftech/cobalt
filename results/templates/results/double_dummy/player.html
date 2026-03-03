@@ -9,17 +9,7 @@
         <div class="card-header card-header-primary">
             <div class="d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
-                    {% if trump == "N" %}
-                        NT
-                    {% elif trump == "S" %}
-                        <span style="color:black;">♠</span>
-                    {% elif trump == "H" %}
-                        <span style="color:red;">♥</span>
-                    {% elif trump == "D" %}
-                        <span style="color:red;">♦</span>
-                    {% else %}
-                        <span style="color:black;">♣</span>
-                    {% endif %}
+                    {{ state.level }}{% if trump == "N" %}NT{% elif trump == "S" %}<span style="color:black;">♠</span>{% elif trump == "H" %}<span style="color:red;">♥</span>{% elif trump == "D" %}<span style="color:red;">♦</span>{% else %}<span style="color:black;">♣</span>{% endif %}
                     by {{ declarer }}
                     &mdash; NS: {{ state.tricks_ns }} / EW: {{ state.tricks_ew }}
                 </h5>
@@ -43,14 +33,9 @@
             {% else %}
                 <div class="text-center mb-2">
                     <span class="badge badge-secondary">To play: <strong>{{ ntp }}</strong></span>
-                    {% if state.optimal_cards %}
-                        <span class="badge badge-success ml-2">
-                            Optimal:
-                            {% for card in state.optimal_cards %}
-                                <span style="color: {% if card.suit == 'H' or card.suit == 'D' %}#ffe0e0{% else %}white{% endif %}">
-                                    {% if card.suit == "S" %}♠{% elif card.suit == "H" %}♥{% elif card.suit == "D" %}♦{% else %}♣{% endif %}{{ card.rank }}
-                                </span>
-                            {% endfor %}
+                    {% if best_outcome %}
+                        <span class="badge {% if best_outcome == '=' or best_outcome|slice:':1' == '+' %}badge-success{% else %}badge-danger{% endif %} ml-2">
+                            Best: {{ best_outcome }}
                         </span>
                     {% endif %}
                 </div>
@@ -60,7 +45,7 @@
             <table class="mx-auto" style="border-collapse: separate; border-spacing: 4px;">
                 <tr>
                     <td></td>
-                    <td class="text-center align-bottom">
+                    <td class="align-bottom">
                         {% include "results/double_dummy/_hand.html" with direction="N" hand_suits=rendered_hands.N %}
                     </td>
                     <td></td>
@@ -124,7 +109,7 @@
                 </tr>
                 <tr>
                     <td></td>
-                    <td class="text-center align-top">
+                    <td class="align-top">
                         {% include "results/double_dummy/_hand.html" with direction="S" hand_suits=rendered_hands.S %}
                     </td>
                     <td></td>
