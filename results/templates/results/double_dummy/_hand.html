@@ -1,0 +1,40 @@
+{#------------------------------------------------------------------------#}
+{#  Single hand display for the double-dummy player.                      #}
+{#  Expected context vars:                                                #}
+{#    direction  – "N"/"E"/"S"/"W"                                       #}
+{#    hand_suits – list of dicts from rendered_hands[dir]:               #}
+{#      [{"key":"S","symbol":"♠","color":"black",                        #}
+{#        "cards":[{"rank":"A","is_active":T,"is_legal":T,"is_optimal":T},...]},...] #}
+{#------------------------------------------------------------------------#}
+<div class="p-1" style="min-width: 80px;">
+    <div class="font-weight-bold text-center mb-1" style="font-size: 0.9em;">{{ direction }}</div>
+    {% for suit_info in hand_suits %}
+        <div style="line-height: 1.7; white-space: nowrap;">
+            <span style="color: {{ suit_info.color }}; font-size: 1.2em;">{{ suit_info.symbol }}</span>
+            {% if suit_info.cards %}
+                {% for card in suit_info.cards %}
+                    {% if card.is_active and card.is_legal %}
+                        {# Legal card to play this turn — render as clickable button #}
+                        <button type="button"
+                                style="font-weight: bold; font-size: 0.95em; min-width: 22px; padding: 0 3px; cursor: pointer;
+                                       {% if card.is_optimal %}border: 2px solid green; background-color: #d4edda;{% endif %}"
+                                class="btn btn-sm {% if suit_info.color == 'red' %}btn-outline-danger{% else %}btn-outline-dark{% endif %}"
+                                hx-post="{% url 'results:double_dummy_play_card_htmx' results_file_id=results_file_id board_number=board_number %}"
+                                hx-include="#dd-state-form"
+                                hx-vals='{"played_suit":"{{ suit_info.key }}","played_rank":"{{ card.rank }}"}'
+                                hx-target="#dd-player-container"
+                                hx-swap="innerHTML">{{ card.rank }}</button>
+                    {% elif card.is_active and not card.is_legal %}
+                        {# Must follow suit — card is greyed out #}
+                        <span style="color: #aaa; font-size: 0.9em; padding: 0 2px;">{{ card.rank }}</span>
+                    {% else %}
+                        {# Not this player's turn — plain text #}
+                        <span style="color: {{ suit_info.color }}; padding: 0 1px;">{{ card.rank }}</span>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <span style="color: #aaa;">—</span>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>

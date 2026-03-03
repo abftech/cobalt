@@ -1,6 +1,7 @@
 from django.urls import path
 
 import results.views.core
+import results.views.double_dummy_player
 import results.views.home
 import results.views.results_views
 from results.views.home import home
@@ -48,5 +49,15 @@ urlpatterns = [
         "show-results-for-club",
         results.views.results_views.show_results_for_club_htmx,
         name="show_results_for_club_htmx",
+    ),
+    path(
+        "double-dummy/<int:results_file_id>/<int:board_number>/",
+        results.views.double_dummy_player.double_dummy_player_htmx,
+        name="double_dummy_player_htmx",
+    ),
+    path(
+        "double-dummy/<int:results_file_id>/<int:board_number>/play/",
+        results.views.double_dummy_player.double_dummy_play_card_htmx,
+        name="double_dummy_play_card_htmx",
     ),
 ]

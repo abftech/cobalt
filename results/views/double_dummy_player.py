@@ -1,0 +1,328 @@
+"""Double-dummy interactive hand player views.
+
+Two HTMX endpoints:
+  - double_dummy_player_htmx  (GET)  – renders contract selector
+  - double_dummy_play_card_htmx (POST) – processes a card play, calls solver
+"""
+
+import json
+
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, render
+
+from results.dds_solver import (
+    determine_trick_winner,
+    hands_to_pbn,
+    lho_of,
+    next_direction,
+    solve_board,
+    SUIT_STR_TO_INT,
+)
+from results.models import ResultsFile
+from results.views.core import dealer_and_vulnerability_for_board
+from results.views.usebio import parse_usebio_file
+
+# Map full direction names (USEBIO) to single letters
+_DIR_FULL_TO_SHORT = {"North": "N", "South": "S", "East": "E", "West": "W"}
+# Map full suit names (USEBIO) to short
+_SUIT_FULL_TO_SHORT = {"spades": "S", "hearts": "H", "diamonds": "D", "clubs": "C"}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _load_hand_for_board(usebio, board_number):
+    """Return the hand dict for *board_number* from a parsed USEBIO document.
+
+    Returns a dict keyed by "N"/"E"/"S"/"W", each value a dict keyed by
+    "S"/"H"/"D"/"C" with a list of rank characters, e.g.::
+
+        {"N": {"S": ["A","K","4"], "H": ["Q","7"], "D": ["8","5"], "C": ["Q","6","5","4","2"]}, ...}
+
+    Returns None if the board is not found.
+    """
+    if "HANDSET" not in usebio or "BOARD" not in usebio["HANDSET"]:
+        return None
+
+    for board in usebio["HANDSET"]["BOARD"]:
+        if int(board["BOARD_NUMBER"]) == board_number:
+            hand = {}
+            for compass in board["HAND"]:
+                direction_short = _DIR_FULL_TO_SHORT.get(compass["DIRECTION"])
+                if direction_short is None:
+                    continue
+                hand[direction_short] = {
+                    "S": list(compass.get("SPADES") or ""),
+                    "H": list(compass.get("HEARTS") or ""),
+                    "D": list(compass.get("DIAMONDS") or ""),
+                    "C": list(compass.get("CLUBS") or ""),
+                }
+            return hand
+
+    return None
+
+
+def _build_initial_state(hand, trump, declarer):
+    """Build the initial game-state dict from a hand dict.
+
+    Args:
+        hand: dict as returned by _load_hand_for_board
+        trump: trump suit string "S"/"H"/"D"/"C"/"N"
+        declarer: declarer direction "N"/"E"/"S"/"W"
+
+    Returns:
+        game_state dict.
+    """
+    leader = lho_of(declarer)
+    return {
+        "trump": trump,
+        "declarer": declarer,
+        "trick_leader": leader,
+        "next_to_play": leader,
+        "tricks_ns": 0,
+        "tricks_ew": 0,
+        "current_trick": [],
+        "hands": hand,
+        "optimal_cards": [],
+        "game_over": False,
+    }
+
+
+def _get_legal_cards(hand_for_player, led_suit):
+    """Return legal cards for *hand_for_player* given the current *led_suit*.
+
+    Args:
+        hand_for_player: dict keyed "S"/"H"/"D"/"C", values are lists of rank chars.
+        led_suit: suit string "S"/"H"/"D"/"C" or None (trick not yet started).
+
+    Returns:
+        dict of same shape but containing only legal cards to play.
+    """
+    if led_suit and hand_for_player.get(led_suit):
+        # Must follow suit
+        return {led_suit: hand_for_player[led_suit]}
+    # No restriction
+    return {s: list(cards) for s, cards in hand_for_player.items()}
+
+
+def _build_trick_arrays(current_trick):
+    """Convert current_trick list to (trick_suits, trick_ranks) for SolveBoardPBN."""
+    trick_suits = [SUIT_STR_TO_INT.get(c["suit"], 0) for c in current_trick]
+    trick_ranks = [
+        {
+            "2": 2,
+            "3": 3,
+            "4": 4,
+            "5": 5,
+            "6": 6,
+            "7": 7,
+            "8": 8,
+            "9": 9,
+            "T": 10,
+            "J": 11,
+            "Q": 12,
+            "K": 13,
+            "A": 14,
+        }.get(c["rank"], 0)
+        for c in current_trick
+    ]
+    return trick_suits, trick_ranks
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Views
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@login_required()
+def double_dummy_player_htmx(request, results_file_id, board_number):
+    """GET – render the contract selector for the interactive hand player."""
+
+    results_file = get_object_or_404(ResultsFile, pk=results_file_id)
+    usebio = parse_usebio_file(results_file)
+
+    hand = _load_hand_for_board(usebio, board_number)
+    if hand is None:
+        return HttpResponse(
+            f"<p class='text-danger'>Board {board_number} hand data not found.</p>"
+        )
+
+    dealer, vulnerability = dealer_and_vulnerability_for_board(board_number)
+
+    trumps = [
+        ("S", "♠", "black"),
+        ("H", "♥", "red"),
+        ("D", "♦", "red"),
+        ("C", "♣", "black"),
+    ]
+
+    return render(
+        request,
+        "results/double_dummy/setup.html",
+        {
+            "results_file_id": results_file_id,
+            "board_number": board_number,
+            "dealer": dealer,
+            "vulnerability": vulnerability,
+            "trumps": trumps,
+            "declarer_dirs": ["N", "E", "S", "W"],
+        },
+    )
+
+
+@login_required()
+def double_dummy_play_card_htmx(request, results_file_id, board_number):
+    """POST – process a card play (or initial Start) and return updated player fragment."""
+
+    if request.method != "POST":
+        return HttpResponse(status=405)
+
+    # ── Parse or build game state ──────────────────────────────────────────
+    raw_state = request.POST.get("game_state", "")
+    played_suit = request.POST.get("played_suit", "")
+    played_rank = request.POST.get("played_rank", "")
+
+    if raw_state:
+        try:
+            state = json.loads(raw_state)
+        except (json.JSONDecodeError, ValueError):
+            return HttpResponse(
+                "<p class='text-danger'>Invalid game state.</p>", status=400
+            )
+    else:
+        # Initial start — build state from USEBIO + form params
+        trump = request.POST.get("trump", "N")
+        declarer = request.POST.get("declarer", "N")
+
+        results_file = get_object_or_404(ResultsFile, pk=results_file_id)
+        usebio = parse_usebio_file(results_file)
+        hand = _load_hand_for_board(usebio, board_number)
+        if hand is None:
+            return HttpResponse(
+                f"<p class='text-danger'>Board {board_number} hand data not found.</p>"
+            )
+        state = _build_initial_state(hand, trump, declarer)
+
+    # ── Process played card (if any) ───────────────────────────────────────
+    if played_suit and played_rank and not state.get("game_over"):
+        current_player = state["next_to_play"]
+        player_hand = state["hands"][current_player]
+
+        # Validate card is in hand
+        if played_rank not in player_hand.get(played_suit, []):
+            return HttpResponse(
+                "<p class='text-danger'>Illegal card — not in your hand.</p>",
+                status=400,
+            )
+
+        # Validate follow-suit rule
+        led_suit = state["current_trick"][0]["suit"] if state["current_trick"] else None
+        legal = _get_legal_cards(player_hand, led_suit)
+        if played_suit not in legal or played_rank not in legal[played_suit]:
+            return HttpResponse(
+                "<p class='text-danger'>Illegal card — must follow suit.</p>",
+                status=400,
+            )
+
+        # Remove card from hand
+        player_hand[played_suit].remove(played_rank)
+
+        # Add to current trick
+        state["current_trick"].append(
+            {"direction": current_player, "suit": played_suit, "rank": played_rank}
+        )
+
+        # Check trick completion
+        if len(state["current_trick"]) == 4:
+            winner = determine_trick_winner(state["current_trick"], state["trump"])
+            if winner in ("N", "S"):
+                state["tricks_ns"] += 1
+            else:
+                state["tricks_ew"] += 1
+            state["current_trick"] = []
+            state["trick_leader"] = winner
+            state["next_to_play"] = winner
+        else:
+            state["next_to_play"] = next_direction(current_player)
+
+    # ── Check for game over ────────────────────────────────────────────────
+    total_tricks = state["tricks_ns"] + state["tricks_ew"]
+    if total_tricks == 13:
+        state["game_over"] = True
+
+    # ── Call solver for next optimal cards ────────────────────────────────
+    state["optimal_cards"] = []
+    if not state["game_over"]:
+        pbn = hands_to_pbn(state["hands"])
+        trick_suits, trick_ranks = _build_trick_arrays(state["current_trick"])
+        state["optimal_cards"] = solve_board(
+            pbn,
+            state["trump"],
+            state["next_to_play"],
+            trick_suits,
+            trick_ranks,
+        )
+
+    # ── Compute legal cards for display ───────────────────────────────────
+    next_player = state["next_to_play"]
+    led_suit_now = state["current_trick"][0]["suit"] if state["current_trick"] else None
+    if not state["game_over"]:
+        legal_cards = _get_legal_cards(state["hands"][next_player], led_suit_now)
+    else:
+        legal_cards = {}
+
+    # Flatten optimal_cards to a set of (suit, rank) tuples for easy template lookup
+    optimal_set = {(c["suit"], c["rank"]) for c in state["optimal_cards"]}
+
+    game_state_json = json.dumps(state)
+
+    # ── Pre-process hands for template (no custom filters needed) ─────────
+    _suit_meta = [
+        ("S", "♠", "black"),
+        ("H", "♥", "red"),
+        ("D", "♦", "red"),
+        ("C", "♣", "black"),
+    ]
+    rendered_hands = {}
+    for dir_key in ["N", "E", "S", "W"]:
+        suits = []
+        for suit_key, symbol, color in _suit_meta:
+            cards = []
+            for rank in state["hands"][dir_key].get(suit_key, []):
+                is_active = (dir_key == next_player) and not state["game_over"]
+                is_legal = is_active and (
+                    suit_key in legal_cards and rank in legal_cards[suit_key]
+                )
+                is_optimal = (suit_key, rank) in optimal_set
+                cards.append(
+                    {
+                        "rank": rank,
+                        "is_active": is_active,
+                        "is_legal": is_legal,
+                        "is_optimal": is_optimal,
+                    }
+                )
+            suits.append(
+                {"key": suit_key, "symbol": symbol, "color": color, "cards": cards}
+            )
+        rendered_hands[dir_key] = suits
+
+    # Build current trick display keyed by direction
+    trick_by_dir = {tc["direction"]: tc for tc in state["current_trick"]}
+
+    return render(
+        request,
+        "results/double_dummy/player.html",
+        {
+            "state": state,
+            "game_state_json": game_state_json,
+            "rendered_hands": rendered_hands,
+            "trick_by_dir": trick_by_dir,
+            "results_file_id": results_file_id,
+            "board_number": board_number,
+            "directions": ["N", "E", "S", "W"],
+        },
+    )

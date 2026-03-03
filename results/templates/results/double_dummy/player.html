@@ -1,0 +1,143 @@
+{#------------------------------------------------------------------------#}
+{#  Interactive double-dummy hand player fragment.                        #}
+{#  Replaces #dd-player-container on every card play.                    #}
+{#------------------------------------------------------------------------#}
+
+{% with trump=state.trump declarer=state.declarer ntp=state.next_to_play %}
+
+    <div class="card mt-2">
+        <div class="card-header card-header-primary">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    {% if trump == "N" %}
+                        NT
+                    {% elif trump == "S" %}
+                        <span style="color:black;">♠</span>
+                    {% elif trump == "H" %}
+                        <span style="color:red;">♥</span>
+                    {% elif trump == "D" %}
+                        <span style="color:red;">♦</span>
+                    {% else %}
+                        <span style="color:black;">♣</span>
+                    {% endif %}
+                    by {{ declarer }}
+                    &mdash; NS: {{ state.tricks_ns }} / EW: {{ state.tricks_ew }}
+                </h5>
+                <button class="btn btn-sm btn-light"
+                        hx-get="{% url 'results:double_dummy_player_htmx' results_file_id=results_file_id board_number=board_number %}"
+                        hx-target="#dd-player-container"
+                        hx-swap="innerHTML">
+                    Reset
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body p-2">
+
+            {% if state.game_over %}
+                <div class="alert alert-success text-center">
+                    <strong>Hand complete</strong> &mdash;
+                    NS made {{ state.tricks_ns }} trick{% if state.tricks_ns != 1 %}s{% endif %},
+                    EW made {{ state.tricks_ew }} trick{% if state.tricks_ew != 1 %}s{% endif %}.
+                </div>
+            {% else %}
+                <div class="text-center mb-2">
+                    <span class="badge badge-secondary">To play: <strong>{{ ntp }}</strong></span>
+                    {% if state.optimal_cards %}
+                        <span class="badge badge-success ml-2">
+                            Optimal:
+                            {% for card in state.optimal_cards %}
+                                <span style="color: {% if card.suit == 'H' or card.suit == 'D' %}#ffe0e0{% else %}white{% endif %}">
+                                    {% if card.suit == "S" %}♠{% elif card.suit == "H" %}♥{% elif card.suit == "D" %}♦{% else %}♣{% endif %}{{ card.rank }}
+                                </span>
+                            {% endfor %}
+                        </span>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+        {# ── Compass table ──────────────────────────────────────────────── #}
+            <table class="mx-auto" style="border-collapse: separate; border-spacing: 4px;">
+                <tr>
+                    <td></td>
+                    <td class="text-center align-bottom">
+                        {% include "results/double_dummy/_hand.html" with direction="N" hand_suits=rendered_hands.N %}
+                    </td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td class="align-middle">
+                        {% include "results/double_dummy/_hand.html" with direction="W" hand_suits=rendered_hands.W %}
+                    </td>
+
+                {# ── Trick area (centre cell) ─────────────────────────── #}
+                    <td class="align-middle text-center"
+                        style="width: 110px; height: 90px; position: relative; vertical-align: middle;">
+                        <div style="position: relative; width: 110px; height: 90px; margin: auto;">
+
+                        {# North slot #}
+                            <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+                                        font-weight: bold; font-size: 1.1em;">
+                                {% if trick_by_dir.N %}
+                                    <span style="color: {% if trick_by_dir.N.suit == 'H' or trick_by_dir.N.suit == 'D' %}red{% else %}black{% endif %}">
+                                        {% if trick_by_dir.N.suit == "S" %}♠{% elif trick_by_dir.N.suit == "H" %}♥{% elif trick_by_dir.N.suit == "D" %}♦{% else %}♣{% endif %}{{ trick_by_dir.N.rank }}
+                                    </span>
+                                {% else %}&mdash;{% endif %}
+                            </div>
+
+                        {# West slot #}
+                            <div style="position: absolute; top: 50%; left: 0; transform: translateY(-50%);
+                                        font-weight: bold; font-size: 1.1em;">
+                                {% if trick_by_dir.W %}
+                                    <span style="color: {% if trick_by_dir.W.suit == 'H' or trick_by_dir.W.suit == 'D' %}red{% else %}black{% endif %}">
+                                        {% if trick_by_dir.W.suit == "S" %}♠{% elif trick_by_dir.W.suit == "H" %}♥{% elif trick_by_dir.W.suit == "D" %}♦{% else %}♣{% endif %}{{ trick_by_dir.W.rank }}
+                                    </span>
+                                {% else %}&mdash;{% endif %}
+                            </div>
+
+                        {# East slot #}
+                            <div style="position: absolute; top: 50%; right: 0; transform: translateY(-50%);
+                                        font-weight: bold; font-size: 1.1em;">
+                                {% if trick_by_dir.E %}
+                                    <span style="color: {% if trick_by_dir.E.suit == 'H' or trick_by_dir.E.suit == 'D' %}red{% else %}black{% endif %}">
+                                        {% if trick_by_dir.E.suit == "S" %}♠{% elif trick_by_dir.E.suit == "H" %}♥{% elif trick_by_dir.E.suit == "D" %}♦{% else %}♣{% endif %}{{ trick_by_dir.E.rank }}
+                                    </span>
+                                {% else %}&mdash;{% endif %}
+                            </div>
+
+                        {# South slot #}
+                            <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+                                        font-weight: bold; font-size: 1.1em;">
+                                {% if trick_by_dir.S %}
+                                    <span style="color: {% if trick_by_dir.S.suit == 'H' or trick_by_dir.S.suit == 'D' %}red{% else %}black{% endif %}">
+                                        {% if trick_by_dir.S.suit == "S" %}♠{% elif trick_by_dir.S.suit == "H" %}♥{% elif trick_by_dir.S.suit == "D" %}♦{% else %}♣{% endif %}{{ trick_by_dir.S.rank }}
+                                    </span>
+                                {% else %}&mdash;{% endif %}
+                            </div>
+
+                        </div>
+                    </td>
+
+                    <td class="align-middle">
+                        {% include "results/double_dummy/_hand.html" with direction="E" hand_suits=rendered_hands.E %}
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="text-center align-top">
+                        {% include "results/double_dummy/_hand.html" with direction="S" hand_suits=rendered_hands.S %}
+                    </td>
+                    <td></td>
+                </tr>
+            </table>
+
+        </div>
+    </div>
+
+{# ── Hidden state form (re-submitted with every card play) ──────────── #}
+    <form id="dd-state-form">
+        {% csrf_token %}
+        <input type="hidden" name="game_state" value="{{ game_state_json }}">
+    </form>
+
+{% endwith %}

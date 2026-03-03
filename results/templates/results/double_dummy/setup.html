@@ -1,0 +1,90 @@
+{#------------------------------------------------------------------------#}
+{#  Contract selector for the interactive double-dummy hand player.       #}
+{#  Loaded via HTMX GET into #dd-player-container.                        #}
+{#------------------------------------------------------------------------#}
+<div class="card mt-2">
+    <div class="card-header card-header-primary">
+        <h5 class="mb-0">Play this hand — choose contract</h5>
+    </div>
+    <div class="card-body">
+        <form id="dd-setup-form">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label class="font-weight-bold">Trump suit</label><br>
+                <div class="btn-group" role="group" id="trump-buttons">
+                    {% for suit, symbol, color in trumps %}
+                        <button type="button"
+                                class="btn btn-outline-secondary dd-trump-btn"
+                                data-value="{{ suit }}"
+                                style="color: {{ color }}; font-size: 1.2em;"
+                                onclick="ddSelectTrump(this)">{{ symbol }}</button>
+                    {% endfor %}
+                    <button type="button"
+                            class="btn btn-outline-secondary dd-trump-btn"
+                            data-value="N"
+                            onclick="ddSelectTrump(this)">NT</button>
+                </div>
+                <input type="hidden" name="trump" id="dd-trump-value" value="">
+            </div>
+
+            <div class="form-group mt-3">
+                <label class="font-weight-bold">Declarer</label><br>
+                <div class="btn-group" role="group" id="declarer-buttons">
+                    {% for dir in declarer_dirs %}
+                        <button type="button"
+                                class="btn btn-outline-secondary dd-dir-btn"
+                                data-value="{{ dir }}"
+                                onclick="ddSelectDeclarer(this)">{{ dir }}</button>
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="declarer" id="dd-declarer-value" value="">
+            </div>
+
+            <div class="mt-3">
+                <button type="button"
+                        id="dd-start-btn"
+                        class="btn btn-success"
+                        disabled
+                        hx-post="{% url 'results:double_dummy_play_card_htmx' results_file_id=results_file_id board_number=board_number %}"
+                        hx-include="#dd-setup-form"
+                        hx-target="#dd-player-container"
+                        hx-swap="innerHTML">
+                    Start
+                </button>
+                <small class="text-muted ml-2">Select a trump and declarer to start</small>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function ddSelectTrump(btn) {
+        document.querySelectorAll('.dd-trump-btn').forEach(b => b.classList.remove('btn-primary', 'active'));
+        btn.classList.add('btn-primary', 'active');
+        document.getElementById('dd-trump-value').value = btn.dataset.value;
+        ddCheckStartReady();
+    }
+
+    function ddSelectDeclarer(btn) {
+        document.querySelectorAll('.dd-dir-btn').forEach(b => b.classList.remove('btn-info', 'active'));
+        btn.classList.add('btn-info', 'active');
+        document.getElementById('dd-declarer-value').value = btn.dataset.value;
+        ddCheckStartReady();
+    }
+
+    function ddCheckStartReady() {
+        const trump = document.getElementById('dd-trump-value').value;
+        const declarer = document.getElementById('dd-declarer-value').value;
+        document.getElementById('dd-start-btn').disabled = !(trump && declarer);
+    }
+
+    {% if preselect_trump %}
+        document.addEventListener('DOMContentLoaded', function() {
+            const trumpBtn = document.querySelector('.dd-trump-btn[data-value="{{ preselect_trump }}"]');
+            if (trumpBtn) ddSelectTrump(trumpBtn);
+            const dirBtn = document.querySelector('.dd-dir-btn[data-value="{{ preselect_declarer }}"]');
+            if (dirBtn) ddSelectDeclarer(dirBtn);
+        });
+    {% endif %}
+</script>
