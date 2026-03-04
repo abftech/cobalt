@@ -32,7 +32,7 @@
                             <button type="button"
                                     class="btn btn-outline-primary dd-trump-btn"
                                     data-value="{{ suit }}"
-                                    onclick="ddSelectTrump(this)">{{ symbol }}</button>
+                                    onclick="ddSelectTrump(this)"><span style="font-size: 1.4em; line-height: 1; color: {{ color }};">{{ symbol }}</span></button>
                         {% endfor %}
                         <button type="button"
                                 class="btn btn-outline-primary dd-trump-btn"
@@ -74,6 +74,9 @@
 </div>
 
 <script>
+    // Remove any Bootstrap tooltip elements left in <body> from the previous render
+    $('.tooltip').remove();
+
     function ddSelectLevel(btn) {
         document.querySelectorAll('.dd-level-btn').forEach(b => b.classList.remove('btn-warning', 'active'));
         btn.classList.add('btn-warning', 'active');

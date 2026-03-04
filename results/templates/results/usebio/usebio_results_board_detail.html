@@ -190,8 +190,9 @@
                         </table>
 
                         <div class="mt-3">
-                            <button class="btn btn-primary btn-sm"
-                                    hx-get="{% url 'results:double_dummy_player_htmx' results_file_id=results_file.id board_number=board_number %}{% if pair_contract_level %}?level={{ pair_contract_level }}&trump={{ pair_contract_trump }}&declarer={{ pair_contract_declarer }}{% endif %}"
+                            <button id="dd-play-button"
+                                    class="btn btn-primary btn-sm"
+                                    hx-get="{% url 'results:double_dummy_player_htmx' results_file_id=results_file.id board_number=board_number %}{% if pair_contract_level %}?level={{ pair_contract_level }}&trump={{ pair_contract_trump }}&declarer={{ pair_contract_declarer }}&double={{ pair_contract_double }}{% endif %}"
                                     hx-target="#dd-player-container"
                                     hx-swap="innerHTML"
                                     _="on click hide me">

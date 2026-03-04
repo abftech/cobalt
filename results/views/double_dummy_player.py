@@ -172,32 +172,36 @@ def _build_trick_arrays(current_trick):
 
 
 def _parse_par_contract(par_string):
-    """Extract (level, trump, declarer) from a par_string.
+    """Extract (level, trump, declarer, double) from a par_string.
 
     Handles formats like:
       "4N= by N for 430"
       "5HX by EW for 100"
       "4S= by N or 4H= by E for -620"   ← takes first contract
 
-    Returns (level_int, trump_str, declarer_str) or (None, None, None) on failure.
+    Returns (level_int, trump_str, declarer_str, double_str) or
+    (None, None, None, None) on failure.
     """
     if not par_string:
-        return None, None, None
+        return None, None, None, None
     try:
         first = par_string.split(" or ")[0].strip()
         level = int(first[0])
         trump = first[1]  # C/D/H/S/N
+        suffix = first[2:]  # e.g. "X by EW for 100" or "= by N for 430"
+        double = (
+            "XX" if suffix.startswith("XX") else "X" if suffix.startswith("X") else ""
+        )
         by_idx = first.find(" by ")
         if by_idx < 0:
-            return None, None, None
-        index_field = by_idx + 4
-        declarer_raw = first[index_field:].split()[0]
+            return None, None, None, None
+        declarer_raw = first[by_idx + 4 :].split()[0]
         declarer = {"NS": "N", "EW": "E"}.get(declarer_raw, declarer_raw)
         if declarer not in ("N", "E", "S", "W"):
-            return None, None, None
-        return level, trump, declarer
+            return None, None, None, None
+        return level, trump, declarer, double
     except (IndexError, ValueError, AttributeError):
-        return None, None, None
+        return None, None, None, None
 
 
 def _render_player(request, state, results_file_id, board_number, trick_pause=False):
@@ -263,13 +267,16 @@ def _render_player(request, state, results_file_id, board_number, trick_pause=Fa
                 is_optimal = (
                     is_active and is_legal and (suit_key, rank) in is_optimal_set
                 )
+                outcome = dir_outcomes.get((suit_key, rank), "")
                 cards.append(
                     {
                         "rank": rank,
                         "is_active": is_active,
                         "is_legal": is_legal,
                         "is_optimal": is_optimal,
-                        "outcome": dir_outcomes.get((suit_key, rank), ""),
+                        "outcome": outcome,
+                        "outcome_positive": bool(outcome)
+                        and (outcome == "=" or outcome[0] == "+"),
                     }
                 )
             suits.append(
@@ -338,9 +345,12 @@ def double_dummy_player_htmx(request, results_file_id, board_number):
             if int(board["BOARD_NUMBER"]) == board_number:
                 dd_table = double_dummy_from_usebio(board["HAND"])
                 _, par_string = par_score_and_contract(dd_table, vulnerability, dealer)
-                preselect_level, preselect_trump, preselect_declarer = (
-                    _parse_par_contract(par_string)
-                )
+                (
+                    preselect_level,
+                    preselect_trump,
+                    preselect_declarer,
+                    preselect_double,
+                ) = _parse_par_contract(par_string)
                 break
     except Exception:
         pass
@@ -351,6 +361,7 @@ def double_dummy_player_htmx(request, results_file_id, board_number):
         qs_level = request.GET.get("level")
         qs_trump = request.GET.get("trump")
         qs_declarer = request.GET.get("declarer")
+        qs_double = request.GET.get("double", "")
         try:
             qs_level_int = int(qs_level) if qs_level else None
         except (ValueError, TypeError):
@@ -363,6 +374,7 @@ def double_dummy_player_htmx(request, results_file_id, board_number):
             and qs_declarer in ("N", "E", "S", "W")
         ):
             state = _build_initial_state(hand, qs_trump, qs_declarer, qs_level_int)
+            state["double"] = qs_double if qs_double in ("X", "XX") else ""
             return _render_player(request, state, results_file_id, board_number)
 
         # Fall back to the par contract
@@ -370,6 +382,8 @@ def double_dummy_player_htmx(request, results_file_id, board_number):
             state = _build_initial_state(
                 hand, preselect_trump, preselect_declarer, preselect_level
             )
+            state["is_par_contract"] = True
+            state["double"] = preselect_double or ""
             return _render_player(request, state, results_file_id, board_number)
 
     # Fallback: show the contract selector
@@ -446,6 +460,7 @@ def double_dummy_play_card_htmx(request, results_file_id, board_number):
             else:
                 state["tricks_ew"] += 1
                 state.setdefault("tricks_sequence", []).append("EW")
+            state.setdefault("trick_history", []).append(list(state["current_trick"]))
             state["current_trick"] = []
             state["trick_leader"] = winner
             state["next_to_play"] = winner

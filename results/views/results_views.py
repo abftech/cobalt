@@ -472,15 +472,17 @@ def usebio_mp_pairs_board_view(request, results_file_id, board_number, pair_id):
 
     # Extract the pair's contract for this board so the DDS player can use it
     pair_contract_level = pair_contract_trump = pair_contract_declarer = None
+    pair_contract_double = ""
     if pair_id and pair_id != "0":
         for row in board_data:
             if pair_id in (row.get("ns_pair_number"), row.get("ew_pair_number")):
-                level, trump = _parse_usebio_contract(row.get("contract", ""))
+                level, trump, double = _parse_usebio_contract(row.get("contract", ""))
                 played_by = row.get("played_by", "")
                 if level and trump and played_by in ("N", "E", "S", "W"):
                     pair_contract_level = level
                     pair_contract_trump = trump
                     pair_contract_declarer = played_by
+                    pair_contract_double = double
                 break
 
     return render(
@@ -508,33 +510,40 @@ def usebio_mp_pairs_board_view(request, results_file_id, board_number, pair_id):
             "pair_contract_level": pair_contract_level,
             "pair_contract_trump": pair_contract_trump,
             "pair_contract_declarer": pair_contract_declarer,
+            "pair_contract_double": pair_contract_double,
         },
     )
 
 
 def _parse_usebio_contract(contract_str):
-    """Parse a USEBIO contract string into (level, trump).
+    """Parse a USEBIO contract string into (level, trump, double).
 
-    Examples: "4S" -> (4, "S"), "3NT" -> (3, "N"), "5HX" -> (5, "H").
-    Returns (None, None) for passed-out boards or unparseable strings.
+    Examples: "4S" -> (4, "S", ""), "3NT" -> (3, "N", ""),
+              "5HX" -> (5, "H", "X"), "5HXX" -> (5, "H", "XX").
+    Returns (None, None, None) for passed-out boards or unparseable strings.
     """
     if not contract_str:
-        return None, None
+        return None, None, None
     s = contract_str.upper().strip()
     if s in ("PASS", "PASSOUT", "P"):
-        return None, None
+        return None, None, None
     try:
         level = int(s[0])
         rest = s[1:]
         if rest.startswith("NT"):
             trump = "N"
+            suffix = rest[2:]
         elif rest and rest[0] in ("S", "H", "D", "C"):
             trump = rest[0]
+            suffix = rest[1:]
         else:
-            return None, None
-        return level, trump
+            return None, None, None
+        double = (
+            "XX" if suffix.startswith("XX") else "X" if suffix.startswith("X") else ""
+        )
+        return level, trump, double
     except (IndexError, ValueError):
-        return None, None
+        return None, None, None
 
 
 def _insert_par_data_into_list(board_data, par_score, par_string, ns_flag):

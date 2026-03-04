@@ -2,31 +2,34 @@
 {#  Interactive double-dummy hand player fragment.                        #}
 {#  Replaces #dd-player-container on every card play.                    #}
 {#------------------------------------------------------------------------#}
+{% load cobalt_tags %}
 
 {% with trump=state.trump declarer=state.declarer ntp=state.next_to_play %}
 
-    <div class="card mt-2">
+    <div class="card mt-5">
         <div class="card-header card-header-primary">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    {{ state.level }}{% if trump == "N" %}NT{% elif trump == "S" %}<span style="color:black;">♠</span>{% elif trump == "H" %}<span style="color:red;">♥</span>{% elif trump == "D" %}<span style="color:red;">♦</span>{% else %}<span style="color:black;">♣</span>{% endif %}
-                    by {{ declarer }}
-                    &mdash; NS: {{ state.tricks_ns }} / EW: {{ state.tricks_ew }}
-                </h5>
+            <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <button class="btn btn-sm btn-light mr-1"
-                            hx-get="{% url 'results:double_dummy_player_htmx' results_file_id=results_file_id board_number=board_number %}"
-                            hx-target="#dd-player-container"
-                            hx-swap="innerHTML">
-                        Reset
-                    </button>
-                    <button class="btn btn-sm btn-light"
-                            hx-get="{% url 'results:double_dummy_player_htmx' results_file_id=results_file_id board_number=board_number %}?setup=1"
-                            hx-target="#dd-player-container"
-                            hx-swap="innerHTML">
-                        Change contract
-                    </button>
+                    <h2 class="mb-1">Double Dummy Solver</h2>
+                    <div class="d-flex align-items-center mb-0">
+                        <h3 class="mb-0 mr-2">
+                            {% if state.is_par_contract %}Par contract: {% endif %}{{ state.level }}{% if trump == "N" %}NT{% else %}{{ trump|cobalt_suit_replace|safe }}{% endif %}{% if state.double %}{{ state.double }}{% endif %}
+                            by {% if declarer == "N" %}North{% elif declarer == "S" %}South{% elif declarer == "E" %}East{% else %}West{% endif %}
+                        </h3>
+                        <button class="btn btn-info"
+                                style="padding: 1px 6px; font-size: 0.75em; line-height: 1.4;"
+                                data-toggle="tooltip" title="Change contract"
+                                hx-get="{% url 'results:double_dummy_player_htmx' results_file_id=results_file_id board_number=board_number %}?setup=1"
+                                hx-target="#dd-player-container"
+                                hx-swap="innerHTML">
+                            <i class="fas fa-exchange-alt"></i>
+                        </button>
+                    </div>
+                    <h5 class="mb-0">NS: {{ state.tricks_ns }} / EW: {{ state.tricks_ew }}</h5>
                 </div>
+                <p class="d-inline font-weight-bold text-white"
+                   style="cursor: pointer; font-size: larger;"
+                   onclick="$('#dd-player-container').empty(); $('#dd-play-button').show();">X</p>
             </div>
         </div>
 
@@ -60,43 +63,55 @@
                         <div style="position: relative; width: 110px; height: 90px; margin: auto;">
 
                         {# North slot #}
-                            <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-                                        font-weight: bold; font-size: 1.1em;">
-                                {% if trick_by_dir.N %}
-                                    <span style="color: {% if trick_by_dir.N.suit == 'H' or trick_by_dir.N.suit == 'D' %}red{% else %}black{% endif %}">
-                                        {% if trick_by_dir.N.suit == "S" %}♠{% elif trick_by_dir.N.suit == "H" %}♥{% elif trick_by_dir.N.suit == "D" %}♦{% else %}♣{% endif %}{{ trick_by_dir.N.rank }}
-                                    </span>
-                                {% else %}&mdash;{% endif %}
+                            <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%);">
+                                {% if trick_by_dir.N %}{% with c=trick_by_dir.N %}
+                                    <div style="background:white; border:1.5px solid #ccc; border-radius:4px;
+                                                box-shadow:1px 2px 3px rgba(0,0,0,0.2); padding:1px 5px;
+                                                min-width:26px; text-align:center; display:inline-block;
+                                                color:{% if c.suit == 'H' or c.suit == 'D' %}red{% else %}#111{% endif %};">
+                                        <div style="font-weight:bold; font-size:0.85em; line-height:1.2;">{{ c.rank }}</div>
+                                        <div style="font-size:1.5em; line-height:1.1;">{% if c.suit == "S" %}&spadesuit;{% elif c.suit == "H" %}&heartsuit;{% elif c.suit == "D" %}&diamondsuit;{% else %}&clubsuit;{% endif %}</div>
+                                    </div>
+                                {% endwith %}{% endif %}
                             </div>
 
                         {# West slot #}
-                            <div style="position: absolute; top: 50%; left: 0; transform: translateY(-50%);
-                                        font-weight: bold; font-size: 1.1em;">
-                                {% if trick_by_dir.W %}
-                                    <span style="color: {% if trick_by_dir.W.suit == 'H' or trick_by_dir.W.suit == 'D' %}red{% else %}black{% endif %}">
-                                        {% if trick_by_dir.W.suit == "S" %}♠{% elif trick_by_dir.W.suit == "H" %}♥{% elif trick_by_dir.W.suit == "D" %}♦{% else %}♣{% endif %}{{ trick_by_dir.W.rank }}
-                                    </span>
-                                {% else %}&mdash;{% endif %}
+                            <div style="position: absolute; top: 50%; left: 0; transform: translateY(-50%);">
+                                {% if trick_by_dir.W %}{% with c=trick_by_dir.W %}
+                                    <div style="background:white; border:1.5px solid #ccc; border-radius:4px;
+                                                box-shadow:1px 2px 3px rgba(0,0,0,0.2); padding:1px 5px;
+                                                min-width:26px; text-align:center; display:inline-block;
+                                                color:{% if c.suit == 'H' or c.suit == 'D' %}red{% else %}#111{% endif %};">
+                                        <div style="font-weight:bold; font-size:0.85em; line-height:1.2;">{{ c.rank }}</div>
+                                        <div style="font-size:1.5em; line-height:1.1;">{% if c.suit == "S" %}&spadesuit;{% elif c.suit == "H" %}&heartsuit;{% elif c.suit == "D" %}&diamondsuit;{% else %}&clubsuit;{% endif %}</div>
+                                    </div>
+                                {% endwith %}{% endif %}
                             </div>
 
                         {# East slot #}
-                            <div style="position: absolute; top: 50%; right: 0; transform: translateY(-50%);
-                                        font-weight: bold; font-size: 1.1em;">
-                                {% if trick_by_dir.E %}
-                                    <span style="color: {% if trick_by_dir.E.suit == 'H' or trick_by_dir.E.suit == 'D' %}red{% else %}black{% endif %}">
-                                        {% if trick_by_dir.E.suit == "S" %}♠{% elif trick_by_dir.E.suit == "H" %}♥{% elif trick_by_dir.E.suit == "D" %}♦{% else %}♣{% endif %}{{ trick_by_dir.E.rank }}
-                                    </span>
-                                {% else %}&mdash;{% endif %}
+                            <div style="position: absolute; top: 50%; right: 0; transform: translateY(-50%);">
+                                {% if trick_by_dir.E %}{% with c=trick_by_dir.E %}
+                                    <div style="background:white; border:1.5px solid #ccc; border-radius:4px;
+                                                box-shadow:1px 2px 3px rgba(0,0,0,0.2); padding:1px 5px;
+                                                min-width:26px; text-align:center; display:inline-block;
+                                                color:{% if c.suit == 'H' or c.suit == 'D' %}red{% else %}#111{% endif %};">
+                                        <div style="font-weight:bold; font-size:0.85em; line-height:1.2;">{{ c.rank }}</div>
+                                        <div style="font-size:1.5em; line-height:1.1;">{% if c.suit == "S" %}&spadesuit;{% elif c.suit == "H" %}&heartsuit;{% elif c.suit == "D" %}&diamondsuit;{% else %}&clubsuit;{% endif %}</div>
+                                    </div>
+                                {% endwith %}{% endif %}
                             </div>
 
                         {# South slot #}
-                            <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-                                        font-weight: bold; font-size: 1.1em;">
-                                {% if trick_by_dir.S %}
-                                    <span style="color: {% if trick_by_dir.S.suit == 'H' or trick_by_dir.S.suit == 'D' %}red{% else %}black{% endif %}">
-                                        {% if trick_by_dir.S.suit == "S" %}♠{% elif trick_by_dir.S.suit == "H" %}♥{% elif trick_by_dir.S.suit == "D" %}♦{% else %}♣{% endif %}{{ trick_by_dir.S.rank }}
-                                    </span>
-                                {% else %}&mdash;{% endif %}
+                            <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);">
+                                {% if trick_by_dir.S %}{% with c=trick_by_dir.S %}
+                                    <div style="background:white; border:1.5px solid #ccc; border-radius:4px;
+                                                box-shadow:1px 2px 3px rgba(0,0,0,0.2); padding:1px 5px;
+                                                min-width:26px; text-align:center; display:inline-block;
+                                                color:{% if c.suit == 'H' or c.suit == 'D' %}red{% else %}#111{% endif %};">
+                                        <div style="font-weight:bold; font-size:0.85em; line-height:1.2;">{{ c.rank }}</div>
+                                        <div style="font-size:1.5em; line-height:1.1;">{% if c.suit == "S" %}&spadesuit;{% elif c.suit == "H" %}&heartsuit;{% elif c.suit == "D" %}&diamondsuit;{% else %}&clubsuit;{% endif %}</div>
+                                    </div>
+                                {% endwith %}{% endif %}
                             </div>
 
                         </div>
@@ -117,27 +132,29 @@
 
             {# ── Trick sequence visualiser (bottom-left of card body) ── #}
             {% if tricks_display %}
-                <div style="position: absolute; left: 8px; bottom: 8px;
-                            width: {{ pile_width }}px; height: 48px;">
+                <div id="dd-trick-pile" style="position: absolute; left: 8px; bottom: 8px;
+                                               width: {{ pile_width }}px; height: 48px;">
                     {% for t in tricks_display %}
                         {% if t.side == "NS" %}
-                            <div title="NS" style="
-                                                   position: absolute; left: {{ t.left_px }}px; top: 0;
-                                                   width: 34px; height: 48px;
-                                                   z-index: {{ forloop.counter }};
-                                                   background: repeating-linear-gradient(135deg, #0d47a1 0 3px, #1976d2 3px 7px);
-                                                   border: 1.5px solid #bbb; border-radius: 3px;
-                                                   box-shadow: inset 0 0 0 2px white, 2px 2px 3px rgba(0,0,0,0.35);
-                                                  "></div>
+                            <div data-trick-index="{{ forloop.counter0 }}"
+                                 style="position: absolute; left: {{ t.left_px }}px; top: 0;
+                                        width: 34px; height: 48px;
+                                        z-index: {{ forloop.counter }};
+                                        cursor: pointer;
+                                        background: repeating-linear-gradient(135deg, #0d47a1 0 3px, #1976d2 3px 7px);
+                                        border: 1.5px solid #bbb; border-radius: 3px;
+                                        box-shadow: inset 0 0 0 2px white, 2px 2px 3px rgba(0,0,0,0.35);
+                                       "></div>
                         {% else %}
-                            <div title="EW" style="
-                                                   position: absolute; left: {{ t.left_px }}px; bottom: 0;
-                                                   width: 48px; height: 34px;
-                                                   z-index: {{ forloop.counter }};
-                                                   background: repeating-linear-gradient(135deg, #b71c1c 0 3px, #e53935 3px 7px);
-                                                   border: 1.5px solid #bbb; border-radius: 3px;
-                                                   box-shadow: inset 0 0 0 2px white, 2px 2px 3px rgba(0,0,0,0.35);
-                                                  "></div>
+                            <div data-trick-index="{{ forloop.counter0 }}"
+                                 style="position: absolute; left: {{ t.left_px }}px; bottom: 0;
+                                        width: 48px; height: 34px;
+                                        z-index: {{ forloop.counter }};
+                                        cursor: pointer;
+                                        background: repeating-linear-gradient(135deg, #b71c1c 0 3px, #e53935 3px 7px);
+                                        border: 1.5px solid #bbb; border-radius: 3px;
+                                        box-shadow: inset 0 0 0 2px white, 2px 2px 3px rgba(0,0,0,0.35);
+                                       "></div>
                         {% endif %}
                     {% endfor %}
                 </div>
@@ -161,21 +178,25 @@
         <div class="text-center mt-2">
             <button type="button"
                     class="btn btn-sm btn-outline-secondary"
+                    data-toggle="tooltip"
+                    title="Undo last card"
                     hx-post="{% url 'results:double_dummy_play_card_htmx' results_file_id=results_file_id board_number=board_number %}"
                     hx-include="#dd-state-form"
                     hx-vals='{"action":"undo_one"}'
                     hx-target="#dd-player-container"
                     hx-swap="innerHTML">
-                &#8592; Back 1 card
+                <i class="fas fa-step-backward"></i>
             </button>
             <button type="button"
                     class="btn btn-sm btn-outline-secondary ml-1"
+                    data-toggle="tooltip"
+                    title="Restart from the beginning"
                     hx-post="{% url 'results:double_dummy_play_card_htmx' results_file_id=results_file_id board_number=board_number %}"
                     hx-include="#dd-state-form"
                     hx-vals='{"action":"undo_all"}'
                     hx-target="#dd-player-container"
                     hx-swap="innerHTML">
-                &#8617; Back to start
+                <i class="fas fa-fast-backward"></i>
             </button>
         </div>
     {% endif %}
@@ -187,3 +208,91 @@
     </form>
 
 {% endwith %}
+<script>
+// Remove any Bootstrap tooltip elements left in <body> from the previous render
+    $('.tooltip').remove();
+    $('[data-toggle="tooltip"]').tooltip();
+
+    (function () {
+        const pile = document.getElementById('dd-trick-pile');
+        if (!pile) return;
+
+        let state;
+        try {
+            state = JSON.parse(document.querySelector('#dd-state-form input[name="game_state"]').value);
+        } catch (e) { return; }
+
+        const history = state.trick_history || [];
+        if (history.length === 0) return;
+
+        const suitSymbol = { S: '\u2660', H: '\u2665', D: '\u2666', C: '\u2663' };
+        const suitColor  = { S: '#111',   H: 'red',    D: 'red',    C: '#111'  };
+
+        let popup = null;
+        const timers = [];
+
+        function clearTimers() { while (timers.length) clearTimeout(timers.pop()); }
+
+        function removePopup() {
+            clearTimers();
+            if (popup) { popup.remove(); popup = null; }
+        }
+
+        function showTrick(trickCards) {
+            removePopup();
+
+            popup = document.createElement('div');
+            popup.style.cssText = 'position:absolute; bottom:60px; left:8px; background:white; ' +
+            'border:1.5px solid #ccc; border-radius:6px; padding:6px 8px; ' +
+            'box-shadow:2px 3px 8px rgba(0,0,0,0.25); display:flex; gap:6px; ' +
+            'align-items:flex-end; z-index:100; pointer-events:none;';
+
+            var cardEls = trickCards.map(function (play) {
+                var wrapper = document.createElement('div');
+                wrapper.style.cssText = 'opacity:0; text-align:center; min-width:28px;';
+
+                var label = document.createElement('div');
+                label.style.cssText = 'font-size:0.7em; color:#666; margin-bottom:2px; font-weight:bold;';
+                label.textContent = play.direction;
+
+                var face = document.createElement('div');
+                face.style.cssText = 'background:white; border:1.5px solid #ccc; border-radius:4px; ' +
+                'padding:1px 5px; display:inline-block; color:' + suitColor[play.suit] + ';';
+
+                var rank = document.createElement('div');
+                rank.style.cssText = 'font-weight:bold; font-size:0.9em; line-height:1.2;';
+                rank.textContent = play.rank;
+
+                var sym = document.createElement('div');
+                sym.style.cssText = 'font-size:1.4em; line-height:1.1;';
+                sym.textContent = suitSymbol[play.suit];
+
+                face.appendChild(rank);
+                face.appendChild(sym);
+                wrapper.appendChild(label);
+                wrapper.appendChild(face);
+                popup.appendChild(wrapper);
+                return wrapper;
+            });
+
+            pile.closest('.card-body').appendChild(popup);
+
+            cardEls.forEach(function (el, i) {
+                timers.push(setTimeout(function () {
+                    el.style.transition = 'opacity 0.25s ease-in';
+                    el.style.opacity = '1';
+                }, i * 400));
+            });
+        }
+
+        pile.addEventListener('mouseleave', removePopup);
+
+        pile.querySelectorAll('[data-trick-index]').forEach(function (strip) {
+            strip.addEventListener('mouseenter', function () {
+                var idx = parseInt(strip.dataset.trickIndex, 10);
+                var trickCards = history[idx];
+                if (trickCards) showTrick(trickCards);
+            });
+        });
+    })();
+</script>
