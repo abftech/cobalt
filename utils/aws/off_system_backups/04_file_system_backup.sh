@@ -9,9 +9,9 @@
 
 if [ "$1" = "no-email" ]
 then
-  exclude=" --exclude '/post_office_attachments'"
+  exclude_args=(--exclude '/post_office_attachments')
 else
-  exclude=""
+  exclude_args=()
 fi
 
 # Copy file system
@@ -21,7 +21,7 @@ echo "Starting rsync to copy files..."
 if ! rsync \
   -avzr \
   -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $SSH_KEY_FILE" \
-   --progress "$exclude"\
+   --progress "${exclude_args[@]}"\
    ec2-user@"$EC2_IP_ADDRESS":/cobalt-media "$FILE_SYSTEM_DIRECTORY"
 then
   ./notify.sh error "Error running rsync"
