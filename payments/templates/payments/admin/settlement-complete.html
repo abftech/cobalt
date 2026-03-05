@@ -32,6 +32,7 @@
                                     <th>Account Number</th>
                                     <th>Amount({{ GLOBAL_CURRENCY_SYMBOL }})</th>
                                     <th>Date</th>
+                                    <th>Xero Invoice</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -42,6 +43,13 @@
                                         <td>{{ tran.organisation.bank_account }}</td>
                                         <td>{{ tran.amount }}</td>
                                         <td>{{ tran.created_date }}</td>
+                                        <td>
+                                            {% if tran.xero_invoice %}
+                                                <span class="badge badge-success">{{ tran.xero_invoice.invoice_number }}</span>
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
                                     </tr>
                                 {% endfor %}
                             </tbody>

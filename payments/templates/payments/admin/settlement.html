@@ -99,6 +99,16 @@
                             </table>
 
                         </div>
+                        {% if xero_available %}
+                            <div class="mt-3 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="use_xero" id="id_use_xero" checked>
+                                    <label class="form-check-label" for="id_use_xero">
+                                        Generate Xero invoices (ACCPAY, awaiting bank reconciliation)
+                                    </label>
+                                </div>
+                            </div>
+                        {% endif %}
                         <div class="text-center">
                             <button class="btn btn-success" type="submit" name="export">Export Selected to CSV</button>
                             <button class="btn btn-primary" type="submit" name="confirm">Confirm Payment</button>

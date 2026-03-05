@@ -298,6 +298,15 @@ class OrganisationTransaction(AbstractTransaction):
     )
     """ Records the actual amount paid out minus the fees for settlement transactions. Blank for anything else"""
 
+    xero_invoice = models.ForeignKey(
+        "xero.XeroInvoice",
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="organisation_transactions",
+    )
+    """ Link to the Xero invoice created for this settlement transaction, if any """
+
     def save(self, *args, **kwargs):
         if not self.reference_no:
             self.reference_no = "%s-%s-%s" % (

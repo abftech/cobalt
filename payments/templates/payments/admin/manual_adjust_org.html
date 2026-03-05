@@ -48,6 +48,14 @@
 
                             {% cobalt_bs4_field form.description %}
 
+                            <div id="xero_option" style="display:none;" class="mt-2 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="use_xero" id="id_use_xero" checked>
+                                    <label class="form-check-label" for="id_use_xero">
+                                        Generate Xero invoice (ACCPAY, awaiting bank reconciliation)
+                                    </label>
+                                </div>
+                            </div>
 
                             <div>
                                 <button type="submit" class="btn btn-success center-text cobalt-save">Submit</button>
@@ -85,12 +93,23 @@
                 }
             }
 
+            function updateXeroOption() {
+                if ($('#id_adjustment_type').val() === "2") {
+                    $('#xero_option').show();
+                } else {
+                    $('#xero_option').hide();
+                }
+            }
+
             $('#id_adjustment_type').change(function(){
                 changeDescription();
                 if ($('#id_adjustment_type').val() !== "2"){
                     $('#id_description').attr("readonly", false);
                 }
+                updateXeroOption();
             });
+
+            updateXeroOption();
 
             $('#id_amount').on("change", function(evt){
                 evt.preventDefault();

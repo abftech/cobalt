@@ -159,6 +159,12 @@ XERO_CLIENT_ID = set_value("XERO_CLIENT_ID")
 XERO_CLIENT_SECRET = set_value("XERO_CLIENT_SECRET")
 XERO_TENANT_NAME = "17 Ways"
 XERO_BANK_ACCOUNT_CODE = set_value("XERO_BANK_ACCOUNT_CODE", "not-set")
+#   XERO_SETTLEMENT_ACCOUNT_CODE. When creating an ACCPAY invoice line item, Xero needs to know
+#   which GL account to classify the expense/payable against in the chart of
+#    accounts (e.g. a "Club Settlement Payouts" account). This is separate from
+#    XERO_BANK_ACCOUNT_CODE, which identifies the physical bank account that money
+#    flows through. You create/identify the account in Xero's chart of accounts.
+XERO_SETTLEMENT_ACCOUNT_CODE = set_value("XERO_SETTLEMENT_ACCOUNT_CODE", "not-set")
 
 DATABASES = {
     "default": {

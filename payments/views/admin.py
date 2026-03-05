@@ -30,6 +30,8 @@ from cobalt.settings import (
     ABF_ORG,
     TIME_ZONE,
 )
+from xero.core import XeroApi
+from xero.models import XeroCredentials
 from events.models import EventLog
 from logs.views import log_event
 from masterpoints.views import user_summary
@@ -1875,6 +1877,10 @@ def settlement(request):
             org_transaction.amount_to_settle = amount_to_settle
             non_zero_orgs.append(org_transaction)
 
+    xero_available = XeroCredentials.objects.filter(
+        access_token__gt="", refresh_token__gt=""
+    ).exists()
+
     if request.method == "POST":
 
         form = SettlementForm(request.POST, orgs=org_list)
@@ -1961,6 +1967,38 @@ def settlement(request):
                     )
                     trans_list.append(trans)
 
+                # Create Xero invoices if requested — non-blocking, failures warn but don't abort
+                xero_failures = []
+                if form.cleaned_data["use_xero"] and xero_available:
+                    xero = XeroApi()
+                    for trans in trans_list:
+                        try:
+                            reference = f"Settlement {trans.organisation.name} {datetime.date.today():%Y-%m-%d}"
+                            xero_invoice = xero.create_settlement_invoice(
+                                organisation=trans.organisation,
+                                bank_settlement_amount=float(
+                                    trans.bank_settlement_amount
+                                ),
+                                reference=reference,
+                            )
+                            if xero_invoice:
+                                trans.xero_invoice = xero_invoice
+                                trans.save(update_fields=["xero_invoice"])
+                            else:
+                                xero_failures.append(trans.organisation.name)
+                        except Exception as exc:
+                            logger.error(
+                                f"Xero settlement invoice failed for {trans.organisation.name}: {exc}"
+                            )
+                            xero_failures.append(trans.organisation.name)
+
+                if xero_failures:
+                    messages.warning(
+                        request,
+                        f"Settlement processed but Xero sync failed for: {', '.join(xero_failures)}",
+                        extra_tags="cobalt-message-warning",
+                    )
+
                 messages.success(
                     request,
                     "Settlement processed successfully.",
@@ -1976,7 +2014,9 @@ def settlement(request):
         form = SettlementForm(orgs=org_list)
 
     return render(
-        request, "payments/admin/settlement.html", {"orgs": non_zero_orgs, "form": form}
+        request,
+        "payments/admin/settlement.html",
+        {"orgs": non_zero_orgs, "form": form, "xero_available": xero_available},
     )
 
 
@@ -2061,7 +2101,7 @@ def manual_adjust_org(request, org_id=None, default_transaction=None):
             other_organisation = None
             bank_settlement_amount = None
 
-        update_organisation(
+        trans = update_organisation(
             organisation=org,
             amount=amount,
             description=description,
@@ -2070,6 +2110,43 @@ def manual_adjust_org(request, org_id=None, default_transaction=None):
             other_organisation=other_organisation,
             bank_settlement_amount=bank_settlement_amount,
         )
+
+        # Create Xero invoice for manual settlement if requested
+        if payment_type == "Settlement" and form.cleaned_data.get("use_xero"):
+            xero_credentials_exist = XeroCredentials.objects.filter(
+                access_token__gt="", refresh_token__gt=""
+            ).exists()
+            if xero_credentials_exist:
+                try:
+                    xero = XeroApi()
+                    reference = f"Settlement {org} {datetime.date.today():%Y-%m-%d}"
+                    xero_invoice = xero.create_settlement_invoice(
+                        organisation=org,
+                        bank_settlement_amount=bank_settlement_amount,
+                        reference=reference,
+                    )
+                    if xero_invoice:
+                        trans.xero_invoice = xero_invoice
+                        trans.save(update_fields=["xero_invoice"])
+                        messages.success(
+                            request,
+                            f"Xero invoice {xero_invoice.invoice_number} created.",
+                            extra_tags="cobalt-message-success",
+                        )
+                    else:
+                        messages.warning(
+                            request,
+                            "Xero invoice creation failed.",
+                            extra_tags="cobalt-message-warning",
+                        )
+                except Exception as exc:
+                    logger.error(f"Xero settlement invoice failed for {org}: {exc}")
+                    messages.warning(
+                        request,
+                        "Xero invoice creation failed.",
+                        extra_tags="cobalt-message-warning",
+                    )
+
         msg = "Adjustment successful. %s adjusted by %s%s" % (
             org,
             GLOBAL_CURRENCY_SYMBOL,

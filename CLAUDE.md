@@ -53,6 +53,64 @@ Every new model must be added to the app's `admin.py` file so it appears in the 
 
 Background/scheduled work is handled by Django management commands run by cron on the EC2 instances. See examples in `notifications/management/commands/` and `organisations/management/commands/`.
 
+### Batch job pattern
+
+Every management command **must** follow this pattern (see `organisations/management/commands/auto_pay_batch.py` as the reference):
+
+```python
+import logging
+import sys
+
+from django.core.management.base import BaseCommand
+
+from utils.models import BatchStatus
+from utils.views.cobalt_lock import CobaltLock
+
+logger = logging.getLogger("cobalt")
+
+
+class Command(BaseCommand):
+    help = "..."
+
+    def handle(self, *args, **options):
+        logger.info("<command name> starting")
+
+        batch = BatchStatus.objects.create(command="<command_name>")
+        summary_lines = []
+
+        try:
+            lock = CobaltLock("<command_name>", expiry=10)
+            if not lock.get_lock():
+                logger.info("<command name> already running (locked), exiting")
+                sys.exit(0)
+
+            # ... do work, appending human-readable lines to summary_lines ...
+
+            lock.free_lock()
+            lock.delete_lock()
+
+        except Exception as e:
+            logger.exception("<command name> failed with an unhandled exception")
+            batch.status = BatchStatus.STATUS_FAILED
+            summary_lines.append(f"\nERROR: {e}")
+            batch.summary = "\n".join(summary_lines)
+            batch.save()
+            raise
+
+        batch.status = BatchStatus.STATUS_SUCCESS
+        batch.summary = "\n".join(summary_lines)
+        batch.save()
+
+        logger.info("<command name> finished")
+```
+
+Key rules:
+- Always create a `BatchStatus` record at the start (status defaults to `STATUS_STARTED`).
+- Use `CobaltLock` to prevent concurrent runs on multiple servers; call `sys.exit(0)` if lock is not acquired.
+- Accumulate a human-readable `summary_lines` list throughout; join it into `batch.summary` at the end.
+- The outer `try/except` catches unhandled exceptions, sets `STATUS_FAILED`, saves the summary, then **re-raises** so the error is visible in cron logs.
+- On success, set `STATUS_SUCCESS` and save the batch record after releasing the lock.
+
 ### Configuration via environment variables
 
 There is a single `cobalt/settings.py`. All environment-specific configuration is supplied via environment variables (managed by Elastic Beanstalk on AWS, and by a local `.env` or shell exports in development). Never hardcode secrets or environment-specific values.

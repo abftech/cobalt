@@ -12,6 +12,7 @@ from cobalt.settings import (
     XERO_CLIENT_SECRET,
     XERO_TENANT_NAME,
     XERO_BANK_ACCOUNT_CODE,
+    XERO_SETTLEMENT_ACCOUNT_CODE,
     COBALT_HOSTNAME,
 )
 from xero.models import XeroCredentials, XeroInvoice
@@ -489,6 +490,56 @@ class XeroApi:
     # -----------------------------------------------------------------------
     # Listing methods
     # -----------------------------------------------------------------------
+
+    def create_settlement_invoice(
+        self,
+        organisation,
+        bank_settlement_amount: float,
+        reference: str,
+    ):
+        """Create an ACCPAY invoice in Xero for a settlement payment to a club.
+
+        The invoice is left as AUTHORISED (not paid). Payment confirmation comes
+        later via bank feed reconciliation in Xero, detected by the
+        sync_xero_invoice_status management command.
+
+        If the organisation has no xero_contact_id, one is created on demand.
+
+        Args:
+            organisation: The Organisation being settled.
+            bank_settlement_amount: Net amount to be paid out (after ABF fees).
+            reference: Human-readable reference string for the invoice.
+
+        Returns:
+            XeroInvoice instance on success, None on failure.
+        """
+        if not organisation.xero_contact_id:
+            logger.info(
+                f"Organisation {organisation.name} has no xero_contact_id — creating contact"
+            )
+            contact_id = self.create_organisation_contact(organisation)
+            if not contact_id:
+                logger.error(
+                    f"Failed to create Xero contact for {organisation.name} — cannot create settlement invoice"
+                )
+                return None
+
+        line_items = [
+            {
+                "description": reference,
+                "quantity": 1,
+                "unit_amount": bank_settlement_amount,
+                "account_code": XERO_SETTLEMENT_ACCOUNT_CODE,
+            }
+        ]
+
+        return self.create_invoice(
+            organisation=organisation,
+            line_items=line_items,
+            reference=reference,
+            invoice_type="ACCPAY",
+            due_days=0,
+        )
 
     def get_invoices_for_organisation(
         self,

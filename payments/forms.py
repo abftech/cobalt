@@ -1,4 +1,4 @@
-""" Payment forms with validation """
+"""Payment forms with validation"""
 
 from django import forms
 from accounts.models import User
@@ -119,6 +119,12 @@ class SettlementForm(forms.Form):
         choices=CARD_CHOICES,
     )
 
+    use_xero = forms.BooleanField(
+        required=False,
+        initial=True,
+        label="Generate Xero invoices",
+    )
+
     def __init__(self, *args, **kwargs):
         """dynamic override of checkbox list"""
 
@@ -145,6 +151,12 @@ class AdjustOrgForm(forms.ModelForm):
 
     adjustment_type = forms.ChoiceField(
         choices=[(1, "Manual Adjustment"), (2, "Settlement")]
+    )
+
+    use_xero = forms.BooleanField(
+        required=False,
+        initial=True,
+        label="Generate Xero invoice",
     )
 
     class Meta:
