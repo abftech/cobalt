@@ -1,0 +1,263 @@
+{#------------------------------------------------------------------------#}
+{#                                                                        #}
+{# Traveller view for a CROSS_IMP board                                  #}
+{#                                                                        #}
+{#------------------------------------------------------------------------#}
+{% extends 'base.html' %}
+{% load cobalt_tags %}
+{% load static %}
+{% block title %} - Results{% endblock %}
+
+{% block content %}
+
+    <div id="ignore_cobalt_save"></div>
+
+    <nav aria-label="breadcrumb" role="navigation">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url "results:results" %}">Results</a></li>
+            <li class="breadcrumb-item"><a href="{% url "results:usebio_mp_pairs_results_summary_view" results_file_id=results_file.id %}">{{ usebio.EVENT_DESCRIPTION }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Traveller - Board {{ board_number }}</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+
+        {% include "results/usebio/usebio_results_header.html" %}
+
+        <div class="card-body">
+
+            <div class="card">
+
+                <div class="card-header card-header-warning">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            {% if previous_board %}
+                                <a href="{% url "results:cross_imp_board_view" board_number=previous_board pair_id=pair_id results_file_id=results_file.id %}" class="btn btn-sm btn-secondary">Previous</a>
+                            {% endif %}
+                        </div>
+                        <div>
+                            {% if next_board %}
+                                <a href="{% url "results:cross_imp_board_view" board_number=next_board pair_id=pair_id results_file_id=results_file.id %}" class="btn btn-sm btn-secondary">Next</a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex">
+                        <div class="mt-3">
+                            <h2>Traveller for Board {{ board_number }}</h2>
+                        </div>
+                        <div class="ml-auto">
+                            <h5 class="text-dark">
+                                Jump to
+                                <select
+                                    class="selectpicker"
+                                    data-style="btn btn-secondary btn-sm"
+                                    name="board_jump"
+                                    id="board_jump"
+                                >
+                                    {% for i in total_boards_range %}
+                                        <option value="{{ i }}"
+                                                {% if i == board_number %}selected{% endif %}
+                                        >Board {{ i }}</option>
+                                    {% endfor %}
+                                </select>
+                            </h5>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body table-responsive">
+                    <table class="table table-condensed table-hover">
+                        <thead>
+                            <tr class="text-danger">
+                                <th class="text-left">North-South</th>
+                                <th class="text-left">East-West</th>
+                                <th>
+                                    <span class="d-md-none">Con</span>
+                                    <span class="d-none d-md-block">Contract</span>
+                                </th>
+                                <th>
+                                    <span class="d-md-none">By</span>
+                                    <span class="d-none d-md-block">Declarer</span>
+                                </th>
+                                <th class="d-none d-sm-table-cell">Lead</th>
+                                <th class="d-none d-sm-table-cell">Tricks</th>
+                                <th>
+                                    <span class="d-md-none">+/-</span>
+                                    <span class="d-none d-md-block">Score</span>
+                                </th>
+                                <th>
+                                    <span class="d-none d-sm-table-cell">{% if ns_flag %}NS{% else %}EW{% endif %} IMPs</span>
+                                </th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in board_data %}
+
+                                {# need to cope with par_score being zero so check for type not trueness #}
+                                {% if row.par_score|get_class == "int" %}
+                                    <tr>
+                                        <td colspan="9">
+                                            <button class="btn btn-sm btn-block btn-outline cobalt-text-transform-off" style="font-size: large">
+                                                Par Contract: {{ row.par_string }}
+                                            </button>
+                                        </td>
+                                    </tr>
+
+                                {% else %}
+                                    <tr>
+                                        <td class="text-left {{ row.tr_highlight }}"><a href="{% url "results:cross_imp_pairs_details_view" pair_id=row.ns_pair_number results_file_id=results_file.id %}">{{ row.ns_pair }}</a></td>
+                                        <td class="text-left {{ row.tr_highlight }}"><a href="{% url "results:cross_imp_pairs_details_view" pair_id=row.ew_pair_number results_file_id=results_file.id %}">{{ row.ew_pair }}</a></td>
+                                        <td class="{{ row.tr_highlight }}">{{ row.contract|cobalt_suit_replace|default_if_none:""|safe }}</td>
+                                        <td class="{{ row.tr_highlight }}">{{ row.played_by }}</td>
+                                        <td class="d-none d-sm-table-cell {{ row.tr_highlight }}">{{ row.lead|cobalt_suit_replace|safe }}</td>
+                                        <td class="d-none d-sm-table-cell {{ row.tr_highlight }}">{{ row.tricks }}</td>
+                                        <td class="{{ row.tr_highlight }}">{{ row.score|default_if_none:"" }}</td>
+                                        <td class="d-none d-sm-table-cell {{ row.tr_highlight }}">
+                                            {% if ns_flag %}
+                                                {{ row.ns_cross_imp_points|floatformat:2 }}
+                                            {% else %}
+                                                {{ row.ew_cross_imp_points|floatformat:2 }}
+                                            {% endif %}
+                                        </td>
+                                        <td><div>{{ row.indicator|safe }}</div></td>
+                                    </tr>
+                                {% endif %}
+
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- HAND DETAILS -->
+        <div class="card">
+            <div class="card-header card-header-success">
+                <h3>Board {{ board_number }}</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <table class="">
+                            <tr>
+                                <td>&nbsp;</td>
+                                <td>{% include "results/usebio/usebio_results_board_detail_hand.html" with cards=hand.North direction="North" %}</td>
+                                <td>&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td>{% include "results/usebio/usebio_results_board_detail_hand.html" with cards=hand.West direction="West" %}</td>
+                                <td class="text-center d-flex align-items-center justify-content-center font-weight-bold" style="font-size:large; width: 140px; height: 140px; background-color: darkgreen; display:inline-block; color: white">Dealer {{ dealer }}<br>{{ vulnerability }}</td>
+                                <td>{% include "results/usebio/usebio_results_board_detail_hand.html" with cards=hand.East direction="East" %}</td>
+                            </tr>
+                            <tr>
+                                <td>&nbsp;</td>
+                                <td>{% include "results/usebio/usebio_results_board_detail_hand.html" with cards=hand.South direction="South" %}</td>
+                                <td>&nbsp;</td>
+                            </tr>
+                        </table>
+
+                        <div class="mt-3">
+                            <button id="dd-play-button"
+                                    class="btn btn-primary btn-sm"
+                                    hx-get="{% url 'results:double_dummy_player_htmx' results_file_id=results_file.id board_number=board_number %}{% if pair_contract_level %}?level={{ pair_contract_level }}&trump={{ pair_contract_trump }}&declarer={{ pair_contract_declarer }}&double={{ pair_contract_double }}{% endif %}"
+                                    hx-target="#dd-player-container"
+                                    hx-swap="innerHTML"
+                                    _="on click hide me">
+                                Play this hand
+                            </button>
+                        </div>
+                        <div id="dd-player-container" class="mt-3"></div>
+
+                    </div>
+                    <div class="col-md-4 pt-4">
+                        <div class="row">
+                            <div class="col-12">
+
+                                <div class="d-none" id="total_tricks">
+                                    <h4>Total Number of Tricks</h4>
+                                    <table class="table table-condensed" style="font-size: large">
+                                        <tr><td></td><td><span style="font-size: 1.5em;">&clubsuit;</span></td><td><span style="color: red; font-size: 1.5em;">&diamondsuit;</span></td><td><span style="color: red; font-size: 1.5em;">&heartsuit;</span></td><td><span style="font-size: 1.5em;">&spadesuit;</span></td><td>NT</td></tr>
+                                        <tr><td>N</td><td>{{ double_dummy.N.C }}</td><td>{{ double_dummy.N.D }}</td><td>{{ double_dummy.N.H }}</td><td>{{ double_dummy.N.S }}</td><td>{{ double_dummy.N.N }}</td></tr>
+                                        <tr><td>S</td><td>{{ double_dummy.S.C }}</td><td>{{ double_dummy.S.D }}</td><td>{{ double_dummy.S.H }}</td><td>{{ double_dummy.S.S }}</td><td>{{ double_dummy.S.N }}</td></tr>
+                                        <tr><td>E</td><td>{{ double_dummy.E.C }}</td><td>{{ double_dummy.E.D }}</td><td>{{ double_dummy.E.H }}</td><td>{{ double_dummy.E.S }}</td><td>{{ double_dummy.E.N }}</td></tr>
+                                        <tr><td>W</td><td>{{ double_dummy.W.C }}</td><td>{{ double_dummy.W.D }}</td><td>{{ double_dummy.W.H }}</td><td>{{ double_dummy.W.S }}</td><td>{{ double_dummy.W.N }}</td></tr>
+                                    </table>
+                                </div>
+
+                                <div id="normal_table">
+                                    <h4>Making Contracts</h4>
+                                    <table class="table table-condensed" style="font-size: large">
+                                        <tr><td></td><td><span style="font-size: 1.5em;">&clubsuit;</span></td><td><span style="color: red; font-size: 1.5em;">&diamondsuit;</span></td><td><span style="color: red; font-size: 1.5em;">&heartsuit;</span></td><td><span style="font-size: 1.5em;">&spadesuit;</span></td><td>NT</td></tr>
+                                        <tr><td>N</td><td>{{ double_dummy.N.C|cobalt_trick_count }}</td><td>{{ double_dummy.N.D|cobalt_trick_count }}</td><td>{{ double_dummy.N.H|cobalt_trick_count }}</td><td>{{ double_dummy.N.S|cobalt_trick_count }}</td><td>{{ double_dummy.N.N|cobalt_trick_count }}</td></tr>
+                                        <tr><td>S</td><td>{{ double_dummy.S.C|cobalt_trick_count }}</td><td>{{ double_dummy.S.D|cobalt_trick_count }}</td><td>{{ double_dummy.S.H|cobalt_trick_count }}</td><td>{{ double_dummy.S.S|cobalt_trick_count }}</td><td>{{ double_dummy.S.N|cobalt_trick_count }}</td></tr>
+                                        <tr><td>E</td><td>{{ double_dummy.E.C|cobalt_trick_count }}</td><td>{{ double_dummy.E.D|cobalt_trick_count }}</td><td>{{ double_dummy.E.H|cobalt_trick_count }}</td><td>{{ double_dummy.E.S|cobalt_trick_count }}</td><td>{{ double_dummy.E.N|cobalt_trick_count }}</td></tr>
+                                        <tr><td>W</td><td>{{ double_dummy.W.C|cobalt_trick_count }}</td><td>{{ double_dummy.W.D|cobalt_trick_count }}</td><td>{{ double_dummy.W.H|cobalt_trick_count }}</td><td>{{ double_dummy.W.S|cobalt_trick_count }}</td><td>{{ double_dummy.W.N|cobalt_trick_count }}</td></tr>
+                                    </table>
+                                </div>
+                                <button
+                                    class="btn btn-sm btn-info float-right"
+                                    _="on click toggle .d-none on #total_tricks
+                                       then toggle .d-none on #normal_table
+                                       then js toggle_cookie(); end"
+                                >toggle view</button>
+
+                            </div>
+                        </div>
+
+                        <div class="row mt-5">
+                            <div class="col-6">
+                                <table style="font-size: large">
+                                    <tr><td></td><td class="text-center">{{ high_card_points.North }}</td><td></td></tr>
+                                    <tr><td class="p-2">{{ high_card_points.West }}</td><td class="font-weight-bold">HCP</td><td class="p-2">{{ high_card_points.East }}</td></tr>
+                                    <tr><td></td><td class="text-center">{{ high_card_points.South }}</td><td></td></tr>
+                                </table>
+                            </div>
+                            <div class="col-6">
+                                <table style="font-size: large">
+                                    <tr><td></td><td class="text-center">{{ losing_trick_count.North }}</td><td></td></tr>
+                                    <tr><td class="p-2">{{ losing_trick_count.West }}</td><td class="font-weight-bold" title="Losing Trick Count">LTC</td><td class="p-2">{{ losing_trick_count.East }}</td></tr>
+                                    <tr><td></td><td class="text-center">{{ losing_trick_count.South }}</td><td></td></tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block footer %}
+    <script src="{% static "assets/js/plugins/bootstrap-selectpicker.js" %}"></script>
+    <script src="{% static "assets/js/js.cookie.min.js" %}"></script>
+    <script>
+        function toggle_cookie() {
+            if (Cookies.get('results-show-total-tricks') === 'set') {
+                Cookies.remove('results-show-total-tricks');
+            } else {
+                Cookies.set('results-show-total-tricks', 'set', { expires: 100000, domain: '', path: '/' });
+            }
+        }
+
+        $(document).ready(function () {
+            if ($(window).width() <= 992) {
+                $("#board_jump > option").each(function () {
+                    $(this).text($(this).val());
+                });
+            }
+
+            $('#board_jump').on('change', function () {
+                const board = $(this).val();
+                window.location = "/results/cross-imp-board-details/{{ results_file.id }}/" + board + "/{{ pair_id }}";
+            });
+
+            if (Cookies.get('results-show-total-tricks') === 'set') {
+                $("#total_tricks").toggleClass("d-none");
+                $("#normal_table").toggleClass("d-none");
+            }
+        });
+    </script>
+{% endblock footer %}

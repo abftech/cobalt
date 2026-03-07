@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib.humanize.templatetags.humanize import ordinal
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
@@ -117,6 +118,11 @@ def _percentage_from_match_points(ns_match_points, ew_match_points, ns_flag):
 
     # Calculate percentage
     total_mps = ns_match_points + ew_match_points
+
+    # Guard against passed-out boards where all tables score identically (total = 0)
+    if total_mps == 0:
+        return 50.0
+
     if ns_flag:
         percentage = ns_match_points / total_mps
     else:
@@ -127,19 +133,23 @@ def _percentage_from_match_points(ns_match_points, ew_match_points, ns_flag):
 
 @login_required()
 def usebio_mp_pairs_results_summary_view(request, results_file_id):
-    """Show the summary results for a usebio format event"""
-
-    # TODO: Error checking, handle ties, one field or two
-    # TODO: Masterpoints show type in title and change colours
-    # TODO: Highlight team mates
+    """Show the summary results for a usebio format event. Dispatches on event type."""
 
     results_file = get_object_or_404(ResultsFile, pk=results_file_id)
     usebio = parse_usebio_file(results_file)["EVENT"]
 
     masterpoint_type = usebio.get("MASTER_POINT_TYPE", "No").title()
 
+    if results_file.event_type == ResultsFile.EventType.CROSS_IMP:
+        return cross_imp_results_summary_view(
+            request, usebio, results_file, masterpoint_type
+        )
+
+    # MP_PAIRS (default)
+    # TODO: Error checking, handle ties, one field or two
+    # TODO: Masterpoints show type in title and change colours
+    # TODO: Highlight team mates
     if usebio["WINNER_TYPE"] == "2":
-        # Two fields NS/EW
         return usebio_mp_pairs_results_summary_view_two_field(
             request, usebio, results_file, masterpoint_type
         )
@@ -345,12 +355,12 @@ def usebio_mp_pairs_details_view(request, results_file_id, pair_id):
                     ns_flag = False
                 contract = traveller_line.get("CONTRACT")
                 played_by = traveller_line.get("PLAYED_BY")
-                lead = traveller_line.get("LEAD")
-                tricks = traveller_line.get("TRICKS")
+                lead = traveller_line.get("LEAD") or ""
+                tricks = traveller_line.get("TRICKS") or ""
                 ns_match_points = float(traveller_line.get("NS_MATCH_POINTS"))
                 ew_match_points = float(traveller_line.get("EW_MATCH_POINTS"))
                 score = traveller_line.get("SCORE")
-                if score[0] == "A":
+                if score and score[0] == "A":
                     # Adjusted score, don't show user the code, just that it was adjusted
                     score = "ADJ"
 
@@ -605,14 +615,13 @@ def _get_traveller_info_process_board(
         ew_pair = player_dict["names"].get(ew_pair_number)
         contract = traveller_line.get("CONTRACT")
         played_by = traveller_line.get("PLAYED_BY")
-        lead = traveller_line.get("LEAD")
-        tricks = traveller_line.get("TRICKS")
+        lead = traveller_line.get("LEAD") or ""
+        tricks = traveller_line.get("TRICKS") or ""
         score = traveller_line.get("SCORE")
         try:
             score = int(score)
-        except ValueError:
+        except (ValueError, TypeError):
             pass
-        # TODO: Test and make more robust
 
         ew_match_points = float(traveller_line.get("EW_MATCH_POINTS"))
         ns_match_points = float(traveller_line.get("NS_MATCH_POINTS"))
@@ -718,6 +727,380 @@ def calculate_hcp_and_ltc(hand):
                     ltc[compass] += 3
 
     return hcp, ltc
+
+
+def _set_icon_based_on_cross_imp_points(cross_imp_points):
+    """Set a material icon based on cross IMP points for a single board."""
+
+    if cross_imp_points > 5:
+        return "<i class='material-icons' style='color: orange'>star</i>"
+    if cross_imp_points > 1.5:
+        return "<i class='material-icons' style='color: blue'>check_circle</i>"
+    if cross_imp_points > -1.5:
+        return "<span style='color: blue; font-size: larger;'>=</span>"
+    if cross_imp_points > -5:
+        return "<i class='material-icons' style='color: red'>expand_more</i>"
+    return "<i class='material-icons' style='color: red'>cancel</i>"
+
+
+def cross_imp_results_summary_view(request, usebio, results_file, masterpoint_type):
+    """Show the two-field summary results for a CROSS_IMP event."""
+
+    ns_scores = []
+    ew_scores = []
+
+    for item in usebio["PARTICIPANTS"]["PAIR"]:
+        player_1 = item["PLAYER"][0]["PLAYER_NAME"].title()
+        player_2 = item["PLAYER"][1]["PLAYER_NAME"].title()
+        try:
+            player_1_system_number = int(item["PLAYER"][0]["NATIONAL_ID_NUMBER"])
+            player_2_system_number = int(item["PLAYER"][1]["NATIONAL_ID_NUMBER"])
+        except TypeError:
+            player_1_system_number = None
+            player_2_system_number = None
+
+        position = int(item["PLACE"])
+        masterpoints = int(item.get("MASTER_POINTS_AWARDED", 0)) / 100.0
+        pair_number = item["PAIR_NUMBER"]
+        direction = item["DIRECTION"]
+        total_score = float(item["TOTAL_SCORE"])
+        total_score_display = (
+            f"+{total_score:.2f}" if total_score >= 0 else f"{total_score:.2f}"
+        )
+
+        players_names = _format_pair_name(player_1, player_2)
+
+        if request.user.system_number in [
+            player_1_system_number,
+            player_2_system_number,
+        ]:
+            tr_highlight = "bg-warning"
+        else:
+            tr_highlight = ""
+
+        row = {
+            "player_1": player_1,
+            "player_2": player_2,
+            "players_names": players_names,
+            "player_1_system_number": player_1_system_number,
+            "player_2_system_number": player_2_system_number,
+            "position": position,
+            "masterpoints": masterpoints,
+            "pair_number": pair_number,
+            "total_score": total_score,
+            "total_score_display": total_score_display,
+            "tr_highlight": tr_highlight,
+        }
+
+        if direction == "NS":
+            ns_scores.append(row)
+        else:
+            ew_scores.append(row)
+
+    ns_scores = sorted(ns_scores, key=lambda d: d["position"])
+    ew_scores = sorted(ew_scores, key=lambda d: d["position"])
+
+    return render(
+        request,
+        "results/usebio/usebio_results_summary_cross_imp_view.html",
+        {
+            "results_file": results_file,
+            "usebio": usebio,
+            "ns_scores": ns_scores,
+            "ew_scores": ew_scores,
+            "masterpoint_type": masterpoint_type,
+        },
+    )
+
+
+@login_required()
+def cross_imp_pairs_details_view(request, results_file_id, pair_id):
+    """Show board-by-board CROSS_IMP results for a pair."""
+
+    results_file = get_object_or_404(ResultsFile, pk=results_file_id)
+    usebio = parse_usebio_file(results_file)["EVENT"]
+
+    # Get position and total score from participants
+    position = ""
+    pair_total_score = ""
+    pair_total_score_display = ""
+
+    for item in usebio["PARTICIPANTS"]["PAIR"]:
+        if item["PAIR_NUMBER"] == pair_id:
+            position = int(item["PLACE"])
+            pair_total_score = float(item["TOTAL_SCORE"])
+            pair_total_score_display = (
+                f"+{pair_total_score:.2f}"
+                if pair_total_score >= 0
+                else f"{pair_total_score:.2f}"
+            )
+            break
+
+    player_dict = _get_player_names_by_id(usebio)
+
+    if "BOARD" not in usebio:
+        return render(
+            request,
+            "results/usebio/usebio_no_boards_warning.html",
+            {
+                "usebio": usebio,
+                "results_file": results_file,
+                "pair_id": pair_id,
+                "pair_name": player_dict["names"].get(pair_id, pair_id),
+            },
+        )
+
+    pair_data = []
+    last_opponent = None
+    bg_colour = False
+
+    for board in usebio["BOARD"]:
+        board_number = int(board.get("BOARD_NUMBER"))
+        for traveller_line in board.get("TRAVELLER_LINE"):
+            ns_pair = traveller_line.get("NS_PAIR_NUMBER")
+            ew_pair = traveller_line.get("EW_PAIR_NUMBER")
+            if pair_id not in [ns_pair, ew_pair]:
+                continue
+
+            ns_flag = pair_id == ns_pair
+            opponents = player_dict["names"].get(ew_pair if ns_flag else ns_pair)
+            opponents_pair_id = ew_pair if ns_flag else ns_pair
+
+            contract = traveller_line.get("CONTRACT")
+            played_by = traveller_line.get("PLAYED_BY") or ""
+            lead = traveller_line.get("LEAD") or ""
+            tricks = traveller_line.get("TRICKS") or ""
+            score = traveller_line.get("SCORE", "0")
+
+            ns_cross_imp = float(traveller_line.get("NS_CROSS_IMP_POINTS", 0))
+            ew_cross_imp = float(traveller_line.get("EW_CROSS_IMP_POINTS", 0))
+            cross_imp_points = ns_cross_imp if ns_flag else ew_cross_imp
+            cross_imp_display = (
+                f"+{cross_imp_points:.2f}"
+                if cross_imp_points >= 0
+                else f"{cross_imp_points:.2f}"
+            )
+
+            indicator = _set_icon_based_on_cross_imp_points(cross_imp_points)
+
+            if opponents_pair_id != last_opponent:
+                bg_colour = not bg_colour
+                last_opponent = opponents_pair_id
+
+            pair_data.append(
+                {
+                    "board_number": board_number,
+                    "contract": contract,
+                    "played_by": played_by,
+                    "lead": lead,
+                    "tricks": tricks,
+                    "score": score,
+                    "opponents": opponents,
+                    "opponents_pair_id": opponents_pair_id,
+                    "cross_imp_points": cross_imp_points,
+                    "cross_imp_display": cross_imp_display,
+                    "indicator": indicator,
+                    "bg_colour": bg_colour,
+                }
+            )
+
+    pair_data = sorted(pair_data, key=lambda d: d["board_number"])
+
+    return render(
+        request,
+        "results/usebio/usebio_results_cross_imp_pairs_detail.html",
+        {
+            "usebio": usebio,
+            "results_file": results_file,
+            "pair_data": pair_data,
+            "pair_id": pair_id,
+            "pair_name": player_dict["names"].get(pair_id, pair_id),
+            "position": position,
+            "pair_total_score_display": pair_total_score_display,
+        },
+    )
+
+
+def _get_cross_imp_traveller_info_process_board(
+    board, player_dict, pair_id, board_number, ns_flag, request
+):
+    """Process a single board's traveller lines for CROSS_IMP."""
+
+    board_data = []
+
+    for traveller_line in board.get("TRAVELLER_LINE"):
+        ns_pair_number = traveller_line.get("NS_PAIR_NUMBER")
+        ns_pair = player_dict["names"].get(ns_pair_number)
+        ew_pair_number = traveller_line.get("EW_PAIR_NUMBER")
+        ew_pair = player_dict["names"].get(ew_pair_number)
+        contract = traveller_line.get("CONTRACT")
+        played_by = traveller_line.get("PLAYED_BY") or ""
+        lead = traveller_line.get("LEAD") or ""
+        tricks = traveller_line.get("TRICKS") or ""
+        score = traveller_line.get("SCORE")
+        try:
+            score = int(score)
+        except (ValueError, TypeError):
+            pass
+
+        ns_cross_imp_points = float(traveller_line.get("NS_CROSS_IMP_POINTS", 0))
+        ew_cross_imp_points = float(traveller_line.get("EW_CROSS_IMP_POINTS", 0))
+        cross_imp_points = ns_cross_imp_points if ns_flag else ew_cross_imp_points
+
+        indicator = _set_icon_based_on_cross_imp_points(cross_imp_points)
+
+        if pair_id in [ns_pair_number, ew_pair_number]:
+            if request.user.system_number in player_dict["system_numbers"].get(
+                pair_id, []
+            ):
+                tr_highlight = "bg-warning"
+            else:
+                tr_highlight = "bg-info"
+        else:
+            tr_highlight = ""
+
+        board_data.append(
+            {
+                "board_number": board_number,
+                "contract": contract,
+                "played_by": played_by,
+                "lead": lead,
+                "tricks": tricks,
+                "score": score,
+                "ns_pair_number": ns_pair_number,
+                "ew_pair_number": ew_pair_number,
+                "ns_pair": ns_pair,
+                "ew_pair": ew_pair,
+                "tr_highlight": tr_highlight,
+                "indicator": indicator,
+                "ns_cross_imp_points": ns_cross_imp_points,
+                "ew_cross_imp_points": ew_cross_imp_points,
+                "cross_imp_points": cross_imp_points,
+            }
+        )
+
+    return board_data
+
+
+def get_cross_imp_traveller_info(
+    usebio, board_number, player_dict, ns_flag, pair_id, request
+):
+    """Extract traveller information for a CROSS_IMP board."""
+
+    for board in usebio["EVENT"]["BOARD"]:
+        if int(board.get("BOARD_NUMBER")) == board_number:
+            return _get_cross_imp_traveller_info_process_board(
+                board, player_dict, pair_id, board_number, ns_flag, request
+            )
+
+
+@login_required()
+def cross_imp_board_view(request, results_file_id, board_number, pair_id):
+    """Show the traveller + hand record for a CROSS_IMP board."""
+
+    results_file = get_object_or_404(ResultsFile, pk=results_file_id)
+    usebio = parse_usebio_file(results_file)
+
+    player_dict = _get_player_names_by_id(usebio["EVENT"])
+    ns_flag = _get_pair_direction_for_board(usebio, board_number, pair_id)
+
+    board_data = get_cross_imp_traveller_info(
+        usebio, board_number, player_dict, ns_flag, pair_id, request
+    )
+
+    hand = {}
+    double_dummy = None
+
+    if "HANDSET" not in usebio or "BOARD" not in usebio["HANDSET"]:
+        return render(
+            request,
+            "utils/coblt_generic_error_page.html",
+            {
+                "title": "No Board Data Available",
+                "message": "Sorry, we don't have any details available for this board.",
+            },
+        )
+
+    for board in usebio["HANDSET"]["BOARD"]:
+        if int(board["BOARD_NUMBER"]) == board_number:
+            for compass in board["HAND"]:
+                hand[compass["DIRECTION"]] = {
+                    "clubs": compass["CLUBS"],
+                    "diamonds": compass["DIAMONDS"],
+                    "hearts": compass["HEARTS"],
+                    "spades": compass["SPADES"],
+                }
+            double_dummy = double_dummy_from_usebio(board["HAND"])
+            break
+
+    if not double_dummy:
+        return HttpResponse(f"Board {board_number} not found for this result")
+
+    # Sort by bridge score — correlates with cross IMP direction and keeps par insertion clean
+    if ns_flag:
+        board_data = sorted(
+            board_data,
+            key=lambda d: d["score"] if isinstance(d["score"], int) else 0,
+            reverse=True,
+        )
+    else:
+        board_data = sorted(
+            board_data,
+            key=lambda d: d["score"] if isinstance(d["score"], int) else 0,
+        )
+
+    dealer, vulnerability = dealer_and_vulnerability_for_board(board_number)
+    par_score, par_string = par_score_and_contract(double_dummy, vulnerability, dealer)
+    board_data = _insert_par_data_into_list(board_data, par_score, par_string, ns_flag)
+
+    high_card_points, losing_trick_count = calculate_hcp_and_ltc(hand)
+
+    previous_board = board_number - 1 if board_number > 1 else None
+    total_boards = len(usebio["HANDSET"]["BOARD"])
+    next_board = board_number + 1 if board_number < total_boards else None
+
+    pair_contract_level = pair_contract_trump = pair_contract_declarer = None
+    pair_contract_double = ""
+    if pair_id and pair_id != "0":
+        for row in board_data:
+            if pair_id in (row.get("ns_pair_number"), row.get("ew_pair_number")):
+                level, trump, double = _parse_usebio_contract(row.get("contract", ""))
+                played_by = row.get("played_by", "")
+                if level and trump and played_by in ("N", "E", "S", "W"):
+                    pair_contract_level = level
+                    pair_contract_trump = trump
+                    pair_contract_declarer = played_by
+                    pair_contract_double = double
+                break
+
+    return render(
+        request,
+        "results/usebio/usebio_results_board_detail_cross_imp.html",
+        {
+            "usebio": usebio.get("EVENT"),
+            "results_file": results_file,
+            "board_data": board_data,
+            "board_number": board_number,
+            "pair_id": pair_id,
+            "hand": hand,
+            "double_dummy": double_dummy,
+            "dealer": dealer,
+            "vulnerability": vulnerability,
+            "par_score": par_score,
+            "par_string": par_string,
+            "high_card_points": high_card_points,
+            "losing_trick_count": losing_trick_count,
+            "next_board": next_board,
+            "previous_board": previous_board,
+            "total_boards": total_boards,
+            "ns_flag": ns_flag,
+            "total_boards_range": range(1, total_boards + 1),
+            "pair_contract_level": pair_contract_level,
+            "pair_contract_trump": pair_contract_trump,
+            "pair_contract_declarer": pair_contract_declarer,
+            "pair_contract_double": pair_contract_double,
+        },
+    )
 
 
 @login_required()

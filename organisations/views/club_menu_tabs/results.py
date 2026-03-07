@@ -25,6 +25,7 @@ from organisations.views.club_menu import tab_results_htmx
 from results.models import ResultsFile
 from results.views.usebio import (
     parse_usebio_file,
+    create_player_records_from_usebio_format_cross_imp,
     create_player_records_from_usebio_format_pairs,
 )
 
@@ -64,10 +65,19 @@ def upload_results_file_valid(request, form, club):
             event_date = datetime.today()
 
     results_file.event_date = event_date
+
+    # Detect event type from the XML attribute (xmltodict prefixes XML attributes with @)
+    event_type = usebio.get("EVENT", {}).get(
+        "@EVENT_TYPE", ResultsFile.EventType.MP_PAIRS
+    )
+    results_file.event_type = event_type
     results_file.save()
 
     # Create the player records so people know the results are there
-    create_player_records_from_usebio_format_pairs(results_file, usebio)
+    if event_type == ResultsFile.EventType.CROSS_IMP:
+        create_player_records_from_usebio_format_cross_imp(results_file, usebio)
+    else:
+        create_player_records_from_usebio_format_pairs(results_file, usebio)
 
     return tab_results_htmx(request, message="New results successfully uploaded")
 
@@ -158,6 +168,8 @@ def _send_results_emails(results_file, club, request):
         complete=True,
     )
 
+    is_cross_imp = results_file.event_type == ResultsFile.EventType.CROSS_IMP
+
     # Go through data, and email results to players
     for item in usebio["EVENT"]["PARTICIPANTS"]["PAIR"]:
         try:
@@ -172,7 +184,15 @@ def _send_results_emails(results_file, club, request):
         position = int(item["PLACE"])
         # COB-807 - throwing exception if no masterpoints in file
         masterpoints = int(item.get("MASTER_POINTS_AWARDED", 0)) / 100.0
-        percentage = item["PERCENTAGE"]
+
+        if is_cross_imp:
+            total_score = float(item["TOTAL_SCORE"])
+            score_str = (
+                f"+{total_score:.2f}" if total_score >= 0 else f"{total_score:.2f}"
+            )
+            score_display = f"{score_str} IMPs"
+        else:
+            score_display = f"{item['PERCENTAGE']}%"
 
         for system_number in [player_1_system_number, player_2_system_number]:
 
@@ -194,7 +214,7 @@ def _send_results_emails(results_file, club, request):
                     {
                         "position": position,
                         "masterpoints": masterpoints,
-                        "percentage": percentage,
+                        "score_display": score_display,
                         "club": club,
                         "partner": partner,
                         "link": link,

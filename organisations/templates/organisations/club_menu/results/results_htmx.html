@@ -50,7 +50,6 @@
     hx-vars="club_id:{{ club.id }}"
     hx-target="#id_panel_results"
     hx-trigger="change"
-    accept=".xml"
     id="results_file_form"
 >
     <div class="fileinput fileinput-new text-center" data-provides="fileinput" style="cursor: pointer;">
@@ -58,7 +57,7 @@
         <div>
             <span class="btn btn-warning btn-file">
                 <span class="fileinput-new">Upload New Results File</span>
-                <input type="file" name="results_file" id="id_upload_results_file_btn"/>
+                <input type="file" name="results_file" id="id_upload_results_file_btn" accept=".xml"/>
             </span>
 
         </div>
@@ -100,8 +99,8 @@
                                 id="id_toggle_{{ recent_result.id }}"
                                 style="width: 120px"
                                 class="btn btn-sm btn-toggle-publish
-                                {% if recent_result.status == "PE" %}
-                                    btn-success">Publish
+                                       {% if recent_result.status == "PE" %}
+                                           btn-success">Publish
                                 {% else %}
                                     btn-primary">Un-publish
                                 {% endif %}
@@ -109,8 +108,8 @@
 
                             <!-- VIEW RESULTS -->
                             <a class="btn btn-info btn-sm"
-                                href="{% url "results:usebio_mp_pairs_results_summary_view" results_file_id=recent_result.id %}"
-                                target="_blank"
+                               href="{% url "results:usebio_mp_pairs_results_summary_view" results_file_id=recent_result.id %}"
+                               target="_blank"
                             >View</a>
 
                             <!-- DELETE -->

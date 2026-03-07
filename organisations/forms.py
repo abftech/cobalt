@@ -863,7 +863,13 @@ class ResultsFileForm(forms.ModelForm):
 
         model = ResultsFile
         fields = ("results_file",)
-        widgets = {"results_file": forms.FileInput(attrs={"accept": "*/*.xml"})}
+        widgets = {"results_file": forms.FileInput(attrs={"accept": ".xml"})}
+
+    def clean_results_file(self):
+        f = self.cleaned_data.get("results_file")
+        if f and not f.name.lower().endswith(".xml"):
+            raise forms.ValidationError("Only XML files are accepted.")
+        return f
 
 
 class UnregisteredUserMembershipForm(forms.Form):

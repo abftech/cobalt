@@ -36,6 +36,56 @@ def boards_from_usebio(results_file: ResultsFile) -> list:
     return [board["BOARD_NUMBER"] for board in xml["HANDSET"]["BOARD"]]
 
 
+def create_player_records_from_usebio_format_cross_imp(
+    results_file: ResultsFile, xml: dict
+):
+    """Take a CROSS_IMP usebio structure and generate PlayerSummaryResult records."""
+
+    xml_event = xml.get("EVENT")
+
+    event_name = xml_event.get("EVENT_DESCRIPTION")
+    event_date_str = xml_event.get("DATE")
+
+    try:
+        event_date = datetime.strptime(event_date_str, "%d/%m/%Y").date()
+    except ValueError:
+        try:
+            event_date = datetime.strptime(event_date_str, "%d-%m-%Y").date()
+        except ValueError:
+            event_date = datetime.today()
+
+    for detail in xml_event["PARTICIPANTS"]["PAIR"]:
+        total_score = float(detail["TOTAL_SCORE"])
+        position = int(detail["PLACE"])
+        place = ordinal(position)
+
+        score_str = f"+{total_score:.2f}" if total_score >= 0 else f"{total_score:.2f}"
+
+        this_partner_name = ""
+        partner_names = {
+            player["NATIONAL_ID_NUMBER"]: player["PLAYER_NAME"].title()
+            for player in detail["PLAYER"]
+        }
+
+        for player in detail["PLAYER"]:
+            player_system_number = player["NATIONAL_ID_NUMBER"]
+            for partner_id in partner_names:
+                if player_system_number != partner_id:
+                    this_partner_name = partner_names[partner_id][:100]
+
+            if player_system_number:
+                PlayerSummaryResult(
+                    player_system_number=player_system_number,
+                    results_file=results_file,
+                    result_date=event_date,
+                    position=position,
+                    partner_or_team_name=this_partner_name,
+                    percentage=None,
+                    result_string=f"{place} in {event_name} at {results_file.organisation} ({score_str} IMPs)",
+                    event_name=event_name,
+                ).save()
+
+
 def create_player_records_from_usebio_format_pairs(
     results_file: ResultsFile, xml: dict
 ):

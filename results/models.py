@@ -18,11 +18,16 @@ def _results_file_directory_path(instance, filename):
 
 class ResultsFile(models.Model):
     """Initially this supports clubs uploading files in USEBIO format. This may need to be extended for other
-    formats and we will also need to decide if we use files at all when/if we put scoring into Cobalt"""
+    formats and we will also need to decide if we use files at all when/if we put scoring into Cobalt
+    """
 
     class ResultsStatus(models.TextChoices):
         PUBLISHED = "PU"
         PENDING = "PE"
+
+    class EventType(models.TextChoices):
+        MP_PAIRS = "MP_PAIRS", "MP Pairs"
+        CROSS_IMP = "CROSS_IMP", "Cross IMP"
 
     results_file = models.FileField(upload_to=_results_file_directory_path)
     description = models.CharField(max_length=200)
@@ -39,6 +44,11 @@ class ResultsFile(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     event_date = models.DateField(blank=True, null=True)
+    event_type = models.CharField(
+        max_length=20,
+        choices=EventType.choices,
+        default=EventType.MP_PAIRS,
+    )
 
     def __str__(self):
         return f"{self.results_file.path}"

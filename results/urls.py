@@ -46,6 +46,16 @@ urlpatterns = [
         name="usebio_mp_pairs_board_view",
     ),
     path(
+        "cross-imp-pairs-details/<int:results_file_id>/<str:pair_id>",
+        results.views.results_views.cross_imp_pairs_details_view,
+        name="cross_imp_pairs_details_view",
+    ),
+    path(
+        "cross-imp-board-details/<int:results_file_id>/<int:board_number>/<str:pair_id>",
+        results.views.results_views.cross_imp_board_view,
+        name="cross_imp_board_view",
+    ),
+    path(
         "show-results-for-club",
         results.views.results_views.show_results_for_club_htmx,
         name="show_results_for_club_htmx",

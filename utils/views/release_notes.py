@@ -179,6 +179,8 @@ def release_notes_view(request):
                 "Logging for batch jobs",
                 "Email preview bug",
                 "Double dummy solver",
+                "Cross IMPs support for results",
+                "Restrict uploads for results to be XML only",
             ],
         },
         {
