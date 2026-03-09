@@ -46,7 +46,19 @@ class XeroApi:
         self.b64_id_secret = base64.b64encode(
             bytes(f"{XERO_CLIENT_ID}:{XERO_CLIENT_SECRET}", "utf-8")
         ).decode("utf-8")
-        self.xero_auth_url = f"{self.authorisation_url}?response_type=code&client_id={XERO_CLIENT_ID}&redirect_uri={self.redirect_url}&scope={self.scope}&state=123"
+        self.xero_auth_url = (
+            self.authorisation_url
+            + "?"
+            + urlencode(
+                {
+                    "response_type": "code",
+                    "client_id": XERO_CLIENT_ID,
+                    "redirect_uri": self.redirect_url,
+                    "scope": self.scope,
+                    "state": "123",
+                }
+            )
+        )
 
     def headers(self):
         """return API headers"""
