@@ -42,7 +42,7 @@ class XeroApi:
         self.exchange_code_url = "https://identity.xero.com/connect/token"
         self.connections_url = "https://api.xero.com/connections"
         self.authorisation_url = "https://login.xero.com/identity/connect/authorize"
-        self.scope = "offline_access accounting.transactions accounting.contacts payroll.employees payroll.payruns payroll.payslip payroll.timesheets payroll.settings"
+        self.scope = "offline_access accounting.transactions accounting.contacts"
         self.b64_id_secret = base64.b64encode(
             bytes(f"{XERO_CLIENT_ID}:{XERO_CLIENT_SECRET}", "utf-8")
         ).decode("utf-8")

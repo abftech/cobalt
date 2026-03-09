@@ -157,7 +157,7 @@ USE_SQLITE = set_value("USE_SQLITE", 0)
 # xero
 XERO_CLIENT_ID = set_value("XERO_CLIENT_ID")
 XERO_CLIENT_SECRET = set_value("XERO_CLIENT_SECRET")
-XERO_TENANT_NAME = "17 Ways"
+XERO_TENANT_NAME = set_value("XERO_TENANT_NAME")
 XERO_BANK_ACCOUNT_CODE = set_value("XERO_BANK_ACCOUNT_CODE", "not-set")
 #   XERO_SETTLEMENT_ACCOUNT_CODE. When creating an ACCPAY invoice line item, Xero needs to know
 #   which GL account to classify the expense/payable against in the chart of
