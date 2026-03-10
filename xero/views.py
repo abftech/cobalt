@@ -1,29 +1,37 @@
-from django.shortcuts import render, redirect
-from django.urls import reverse
+from django.shortcuts import render
 
+from cobalt.settings import COBALT_HOSTNAME
 from organisations.models import Organisation
 from xero.core import XeroApi
 from xero.models import XeroCredentials
 
-
-def initialise(request):
-    """direct a user to grant initial permissions for us from xero"""
-
-    auth_url = XeroApi().xero_auth_url
-
-    return render(request, "xero/initialise.html", {"auth_url": auth_url})
+PRODUCTION_HOSTS = ["myabf.com.au", "www.myabf.com.au"]
 
 
-def callback(request):
-    """initial callback when a user is sent to Xero to provide access for us"""
-
-    authorisation_code = request.GET.get("code")
+def connect_htmx(request):
+    """Get a client-credentials token and resolve the tenant ID."""
 
     xero = XeroApi()
-    xero.refresh_using_authorisation_code(authorisation_code)
-    xero.set_tenant_id()
 
-    return redirect(reverse("xero:xero_home"))
+    # Force a fresh token regardless of expiry
+    credentials, _ = XeroCredentials.objects.get_or_create()
+    credentials.expires = None
+    credentials.save()
+
+    token_result = xero.refresh_xero_tokens()
+
+    if "access_token" in token_result:
+        tenant_id = xero.set_tenant_id()
+        result = {
+            "token": "ok",
+            "tenant_id": tenant_id or "NOT SET — check logs for details",
+        }
+    else:
+        result = {"error": "Token fetch failed", "detail": token_result}
+
+    response = render(request, "xero/json_data.html", {"json_data": result})
+    response["HX-Trigger"] = '{"update_config": "true"}'
+    return response
 
 
 def home(request):
@@ -68,12 +76,15 @@ def run_xero_api_htmx(request):
         result = xero.xero_api_get("https://api.xero.com/api.xro/2.0/Contacts")
 
     elif cmd == "create_contact":
-        organisation = Organisation.objects.filter(id=org_id).first()
-        if organisation:
-            contact_id = xero.create_organisation_contact(organisation)
-            result = {"ContactID": contact_id, "Name": organisation.name}
+        if COBALT_HOSTNAME in PRODUCTION_HOSTS:
+            result = {"error": "Create Club is not available in production"}
         else:
-            result = {"error": f"Organisation {org_id} not found"}
+            organisation = Organisation.objects.filter(id=org_id).first()
+            if organisation:
+                contact_id = xero.create_organisation_contact(organisation)
+                result = {"ContactID": contact_id, "Name": organisation.name}
+            else:
+                result = {"error": f"Organisation {org_id} not found"}
 
     elif cmd == "update_contact":
         organisation = Organisation.objects.filter(id=org_id).first()
@@ -90,6 +101,15 @@ def run_xero_api_htmx(request):
             result = {"success": success, "Name": organisation.name}
         else:
             result = {"error": f"Organisation {org_id} not found"}
+
+    elif cmd == "create_invoice":
+        if COBALT_HOSTNAME in PRODUCTION_HOSTS:
+            result = {"error": "Create Invoice is not available in production"}
+        else:
+            result = {"error": "create_invoice not yet implemented"}
+
+    else:
+        result = {"error": f"Unknown command: {cmd!r}"}
 
     response = render(request, "xero/json_data.html", {"json_data": result})
     response["HX-Trigger"] = '{"update_config": "true"}'

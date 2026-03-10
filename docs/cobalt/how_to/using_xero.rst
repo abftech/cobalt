@@ -15,7 +15,7 @@ The ``xero`` app integrates Cobalt with `Xero <https://www.xero.com>`_ accountin
 It is used by the ABF to issue invoices to clubs/organisations and record payments against them.
 
 All Xero API calls are wrapped by a single class — ``XeroApi`` in ``xero/core.py``.
-Credentials (OAuth tokens, tenant ID) are stored in the database in the ``XeroCredentials``
+Credentials (access token, tenant ID) are stored in the database in the ``XeroCredentials``
 singleton model. A local mirror of issued invoices is kept in ``XeroInvoice``.
 
 ----
@@ -23,31 +23,37 @@ singleton model. A local mirror of issued invoices is kept in ``XeroInvoice``.
 Architecture
 ------------
 
-Xero uses **OAuth 2.0** with offline access (refresh tokens). The token lifecycle is:
+Cobalt uses Xero's **Custom Connection** — a machine-to-machine OAuth 2.0
+**client credentials** flow. There is no user-facing consent screen or redirect
+URI. The token lifecycle is:
 
-1. An authorised user visits ``/xero/initialise``, which redirects them to Xero's OAuth
-   consent screen.
-2. Xero calls back to ``/xero/callback`` with a short-lived authorisation code.
-3. Cobalt exchanges the code for an **access token** and a long-lived **refresh token**,
-   both stored in ``XeroCredentials``.
-4. The access token expires after ~30 minutes. Every ``XeroApi`` method transparently calls
-   ``refresh_xero_tokens()`` before making any API request, so callers never need to think
-   about token expiry.
+1. Cobalt holds a ``XERO_CLIENT_ID`` and ``XERO_CLIENT_SECRET`` in its
+   environment configuration (see :doc:`setting_up_xero`).
+2. Before every API call, ``refresh_xero_tokens()`` checks whether the stored
+   access token is still valid. If it has expired, it POSTs directly to
+   ``https://identity.xero.com/connect/token`` with the client credentials to
+   obtain a fresh access token.
+3. The new token (valid for ~30 minutes) is saved to ``XeroCredentials`` and
+   used immediately. No refresh token is involved — a new access token is
+   always obtained directly from the token endpoint.
 
 .. code-block:: text
 
-    Browser                    Cobalt                          Xero
-    -------                    ------                          ----
-      |-- GET /xero/initialise -->|                              |
-      |<-- redirect to Xero ------| (XeroApi.xero_auth_url)     |
-      |------- consent ---------------------------------->|      |
-      |<-------- GET /xero/callback?code=... -------------|      |
-                               |-- exchange code for tokens ---->|
-                               |<-- access_token + refresh_token-|
-                               |-- save to XeroCredentials ---|
-                               |-- set_tenant_id() ----------->|
-                               |<-- tenant UUID ---------------|
-                               |-- save tenant_id -------------|
+    Cobalt                                          Xero
+    ------                                          ----
+      |-- POST /connect/token (client_credentials) -->|
+      |<-- access_token (30 min TTL) -----------------|
+      |-- save to XeroCredentials -------------------|
+
+      ... (30 min later, token expires) ...
+
+      |-- POST /connect/token (client_credentials) -->|
+      |<-- new access_token --------------------------|
+      |-- save to XeroCredentials -------------------|
+
+The **Connect** button on the ``/xero/`` admin page forces an immediate token
+fetch and also resolves the tenant UUID via ``set_tenant_id()``. This only
+needs to be done once per environment (or after credentials change).
 
 ----
 
@@ -63,19 +69,13 @@ These environment variables must be set (via Elastic Beanstalk config or a local
    * - Variable
      - Description
    * - ``XERO_CLIENT_ID``
-     - OAuth client ID from the Xero developer portal
+     - Client ID from the Xero Custom Connection app
    * - ``XERO_CLIENT_SECRET``
-     - OAuth client secret from the Xero developer portal
-   * - ``XERO_TENANT_NAME``
-     - The display name of the Xero organisation to connect to (used to look up
-       the tenant UUID after OAuth)
+     - Client secret from the Xero Custom Connection app
    * - ``XERO_BANK_ACCOUNT_CODE``
      - Default Xero account code used when recording payments (e.g. ``"090"``)
-
-The redirect URL is derived automatically from ``COBALT_HOSTNAME``:
-
-* ``127.0.0.1`` / ``localhost`` → ``http://``
-* anything else → ``https://``
+   * - ``XERO_SETTLEMENT_ACCOUNT_CODE``
+     - Xero account code for club settlement payables
 
 ----
 
@@ -85,8 +85,8 @@ Models
 XeroCredentials
 ~~~~~~~~~~~~~~~
 
-A singleton (at most one row). Stores the OAuth tokens and tenant ID. Do not
-access this directly — ``XeroApi.__init__`` loads it automatically.
+A singleton (at most one row). Stores the access token and tenant ID.
+Do not access this directly — ``XeroApi.__init__`` loads it automatically.
 
 .. list-table::
    :header-rows: 1
@@ -96,12 +96,15 @@ access this directly — ``XeroApi.__init__`` loads it automatically.
      - Purpose
    * - ``access_token``
      - Short-lived bearer token (up to 2 000 chars)
-   * - ``refresh_token``
-     - Long-lived token used to obtain new access tokens
    * - ``expires``
-     - DateTimeField; when the access token expires
+     - DateTimeField; when the access token expires (~30 minutes after issue)
    * - ``tenant_id``
      - UUID of the connected Xero organisation
+
+.. note::
+   The ``refresh_token`` and ``authorisation_code`` fields exist on the model
+   from an earlier OAuth authorization-code implementation and are no longer
+   used. They are kept to avoid a breaking migration.
 
 XeroInvoice
 ~~~~~~~~~~~
@@ -155,18 +158,18 @@ them when setting up the integration for the first time or debugging auth issues
 
 ``refresh_xero_tokens()``
     Checks whether the stored access token is still valid. If it has expired,
-    uses the refresh token to obtain a new one and saves it to the database.
-    Returns a dict (Xero token response) or an ``{"message": "..."}`` dict if
-    the token was already valid.
-
-``refresh_using_authorisation_code(authorisation_code)``
-    Exchanges a one-time authorisation code (received via the OAuth callback)
-    for an access token + refresh token. Called by the ``/xero/callback`` view.
+    POSTs to ``https://identity.xero.com/connect/token`` with the client
+    credentials (Basic auth, ``grant_type=client_credentials``) to obtain a
+    fresh token, saves it, and updates ``self.access_token``.
+    Returns the Xero token response dict, or ``{"message": "..."}`` if the
+    token was already valid.
 
 ``set_tenant_id()``
-    Fetches all connected tenants from Xero and saves the UUID for the tenant
-    whose name matches ``XERO_TENANT_NAME``. Called once after the initial OAuth
-    flow.
+    Resolves the tenant ID for the Custom Connection. Decodes the JWT access
+    token to extract the ``authentication_event_id``, then calls
+    ``GET https://api.xero.com/connections`` (with ``Xero-User-Id`` set to that
+    value) to find the matching tenant and saves its UUID to ``XeroCredentials``.
+    Called once after the initial connect.
 
 Contact methods
 ~~~~~~~~~~~~~~~
@@ -410,9 +413,11 @@ Admin UI
 A minimal admin interface is available at ``/xero/`` (restricted to ABF staff):
 
 * **Home** (``/xero/``) — shows current configuration and token status.
-* **Initialise** (``/xero/initialise``) — starts the OAuth flow. Only needed once
-  per environment, or after a refresh token is revoked.
-* **Refresh keys** — HTMX action on the home page; forces an immediate token refresh.
+* **Connect** (``/xero/connect``) — HTMX action on the home page; forces an
+  immediate token fetch via client credentials and resolves the tenant ID.
+  Only needed once per environment, or after credentials change.
+* **Refresh keys** — HTMX action on the home page; forces an immediate token
+  refresh without re-resolving the tenant ID.
 * **API playground** — HTMX form to run ``list_contacts``, ``create_contact``,
   ``update_contact``, and ``archive_contact`` directly from the browser.
 
@@ -452,12 +457,12 @@ Two flags at the top of the test file control behaviour:
 
 To run against a real Xero sandbox:
 
-1. Point the app at a Xero demo company (``XERO_TENANT_NAME`` in settings).
-2. Complete the OAuth flow: run the dev server and visit ``/xero/initialise``.
-3. In Xero, create a contact and copy its UUID.
-4. Set ``MOCK_XERO_API = False`` and ``LIVE_XERO_CONTACT_ID = "<uuid>"`` in the
+1. Ensure valid client credentials are set (``XERO_CLIENT_ID`` / ``XERO_CLIENT_SECRET``).
+3. Click **Connect** on the ``/xero/`` admin page to fetch a token and store the tenant ID.
+4. In Xero, create a contact and copy its UUID.
+5. Set ``MOCK_XERO_API = False`` and ``LIVE_XERO_CONTACT_ID = "<uuid>"`` in the
    test file.
-5. Run the unit tests.
+6. Run the unit tests.
 
 .. warning::
    **Live API tests create persistent data in Xero** — Django's transaction

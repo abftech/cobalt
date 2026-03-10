@@ -810,11 +810,11 @@ class XeroApiTests:
 #
 # 3. CREDENTIALS MUST BE VALID
 #    `XeroApi.__init__` loads tokens from the `XeroCredentials` database row.
-#    Before running live tests, complete the OAuth flow at /xero/initialise to
-#    obtain a valid access token and refresh token.  The `refresh_xero_tokens`
-#    method will auto-refresh an expired access token, but it cannot recover
-#    from a missing or revoked refresh token — in that case you must re-run
-#    the OAuth flow.
+#    Before running live tests, click the Connect button on the /xero/ admin
+#    page to obtain a valid access token.  The `refresh_xero_tokens` method
+#    will auto-refresh an expired access token using the client credentials
+#    (grant_type=client_credentials) — no refresh token or re-authorisation
+#    step is needed as long as XERO_CLIENT_ID and XERO_CLIENT_SECRET are valid.
 #
 # 4. RATE LIMITS
 #    Xero's standard API tier allows 60 calls per minute per app.  Running
@@ -838,8 +838,9 @@ class XeroApiTests:
 #    reported as passed with a "[SKIPPED]" suffix.
 #
 # QUICK START FOR LIVE TESTING
-#   1. Point the app at a Xero demo company (set XERO_TENANT_NAME in settings).
-#   2. Complete the OAuth flow: python manage.py runserver, visit /xero/initialise.
-#   3. In Xero, create a contact and copy its UUID.
-#   4. Set MOCK_XERO_API = False and LIVE_XERO_CONTACT_ID = "<uuid>" here.
-#   5. Run: python manage.py run_tests_unit --app xero
+#   1. Ensure XERO_CLIENT_ID and XERO_CLIENT_SECRET are set for a demo company app.
+#   2. Set XERO_CLIENT_ID and XERO_CLIENT_SECRET for the demo company app.
+#   3. Click Connect on the /xero/ admin page to fetch a token and tenant ID.
+#   4. In Xero, create a contact and copy its UUID.
+#   5. Set MOCK_XERO_API = False and LIVE_XERO_CONTACT_ID = "<uuid>" here.
+#   6. Run: python manage.py run_tests_unit --app xero

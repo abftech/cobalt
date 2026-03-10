@@ -36,7 +36,13 @@
 
                     <div class="col-md-6">
 
-                        <a href="{% url "xero:xero_initialise" %}" class="btn btn-danger">User Authorise</a>
+                        <a
+                            href="javascript: void(0)"
+                            class="btn btn-danger"
+                            hx-post="{% url "xero:xero_connect_htmx" %}"
+                            hx-target="#refresh"
+                            hx-indicator="#spinner"
+                        >Connect to Xero</a>
 
                         <a
                             href="javascript: void(0)"
@@ -54,7 +60,7 @@
                     <!-- SPINNER -->
                     <div class="col-12 text-center my-4">
                         <span class="htmx-indicator" id="spinner">
-                            <img style="width: 40px" src="{% static "img/bars.svg" %}"/>
+                            <img style="width: 40px" src="{% static "assets/img/spinners/bars.svg" %}"/>
                         </span>
                     </div>
                 </div>
@@ -64,29 +70,41 @@
 
                     <div class="col-12">
 
-                        <button
-                            class="btn btn-success"
-                            hx-post="{% url "xero:run_xero_api_htmx" %}"
-                            hx-target="#data"
-                            hx-vars="'cmd': 'create_club'"
-                            hx-indicator="#spinner"
-                        >Create Club</button>
+                        <div class="form-inline mb-2">
 
-                        <button
-                            class="btn btn-info"
-                            hx-post="{% url "xero:run_xero_api_htmx" %}"
-                            hx-target="#data"
-                            hx-vars="'cmd': 'list_clubs'"
-                            hx-indicator="#spinner"
-                        >List Clubs</button>
+                            {% if COBALT_HOSTNAME != "www.myabf.com.au" and COBALT_HOSTNAME != "myabf.com.au" %}
+                                <input type="number" id="org_id" name="org_id" class="form-control mr-2" placeholder="Organisation ID">
 
-                        <button
-                            class="btn btn-info"
-                            hx-post="{% url "xero:run_xero_api_htmx" %}"
-                            hx-target="#data"
-                            hx-vars="'cmd': 'create_invoice'"
-                            hx-indicator="#spinner"
-                        >Create Invoice</button>
+                                <button
+                                    class="btn btn-success mr-1"
+                                    hx-post="{% url "xero:run_xero_api_htmx" %}"
+                                    hx-target="#data"
+                                    hx-include="#org_id"
+                                    hx-vals='{"cmd": "create_contact"}'
+                                    hx-indicator="#spinner"
+                                >Create Club</button>
+                            {% endif %}
+
+                            <button
+                                class="btn btn-info mr-1"
+                                hx-post="{% url "xero:run_xero_api_htmx" %}"
+                                hx-target="#data"
+                                hx-vals='{"cmd": "list_contacts"}'
+                                hx-indicator="#spinner"
+                            >List Clubs</button>
+
+                            {% if COBALT_HOSTNAME != "www.myabf.com.au" and COBALT_HOSTNAME != "myabf.com.au" %}
+                                <button
+                                    class="btn btn-info mr-1"
+                                    hx-post="{% url "xero:run_xero_api_htmx" %}"
+                                    hx-target="#data"
+                                    hx-include="#org_id"
+                                    hx-vals='{"cmd": "create_invoice"}'
+                                    hx-indicator="#spinner"
+                                >Create Invoice</button>
+                            {% endif %}
+
+                        </div>
 
                         <div id="data"></div>
                     </div>

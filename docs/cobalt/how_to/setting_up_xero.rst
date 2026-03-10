@@ -9,9 +9,13 @@ Setting Up the Xero Integration
 ========================================
 
 This guide walks through everything required to connect Cobalt to Xero — from
-creating the Xero app in the developer portal to completing the OAuth handshake
-and verifying the connection. It covers both the **test/demo** and
-**production** environments.
+creating the Xero app in the developer portal to verifying the connection. It
+covers both the **test/demo** and **production** environments.
+
+Cobalt uses Xero's **Custom Connection** (machine-to-machine OAuth 2.0 client
+credentials). There is no user-facing consent screen or callback URL. Cobalt
+exchanges its client credentials directly for an access token whenever it needs
+to make API calls.
 
 For the developer API reference (XeroApi methods, models, testing patterns) see
 :doc:`using_xero`.
@@ -28,16 +32,96 @@ Prerequisites
 
 ----
 
-Step 1 — Create a Xero App
----------------------------
+Xero Account Requirements
+--------------------------
 
-The same Xero app can service multiple Cobalt environments by registering
-multiple redirect URIs. You only need to create one app in the Xero developer
-portal.
+Before setting up the integration, the Xero organisation (and your Xero account)
+must meet the following requirements.
+
+Subscription plan
+~~~~~~~~~~~~~~~~~
+
+Cobalt uses the Xero Accounting API (contacts, invoices, payments endpoints).
+This is available on all standard Xero paid plans. Custom Connection apps —
+which Cobalt uses for authentication — are available to any Xero account holder
+through the developer portal at no extra cost.
+
+.. note::
+   Xero's plan names and feature inclusions change over time. Verify that the
+   target organisation's plan includes API access on
+   `Xero's pricing page <https://www.xero.com/au/pricing-plans/>`_ before
+   proceeding.
+
+For testing, every Xero account includes a **Xero demo company** at no charge.
+All development and UAT work should be done against the demo company.
+
+Developer portal access
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Creating a Custom Connection app requires access to the
+`Xero Developer Portal <https://developer.xero.com/app/manage>`_. Any Xero
+account holder can log in to the developer portal and create apps for free —
+no separate developer subscription is needed.
+
+Chart of accounts
+~~~~~~~~~~~~~~~~~
+
+Cobalt creates invoices and records payments against specific GL account codes.
+Those accounts must exist in the Xero chart of accounts before Cobalt can use
+them. Three categories of account are required:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 20 20 30
+
+   * - Purpose
+     - Cobalt setting
+     - Required Xero account type
+     - Notes
+   * - Payment clearing account
+     - ``XERO_BANK_ACCOUNT_CODE``
+     - **Bank**
+     - Used when ``create_payment()`` records that a club has paid an invoice.
+       Must be a Bank-type account so it appears under **Banking** in Xero and
+       can receive bank feed transactions for reconciliation.
+   * - Club settlement payables
+     - ``XERO_SETTLEMENT_ACCOUNT_CODE``
+     - **Current Liability**
+     - Line-item account on ACCPAY (accounts payable) invoices raised by
+       ``create_settlement_invoice()``. Represents money owed to clubs pending
+       bank transfer. Use an Accounts Payable or Current Liability type.
+   * - Revenue / income accounts
+     - Passed per ``create_invoice()`` call
+     - **Revenue** or **Other Income**
+     - One or more accounts for ACCREC (accounts receivable) invoice line items.
+       The ABF uses separate codes for affiliation fees, table fees, etc. These
+       codes are not stored in Cobalt's environment variables — they are chosen
+       by the code that calls ``create_invoice()``.
+
+Tax type
+~~~~~~~~
+
+Cobalt sends ``TaxType: "NONE"`` on every invoice line item by default. This
+means all accounts used for invoice line items must be configured to allow
+**No Tax** (or **Tax Exempt**) in Xero. Accounts that require GST on all
+transactions will cause invoice creation to fail.
+
+If any line items need GST applied, the calling code can pass ``tax_type``
+explicitly in the line item dict (e.g. ``"tax_type": "OUTPUT2"`` for 10% GST).
+
+----
+
+Step 1 — Create a Xero Custom Connection App
+---------------------------------------------
+
+A separate Xero app (Custom Connection) is required for each Cobalt environment
+because each environment connects to a different Xero organisation (demo company
+for non-production, production org for production).
 
 1. Log in to the `Xero Developer Portal <https://developer.xero.com/app/manage>`_.
-2. Click **New app**.
-3. Fill in the form:
+2. Make sure you are connected to the Demo Company (AU)
+3. Click **New app**.
+4. Fill in the form:
 
    .. list-table::
       :header-rows: 1
@@ -48,34 +132,40 @@ portal.
       * - App name
         - ``Cobalt`` (or any descriptive name)
       * - Integration type
-        - **Web app**
+        - **Custom Connection**
       * - Company or application URL
         - ``https://www.myabf.com.au`` (or your hostname)
-      * - Redirect URIs
-        - Add one line for **each** environment you need (see below)
 
-4. Click **Create app**.
-
-Redirect URIs to register
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Cobalt derives its redirect URI from ``COBALT_HOSTNAME``. Add a line for every
-environment:
-
-.. code-block:: text
-
-    http://127.0.0.1:8000/xero/callback        # local development
-    https://test.myabf.com.au/xero/callback    # test
-    https://uat.myabf.com.au/xero/callback     # UAT
-    https://www.myabf.com.au/xero/callback     # production
+5. Click **Create app**.
 
 .. note::
-   Xero requires ``https://`` for all non-localhost URIs. The development URI
-   using ``http://127.0.0.1:8000`` is treated as a special case by Xero and is
-   permitted without TLS.
+   Custom Connection apps do not use redirect URIs. There is no OAuth consent
+   screen — authentication is handled entirely server-side using client
+   credentials.
 
-5. After saving, go to the **Configuration** tab and copy the **Client ID** and
-   **Client Secret** — you will need them in Step 2.
+Configuring the Custom Connection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After creating the app you must configure which Xero organisation it connects
+to and what API scopes it requires:
+
+1. In the app settings, go to the **Configuration** tab.
+2. Under **Connected organisation**, select the Xero organisation this app
+   should access (demo company for test/UAT, production org for production).
+3. Under **Scopes**, enable at minimum:
+
+   * ``accounting.contacts``
+   * ``accounting.transactions``
+   * ``accounting.settings.read``
+
+4. Save the configuration.
+5. Copy the **Client ID** and **Client Secret** — you will need them in Step 2.
+
+.. warning::
+   Because a Custom Connection app is bound to a single Xero organisation, you
+   need a separate app for each environment that connects to a different Xero
+   organisation. All environments that share the same demo company can share one
+   app.
 
 ----
 
@@ -93,12 +183,9 @@ shell exports):
    * - Variable
      - Description
    * - ``XERO_CLIENT_ID``
-     - Client ID from the Xero developer portal (same value for all environments)
+     - Client ID from the Xero developer portal
    * - ``XERO_CLIENT_SECRET``
-     - Client secret from the Xero developer portal (same value for all environments)
-   * - ``XERO_TENANT_NAME``
-     - The **exact display name** of the Xero organisation to connect to.
-       This must match what appears in the top-left of the Xero UI.
+     - Client secret from the Xero developer portal
    * - ``XERO_BANK_ACCOUNT_CODE``
      - Xero account code for the bank/clearing account used when recording
        payments (e.g. ``090``). Look this up in **Chart of Accounts** in Xero.
@@ -108,30 +195,15 @@ shell exports):
 Test vs production values
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use a **Xero demo company** for all non-production environments. When you
-created your Xero account, Xero automatically provisioned a demo company called
-something like ``Demo Company (AU)``. You can also create additional demo
-companies from the Xero dashboard.
-
-.. list-table::
-   :header-rows: 1
-   :widths: 20 40 40
-
-   * - Environment
-     - ``XERO_TENANT_NAME``
-     - Notes
-   * - Development / Test / UAT
-     - ``Demo Company (AU)``
-     - Or whatever your demo company is named. Check in Xero → organisation
-       switcher (top-left).
-   * - Production
-     - ``17 Ways``
-     - The ABF's live Xero organisation. **Never point test environments here.**
+Use a **Xero demo company** for all non-production environments. Because the
+Custom Connection app is bound to a single organisation in the Xero developer
+portal, using a demo company simply means creating a separate Custom Connection
+app that is linked to the demo company (see Step 1).
 
 .. warning::
-   Setting ``XERO_TENANT_NAME`` to the production organisation on a test server
-   will cause test code to create real invoices and contacts in the live Xero
-   account. Always double-check this variable before running the OAuth flow.
+   Never configure a non-production Custom Connection app to connect to the
+   production Xero organisation. Test code will create real invoices and
+   contacts in the live account.
 
 Finding account codes
 ~~~~~~~~~~~~~~~~~~~~~
@@ -157,12 +229,12 @@ The exact codes depend on the chart of accounts for your Xero organisation.
 
 ----
 
-Step 3 — Complete the OAuth Flow
-----------------------------------
+Step 3 — Connect Cobalt to Xero
+---------------------------------
 
-The OAuth flow links Cobalt to Xero and stores a refresh token in the database.
-This step is performed **once per environment** (or any time the tokens are
-revoked).
+With the Custom Connection there is no user-facing OAuth consent screen. Cobalt
+fetches an access token directly using its client credentials. You trigger this
+once from the admin UI to populate the tenant ID and verify the credentials work.
 
 1. Start (or deploy) the Cobalt application with the environment variables from
    Step 2 in place.
@@ -170,40 +242,37 @@ revoked).
 2. Log in to Cobalt as an **ABF staff** user (the ``/xero/`` views are
    restricted to staff).
 
-3. Navigate to ``/xero/initialise``.
+3. Navigate to ``/xero/``.
 
-4. Click **Connect to Xero**. You will be redirected to Xero's authorisation
-   screen.
+4. Click **Connect**. Cobalt will:
 
-5. Select the correct Xero organisation (demo company for test, production org
-   for production) and click **Allow access**.
+   a. POST to ``https://identity.xero.com/connect/token`` with the client
+      credentials to obtain a fresh access token.
+   b. Decode the JWT access token to extract the ``authentication_event_id``.
+   c. Call ``GET https://api.xero.com/connections`` (with ``Xero-User-Id`` set
+      to the ``authentication_event_id``) to retrieve the linked tenant.
+   d. Save the access token, its expiry time, and the tenant UUID to the
+      ``XeroCredentials`` database table.
 
-6. Xero redirects back to ``/xero/callback``. Cobalt will:
-
-   a. Exchange the authorisation code for an access token and refresh token.
-   b. Look up all organisations connected to the app and find the one whose
-      display name matches ``XERO_TENANT_NAME``.
-   c. Save the tenant UUID and tokens to the ``XeroCredentials`` database table.
-
-7. You are redirected to the Xero admin home page (``/xero/``). Verify that
-   the **Configuration** panel shows:
+5. Verify that the **Configuration** panel shows:
 
    * A non-empty tenant ID
    * A non-empty access token
    * An expiry time roughly 30 minutes in the future
 
 If any of these are missing, check the application logs for errors from
-``xero.core`` and re-run the flow.
+``xero.core`` and click **Connect** again.
 
 Token lifecycle
 ~~~~~~~~~~~~~~~
 
-The access token expires after ~30 minutes. Cobalt refreshes it automatically
-before every API call — no manual intervention is required. The refresh token
-itself does not expire as long as it is used at least once every 60 days.
+Access tokens expire after ~30 minutes. Cobalt fetches a new one automatically
+before every API call via ``refresh_xero_tokens()`` — no manual intervention is
+required. Because client credentials are used, there is no refresh token; a
+brand-new access token is obtained directly whenever the current one has expired.
 
-If the refresh token is ever revoked (e.g. you disconnect the app from Xero's
-**Connected apps** list), you must repeat this step to re-authorise.
+As long as ``XERO_CLIENT_ID`` and ``XERO_CLIENT_SECRET`` remain valid,
+the integration will keep working indefinitely without any re-authorisation step.
 
 ----
 
@@ -219,11 +288,10 @@ everything is working:
 
 If you receive an error, check:
 
-* The ``XERO_TENANT_NAME`` value matches the organisation name exactly
-  (including capitalisation and any trailing spaces).
 * The environment variables were loaded correctly (restart the app server after
   changing them).
-* The Xero app has not been disconnected from **Xero → My Xero → Connected apps**.
+* The Custom Connection app in the Xero developer portal is configured for the
+  correct Xero organisation and has the required scopes enabled.
 
 ----
 
@@ -233,29 +301,89 @@ Step 5 — Set Up GL Account Codes in Xero
 Before invoices can be created, the Xero chart of accounts must contain the
 account codes referenced in ``XERO_BANK_ACCOUNT_CODE`` and
 ``XERO_SETTLEMENT_ACCOUNT_CODE``, and any line-item account codes passed to
-``create_invoice()``.
+``create_invoice()``. Each account must be the **correct Xero account type** —
+using the wrong type will cause API errors.
 
 In the demo company, Xero pre-populates a standard chart of accounts. You may
 need to add or modify accounts to match the codes used in production.
 
-1. In Xero: **Accounting → Chart of Accounts → Add Account**.
-2. Set the **Code**, **Name**, **Type** (e.g. *Revenue*, *Current Liability*),
-   and **Tax** settings to match the production organisation.
-3. Confirm the code is reachable by creating a test invoice via the Cobalt
-   admin or the Django shell::
+To add or edit an account: **Accounting → Chart of Accounts → Add Account**
+(or click an existing account to edit it).
 
-       from xero.core import XeroApi
-       from organisations.models import Organisation
+Payment clearing account (XERO_BANK_ACCOUNT_CODE)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-       xero = XeroApi()
-       org = Organisation.objects.get(pk=<id>)  # must have xero_contact_id set
+This account is referenced by ``create_payment()`` when recording that an
+invoice has been paid.
 
-       invoice = xero.create_invoice(
-           organisation=org,
-           line_items=[{"description": "Test", "quantity": 1, "unit_amount": 1.00, "account_code": "200"}],
-           reference="TEST",
-       )
-       print(invoice)
+* **Xero account type**: ``Bank``
+* **Enable payments**: must be enabled (Xero does this automatically for Bank
+  accounts)
+* **Tax**: not applicable to Bank accounts
+* Bank-type accounts appear under the **Banking** menu in Xero and can be
+  linked to a bank feed for reconciliation. The ABF typically maps this to the
+  actual business transaction account (e.g. code ``090``).
+
+.. note::
+   Only **Bank**-type accounts can be used as the payment account in Xero's
+   Payments API. Attempting to record a payment against a non-Bank account will
+   return an error.
+
+Settlement payables account (XERO_SETTLEMENT_ACCOUNT_CODE)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This account is the line-item account on ACCPAY (accounts payable) invoices
+raised by ``create_settlement_invoice()`` when paying out clubs.
+
+* **Xero account type**: ``Current Liability`` (or ``Accounts Payable``)
+* **Tax**: set to **No Tax** / **Tax Exempt**
+* This account accumulates what the ABF owes to clubs. When the ABF transfers
+  money to a club's bank account and reconciles the transaction in Xero, the
+  ACCPAY invoice is marked paid and this liability is cleared.
+
+Revenue / income accounts (ACCREC line items)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ACCREC invoices (sent to clubs requesting payment) reference one or more
+revenue account codes as line items. These codes are passed by the calling
+code, not stored in Cobalt's environment variables.
+
+* **Xero account type**: ``Revenue`` or ``Other Income``
+* **Tax**: set to **No Tax** / **Tax Exempt** (Cobalt sends ``TaxType: "NONE"``
+  by default; accounts that require GST will cause invoice creation to fail)
+* Create a separate account for each income category, e.g.:
+
+  * Affiliation fees
+  * Table fees
+  * Entry fees
+
+Ensure the account code strings match exactly what is passed by the Cobalt code
+that calls ``create_invoice()`` — they are case-sensitive in Xero.
+
+Verifying account setup
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Confirm the accounts are configured correctly by creating a test invoice and
+payment via the Django shell::
+
+    from xero.core import XeroApi
+    from organisations.models import Organisation
+
+    xero = XeroApi()
+    org = Organisation.objects.get(pk=<id>)  # must have xero_contact_id set
+
+    # Test ACCREC invoice with a revenue account code
+    invoice = xero.create_invoice(
+        organisation=org,
+        line_items=[{"description": "Test", "quantity": 1, "unit_amount": 1.00, "account_code": "200"}],
+        reference="TEST",
+    )
+    print(invoice)
+
+    # Test recording a payment (uses XERO_BANK_ACCOUNT_CODE)
+    if invoice:
+        xero.create_payment(invoice.xero_invoice_id, amount=1.00)
+        print("Payment recorded")
 
 ----
 
@@ -315,22 +443,20 @@ Troubleshooting
 
    * - Symptom
      - Fix
-   * - ``No tenants found matching <name>``
-     - ``XERO_TENANT_NAME`` does not match the organisation name in Xero.
-       Check the exact spelling — including capitalisation and spaces — against
-       the organisation switcher in the top-left of the Xero UI.
    * - ``401 Unauthorized`` on API calls
-     - The access token has been revoked or the refresh token has expired (not
-       used in >60 days). Re-run Step 3.
-   * - Callback returns ``invalid_grant``
-     - The authorisation code was already used (codes are one-time-use). Click
-       **Connect to Xero** again to start a fresh flow.
+     - The client credentials are invalid or the Custom Connection app has been
+       disabled/revoked in the Xero developer portal. Check ``XERO_CLIENT_ID``
+       and ``XERO_CLIENT_SECRET``, then click **Connect** again.
+   * - Token fetch returns an error instead of ``access_token``
+     - The client credentials are wrong, or the app's scopes have not been saved
+       correctly in the Xero developer portal. Re-check the app configuration.
    * - Account code not found error on invoice creation
      - The account code passed to ``create_invoice()`` does not exist in the
        connected Xero organisation. Add it in **Accounting → Chart of Accounts**.
    * - Token refresh succeeds but tenant ID is blank
-     - ``set_tenant_id()`` could not match ``XERO_TENANT_NAME``. Check the value
-       and confirm the app is authorised for the correct Xero organisation.
+     - ``set_tenant_id()`` could not retrieve a connection. Check the application
+       logs and confirm the Custom Connection app is linked to an organisation in
+       the Xero developer portal.
 
 ----
 
@@ -346,14 +472,11 @@ Summary of Environment Variables
      - Notes
    * - ``XERO_CLIENT_ID``
      - Yes
-     - From Xero developer portal. Same across all environments.
+     - From Xero developer portal. Each environment that connects to a different
+       Xero organisation needs its own Custom Connection app and client ID.
    * - ``XERO_CLIENT_SECRET``
      - Yes
-     - From Xero developer portal. Same across all environments.
-   * - ``XERO_TENANT_NAME``
-     - Yes
-     - Must exactly match the Xero organisation display name.
-       Use demo company for non-production.
+     - From Xero developer portal.
    * - ``XERO_BANK_ACCOUNT_CODE``
      - Yes
      - GL account code for recording payments.

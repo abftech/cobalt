@@ -1,19 +1,18 @@
+import json
 import logging
+import base64
 from datetime import timedelta, date
 from urllib.parse import urlencode
 
 import requests
-import base64
 
 from django.utils.timezone import now
 
 from cobalt.settings import (
     XERO_CLIENT_ID,
     XERO_CLIENT_SECRET,
-    XERO_TENANT_NAME,
     XERO_BANK_ACCOUNT_CODE,
     XERO_SETTLEMENT_ACCOUNT_CODE,
-    COBALT_HOSTNAME,
 )
 from xero.models import XeroCredentials, XeroInvoice
 
@@ -26,39 +25,13 @@ class XeroApi:
         # load credentials
         credentials, _ = XeroCredentials.objects.get_or_create()
         self.access_token = credentials.access_token
-        self.refresh_token = credentials.refresh_token
         self.tenant_id = credentials.tenant_id
 
-        # Build redirect URL from COBALT_HOSTNAME
-        protocol = (
-            "http"
-            if "127.0.0.1" in COBALT_HOSTNAME or "localhost" in COBALT_HOSTNAME
-            else "https"
-        )
-        self.redirect_url = f"{protocol}://{COBALT_HOSTNAME}/xero/callback"
-
         # Static data
-        self.token_refresh_url = "https://identity.xero.com/connect/token"
-        self.exchange_code_url = "https://identity.xero.com/connect/token"
-        self.connections_url = "https://api.xero.com/connections"
-        self.authorisation_url = "https://login.xero.com/identity/connect/authorize"
-        self.scope = "offline_access accounting.transactions accounting.contacts"
+        self.token_url = "https://identity.xero.com/connect/token"
         self.b64_id_secret = base64.b64encode(
             bytes(f"{XERO_CLIENT_ID}:{XERO_CLIENT_SECRET}", "utf-8")
         ).decode("utf-8")
-        self.xero_auth_url = (
-            self.authorisation_url
-            + "?"
-            + urlencode(
-                {
-                    "response_type": "code",
-                    "client_id": XERO_CLIENT_ID,
-                    "redirect_uri": self.redirect_url,
-                    "scope": self.scope,
-                    "state": "123",
-                }
-            )
-        )
 
     def headers(self):
         """return API headers"""
@@ -69,114 +42,213 @@ class XeroApi:
             "Accept": "application/json",
         }
 
-    def refresh_using_authorisation_code(self, authorisation_code):
-        """pass Xero an authorisation code and get an access token back"""
-
-        response = requests.post(
-            self.exchange_code_url,
-            headers={"Authorization": f"Basic {self.b64_id_secret}"},
-            data={
-                "grant_type": "authorization_code",
-                "code": authorisation_code,
-                "redirect_uri": self.redirect_url,
-            },
-        )
-
-        json_response = response.json()
-
-        access_token = json_response["access_token"]
-        refresh_token = json_response["refresh_token"]
-
-        credentials, _ = XeroCredentials.objects.get_or_create()
-        credentials.authorisation_code = authorisation_code
-        credentials.access_token = access_token
-        credentials.refresh_token = refresh_token
-        credentials.expires = now() + timedelta(seconds=json_response["expires_in"] - 2)
-        credentials.save()
-
-        self.access_token = access_token
-        self.refresh_token = refresh_token
-
-        logger.info("Updated access token using authorisation code")
-
     def refresh_xero_tokens(self):
-        """the access token expires quickly but can be reset using the refresh token"""
+        """Get an access token via client credentials. Skips if still valid."""
 
-        # See if still valid
         credentials, _ = XeroCredentials.objects.get_or_create()
         if credentials.expires and credentials.expires > now():
             logger.info("Access token is still valid. Not refreshing.")
             return {"message": "Access token is still valid. Not refreshing."}
 
-        logger.info("Refreshing access token")
+        logger.info(f"Fetching new access token from {self.token_url}")
 
-        # Update access token using refresh token
         response = requests.post(
-            self.token_refresh_url,
+            self.token_url,
             headers={
                 "Authorization": f"Basic {self.b64_id_secret}",
                 "Content-Type": "application/x-www-form-urlencoded",
             },
-            data={"grant_type": "refresh_token", "refresh_token": self.refresh_token},
+            data={"grant_type": "client_credentials"},
         )
 
-        json_response = response.json()
+        logger.info(f"Token endpoint responded with HTTP {response.status_code}")
+
+        if not response.text:
+            logger.error("Token endpoint returned an empty body")
+            return {
+                "error": f"Empty response from token endpoint (HTTP {response.status_code})"
+            }
+
+        try:
+            json_response = response.json()
+        except Exception:
+            logger.error(
+                f"Token endpoint returned non-JSON (HTTP {response.status_code}): {response.text[:200]}"
+            )
+            return {
+                "error": f"Non-JSON from token endpoint (HTTP {response.status_code})",
+                "body": response.text[:200],
+            }
+
         if "access_token" not in json_response:
+            logger.error(
+                f"Failed to get access token (HTTP {response.status_code}): {json_response}"
+            )
             return json_response
 
         credentials.access_token = json_response["access_token"]
         credentials.expires = now() + timedelta(seconds=json_response["expires_in"] - 2)
-        credentials.refresh_token = json_response["refresh_token"]
         credentials.save()
 
         self.access_token = credentials.access_token
-        self.refresh_token = credentials.refresh_token
-
+        logger.info("Access token obtained successfully")
         return json_response
 
-    def set_tenant_id(self):
-        """get the tenant id from Xero. We only support one tenant at a time"""
+    def _save_tenant_id(self, tenant_id: str):
+        """Persist tenant_id to the database and update self."""
+        self.tenant_id = tenant_id
+        credentials, _ = XeroCredentials.objects.get_or_create()
+        credentials.tenant_id = tenant_id
+        credentials.save()
+        logger.info(f"Saved tenant_id: {tenant_id}")
 
-        logger.info("Getting tenants")
+    def _decode_jwt_payload(self) -> dict | None:
+        """Decode the JWT access token payload without verifying the signature."""
+        if not self.access_token:
+            logger.error("No access token available — run Connect first")
+            return None
+        try:
+            parts = self.access_token.split(".")
+            if len(parts) != 3:
+                logger.error("Access token is not a valid JWT")
+                return None
+            payload_b64 = parts[1] + "=" * (4 - len(parts[1]) % 4)
+            return json.loads(base64.urlsafe_b64decode(payload_b64))
+        except Exception as e:
+            logger.error(f"Failed to decode JWT access token: {e}")
+            return None
+
+    def set_tenant_id(self) -> str | None:
+        """Resolve the Xero tenant ID and save it.
+
+        For Custom Connections the token scope is ``app.connections``.  The
+        tenant ID is not embedded in the JWT, so we call the connections
+        endpoint (which works with this scope and does not require a tenant ID
+        header).  We match the connection using the ``authEventId`` field,
+        which corresponds to the ``authentication_event_id`` claim in the JWT.
+
+        Returns the tenant ID on success, None on failure.
+        """
+        # Decode the JWT to get the authentication_event_id for matching
+        jwt_payload = self._decode_jwt_payload()
+        auth_event_id = (
+            jwt_payload.get("authentication_event_id") if jwt_payload else None
+        )
+        logger.info(f"JWT authentication_event_id: {auth_event_id}")
+
+        # Call the connections endpoint with Xero-User-Id set to the
+        # authentication_event_id from the JWT (required for Custom Connections)
+        conn_headers = {"Authorization": f"Bearer {self.access_token}"}
+        if auth_event_id:
+            conn_headers["Xero-User-Id"] = auth_event_id
 
         response = requests.get(
-            self.connections_url,
-            headers={
-                "Authorization": f"Bearer {self.access_token}",
-                "Content-Type": "application/json",
-            },
+            "https://api.xero.com/connections", headers=conn_headers
         )
 
-        json_response = response.json()
+        logger.info(f"Connections endpoint HTTP {response.status_code}")
 
-        for tenant in json_response:
-            if tenant["tenantName"] == XERO_TENANT_NAME:
-                self.tenant_id = tenant["tenantId"]
-                credentials, _ = XeroCredentials.objects.get_or_create()
-                credentials.tenant_id = self.tenant_id
-                credentials.save()
-                logger.info(f"Updated tenant id for {XERO_TENANT_NAME}")
-                return
+        if not response.text:
+            logger.error(
+                f"Empty response from connections endpoint (HTTP {response.status_code})"
+            )
+            return None
 
-        logger.error(f"No tenants found matching {XERO_TENANT_NAME}")
+        try:
+            connections = response.json()
+        except Exception:
+            logger.error(f"Non-JSON from connections endpoint: {response.text[:200]}")
+            return None
+
+        if not isinstance(connections, list):
+            logger.error(f"Unexpected connections response: {connections}")
+            return None
+
+        if not connections:
+            logger.error(
+                "Connections endpoint returned an empty list — check the Custom Connection app is linked to an organisation in the Xero developer portal"
+            )
+            return None
+
+        logger.info(
+            f"Connections: {[(c.get('tenantName'), c.get('tenantId')) for c in connections]}"
+        )
+
+        # Match by authEventId (links this token to the right connection)
+        if auth_event_id:
+            for conn in connections:
+                if conn.get("authEventId") == auth_event_id:
+                    self._save_tenant_id(conn["tenantId"])
+                    return conn["tenantId"]
+
+        # Fall back to using the only available connection
+        if len(connections) == 1:
+            conn = connections[0]
+            logger.warning(f"Using sole available connection: {conn.get('tenantName')}")
+            self._save_tenant_id(conn["tenantId"])
+            return conn["tenantId"]
+
+        logger.error(f"Could not determine tenant from {len(connections)} connections")
+        return None
+
+    def _parse_response(self, response) -> dict:
+        """Parse a Xero API response, handling empty or non-JSON bodies."""
+        if not response.text:
+            hints = {
+                401: "Access token is invalid — click 'Connect to Xero' to refresh.",
+                403: "Permission denied — check the tenant ID is set and the Custom Connection app has the required scopes (accounting.contacts, accounting.transactions).",
+            }
+            msg = f"Empty response from Xero (HTTP {response.status_code})"
+            if response.status_code in hints:
+                msg += f" {hints[response.status_code]}"
+            logger.error(msg)
+            return {"error": msg}
+        try:
+            return response.json()
+        except Exception:
+            logger.error(
+                f"Xero API returned non-JSON body (status {response.status_code}): {response.text[:200]}"
+            )
+            return {
+                "error": f"Non-JSON response from Xero (HTTP {response.status_code})",
+                "body": response.text[:200],
+            }
+
+    def _check_credentials(self) -> dict | None:
+        """Return an error dict if tenant_id is not set, otherwise None."""
+        if not self.tenant_id:
+            msg = "Xero tenant ID is not set. Click 'Connect to Xero' first."
+            logger.error(msg)
+            return {"error": msg}
+        return None
 
     def xero_api_get(self, url):
         """generic api call for GET"""
         self.refresh_xero_tokens()
+        if err := self._check_credentials():
+            return err
         logger.info(url)
-        return requests.get(url, headers=self.headers()).json()
+        return self._parse_response(requests.get(url, headers=self.headers()))
 
     def xero_api_post(self, url, json_data):
         """generic api call for POST"""
         self.refresh_xero_tokens()
+        if err := self._check_credentials():
+            return err
         logger.info(url)
-        return requests.post(url, headers=self.headers(), json=json_data).json()
+        return self._parse_response(
+            requests.post(url, headers=self.headers(), json=json_data)
+        )
 
     def xero_api_put(self, url, json_data):
         """generic api call for PUT"""
         self.refresh_xero_tokens()
+        if err := self._check_credentials():
+            return err
         logger.info(url)
-        return requests.put(url, headers=self.headers(), json=json_data).json()
+        return self._parse_response(
+            requests.put(url, headers=self.headers(), json=json_data)
+        )
 
     # -----------------------------------------------------------------------
     # Customer (Contact) methods

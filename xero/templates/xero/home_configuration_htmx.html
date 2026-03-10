@@ -8,10 +8,6 @@
         <div class="table-responsive">
             <table class="table">
                 <tr>
-                    <td>Tenant</td>
-                    <td>{{ XERO_TENANT_NAME }}</td>
-                </tr>
-                <tr>
                     <td>Tenant ID</td>
                     <td>{{ xero.tenant_id }}</td>
                 </tr>
@@ -20,16 +16,8 @@
                     <td>...{{ xero.access_token|slice:"-5:" }}</td>
                 </tr>
                 <tr>
-                    <td>Access Code Expiry</td>
-                    <td>{{ xero_credentials.expires }}</td>
-                </tr>
-                <tr>
-                    <td>Access Code Expiry</td>
+                    <td>Access Token Expiry</td>
                     <td>{{ xero_credentials.expires|naturaltime }}</td>
-                </tr>
-                <tr>
-                    <td>Refresh Code</td>
-                    <td>{{ xero.refresh_token }}</td>
                 </tr>
             </table>
         </div>
