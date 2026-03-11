@@ -1,0 +1,171 @@
+{#------------------------------------------------------------------------#}
+{#                                                                        #}
+{# Reconcile contacts report — loaded into #data via HTMX                #}
+{#                                                                        #}
+{#------------------------------------------------------------------------#}
+
+<div class="card mt-3">
+    <div class="card-header">
+        <h4>Contact Reconciliation Report</h4>
+    </div>
+    <div class="card-body">
+
+        {% if error %}
+            <div class="alert alert-danger">
+                <strong>Error fetching Xero contacts:</strong> {{ error }}
+            </div>
+
+        {% else %}
+
+            {# ---- Summary row ---- #}
+            <div class="row mb-4 text-center">
+                <div class="col">
+                    <div class="h4 text-success">{{ matched_count }}</div>
+                    <div class="text-muted small">Matched</div>
+                </div>
+                <div class="col">
+                    <div class="h4 {% if data_mismatches %}text-warning{% else %}text-success{% endif %}">{{ data_mismatches|length }}</div>
+                    <div class="text-muted small">Data Mismatches</div>
+                </div>
+                <div class="col">
+                    <div class="h4 {% if missing_from_xero %}text-warning{% else %}text-success{% endif %}">{{ missing_from_xero|length }}</div>
+                    <div class="text-muted small">Missing from Xero</div>
+                </div>
+                <div class="col">
+                    <div class="h4 {% if stale_ids %}text-danger{% else %}text-success{% endif %}">{{ stale_ids|length }}</div>
+                    <div class="text-muted small">Stale IDs</div>
+                </div>
+                <div class="col">
+                    <div class="h4 {% if orphans_in_xero %}text-warning{% else %}text-success{% endif %}">{{ orphans_in_xero|length }}</div>
+                    <div class="text-muted small">Orphans in Xero</div>
+                </div>
+            </div>
+
+            <p class="text-muted small mb-4">
+                Cobalt organisations: {{ total_cobalt }} &nbsp;|&nbsp;
+                Active Xero contacts: {{ total_xero }}
+            </p>
+
+            {# ---- Data mismatches ---- #}
+            {% if data_mismatches %}
+                <h5 class="text-warning">Data Mismatches</h5>
+                <p class="text-muted small">Matched contacts where Cobalt and Xero values differ.</p>
+                <div class="table-responsive mb-4">
+                    <table class="table table-sm table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Organisation</th>
+                                <th>ABF #</th>
+                                <th>Field</th>
+                                <th>Cobalt Value</th>
+                                <th>Xero Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in data_mismatches %}
+                                {% for diff in item.diffs %}
+                                    <tr>
+                                        {% if forloop.first %}
+                                            <td rowspan="{{ item.diffs|length }}">{{ item.org.name }}</td>
+                                            <td rowspan="{{ item.diffs|length }}">{{ item.org.org_id }}</td>
+                                        {% endif %}
+                                        <td>{{ diff.field }}</td>
+                                        <td>{{ diff.cobalt }}</td>
+                                        <td>{{ diff.xero }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+
+            {# ---- Missing from Xero ---- #}
+            {% if missing_from_xero %}
+                <h5 class="text-warning">Missing from Xero</h5>
+                <p class="text-muted small">Cobalt organisations with no Xero contact ID. Use <strong>Create Club</strong> or <strong>Create All Missing Clubs</strong> to fix.</p>
+                <div class="table-responsive mb-4">
+                    <table class="table table-sm table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Organisation</th>
+                                <th>ABF #</th>
+                                <th>Email</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for org in missing_from_xero %}
+                                <tr>
+                                    <td>{{ org.name }}</td>
+                                    <td>{{ org.org_id }}</td>
+                                    <td>{{ org.club_email|default:"—" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+
+            {# ---- Stale IDs ---- #}
+            {% if stale_ids %}
+                <h5 class="text-danger">Stale Xero IDs</h5>
+                <p class="text-muted small">Cobalt organisations with a stored Xero contact ID that does not exist as an active contact in Xero (may have been archived or deleted externally).</p>
+                <div class="table-responsive mb-4">
+                    <table class="table table-sm table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Organisation</th>
+                                <th>ABF #</th>
+                                <th>Stored Xero Contact ID</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for org in stale_ids %}
+                                <tr>
+                                    <td>{{ org.name }}</td>
+                                    <td>{{ org.org_id }}</td>
+                                    <td><code>{{ org.xero_contact_id }}</code></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+
+            {# ---- Orphans in Xero ---- #}
+            {% if orphans_in_xero %}
+                <h5 class="text-warning">Orphan Contacts in Xero</h5>
+                <p class="text-muted small">Active Xero contacts not linked to any Cobalt organisation.</p>
+                <div class="table-responsive mb-4">
+                    <table class="table table-sm table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Xero Name</th>
+                                <th>Account Number</th>
+                                <th>Xero Contact ID</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contact in orphans_in_xero %}
+                                <tr>
+                                    <td>{{ contact.Name|default:"—" }}</td>
+                                    <td>{{ contact.AccountNumber|default:"—" }}</td>
+                                    <td><code>{{ contact.ContactID }}</code></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+
+            {# ---- All clear ---- #}
+            {% if not data_mismatches and not missing_from_xero and not stale_ids and not orphans_in_xero %}
+                <div class="alert alert-success">
+                    All {{ matched_count }} organisation{{ matched_count|pluralize }} are matched and in sync with Xero.
+                </div>
+            {% endif %}
+
+        {% endif %}
+
+    </div>
+</div>

@@ -232,6 +232,79 @@ def invoice_form_htmx(request):
     )
 
 
+def reconcile_contacts_htmx(request):
+    """Compare active Xero contacts against Cobalt organisations and report discrepancies."""
+    xero = XeroApi()
+
+    data = xero.xero_api_get(
+        "https://api.xero.com/api.xro/2.0/Contacts"
+        "?where=ContactStatus%3D%3D%22ACTIVE%22"
+    )
+    if "error" in data:
+        return render(request, "xero/reconcile_contacts_htmx.html", {"error": data})
+
+    xero_contacts = data.get("Contacts", [])
+    xero_by_id = {c["ContactID"]: c for c in xero_contacts if c.get("ContactID")}
+
+    # All Xero ContactIDs currently stored in Cobalt
+    linked_ids = set(
+        Organisation.objects.exclude(xero_contact_id="")
+        .exclude(xero_contact_id__isnull=True)
+        .values_list("xero_contact_id", flat=True)
+    )
+
+    missing_from_xero = []
+    stale_ids = []
+    data_mismatches = []
+    matched_count = 0
+
+    for org in Organisation.objects.order_by("name"):
+        if not org.xero_contact_id:
+            missing_from_xero.append(org)
+        elif org.xero_contact_id not in xero_by_id:
+            stale_ids.append(org)
+        else:
+            matched_count += 1
+            xero_c = xero_by_id[org.xero_contact_id]
+            diffs = []
+            if org.name != xero_c.get("Name", ""):
+                diffs.append(
+                    {
+                        "field": "Name",
+                        "cobalt": org.name,
+                        "xero": xero_c.get("Name", ""),
+                    }
+                )
+            cobalt_email = org.club_email or ""
+            xero_email = xero_c.get("EmailAddress", "")
+            if cobalt_email != xero_email:
+                diffs.append(
+                    {"field": "Email", "cobalt": cobalt_email, "xero": xero_email}
+                )
+            if diffs:
+                data_mismatches.append({"org": org, "diffs": diffs})
+
+    orphans_in_xero = [
+        c
+        for c in xero_contacts
+        if c.get("ContactID") and c["ContactID"] not in linked_ids
+    ]
+
+    return render(
+        request,
+        "xero/reconcile_contacts_htmx.html",
+        {
+            "matched_count": matched_count,
+            "missing_from_xero": missing_from_xero,
+            "stale_ids": stale_ids,
+            "data_mismatches": data_mismatches,
+            "orphans_in_xero": orphans_in_xero,
+            "total_xero": len(xero_contacts),
+            "total_cobalt": Organisation.objects.count(),
+        },
+    )
+
+
 def _handle_invoice_webhook(xero_invoice_id: str):
     """Fetch current invoice status from Xero and update the local XeroInvoice."""
     local = XeroInvoice.objects.filter(xero_invoice_id=xero_invoice_id).first()

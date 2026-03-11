@@ -110,6 +110,13 @@
                                 hx-indicator="#spinner"
                             >List Clubs</button>
 
+                            <button
+                                class="btn btn-secondary mr-1"
+                                hx-post="{% url "xero:reconcile_contacts_htmx" %}"
+                                hx-target="#data"
+                                hx-indicator="#spinner"
+                            >Reconcile Contacts</button>
+
                             {% if COBALT_HOSTNAME != "www.myabf.com.au" and COBALT_HOSTNAME != "myabf.com.au" %}
                                 <button
                                     class="btn btn-info mr-1"
