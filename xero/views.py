@@ -158,6 +158,51 @@ def run_xero_api_htmx(request):
                 except (ValueError, TypeError) as e:
                     result = {"error": f"Invalid field value: {e}"}
 
+    elif cmd == "create_payment":
+        if COBALT_HOSTNAME in PRODUCTION_HOSTS:
+            result = {"error": "Create Payment is not available in production"}
+        else:
+            xero_invoice_id = request.POST.get("xero_invoice_id", "")
+            invoice = XeroInvoice.objects.filter(
+                xero_invoice_id=xero_invoice_id
+            ).first()
+            if not invoice:
+                result = {"error": f"Invoice {xero_invoice_id!r} not found locally"}
+            else:
+                try:
+                    amount = float(request.POST.get("amount", invoice.amount))
+                    payment_date_str = request.POST.get("payment_date", "")
+                    account_code = request.POST.get("account_code", "") or None
+                    from datetime import date as date_type
+
+                    payment_date = (
+                        date_type.fromisoformat(payment_date_str)
+                        if payment_date_str
+                        else None
+                    )
+                    response = xero.create_payment(
+                        xero_invoice_id=xero_invoice_id,
+                        amount=amount,
+                        payment_date=payment_date,
+                        account_code=account_code,
+                    )
+                    payments = response.get("Payments", [])
+                    if payments and payments[0].get("Status") == "AUTHORISED":
+                        result = {
+                            "PaymentID": payments[0].get("PaymentID"),
+                            "InvoiceNumber": invoice.invoice_number,
+                            "Organisation": invoice.organisation.name,
+                            "Amount": amount,
+                            "Status": "AUTHORISED",
+                        }
+                    else:
+                        result = {
+                            "error": "Payment may have failed — check application logs",
+                            "detail": response,
+                        }
+                except (ValueError, TypeError) as e:
+                    result = {"error": f"Invalid field value: {e}"}
+
     elif cmd == "archive_all_contacts":
         if COBALT_HOSTNAME in PRODUCTION_HOSTS:
             result = {"error": "Archive All Contacts is not available in production"}
@@ -216,6 +261,22 @@ def run_xero_api_htmx(request):
     response = render(request, "xero/json_data.html", {"json_data": result})
     response["HX-Trigger"] = '{"update_config": "true"}'
     return response
+
+
+def payment_form_htmx(request):
+    """Return the create-payment form fragment."""
+    from cobalt.settings import XERO_BANK_ACCOUNT_CODE
+
+    invoices = (
+        XeroInvoice.objects.filter(status="AUTHORISED")
+        .select_related("organisation")
+        .order_by("organisation__name", "invoice_number")
+    )
+    return render(
+        request,
+        "xero/payment_form_htmx.html",
+        {"invoices": invoices, "default_account_code": XERO_BANK_ACCOUNT_CODE},
+    )
 
 
 def invoice_form_htmx(request):

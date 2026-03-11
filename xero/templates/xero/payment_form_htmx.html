@@ -1,0 +1,104 @@
+{#------------------------------------------------------------------------#}
+{#                                                                        #}
+{# Create Payment form fragment — loaded into #data via HTMX             #}
+{#                                                                        #}
+{#------------------------------------------------------------------------#}
+
+<div class="card mt-3">
+    <div class="card-header">
+        <h4>Create Payment</h4>
+    </div>
+    <div class="card-body">
+
+        {% if not invoices %}
+            <div class="alert alert-warning">
+                No authorised invoices found. Create an invoice first, or check that
+                existing invoices have <strong>AUTHORISED</strong> status.
+            </div>
+        {% else %}
+
+            <form id="payment-form">
+
+                <!-- Invoice -->
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label font-weight-bold">Invoice</label>
+                    <div class="col-sm-9">
+                        <select name="xero_invoice_id" id="invoice_select" class="form-control" required
+                                onchange="prefillAmount(this)">
+                            <option value="">-- Select an invoice --</option>
+                            {% for inv in invoices %}
+                                <option value="{{ inv.xero_invoice_id }}"
+                                        data-amount="{{ inv.amount }}">
+                                    {{ inv.invoice_number }} — {{ inv.organisation.name }} — ${{ inv.amount }}{% if inv.reference %} ({{ inv.reference }}){% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Amount -->
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label font-weight-bold">Amount ($)</label>
+                    <div class="col-sm-3">
+                        <input type="number" name="amount" id="payment_amount" class="form-control"
+                               value="" min="0" step="0.01" required>
+                    </div>
+                    <div class="col-sm-6 col-form-label text-muted">Pre-filled from invoice; adjust for partial payments</div>
+                </div>
+
+                <!-- Payment date -->
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label font-weight-bold">Payment Date</label>
+                    <div class="col-sm-3">
+                        <input type="date" name="payment_date" class="form-control">
+                    </div>
+                    <div class="col-sm-6 col-form-label text-muted">Leave blank to use today</div>
+                </div>
+
+                <!-- Account code -->
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label font-weight-bold">Bank Account Code</label>
+                    <div class="col-sm-3">
+                        <input type="text" name="account_code" class="form-control"
+                               placeholder="{{ default_account_code }}">
+                    </div>
+                    <div class="col-sm-6 col-form-label text-muted">
+                        Leave blank to use <code>XERO_BANK_ACCOUNT_CODE</code> ({{ default_account_code }})
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Actions -->
+                <div class="form-group row">
+                    <div class="col-sm-9 offset-sm-3">
+                        <button
+                            type="button"
+                            class="btn btn-success mr-2"
+                            hx-post="{% url "xero:run_xero_api_htmx" %}"
+                            hx-include="#payment-form"
+                            hx-vals='{"cmd": "create_payment"}'
+                            hx-target="#data"
+                            hx-indicator="#spinner"
+                        >Record Payment in Xero</button>
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            onclick="document.getElementById('data').innerHTML = ''"
+                        >Cancel</button>
+                    </div>
+                </div>
+
+            </form>
+
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+    function prefillAmount(select) {
+        var amount = select.options[select.selectedIndex].dataset.amount;
+        document.getElementById('payment_amount').value = amount || '';
+    }
+</script>

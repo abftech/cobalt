@@ -41,6 +41,46 @@ Prefer **function-based views** (FBVs). Class-based views (CBVs) are a last reso
 
 We use HTMX extensively for partial page updates instead of a full SPA framework. Most interactive UI flows use HTMX posts to views that return HTML fragments. Templates are often split into a "full page" template and an `_htmx.html` fragment variant.
 
+#### Confirmation dialogs — use SweetAlert2, not `confirm()`
+
+Never use the browser's native `confirm()` for destructive actions. Use SweetAlert2 instead. Load it in `{% block footer %}` and trigger HTMX programmatically via `htmx.ajax()`:
+
+```html
+{% block footer %}
+    <script src="{% static "assets/js/plugins/sweetalert2.js" %}"></script>
+    <script>
+        function confirmDelete() {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'This cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    htmx.ajax('POST', '{% url "app:some_view" %}', {
+                        target: '#some-div',
+                        values: {key: 'value'}
+                    });
+                }
+            });
+        }
+    </script>
+{% endblock footer %}
+```
+
+The button just calls the JS function: `<button onclick="confirmDelete()">Delete</button>` — no `hx-post` on the button itself.
+
+#### Suppressing the "leave page?" prompt
+
+`cobalt-core.js` registers a `beforeunload` handler that warns users about unsaved form changes. Pages that manage their own state (e.g. HTMX-driven admin tools) should suppress it by adding a hidden element anywhere in the template:
+
+```html
+<span id="ignore_cobalt_save" hidden></span>
+```
+
 ### Models stay thin
 
 Keep models as short as possible. They should define fields, `__str__`, simple properties, and `Meta`. **Business logic belongs in views** (or in `*_core.py` helper modules alongside the app's views), not in model methods.

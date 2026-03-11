@@ -94,11 +94,7 @@
 
                                 <button
                                     class="btn btn-warning mr-1"
-                                    hx-post="{% url "xero:run_xero_api_htmx" %}"
-                                    hx-target="#data"
-                                    hx-vals='{"cmd": "archive_all_contacts"}'
-                                    hx-indicator="#spinner"
-                                    onclick="return confirm('Archive ALL contacts in Xero? This cannot be undone.')"
+                                    onclick="confirmArchiveAll()"
                                 >Archive All Contacts</button>
                             {% endif %}
 
@@ -124,6 +120,13 @@
                                     hx-target="#data"
                                     hx-indicator="#spinner"
                                 >Create Invoice</button>
+
+                                <button
+                                    class="btn btn-success mr-1"
+                                    hx-post="{% url "xero:payment_form_htmx" %}"
+                                    hx-target="#data"
+                                    hx-indicator="#spinner"
+                                >Create Payment</button>
                             {% endif %}
 
                         </div>
@@ -139,4 +142,31 @@
     </div>
     </div>
 
+{# Suppress the "leave page?" prompt from cobalt-core.js #}
+    <span id="ignore_cobalt_save" hidden></span>
+
 {% endblock content %}
+
+{% block footer %}
+    <script src="{% static "assets/js/plugins/sweetalert2.js" %}"></script>
+    <script>
+        function confirmArchiveAll() {
+            Swal.fire({
+                title: 'Archive all contacts?',
+                text: 'This will archive every active contact in Xero. This cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, archive all'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    htmx.ajax('POST', '{% url "xero:run_xero_api_htmx" %}', {
+                        target: '#data',
+                        values: {cmd: 'archive_all_contacts'}
+                    });
+                }
+            });
+        }
+    </script>
+{% endblock footer %}
