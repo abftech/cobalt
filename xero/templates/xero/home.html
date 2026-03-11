@@ -96,10 +96,8 @@
                             {% if COBALT_HOSTNAME != "www.myabf.com.au" and COBALT_HOSTNAME != "myabf.com.au" %}
                                 <button
                                     class="btn btn-info mr-1"
-                                    hx-post="{% url "xero:run_xero_api_htmx" %}"
+                                    hx-post="{% url "xero:invoice_form_htmx" %}"
                                     hx-target="#data"
-                                    hx-include="#org_id"
-                                    hx-vals='{"cmd": "create_invoice"}'
                                     hx-indicator="#spinner"
                                 >Create Invoice</button>
                             {% endif %}

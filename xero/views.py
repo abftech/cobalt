@@ -117,7 +117,45 @@ def run_xero_api_htmx(request):
         if COBALT_HOSTNAME in PRODUCTION_HOSTS:
             result = {"error": "Create Invoice is not available in production"}
         else:
-            result = {"error": "create_invoice not yet implemented"}
+            organisation = Organisation.objects.filter(id=org_id).first()
+            if not organisation:
+                result = {"error": f"Organisation {org_id} not found"}
+            elif not organisation.xero_contact_id:
+                result = {
+                    "error": f"{organisation.name} has no Xero contact ID — create the contact first"
+                }
+            else:
+                try:
+                    line_items = [
+                        {
+                            "description": request.POST.get("description", ""),
+                            "quantity": float(request.POST.get("quantity", 1)),
+                            "unit_amount": float(request.POST.get("unit_amount", 0)),
+                            "account_code": request.POST.get("account_code", ""),
+                        }
+                    ]
+                    invoice = xero.create_invoice(
+                        organisation=organisation,
+                        line_items=line_items,
+                        reference=request.POST.get("reference", ""),
+                        invoice_type=request.POST.get("invoice_type", "ACCREC"),
+                        due_days=int(request.POST.get("due_days", 15)),
+                    )
+                    if invoice:
+                        result = {
+                            "InvoiceNumber": invoice.invoice_number,
+                            "XeroInvoiceId": invoice.xero_invoice_id,
+                            "Organisation": organisation.name,
+                            "Amount": str(invoice.amount),
+                            "Status": invoice.status,
+                            "DueDate": str(invoice.due_date),
+                        }
+                    else:
+                        result = {
+                            "error": "Invoice creation failed — check application logs"
+                        }
+                except (ValueError, TypeError) as e:
+                    result = {"error": f"Invalid field value: {e}"}
 
     else:
         result = {"error": f"Unknown command: {cmd!r}"}
@@ -125,6 +163,20 @@ def run_xero_api_htmx(request):
     response = render(request, "xero/json_data.html", {"json_data": result})
     response["HX-Trigger"] = '{"update_config": "true"}'
     return response
+
+
+def invoice_form_htmx(request):
+    """Return the create-invoice form fragment."""
+    organisations = (
+        Organisation.objects.exclude(xero_contact_id__isnull=True)
+        .exclude(xero_contact_id="")
+        .order_by("name")
+    )
+    return render(
+        request,
+        "xero/invoice_form_htmx.html",
+        {"organisations": organisations},
+    )
 
 
 def _handle_invoice_webhook(xero_invoice_id: str):

@@ -1,0 +1,130 @@
+{#------------------------------------------------------------------------#}
+{#                                                                        #}
+{# Create Invoice form fragment — loaded into #data via HTMX             #}
+{#                                                                        #}
+{#------------------------------------------------------------------------#}
+
+<div class="card mt-3">
+    <div class="card-header">
+        <h4>Create Invoice</h4>
+    </div>
+    <div class="card-body">
+
+        {% if not organisations %}
+            <div class="alert alert-warning">
+                No organisations with a Xero contact ID found.
+                Use <strong>Create Club</strong> to register an organisation with Xero first.
+            </div>
+        {% else %}
+
+            <form id="invoice-form">
+
+                <!-- Organisation -->
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label font-weight-bold">Organisation</label>
+                    <div class="col-sm-9">
+                        <select name="org_id" class="form-control" required>
+                            <option value="">-- Select an organisation --</option>
+                            {% for org in organisations %}
+                                <option value="{{ org.id }}">{{ org.name }} ({{ org.org_id }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Reference -->
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label font-weight-bold">Reference</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="reference" class="form-control"
+                               placeholder="e.g. Affiliation fees 2025" required>
+                    </div>
+                </div>
+
+                <!-- Invoice type -->
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label font-weight-bold">Invoice Type</label>
+                    <div class="col-sm-9">
+                        <select name="invoice_type" class="form-control">
+                            <option value="ACCREC">ACCREC — Accounts Receivable (club owes ABF)</option>
+                            <option value="ACCPAY">ACCPAY — Accounts Payable (ABF owes club)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Due days -->
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label font-weight-bold">Due Days</label>
+                    <div class="col-sm-3">
+                        <input type="number" name="due_days" class="form-control" value="15" min="0">
+                    </div>
+                    <div class="col-sm-6 col-form-label text-muted">Days from today until payment due</div>
+                </div>
+
+                <hr>
+                <h5>Line Item</h5>
+
+                <!-- Description -->
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label font-weight-bold">Description</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="description" class="form-control"
+                               placeholder="e.g. Affiliation fee" required>
+                    </div>
+                </div>
+
+                <!-- Quantity -->
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label font-weight-bold">Quantity</label>
+                    <div class="col-sm-3">
+                        <input type="number" name="quantity" class="form-control" value="1" min="0" step="any">
+                    </div>
+                </div>
+
+                <!-- Unit amount -->
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label font-weight-bold">Unit Amount ($)</label>
+                    <div class="col-sm-3">
+                        <input type="number" name="unit_amount" class="form-control" value="0.00"
+                               min="0" step="0.01">
+                    </div>
+                </div>
+
+                <!-- Account code -->
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label font-weight-bold">Account Code</label>
+                    <div class="col-sm-3">
+                        <input type="text" name="account_code" class="form-control"
+                               placeholder="e.g. 200" required>
+                    </div>
+                    <div class="col-sm-6 col-form-label text-muted">Xero GL account code for this line item</div>
+                </div>
+
+                <hr>
+
+                <!-- Actions -->
+                <div class="form-group row">
+                    <div class="col-sm-9 offset-sm-3">
+                        <button
+                            type="button"
+                            class="btn btn-success mr-2"
+                            hx-post="{% url "xero:run_xero_api_htmx" %}"
+                            hx-include="#invoice-form"
+                            hx-vals='{"cmd": "create_invoice"}'
+                            hx-target="#data"
+                            hx-indicator="#spinner"
+                        >Create Invoice in Xero</button>
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            onclick="document.getElementById('data').innerHTML = ''"
+                        >Cancel</button>
+                    </div>
+                </div>
+
+            </form>
+
+        {% endif %}
+
+    </div>
+</div>
