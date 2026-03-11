@@ -1,9 +1,20 @@
-from django.shortcuts import render
+import base64
+import hashlib
+import hmac as hmac_lib
+import json as json_lib
+import logging
 
-from cobalt.settings import COBALT_HOSTNAME
+from django.http import HttpResponse
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
+from cobalt.settings import COBALT_HOSTNAME, XERO_WEBHOOK_KEY
 from organisations.models import Organisation
 from xero.core import XeroApi
-from xero.models import XeroCredentials
+from xero.models import XeroCredentials, XeroInvoice
+
+logger = logging.getLogger("cobalt")
 
 PRODUCTION_HOSTS = ["myabf.com.au", "www.myabf.com.au"]
 
@@ -114,3 +125,54 @@ def run_xero_api_htmx(request):
     response = render(request, "xero/json_data.html", {"json_data": result})
     response["HX-Trigger"] = '{"update_config": "true"}'
     return response
+
+
+def _handle_invoice_webhook(xero_invoice_id: str):
+    """Fetch current invoice status from Xero and update the local XeroInvoice."""
+    local = XeroInvoice.objects.filter(xero_invoice_id=xero_invoice_id).first()
+    if not local:
+        return
+    xero = XeroApi()
+    data = xero.get_invoice(xero_invoice_id)
+    invoices = data.get("Invoices", [])
+    if invoices:
+        new_status = invoices[0].get("Status")
+        if new_status and new_status != local.status:
+            old_status = local.status
+            local.status = new_status
+            local.save(update_fields=["status", "updated_at"])
+            logger.info(
+                f"Xero webhook: invoice {local.invoice_number} {old_status} -> {new_status}"
+            )
+
+
+@require_POST
+@csrf_exempt
+def xero_webhook(request):
+    """Receive and process Xero webhook event notifications.
+
+    Xero signs every request with HMAC-SHA256 using the webhook key configured
+    in the Xero developer portal.  We verify the signature before processing.
+
+    For the Intent to Receive handshake (0 events) we simply verify the
+    signature and return 200 — no further action needed.
+    """
+    signature = request.META.get("HTTP_X_XERO_SIGNATURE", "")
+    computed = base64.b64encode(
+        hmac_lib.new(
+            XERO_WEBHOOK_KEY.encode(),
+            request.body,
+            hashlib.sha256,
+        ).digest()
+    ).decode()
+
+    if not hmac_lib.compare_digest(signature, computed):
+        logger.warning("Xero webhook: invalid signature")
+        return HttpResponse(status=401)
+
+    payload = json_lib.loads(request.body)
+    for event in payload.get("events", []):
+        if event.get("eventCategory") == "INVOICE":
+            _handle_invoice_webhook(event["resourceId"])
+
+    return HttpResponse(status=200)

@@ -45,6 +45,7 @@ class MaintenanceModeMiddleware:
         if request.user.is_superuser or request.META["PATH_INFO"] in [
             "/accounts/login/",
             "/notifications/ses/event-webhook/",
+            "/xero/webhook",
         ]:
             return response
         else:

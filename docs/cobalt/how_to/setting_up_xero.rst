@@ -417,20 +417,94 @@ Via code (e.g. Django shell)
 
 ----
 
-Cron Job — Invoice Status Sync
---------------------------------
+Step 6 — Configure Xero Webhooks
+---------------------------------
 
-Cobalt runs a management command to sync the status of outstanding invoices
-from Xero (to detect payments made directly in Xero, e.g. after bank
-reconciliation):
+Xero can push real-time notifications to Cobalt whenever an invoice is created
+or updated. This is the primary mechanism Cobalt uses to keep ``XeroInvoice``
+status fields in sync — webhooks eliminate the need to poll Xero for every
+outstanding invoice.
+
+Setting up the webhook in the Xero developer portal
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Log in to the `Xero Developer Portal <https://developer.xero.com/app/manage>`_
+   and open your Custom Connection app.
+2. Go to the **Webhooks** tab.
+3. Click **Add Webhook** and fill in:
+
+   .. list-table::
+      :header-rows: 1
+      :widths: 30 70
+
+      * - Field
+        - Value
+      * - Webhook URL
+        - ``https://<your-hostname>/xero/webhook``
+          (e.g. ``https://www.myabf.com.au/xero/webhook``)
+      * - Event types
+        - Select **Invoices** (covers both CREATE and UPDATE events)
+
+4. Click **Save**. Xero will immediately send an **Intent to Receive**
+   validation request — a POST with an empty ``events`` list and a valid
+   HMAC-SHA256 signature. Cobalt verifies the signature and returns HTTP 200,
+   completing the handshake automatically.
+5. Copy the **Webhook key** shown on the Webhooks tab. This is the signing
+   secret used to verify every incoming request.
+
+Setting ``XERO_WEBHOOK_KEY``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Add the webhook signing key as an environment variable:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 35 65
+
+   * - Variable
+     - Description
+   * - ``XERO_WEBHOOK_KEY``
+     - The webhook signing key from the Xero developer portal Webhooks tab.
+
+How the webhook endpoint works
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Every request Xero sends carries an ``x-xero-signature`` header containing a
+Base64-encoded HMAC-SHA256 signature of the raw request body, signed with the
+webhook key. Cobalt:
+
+1. Recomputes the HMAC-SHA256 using ``XERO_WEBHOOK_KEY``.
+2. Compares it to the header using a constant-time comparison. If they do not
+   match, returns HTTP 401 (and logs a warning).
+3. For each event with ``eventCategory == "INVOICE"``, fetches the current
+   invoice status from Xero and updates the local ``XeroInvoice`` record if
+   the status has changed.
+4. Returns HTTP 200.
+
+The endpoint is exempt from CSRF checks (it is machine-to-machine) and is
+allowed through maintenance mode so Xero can always reach it.
+
+.. note::
+   The Intent to Receive handshake sends a payload with ``"events": []``.
+   Cobalt handles this correctly — it verifies the signature and returns 200
+   without attempting to process any events.
+
+Cron Job — Invoice Status Sync (fallback)
+------------------------------------------
+
+Cobalt also includes a management command that polls Xero for outstanding
+invoice statuses. Now that webhooks provide real-time updates, this command
+serves as a **daily fallback** to catch any events that may have been missed
+(e.g. during downtime):
 
 ::
 
     python manage.py sync_xero_invoice_status
 
-This should be scheduled as a cron job on the EC2 instances. A typical schedule
-is once per hour. The command is safe to run on all environments; it only reads
-from Xero and updates the local ``XeroInvoice.status`` field.
+Schedule this as a daily cron job on the EC2 instances. Running it hourly is
+no longer necessary once webhooks are configured. The command is safe to run
+on all environments; it only reads from Xero and updates the local
+``XeroInvoice.status`` field.
 
 ----
 
@@ -483,3 +557,7 @@ Summary of Environment Variables
    * - ``XERO_SETTLEMENT_ACCOUNT_CODE``
      - Yes
      - GL account code for club settlement payables.
+   * - ``XERO_WEBHOOK_KEY``
+     - Yes (if webhooks are configured)
+     - Signing key from the Xero developer portal Webhooks tab. Required to
+       verify the HMAC-SHA256 signature on incoming webhook requests.
