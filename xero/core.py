@@ -266,6 +266,11 @@ class XeroApi:
                     "ContactStatus": "ACTIVE",
                     "Name": organisation.name,
                     "EmailAddress": organisation.club_email or "",
+                    **(
+                        {"Website": organisation.club_website}
+                        if organisation.club_website
+                        else {}
+                    ),
                     "Addresses": [
                         {
                             "AddressType": "STREET",
@@ -322,6 +327,11 @@ class XeroApi:
                     "AccountNumber": organisation.org_id,
                     "Name": organisation.name,
                     "EmailAddress": organisation.club_email or "",
+                    **(
+                        {"Website": organisation.club_website}
+                        if organisation.club_website
+                        else {}
+                    ),
                     "Addresses": [
                         {
                             "AddressType": "STREET",

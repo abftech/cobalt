@@ -4,6 +4,7 @@ import hmac as hmac_lib
 import json as json_lib
 import logging
 
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -156,6 +157,58 @@ def run_xero_api_htmx(request):
                         }
                 except (ValueError, TypeError) as e:
                     result = {"error": f"Invalid field value: {e}"}
+
+    elif cmd == "archive_all_contacts":
+        if COBALT_HOSTNAME in PRODUCTION_HOSTS:
+            result = {"error": "Archive All Contacts is not available in production"}
+        else:
+            data = xero.xero_api_get(
+                "https://api.xero.com/api.xro/2.0/Contacts"
+                "?where=ContactStatus%3D%3D%22ACTIVE%22"
+            )
+            contacts = data.get("Contacts", [])
+            archived = 0
+            failed = 0
+            for contact in contacts:
+                contact_id = contact.get("ContactID")
+                if not contact_id:
+                    continue
+                archive_result = xero.xero_api_post(
+                    "https://api.xero.com/api.xro/2.0/Contacts",
+                    {
+                        "Contacts": [
+                            {"ContactID": contact_id, "ContactStatus": "ARCHIVED"}
+                        ]
+                    },
+                )
+                if archive_result.get("Contacts"):
+                    archived += 1
+                    Organisation.objects.filter(xero_contact_id=contact_id).update(
+                        xero_contact_id=""
+                    )
+                else:
+                    failed += 1
+            result = {"archived": archived, "failed": failed, "total": len(contacts)}
+
+    elif cmd == "create_all_contacts":
+        if COBALT_HOSTNAME in PRODUCTION_HOSTS:
+            result = {
+                "error": "Create All Missing Clubs is not available in production"
+            }
+        else:
+            orgs = Organisation.objects.filter(
+                Q(xero_contact_id__isnull=True) | Q(xero_contact_id="")
+            ).order_by("name")
+            total = orgs.count()
+            created = 0
+            failed = 0
+            for org in orgs:
+                contact_id = xero.create_organisation_contact(org)
+                if contact_id:
+                    created += 1
+                else:
+                    failed += 1
+            result = {"created": created, "failed": failed, "total": total}
 
     else:
         result = {"error": f"Unknown command: {cmd!r}"}

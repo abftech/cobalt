@@ -83,6 +83,23 @@
                                     hx-vals='{"cmd": "create_contact"}'
                                     hx-indicator="#spinner"
                                 >Create Club</button>
+
+                                <button
+                                    class="btn btn-primary mr-1"
+                                    hx-post="{% url "xero:run_xero_api_htmx" %}"
+                                    hx-target="#data"
+                                    hx-vals='{"cmd": "create_all_contacts"}'
+                                    hx-indicator="#spinner"
+                                >Create All Missing Clubs</button>
+
+                                <button
+                                    class="btn btn-warning mr-1"
+                                    hx-post="{% url "xero:run_xero_api_htmx" %}"
+                                    hx-target="#data"
+                                    hx-vals='{"cmd": "archive_all_contacts"}'
+                                    hx-indicator="#spinner"
+                                    onclick="return confirm('Archive ALL contacts in Xero? This cannot be undone.')"
+                                >Archive All Contacts</button>
                             {% endif %}
 
                             <button
