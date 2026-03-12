@@ -42,6 +42,9 @@
                             hx-post="{% url "xero:xero_connect_htmx" %}"
                             hx-target="#refresh"
                             hx-indicator="#spinner"
+                            data-toggle="tooltip"
+                            data-placement="top"
+                            title="Connect to Xero. Only needs to happen on first setup."
                         >Connect to Xero</a>
 
                         <a
@@ -50,6 +53,9 @@
                             hx-post="{% url "xero:xero_refresh_keys_htmx" %}"
                             hx-target="#refresh"
                             hx-indicator="#spinner"
+                            data-toggle="tooltip"
+                            data-placement="top"
+                            title="Refresh tokens. Happens automatically. Not need to run."
                         >Refresh Tokens</a>
                         <div id="refresh"></div>
                     </div>
@@ -82,6 +88,9 @@
                                     hx-include="#org_id"
                                     hx-vals='{"cmd": "create_contact"}'
                                     hx-indicator="#spinner"
+                                    data-toggle="tooltip"
+                                    data-placement="top"
+                                    title="Create a Contact in Xero from an Organisation in MyABF"
                                 >Create Club</button>
 
                                 <button
@@ -90,11 +99,17 @@
                                     hx-target="#data"
                                     hx-vals='{"cmd": "create_all_contacts"}'
                                     hx-indicator="#spinner"
+                                    data-toggle="tooltip"
+                                    data-placement="top"
+                                    title="Creates any contacts in Xero for Organisations that are missing"
                                 >Create All Missing Clubs</button>
 
                                 <button
                                     class="btn btn-warning mr-1"
                                     onclick="confirmArchiveAll()"
+                                    data-toggle="tooltip"
+                                    data-placement="top"
+                                    title="Archive All Contacts in test Xero Demo Company system"
                                 >Archive All Contacts</button>
                             {% endif %}
 
@@ -104,6 +119,9 @@
                                 hx-target="#data"
                                 hx-vals='{"cmd": "list_contacts"}'
                                 hx-indicator="#spinner"
+                                data-toggle="tooltip"
+                                data-placement="top"
+                                title="List Contacts in Xero"
                             >List Clubs</button>
 
                             <button
@@ -111,6 +129,9 @@
                                 hx-post="{% url "xero:reconcile_contacts_htmx" %}"
                                 hx-target="#data"
                                 hx-indicator="#spinner"
+                                data-toggle="tooltip"
+                                data-placement="top"
+                                title="Reconcile Xero and MyABF"
                             >Reconcile Contacts</button>
 
                             {% if COBALT_HOSTNAME != "www.myabf.com.au" and COBALT_HOSTNAME != "myabf.com.au" %}
@@ -119,6 +140,9 @@
                                     hx-post="{% url "xero:invoice_form_htmx" %}"
                                     hx-target="#data"
                                     hx-indicator="#spinner"
+                                    data-toggle="tooltip"
+                                    data-placement="top"
+                                    title="Create an invoice in Xero"
                                 >Create Invoice</button>
 
                                 <button
@@ -126,6 +150,9 @@
                                     hx-post="{% url "xero:payment_form_htmx" %}"
                                     hx-target="#data"
                                     hx-indicator="#spinner"
+                                    data-toggle="tooltip"
+                                    data-placement="top"
+                                    title="Add a Payment to Xero"
                                 >Create Payment</button>
                             {% endif %}
 
@@ -150,6 +177,8 @@
 {% block footer %}
     <script src="{% static "assets/js/plugins/sweetalert2.js" %}"></script>
     <script>
+        $(function () { $('[data-toggle="tooltip"]').tooltip(); });
+
         function confirmArchiveAll() {
             Swal.fire({
                 title: 'Archive all contacts?',
