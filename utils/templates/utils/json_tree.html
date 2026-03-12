@@ -1,0 +1,131 @@
+{# Reusable JSON tree widget.
+   Usage:
+     1. Serialize your data into the page using Django's json_script filter:
+            {{ my_data|json_script:"my-data-id" }}
+     2. Add a container div with a unique id.
+     3. Include this template, passing data_script_id and container_id:
+            {% include "utils/json_tree.html" with data_script_id="my-data-id" container_id="my-tree" %}
+#}
+
+<style>
+    .jt-root { font-family: monospace; font-size: 0.875rem; }
+    .jt-node { margin: 1px 0; }
+    .jt-children { margin-left: 1.25rem; }
+    .jt-hidden { display: none; }
+    .jt-toggle {
+        display: inline-block;
+        width: 1rem;
+        cursor: pointer;
+        user-select: none;
+        color: #555;
+        transition: transform 0.15s ease;
+    }
+    .jt-toggle:hover { color: #000; }
+    .jt-label-key { color: #7c3aed; }
+    .jt-label-meta { color: #6b7280; font-style: italic; }
+    .jt-value-string { color: #16a34a; }
+    .jt-value-number { color: #2563eb; }
+    .jt-value-boolean { color: #d97706; }
+    .jt-value-null { color: #9ca3af; }
+    .jt-leaf { display: block; padding-left: 1rem; }
+</style>
+
+<div id="{{ container_id }}" class="jt-root"></div>
+
+<script>
+    (function () {
+        function buildNode(value, key) {
+            if (value !== null && typeof value === "object") {
+                var isArray = Array.isArray(value);
+                var entries = isArray
+                    ? value.map(function (v, i) { return [i, v]; })
+                    : Object.entries(value);
+
+                var wrapper = document.createElement("div");
+                wrapper.className = "jt-node";
+
+                var header = document.createElement("div");
+                header.style.cursor = "pointer";
+                header.style.userSelect = "none";
+
+                var toggle = document.createElement("span");
+                toggle.className = "jt-toggle";
+                toggle.textContent = "▶";
+
+                var labelKey = document.createElement("span");
+                labelKey.className = "jt-label-key";
+                labelKey.textContent = key !== undefined ? key + ": " : "";
+
+                var labelMeta = document.createElement("span");
+                labelMeta.className = "jt-label-meta";
+                labelMeta.textContent = isArray
+                    ? "[" + entries.length + " item" + (entries.length !== 1 ? "s" : "") + "]"
+                    : "{" + entries.length + " key" + (entries.length !== 1 ? "s" : "") + "}";
+
+                header.appendChild(toggle);
+                header.appendChild(labelKey);
+                header.appendChild(labelMeta);
+
+                var children = document.createElement("div");
+                children.className = "jt-children jt-hidden";
+
+                for (var i = 0; i < entries.length; i++) {
+                    children.appendChild(buildNode(entries[i][1], entries[i][0]));
+                }
+
+                header.addEventListener("click", function (toggle, children) {
+                    return function () {
+                        var collapsed = toggle.textContent === "▶";
+                        toggle.textContent = collapsed ? "▼" : "▶";
+                        children.classList.toggle("jt-hidden", !collapsed);
+                    };
+                }(toggle, children));
+
+                wrapper.appendChild(header);
+                wrapper.appendChild(children);
+                return wrapper;
+            }
+
+        // Leaf value
+            var leaf = document.createElement("div");
+            leaf.className = "jt-leaf";
+
+            if (key !== undefined) {
+                var keySpan = document.createElement("span");
+                keySpan.className = "jt-label-key";
+                keySpan.textContent = key + ": ";
+                leaf.appendChild(keySpan);
+            }
+
+            var valSpan = document.createElement("span");
+            if (value === null) {
+                valSpan.className = "jt-value-null";
+                valSpan.textContent = "null";
+            } else if (typeof value === "string") {
+                valSpan.className = "jt-value-string";
+                valSpan.textContent = JSON.stringify(value);
+            } else if (typeof value === "number") {
+                valSpan.className = "jt-value-number";
+                valSpan.textContent = value;
+            } else if (typeof value === "boolean") {
+                valSpan.className = "jt-value-boolean";
+                valSpan.textContent = value;
+            } else {
+                valSpan.textContent = String(value);
+            }
+            leaf.appendChild(valSpan);
+            return leaf;
+        }
+
+        function renderJsonTree(data, container) {
+            container.innerHTML = "";
+            container.appendChild(buildNode(data));
+        }
+
+        var scriptEl = document.getElementById("{{ data_script_id }}");
+        var container = document.getElementById("{{ container_id }}");
+        if (scriptEl && container) {
+            renderJsonTree(JSON.parse(scriptEl.textContent), container);
+        }
+    }());
+</script>

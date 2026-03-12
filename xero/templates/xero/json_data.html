@@ -8,9 +8,8 @@
             <p class="mb-2"><strong>Count: {{ json_data.Contacts|length }}</strong></p>
         {% endif %}
 
-        <pre>
-{{ json_data | pprint }}
-    </pre>
+        {{ json_data|json_script:"xero-json-data" }}
+        {% include "utils/json_tree.html" with data_script_id="xero-json-data" container_id="xero-json-tree" %}
 
     </div>
 </div>
