@@ -7,6 +7,7 @@ import logging
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render
+from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -258,7 +259,17 @@ def run_xero_api_htmx(request):
     else:
         result = {"error": f"Unknown command: {cmd!r}"}
 
-    response = render(request, "xero/json_data.html", {"json_data": result})
+    _json_str = json_lib.dumps(result)
+    _json_str = (
+        _json_str.replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+    )
+    response = render(
+        request,
+        "xero/json_data.html",
+        {"json_data": result, "json_data_str": mark_safe(_json_str)},
+    )
     response["HX-Trigger"] = '{"update_config": "true"}'
     return response
 
