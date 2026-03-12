@@ -4,6 +4,10 @@
     </div>
     <div class="card-body">
 
+        {% if json_data.Contacts %}
+            <p class="mb-2"><strong>Count: {{ json_data.Contacts|length }}</strong></p>
+        {% endif %}
+
         <pre>
 {{ json_data | pprint }}
     </pre>
