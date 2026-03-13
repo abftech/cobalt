@@ -407,6 +407,8 @@ def xero_webhook(request):
     For the Intent to Receive handshake (0 events) we simply verify the
     signature and return 200 — no further action needed.
     """
+    logger.info(f"Xero webhook received: {len(request.body)} bytes")
+
     signature = request.META.get("HTTP_X_XERO_SIGNATURE", "")
     computed = base64.b64encode(
         hmac_lib.new(
@@ -417,12 +419,25 @@ def xero_webhook(request):
     ).decode()
 
     if not hmac_lib.compare_digest(signature, computed):
-        logger.warning("Xero webhook: invalid signature")
+        logger.warning(
+            "Xero webhook: invalid signature — check XERO_WEBHOOK_KEY matches the Xero developer portal"
+        )
         return HttpResponse(status=401)
 
     payload = json_lib.loads(request.body)
-    for event in payload.get("events", []):
-        if event.get("eventCategory") == "INVOICE":
-            _handle_invoice_webhook(event["resourceId"])
+    events = payload.get("events", [])
+    logger.info(f"Xero webhook: {len(events)} event(s)")
+
+    for event in events:
+        category = event.get("eventCategory")
+        event_type = event.get("eventType")
+        resource_id = event.get("resourceId")
+        logger.info(
+            f"Xero webhook event: {category}/{event_type} resourceId={resource_id}"
+        )
+        if category == "INVOICE":
+            _handle_invoice_webhook(resource_id)
+        else:
+            logger.info(f"Xero webhook: ignoring event category {category!r}")
 
     return HttpResponse(status=200)
