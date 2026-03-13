@@ -165,6 +165,11 @@ XERO_BANK_ACCOUNT_CODE = set_value("XERO_BANK_ACCOUNT_CODE", "not-set")
 #    XERO_BANK_ACCOUNT_CODE, which identifies the physical bank account that money
 #    flows through. You create/identify the account in Xero's chart of accounts.
 XERO_SETTLEMENT_ACCOUNT_CODE = set_value("XERO_SETTLEMENT_ACCOUNT_CODE", "not-set")
+#   XERO_SETTLEMENT_TAX_TYPE. The Xero tax type applied to ACCPAY settlement invoice
+#   line items. Xero requires a TaxType on ACCPAY line items. Use the tax type code
+#   from your Xero chart of accounts — typically "NOTAX" (BAS Excluded) for
+#   settlement disbursements. Check Xero Settings > Tax Rates for valid codes.
+XERO_SETTLEMENT_TAX_TYPE = set_value("XERO_SETTLEMENT_TAX_TYPE", "NOTAX")
 
 DATABASES = {
     "default": {

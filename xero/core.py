@@ -13,6 +13,7 @@ from cobalt.settings import (
     XERO_CLIENT_SECRET,
     XERO_BANK_ACCOUNT_CODE,
     XERO_SETTLEMENT_ACCOUNT_CODE,
+    XERO_SETTLEMENT_TAX_TYPE,
 )
 from xero.models import XeroCredentials, XeroInvoice, XeroLog
 
@@ -471,16 +472,18 @@ class XeroApi:
         today = date.today()
         due_date = today + timedelta(days=due_days)
 
-        xero_line_items = [
-            {
+        xero_line_items = []
+        for item in line_items:
+            line = {
                 "Description": item["description"],
                 "Quantity": item["quantity"],
                 "UnitAmount": float(item["unit_amount"]),
                 "AccountCode": item["account_code"],
                 "LineAmount": float(item["quantity"]) * float(item["unit_amount"]),
             }
-            for item in line_items
-        ]
+            if item.get("tax_type"):
+                line["TaxType"] = item["tax_type"]
+            xero_line_items.append(line)
 
         total = sum(
             float(item["quantity"]) * float(item["unit_amount"]) for item in line_items
@@ -687,6 +690,7 @@ class XeroApi:
                 "quantity": 1,
                 "unit_amount": bank_settlement_amount,
                 "account_code": XERO_SETTLEMENT_ACCOUNT_CODE,
+                "tax_type": XERO_SETTLEMENT_TAX_TYPE,
             }
         ]
 
