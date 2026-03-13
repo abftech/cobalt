@@ -19,6 +19,21 @@ from xero.models import XeroCredentials, XeroInvoice
 logger = logging.getLogger("etime")
 
 
+def _raise_xero_validation_error(response: dict, fallback: str) -> None:
+    """Extract Xero validation error messages from a response dict and raise ValueError.
+
+    Xero wraps validation errors in two places depending on whether the failure
+    is at the top level (response["Elements"][0]["ValidationErrors"]) or on the
+    invoice element itself (response["ValidationErrors"]).
+    """
+    for source in (response, *response.get("Elements", [])):
+        errors = source.get("ValidationErrors", [])
+        messages = [e["Message"] for e in errors if e.get("Message")]
+        if messages:
+            raise ValueError("; ".join(messages))
+    raise ValueError(fallback)
+
+
 class XeroApi:
     def __init__(self):
 
@@ -437,7 +452,6 @@ class XeroApi:
                 "Quantity": item["quantity"],
                 "UnitAmount": float(item["unit_amount"]),
                 "AccountCode": item["account_code"],
-                "TaxType": item.get("tax_type", "NONE"),
                 "LineAmount": float(item["quantity"]) * float(item["unit_amount"]),
             }
             for item in line_items
@@ -470,13 +484,20 @@ class XeroApi:
             logger.error(
                 f"Failed to create invoice for {organisation.name}: {response}"
             )
-            return None
+            _raise_xero_validation_error(response, "Invoice creation failed")
 
         xero_invoice_data = invoices[0]
         xero_invoice_id = xero_invoice_data.get("InvoiceID")
-        if not xero_invoice_id:
-            logger.error(f"No InvoiceID returned for {organisation.name}: {response}")
-            return None
+
+        # Xero returns a null UUID when validation fails but still wraps it in Invoices
+        if (
+            not xero_invoice_id
+            or xero_invoice_id == "00000000-0000-0000-0000-000000000000"
+        ):
+            logger.error(
+                f"No valid InvoiceID returned for {organisation.name}: {response}"
+            )
+            _raise_xero_validation_error(xero_invoice_data, "Invoice creation failed")
 
         xero_invoice = XeroInvoice(
             organisation=organisation,
@@ -491,13 +512,14 @@ class XeroApi:
         )
         xero_invoice.save()
 
-        url = self.get_online_invoice_url(xero_invoice_id)
-        if url:
-            xero_invoice.online_invoice_url = url
-            xero_invoice.save(update_fields=["online_invoice_url"])
-            logger.info(f"Online invoice URL for {xero_invoice_id}: {url}")
-        else:
-            logger.warning(f"No online invoice URL returned for {xero_invoice_id}")
+        if invoice_type == "ACCREC":
+            url = self.get_online_invoice_url(xero_invoice_id)
+            if url:
+                xero_invoice.online_invoice_url = url
+                xero_invoice.save(update_fields=["online_invoice_url"])
+                logger.info(f"Online invoice URL for {xero_invoice_id}: {url}")
+            else:
+                logger.warning(f"No online invoice URL returned for {xero_invoice_id}")
 
         logger.info(f"Created Xero invoice {xero_invoice_id} for {organisation.name}")
         return xero_invoice

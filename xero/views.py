@@ -146,20 +146,17 @@ def run_xero_api_htmx(request):
                         invoice_type=request.POST.get("invoice_type", "ACCREC"),
                         due_days=int(request.POST.get("due_days", 15)),
                     )
-                    if invoice:
-                        result = {
-                            "InvoiceNumber": invoice.invoice_number,
-                            "XeroInvoiceId": invoice.xero_invoice_id,
-                            "Organisation": organisation.name,
-                            "Amount": str(invoice.amount),
-                            "Status": invoice.status,
-                            "DueDate": str(invoice.due_date),
-                        }
-                    else:
-                        result = {
-                            "error": "Invoice creation failed — check application logs"
-                        }
-                except (ValueError, TypeError) as e:
+                    result = {
+                        "InvoiceNumber": invoice.invoice_number,
+                        "XeroInvoiceId": invoice.xero_invoice_id,
+                        "Organisation": organisation.name,
+                        "Amount": str(invoice.amount),
+                        "Status": invoice.status,
+                        "DueDate": str(invoice.due_date),
+                    }
+                except ValueError as e:
+                    result = {"error": str(e)}
+                except TypeError as e:
                     result = {"error": f"Invalid field value: {e}"}
 
     elif cmd == "create_payment":
