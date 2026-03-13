@@ -1,0 +1,68 @@
+{% load humanize %}
+
+{% if error %}
+    <div class="alert alert-danger mt-3">{{ error }}</div>
+{% else %}
+
+    <div class="card mt-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Transactions &mdash; {{ organisation.name }}</h4>
+            <button
+                class="btn btn-sm btn-warning"
+                hx-post="{% url "xero:reconcile_transactions_htmx" %}"
+                hx-target="#data"
+                hx-indicator="#spinner"
+                hx-vals='{"org_id": "{{ organisation.id }}"}'
+                data-toggle="tooltip"
+                data-placement="top"
+                title="Compare Cobalt records against Xero"
+            >Reconcile with Xero</button>
+        </div>
+        <div class="card-body">
+
+            {% if not invoices %}
+                <p class="text-muted">No transactions found in Cobalt for this organisation.</p>
+            {% else %}
+                <p class="mb-2 text-muted">
+                    {{ invoices|length }} invoice{{ invoices|length|pluralize }} recorded in Cobalt
+                </p>
+                <table class="table table-sm table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Due Date</th>
+                            <th class="text-right">Amount</th>
+                            <th>Status</th>
+                            <th>Reference</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inv in invoices %}
+                            <tr>
+                                <td><small>{{ inv.invoice_number }}</small></td>
+                                <td><small>{{ inv.get_invoice_type_display }}</small></td>
+                                <td><small>{{ inv.date }}</small></td>
+                                <td><small>{{ inv.due_date }}</small></td>
+                                <td class="text-right"><small>${{ inv.amount|floatformat:2|intcomma }}</small></td>
+                                <td>
+                                    <span class="badge
+                                                 {% if inv.status == 'PAID' %}badge-success
+                                                 {% elif inv.status == 'AUTHORISED' %}badge-primary
+                                                 {% elif inv.status == 'VOIDED' %}badge-secondary
+                                                 {% else %}badge-warning{% endif %}">
+                                        {{ inv.status }}
+                                    </span>
+                                </td>
+                                <td><small class="text-muted">{{ inv.reference }}</small></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+
+        </div>
+    </div>
+
+{% endif %}

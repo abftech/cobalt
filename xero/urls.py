@@ -16,5 +16,11 @@ urlpatterns = [
         views.reconcile_contacts_htmx,
         name="reconcile_contacts_htmx",
     ),
+    path("transactions", views.transactions_htmx, name="transactions_htmx"),
+    path(
+        "reconcile-transactions",
+        views.reconcile_transactions_htmx,
+        name="reconcile_transactions_htmx",
+    ),
     path("webhook", views.xero_webhook, name="xero_webhook"),
 ]

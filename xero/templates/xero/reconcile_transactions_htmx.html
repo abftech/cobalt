@@ -1,0 +1,200 @@
+{% load humanize %}
+
+{% if error %}
+    <div class="alert alert-danger mt-3">{{ error }}</div>
+{% else %}
+
+    <div class="card mt-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Transaction Reconciliation &mdash; {{ organisation.name }}</h4>
+            <button
+                class="btn btn-sm btn-info"
+                hx-post="{% url "xero:transactions_htmx" %}"
+                hx-target="#data"
+                hx-indicator="#spinner"
+                hx-vals='{"org_id": "{{ organisation.id }}"}'
+            >&larr; Back to Transactions</button>
+        </div>
+        <div class="card-body">
+
+        {# Summary row #}
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center border-success">
+                        <div class="card-body py-2">
+                            <h4 class="text-success mb-0">{{ matched|length }}</h4>
+                            <small class="text-muted">Matched</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center {% if differences_count %}border-warning{% else %}border-success{% endif %}">
+                        <div class="card-body py-2">
+                            <h4 class="{% if differences_count %}text-warning{% else %}text-success{% endif %} mb-0">
+                                {{ differences_count }}
+                            </h4>
+                            <small class="text-muted">With Differences</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center {% if local_only %}border-danger{% else %}border-success{% endif %}">
+                        <div class="card-body py-2">
+                            <h4 class="{% if local_only %}text-danger{% else %}text-success{% endif %} mb-0">
+                                {{ local_only|length }}
+                            </h4>
+                            <small class="text-muted">Cobalt Only</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center {% if xero_only %}border-warning{% else %}border-success{% endif %}">
+                        <div class="card-body py-2">
+                            <h4 class="{% if xero_only %}text-warning{% else %}text-success{% endif %} mb-0">
+                                {{ xero_only|length }}
+                            </h4>
+                            <small class="text-muted">Xero Only</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        {# Differences #}
+            {% if differences_count %}
+                <h5 class="text-warning">Differences</h5>
+                <table class="table table-sm mb-4">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Date</th>
+                            <th class="text-right">Amount</th>
+                            <th>Field</th>
+                            <th>Cobalt</th>
+                            <th>Xero</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in matched %}{% if item.diffs %}
+                            {% for diff in item.diffs %}
+                                <tr class="table-warning">
+                                    {% if forloop.first %}
+                                        <td rowspan="{{ item.diffs|length }}"><small>{{ item.local.invoice_number }}</small></td>
+                                        <td rowspan="{{ item.diffs|length }}"><small>{{ item.local.date }}</small></td>
+                                        <td rowspan="{{ item.diffs|length }}" class="text-right"><small>${{ item.local.amount|floatformat:2|intcomma }}</small></td>
+                                    {% endif %}
+                                    <td><small>{{ diff.field }}</small></td>
+                                    <td><span class="badge badge-secondary">{{ diff.local }}</span></td>
+                                    <td><span class="badge badge-primary">{{ diff.xero }}</span></td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}{% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+
+        {# In sync #}
+            {% with in_sync_count=matched|length|add:"-"|add:differences_count %}
+                {% if in_sync_count != "0" %}
+                    <h5 class="text-success">
+                        In Sync
+                        <small class="text-muted font-weight-normal">({{ matched|length|add:"-"|add:differences_count }} invoices)</small>
+                    </h5>
+                    <table class="table table-sm mb-4">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                                <th class="text-right">Amount</th>
+                                <th>Status</th>
+                                <th>Reference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in matched %}{% if not item.diffs %}
+                                <tr>
+                                    <td><small>{{ item.local.invoice_number }}</small></td>
+                                    <td><small>{{ item.local.get_invoice_type_display }}</small></td>
+                                    <td><small>{{ item.local.date }}</small></td>
+                                    <td class="text-right"><small>${{ item.local.amount|floatformat:2|intcomma }}</small></td>
+                                    <td>
+                                        <span class="badge
+                                                     {% if item.local.status == 'PAID' %}badge-success
+                                                     {% elif item.local.status == 'AUTHORISED' %}badge-primary
+                                                     {% elif item.local.status == 'VOIDED' %}badge-secondary
+                                                     {% else %}badge-warning{% endif %}">
+                                            {{ item.local.status }}
+                                        </span>
+                                    </td>
+                                    <td><small class="text-muted">{{ item.local.reference }}</small></td>
+                                </tr>
+                            {% endif %}{% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            {% endwith %}
+
+        {# Cobalt only #}
+            {% if local_only %}
+                <h5 class="text-danger">In Cobalt Only
+                    <small class="text-muted font-weight-normal">(not found in Xero)</small>
+                </h5>
+                <table class="table table-sm mb-4">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Date</th>
+                            <th class="text-right">Amount</th>
+                            <th>Status</th>
+                            <th>Xero Invoice ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inv in local_only %}
+                            <tr class="table-danger">
+                                <td><small>{{ inv.invoice_number }}</small></td>
+                                <td><small>{{ inv.date }}</small></td>
+                                <td class="text-right"><small>${{ inv.amount|floatformat:2|intcomma }}</small></td>
+                                <td><span class="badge badge-secondary">{{ inv.status }}</span></td>
+                                <td><small class="text-muted">{{ inv.xero_invoice_id }}</small></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+
+        {# Xero only #}
+            {% if xero_only %}
+                <h5 class="text-warning">In Xero Only
+                    <small class="text-muted font-weight-normal">(not tracked in Cobalt)</small>
+                </h5>
+                <table class="table table-sm mb-4">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th class="text-right">Total</th>
+                            <th>Status</th>
+                            <th>Reference</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inv in xero_only %}
+                            <tr class="table-warning">
+                                <td><small>{{ inv.InvoiceNumber }}</small></td>
+                                <td><small>{{ inv.Type }}</small></td>
+                                <td><small>{{ inv.DateString }}</small></td>
+                                <td class="text-right"><small>${{ inv.Total|floatformat:2|intcomma }}</small></td>
+                                <td><span class="badge badge-secondary">{{ inv.Status }}</span></td>
+                                <td><small class="text-muted">{{ inv.Reference }}</small></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+
+        </div>
+    </div>
+
+{% endif %}

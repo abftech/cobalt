@@ -78,9 +78,14 @@
 
                         <div class="form-inline mb-2">
 
-                            {% if COBALT_HOSTNAME != "www.myabf.com.au" and COBALT_HOSTNAME != "myabf.com.au" %}
-                                <input type="number" id="org_id" name="org_id" class="form-control mr-2" placeholder="Organisation ID">
+                            <select id="org_id" name="org_id" class="form-control mr-2" style="max-width: 300px;">
+                                <option value="">— Select Organisation —</option>
+                                {% for org in organisations %}
+                                    <option value="{{ org.id }}">{{ org.name }}</option>
+                                {% endfor %}
+                            </select>
 
+                            {% if COBALT_HOSTNAME != "www.myabf.com.au" and COBALT_HOSTNAME != "myabf.com.au" %}
                                 <button
                                     class="btn btn-success mr-1"
                                     hx-post="{% url "xero:run_xero_api_htmx" %}"
@@ -133,6 +138,28 @@
                                 data-placement="top"
                                 title="Reconcile Xero and MyABF"
                             >Reconcile Contacts</button>
+
+                            <button
+                                class="btn btn-info mr-1"
+                                hx-post="{% url "xero:transactions_htmx" %}"
+                                hx-target="#data"
+                                hx-include="#org_id"
+                                hx-indicator="#spinner"
+                                data-toggle="tooltip"
+                                data-placement="top"
+                                title="View invoices recorded in Cobalt for this organisation"
+                            >View Transactions</button>
+
+                            <button
+                                class="btn btn-warning mr-1"
+                                hx-post="{% url "xero:reconcile_transactions_htmx" %}"
+                                hx-target="#data"
+                                hx-include="#org_id"
+                                hx-indicator="#spinner"
+                                data-toggle="tooltip"
+                                data-placement="top"
+                                title="Compare Cobalt invoice records against Xero for this organisation"
+                            >Reconcile Transactions</button>
 
                             {% if COBALT_HOSTNAME != "www.myabf.com.au" and COBALT_HOSTNAME != "myabf.com.au" %}
                                 <button

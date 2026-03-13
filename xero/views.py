@@ -50,7 +50,10 @@ def connect_htmx(request):
 def home(request):
     """Main page for Xero"""
     xero = XeroApi()
-    return render(request, "xero/home.html", {"xero": xero})
+    organisations = Organisation.objects.order_by("name")
+    return render(
+        request, "xero/home.html", {"xero": xero, "organisations": organisations}
+    )
 
 
 def home_configuration_htmx(request):
@@ -287,6 +290,98 @@ def payment_form_htmx(request):
         request,
         "xero/payment_form_htmx.html",
         {"invoices": invoices, "default_account_code": XERO_BANK_ACCOUNT_CODE},
+    )
+
+
+def transactions_htmx(request):
+    """Show local Cobalt XeroInvoice records for an organisation."""
+
+    org_id = request.POST.get("org_id")
+    organisation = Organisation.objects.filter(id=org_id).first()
+    if not organisation:
+        return render(
+            request,
+            "xero/transactions_htmx.html",
+            {"error": f"Organisation {org_id!r} not found"},
+        )
+
+    invoices = XeroInvoice.objects.filter(organisation=organisation).order_by(
+        "-date", "-created_at"
+    )
+    return render(
+        request,
+        "xero/transactions_htmx.html",
+        {"organisation": organisation, "invoices": invoices},
+    )
+
+
+def reconcile_transactions_htmx(request):
+    """Compare local XeroInvoice records against Xero for an organisation."""
+
+    org_id = request.POST.get("org_id")
+    organisation = Organisation.objects.filter(id=org_id).first()
+    if not organisation:
+        return render(
+            request,
+            "xero/reconcile_transactions_htmx.html",
+            {"error": f"Organisation {org_id!r} not found"},
+        )
+
+    xero = XeroApi()
+    local_invoices = list(
+        XeroInvoice.objects.filter(organisation=organisation).order_by("-date")
+    )
+    xero_invoices = xero.get_invoices_for_organisation(organisation)
+
+    local_by_xero_id = {inv.xero_invoice_id: inv for inv in local_invoices}
+    xero_by_id = {
+        inv["InvoiceID"]: inv for inv in xero_invoices if inv.get("InvoiceID")
+    }
+
+    matched = []
+    for local in local_invoices:
+        xero_inv = xero_by_id.get(local.xero_invoice_id)
+        if xero_inv:
+            diffs = []
+            if local.status != xero_inv.get("Status", ""):
+                diffs.append(
+                    {
+                        "field": "Status",
+                        "local": local.status,
+                        "xero": xero_inv.get("Status", ""),
+                    }
+                )
+            try:
+                if abs(float(local.amount) - float(xero_inv.get("Total", 0))) > 0.01:
+                    diffs.append(
+                        {
+                            "field": "Amount",
+                            "local": str(local.amount),
+                            "xero": str(xero_inv.get("Total", "")),
+                        }
+                    )
+            except (TypeError, ValueError):
+                pass
+            matched.append({"local": local, "xero": xero_inv, "diffs": diffs})
+
+    local_only = [
+        inv for inv in local_invoices if inv.xero_invoice_id not in xero_by_id
+    ]
+    xero_only = [
+        inv for inv in xero_invoices if inv.get("InvoiceID") not in local_by_xero_id
+    ]
+    differences_count = sum(1 for m in matched if m["diffs"])
+
+    return render(
+        request,
+        "xero/reconcile_transactions_htmx.html",
+        {
+            "organisation": organisation,
+            "matched": matched,
+            "local_only": local_only,
+            "xero_only": xero_only,
+            "differences_count": differences_count,
+        },
     )
 
 
