@@ -491,6 +491,14 @@ class XeroApi:
         )
         xero_invoice.save()
 
+        url = self.get_online_invoice_url(xero_invoice_id)
+        if url:
+            xero_invoice.online_invoice_url = url
+            xero_invoice.save(update_fields=["online_invoice_url"])
+            logger.info(f"Online invoice URL for {xero_invoice_id}: {url}")
+        else:
+            logger.warning(f"No online invoice URL returned for {xero_invoice_id}")
+
         logger.info(f"Created Xero invoice {xero_invoice_id} for {organisation.name}")
         return xero_invoice
 
@@ -502,6 +510,14 @@ class XeroApi:
         return self.xero_api_get(
             f"https://api.xero.com/api.xro/2.0/Invoices/{xero_invoice_id}"
         )
+
+    def get_online_invoice_url(self, xero_invoice_id: str) -> str:
+        """Return the public online invoice URL (https://in.xero.com/...) or empty string."""
+        data = self.xero_api_get(
+            f"https://api.xero.com/api.xro/2.0/Invoices/{xero_invoice_id}/OnlineInvoice"
+        )
+        online_invoices = data.get("OnlineInvoices", [])
+        return online_invoices[0].get("OnlineInvoiceUrl", "") if online_invoices else ""
 
     def void_invoice(self, xero_invoice_id: str) -> bool:
         """Void an invoice in Xero and update the local XeroInvoice record.

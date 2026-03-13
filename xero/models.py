@@ -31,6 +31,7 @@ class XeroInvoice(models.Model):
         max_length=15, choices=STATUS_CHOICES, default="AUTHORISED"
     )
     reference = models.CharField(max_length=255, blank=True, default="")
+    online_invoice_url = models.URLField(blank=True, default="")
     date = models.DateField()
     due_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)

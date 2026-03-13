@@ -36,6 +36,7 @@
                             <th class="text-right">Amount</th>
                             <th>Status</th>
                             <th>Reference</th>
+                            <th>Link</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -56,6 +57,11 @@
                                     </span>
                                 </td>
                                 <td><small class="text-muted">{{ inv.reference }}</small></td>
+                                <td>
+                                    {% if inv.online_invoice_url %}
+                                        <a href="{{ inv.online_invoice_url }}" target="_blank" rel="noopener">View</a>
+                                    {% endif %}
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>
