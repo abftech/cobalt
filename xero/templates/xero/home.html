@@ -179,6 +179,10 @@
     <script>
         $(function () { $('[data-toggle="tooltip"]').tooltip(); });
 
+        document.body.addEventListener('htmx:beforeRequest', function () {
+            $('[data-toggle="tooltip"]').tooltip('hide');
+        });
+
         function confirmArchiveAll() {
             Swal.fire({
                 title: 'Archive all contacts?',

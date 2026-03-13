@@ -181,6 +181,7 @@ def release_notes_view(request):
                 "Double dummy solver",
                 "Cross IMPs support for results",
                 "Restrict uploads for results to be XML only",
+                "Xero API (not complete)",
             ],
         },
         {
