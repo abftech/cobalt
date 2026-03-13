@@ -9,6 +9,113 @@
 
 {% block content %}
 
+    <!-- JSON tree helper — defined once here so inline calls below can use it immediately -->
+    <style>
+        .json-tree-container          { font-family: monospace; font-size: 0.85rem; max-height: 400px; overflow: auto; }
+        .json-tree-container .disc    { cursor: pointer; color: #888; user-select: none; }
+        .json-tree-container .summ    { color: #888; }
+        .json-tree-container .jstr    { color: #16a34a; }
+        .json-tree-container .jnum    { color: #2563eb; }
+        .json-tree-container .jbool   { color: #d97706; }
+        .json-tree-container .jnull   { color: #9ca3af; }
+        .json-tree-container .jkey    { color: #7c3aed; }
+        .json-tree-container .kids    { padding-left: 1.5em; }
+    </style>
+    <script>
+        function initJsonTree(dataScriptId, containerId, showLevel, maxStr) {
+            var el        = document.getElementById(dataScriptId);
+            var container = document.getElementById(containerId);
+            if (!el || !container) return;
+            if (container.childNodes.length) return;
+
+            showLevel = showLevel || 1;
+            maxStr    = maxStr    || 100;
+
+            var data;
+            try { data = JSON.parse(el.textContent); }
+            catch (e) {
+                var msg = document.createElement("p");
+                msg.className = "text-muted small mb-1";
+                msg.textContent = "Could not render as tree (" + e.message + "). Raw content:";
+                container.appendChild(msg);
+                var pre = document.createElement("pre");
+                pre.style.cssText = "font-size:0.8em;max-height:200px;overflow-y:auto;";
+                pre.textContent = el.textContent;
+                container.appendChild(pre);
+                return;
+            }
+
+            function span(cls, text) {
+                var s = document.createElement("span");
+                s.className = cls; s.textContent = text; return s;
+            }
+
+            function fmtStr(s) {
+                if (s.length > maxStr) s = s.slice(0, maxStr) + "\u2026";
+                return '"' + s + '"';
+            }
+
+            function buildNode(value, parentEl, depth) {
+                if (value === null)             { parentEl.appendChild(span("jnull",  "null"));        return; }
+                if (typeof value === "string")  { parentEl.appendChild(span("jstr",   fmtStr(value))); return; }
+                if (typeof value === "number")  { parentEl.appendChild(span("jnum",   String(value))); return; }
+                if (typeof value === "boolean") { parentEl.appendChild(span("jbool",  String(value))); return; }
+
+                var isArr = Array.isArray(value);
+                var keys  = isArr ? null : Object.keys(value);
+                var vals  = isArr ? value : Object.values(value);
+                var n     = vals.length;
+                var open  = isArr ? "[" : "{";
+                var close = isArr ? "]" : "}";
+
+                if (n === 0) { parentEl.appendChild(document.createTextNode(open + close)); return; }
+
+                var disc     = span("disc", "\u25B6 ");
+                var nameHint = (!isArr && value["Name"]) ? ("\u201C" + fmtStr(value["Name"]).slice(1, -1) + "\u201D \u00B7 ") : "";
+                var summ     = span("summ", open + " " + nameHint + n + (isArr ? " item" : " key") + (n === 1 ? "" : "s") + " " + close);
+                var kids     = document.createElement("div");
+                kids.className = "kids";
+                kids.style.display = "none";
+
+                var rendered = false, expanded = false;
+
+                function doExpand() {
+                    if (!rendered) {
+                        for (var i = 0; i < n; i++) {
+                            var row = document.createElement("div");
+                            if (!isArr) { row.appendChild(span("jkey", '"' + keys[i] + '": ')); }
+                            buildNode(vals[i], row, depth + 1);
+                            if (i < n - 1) row.appendChild(document.createTextNode(","));
+                            kids.appendChild(row);
+                        }
+                        rendered = true;
+                    }
+                    disc.textContent = "\u25BC ";
+                    summ.style.display = "none";
+                    kids.style.display = "";
+                    expanded = true;
+                }
+
+                function doCollapse() {
+                    disc.textContent = "\u25B6 ";
+                    summ.style.display = "";
+                    kids.style.display = "none";
+                    expanded = false;
+                }
+
+                disc.onclick = function () { expanded ? doCollapse() : doExpand(); };
+
+                parentEl.appendChild(disc);
+                parentEl.appendChild(summ);
+                parentEl.appendChild(kids);
+
+                if (depth < showLevel) doExpand();
+            }
+
+            buildNode(data, container, 0);
+        }
+    </script>
+
     <div class="container">
 
         <!-- BREADCRUMBS -->
@@ -70,15 +177,17 @@
                                 </td>
                             </tr>
                             <tr id="detail-{{ thing.id }}" class="collapse">
-                                <td colspan="6" class="bg-light">
-                                    <div class="p-2">
-                                        {% if thing.request_body %}
-                                            <strong>Request:</strong>
-                                            <pre style="max-height:200px;overflow-y:auto;font-size:0.75em;background:#f8f9fa;border:1px solid #dee2e6;padding:8px;border-radius:4px;">{{ thing.request_body }}</pre>
-                                        {% endif %}
-                                        <strong>Response:</strong>
-                                        <pre style="max-height:200px;overflow-y:auto;font-size:0.75em;background:#f8f9fa;border:1px solid #dee2e6;padding:8px;border-radius:4px;">{{ thing.response_body }}</pre>
-                                    </div>
+                                <td colspan="6" class="bg-light p-3 text-left">
+                                    {% if thing.request_body %}
+                                        <p class="mb-1"><strong>Request:</strong></p>
+                                        <script id="req-{{ thing.id }}" type="application/json">{{ thing.request_body|safe }}</script>
+                                        <div id="req-tree-{{ thing.id }}" class="json-tree-container mb-3"></div>
+                                        <script>initJsonTree("req-{{ thing.id }}", "req-tree-{{ thing.id }}", 1, 100);</script>
+                                    {% endif %}
+                                    <p class="mb-1"><strong>Response:</strong></p>
+                                    <script id="resp-{{ thing.id }}" type="application/json">{{ thing.response_body|safe }}</script>
+                                    <div id="resp-tree-{{ thing.id }}" class="json-tree-container"></div>
+                                    <script>initJsonTree("resp-{{ thing.id }}", "resp-tree-{{ thing.id }}", 1, 100);</script>
                                 </td>
                             </tr>
                         {% empty %}
@@ -96,3 +205,4 @@
     </div>
 
 {% endblock %}
+

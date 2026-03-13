@@ -657,54 +657,63 @@
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td>
-                                                    <a class="btn btn-sm btn-primary btn-block" href="{% url "utils:database_view" %}">Database Stats</a>
-                                                </td>
-                                                <td class="text-left pl-5">
-                                                    View statistics on database
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <a class="btn btn-sm btn-primary btn-block" href="{% url "utils:recent_errors" %}">Recent Errors</a>
-                                                </td>
-                                                <td class="text-left pl-5">
-                                                    View server 500 errors
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <a class="btn btn-sm btn-primary btn-block" href="{% url "notifications:admin_send_test_fcm_message" %}">Send FCM Test</a>
-                                                </td>
-                                                <td class="text-left pl-5">
-                                                    Send a test message to a mobile app
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <a class="btn btn-sm btn-primary btn-block" href="{% url "utils:batch_status_view" %}">Batch Status</a>
-                                                </td>
-                                                <td class="text-left pl-5">
-                                                    View batch job run history and status
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <a class="btn btn-sm btn-primary btn-block" href="{% url "utils:command_line_utils" %}">Command Line Tools</a>
-                                                </td>
-                                                <td class="text-left pl-5">
-                                                    Run IT commands through the website
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                                <tr>
+                                                    <td>
+                                                        <a class="btn btn-sm btn-primary btn-block" href="{% url "xero:xero_log_view" %} ">Xero Logs</a>
+                                                    </td>
+                                                    <td class="text-left pl-5">
+                                                        View API Logs
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <a class="btn btn-sm btn-primary btn-block" href="{% url "utils:database_view" %}">Database Stats</a>
+                                                    </td>
+                                                    <td class="text-left pl-5">
+                                                        View statistics on database
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <a class="btn btn-sm btn-primary btn-block" href="{% url "utils:recent_errors" %}">Recent Errors</a>
+                                                    </td>
+                                                    <td class="text-left pl-5">
+                                                        View server 500 errors
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <a class="btn btn-sm btn-primary btn-block" href="{% url "notifications:admin_send_test_fcm_message" %}">Send FCM Test</a>
+                                                    </td>
+                                                    <td class="text-left pl-5">
+                                                        Send a test message to a mobile app
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <a class="btn btn-sm btn-primary btn-block" href="{% url "utils:batch_status_view" %}">Batch Status</a>
+                                                    </td>
+                                                    <td class="text-left pl-5">
+                                                        View batch job run history and status
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <a class="btn btn-sm btn-primary btn-block" href="{% url "utils:command_line_utils" %}">Command Line Tools</a>
+                                                    </td>
+                                                    <td class="text-left pl-5">
+                                                        Run IT commands through the website
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
 {% endblock content %}
 
