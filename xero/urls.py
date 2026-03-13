@@ -23,4 +23,5 @@ urlpatterns = [
         name="reconcile_transactions_htmx",
     ),
     path("webhook", views.xero_webhook, name="xero_webhook"),
+    path("logs/", views.xero_log_view, name="xero_log_view"),
 ]

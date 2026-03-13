@@ -1,6 +1,31 @@
 from django.db import models
 
 
+class XeroLog(models.Model):
+    """Record of every API call made to the Xero API"""
+
+    STATUS_SUCCESS = "Success"
+    STATUS_FAILURE = "Failure"
+    STATUS_CHOICES = [
+        (STATUS_SUCCESS, "Success"),
+        (STATUS_FAILURE, "Failure"),
+    ]
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    method = models.CharField(max_length=10)
+    url = models.CharField(max_length=500)
+    request_body = models.TextField(blank=True)
+    response_body = models.TextField(blank=True)
+    http_status_code = models.IntegerField(null=True, blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.method} {self.url} — {self.status} ({self.created_at:%Y-%m-%d %H:%M})"
+
+
 class XeroInvoice(models.Model):
     """Local record of an invoice issued through Xero"""
 

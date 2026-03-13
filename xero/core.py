@@ -14,7 +14,7 @@ from cobalt.settings import (
     XERO_BANK_ACCOUNT_CODE,
     XERO_SETTLEMENT_ACCOUNT_CODE,
 )
-from xero.models import XeroCredentials, XeroInvoice
+from xero.models import XeroCredentials, XeroInvoice, XeroLog
 
 logger = logging.getLogger("etime")
 
@@ -243,7 +243,16 @@ class XeroApi:
         if err := self._check_credentials():
             return err
         logger.info(url)
-        return self._parse_response(requests.get(url, headers=self.headers()))
+        response = requests.get(url, headers=self.headers())
+        result = self._parse_response(response)
+        XeroLog.objects.create(
+            method="GET",
+            url=url,
+            response_body=response.text[:10_000],
+            http_status_code=response.status_code,
+            status=XeroLog.STATUS_SUCCESS if response.ok else XeroLog.STATUS_FAILURE,
+        )
+        return result
 
     def xero_api_post(self, url, json_data):
         """generic api call for POST"""
@@ -251,9 +260,17 @@ class XeroApi:
         if err := self._check_credentials():
             return err
         logger.info(url)
-        return self._parse_response(
-            requests.post(url, headers=self.headers(), json=json_data)
+        response = requests.post(url, headers=self.headers(), json=json_data)
+        result = self._parse_response(response)
+        XeroLog.objects.create(
+            method="POST",
+            url=url,
+            request_body=json.dumps(json_data)[:10_000],
+            response_body=response.text[:10_000],
+            http_status_code=response.status_code,
+            status=XeroLog.STATUS_SUCCESS if response.ok else XeroLog.STATUS_FAILURE,
         )
+        return result
 
     def xero_api_put(self, url, json_data):
         """generic api call for PUT"""
@@ -261,9 +278,17 @@ class XeroApi:
         if err := self._check_credentials():
             return err
         logger.info(url)
-        return self._parse_response(
-            requests.put(url, headers=self.headers(), json=json_data)
+        response = requests.put(url, headers=self.headers(), json=json_data)
+        result = self._parse_response(response)
+        XeroLog.objects.create(
+            method="PUT",
+            url=url,
+            request_body=json.dumps(json_data)[:10_000],
+            response_body=response.text[:10_000],
+            http_status_code=response.status_code,
+            status=XeroLog.STATUS_SUCCESS if response.ok else XeroLog.STATUS_FAILURE,
         )
+        return result
 
     # -----------------------------------------------------------------------
     # Customer (Contact) methods

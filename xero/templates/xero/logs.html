@@ -1,0 +1,98 @@
+{#------------------------------------------------------------------------#}
+{#                                                                        #}
+{# Xero API call log viewer                                               #}
+{#                                                                        #}
+{#------------------------------------------------------------------------#}
+{% extends 'base.html' %}
+{% load cobalt_tags %}
+{% block title %} - Xero Logs{% endblock %}
+
+{% block content %}
+
+    <div class="container">
+
+        <!-- BREADCRUMBS -->
+        <nav aria-label="breadcrumb" role="navigation">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url "rbac:admin_menu" %}">Admin</a></li>
+                <li class="breadcrumb-item"><a href="{% url "rbac:admin_menu" %}#payments">Finance</a></li>
+                <li class="breadcrumb-item"><a href="{% url "xero:xero_home" %}">Xero</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Logs</li>
+            </ol>
+        </nav>
+
+        <div class="card">
+
+            <!-- CARD HEADER -->
+            <div class="card-header card-header-info">
+                <h4 class="card-title">Xero API Call Log</h4>
+            </div>
+
+            <!-- CARD BODY -->
+            <div class="card-body table-responsive">
+
+                <!-- STATUS FILTER -->
+                <div class="mb-3">
+                    <a href="?status=" class="btn btn-sm {% if not current_status %}btn-info{% else %}btn-outline-info{% endif %}">All</a>
+                    <a href="?status=Success" class="btn btn-sm {% if current_status == 'Success' %}btn-success{% else %}btn-outline-success{% endif %}">Success</a>
+                    <a href="?status=Failure" class="btn btn-sm {% if current_status == 'Failure' %}btn-danger{% else %}btn-outline-danger{% endif %}">Failure</a>
+                </div>
+
+                <table class="table table-condensed table-hover">
+                    <thead class="text-info">
+                        <tr>
+                            <th>Date/Time</th>
+                            <th>Method</th>
+                            <th>URL</th>
+                            <th>HTTP</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for thing in things %}
+                            <tr>
+                                <td style="white-space:nowrap;">{{ thing.created_at|cobalt_nice_datetime }}</td>
+                                <td><code>{{ thing.method }}</code></td>
+                                <td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ thing.url }}">{{ thing.url }}</td>
+                                <td>{{ thing.http_status_code }}</td>
+                                <td>
+                                    {% if thing.status == "Success" %}
+                                        <span class="badge badge-success">{{ thing.status }}</span>
+                                    {% else %}
+                                        <span class="badge badge-danger">{{ thing.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a class="btn btn-sm btn-outline-secondary"
+                                       data-toggle="collapse"
+                                       href="#detail-{{ thing.id }}">Details</a>
+                                </td>
+                            </tr>
+                            <tr id="detail-{{ thing.id }}" class="collapse">
+                                <td colspan="6" class="bg-light">
+                                    <div class="p-2">
+                                        {% if thing.request_body %}
+                                            <strong>Request:</strong>
+                                            <pre style="max-height:200px;overflow-y:auto;font-size:0.75em;background:#f8f9fa;border:1px solid #dee2e6;padding:8px;border-radius:4px;">{{ thing.request_body }}</pre>
+                                        {% endif %}
+                                        <strong>Response:</strong>
+                                        <pre style="max-height:200px;overflow-y:auto;font-size:0.75em;background:#f8f9fa;border:1px solid #dee2e6;padding:8px;border-radius:4px;">{{ thing.response_body }}</pre>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No Xero API calls recorded yet.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                {% include 'utils/pagination_footer.html' %}
+
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

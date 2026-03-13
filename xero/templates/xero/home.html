@@ -127,6 +127,14 @@
                                 >Archive All Contacts</button>
                             {% endif %}
 
+                            <a
+                                href="{% url "xero:xero_log_view" %}"
+                                class="btn btn-secondary mr-1"
+                                data-toggle="tooltip"
+                                data-placement="top"
+                                title="View Xero API call log"
+                            >View Logs</a>
+
                             <button
                                 class="btn btn-info mr-1"
                                 hx-post="{% url "xero:run_xero_api_htmx" %}"

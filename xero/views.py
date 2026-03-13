@@ -4,6 +4,7 @@ import hmac as hmac_lib
 import json as json_lib
 import logging
 
+from django.contrib.auth.decorators import user_passes_test
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -13,8 +14,9 @@ from django.views.decorators.http import require_POST
 
 from cobalt.settings import COBALT_HOSTNAME, XERO_WEBHOOK_KEY
 from organisations.models import Organisation
+from utils.utils import cobalt_paginator
 from xero.core import XeroApi
-from xero.models import XeroCredentials, XeroInvoice
+from xero.models import XeroCredentials, XeroInvoice, XeroLog
 
 logger = logging.getLogger("cobalt")
 
@@ -533,3 +535,26 @@ def xero_webhook(request):
             logger.info(f"Xero webhook: ignoring event category {category!r}")
 
     return HttpResponse(status=200)
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def xero_log_view(request):
+    """View Xero API call log"""
+
+    status_filter = request.GET.get("status", "")
+    logs = XeroLog.objects.all()
+    if status_filter:
+        logs = logs.filter(status=status_filter)
+
+    things = cobalt_paginator(request, logs, 20)
+    searchparams = f"status={status_filter}&" if status_filter else ""
+
+    return render(
+        request,
+        "xero/logs.html",
+        {
+            "things": things,
+            "current_status": status_filter,
+            "searchparams": searchparams,
+        },
+    )
