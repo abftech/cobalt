@@ -11,6 +11,15 @@
 
     <div class="container">
 
+        <!-- BREADCRUMBS -->
+        <nav aria-label="breadcrumb" role="navigation">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url "rbac:admin_menu" %}">Admin</a></li>
+                <li class="breadcrumb-item"><a href="{% url "rbac:admin_menu" %}#payments">Finance</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Xero</li>
+            </ol>
+        </nav>
+
         <div class="card">
             <!-- MAIN CARD HEADER -->
             <div class="card-header text-white bg-primary">
