@@ -1877,9 +1877,19 @@ def settlement(request):
             org_transaction.amount_to_settle = amount_to_settle
             non_zero_orgs.append(org_transaction)
 
-    xero_available = XeroCredentials.objects.filter(
-        access_token__gt="", refresh_token__gt=""
-    ).exists()
+    non_zero_orgs.sort(key=lambda t: t.organisation.org_id or "")
+
+    totals = {
+        "gross": sum(float(o.balance) for o in non_zero_orgs),
+        "min_balance": sum(
+            float(o.organisation.minimum_balance_after_settlement)
+            for o in non_zero_orgs
+        ),
+        "net": sum(o.amount_to_settle for o in non_zero_orgs),
+        "settlement": sum(o.settlement_amount for o in non_zero_orgs),
+    }
+
+    xero_available = XeroCredentials.objects.filter(access_token__gt="").exists()
 
     if request.method == "POST":
 
@@ -1927,6 +1937,34 @@ def settlement(request):
                 )
 
                 for org_transaction in settlements:
+                    raw = request.POST.get(
+                        f"settlement_amount_{org_transaction.id}", ""
+                    )
+                    try:
+                        custom_bank_amount = float(raw)
+                    except (ValueError, TypeError):
+                        custom_bank_amount = None
+                    if (
+                        custom_bank_amount is None
+                        or custom_bank_amount < 0
+                        or custom_bank_amount > float(org_transaction.balance)
+                    ):
+                        messages.error(
+                            request,
+                            f"Invalid settlement amount for {org_transaction.organisation.name}: must be between 0 and {org_transaction.balance}.",
+                            extra_tags="cobalt-message-danger",
+                        )
+                        return render(
+                            request,
+                            "payments/admin/settlement.html",
+                            {
+                                "orgs": non_zero_orgs,
+                                "form": form,
+                                "xero_available": xero_available,
+                                "totals": totals,
+                            },
+                        )
+
                     writer.writerow(
                         [
                             org_transaction.organisation.org_id,
@@ -1938,7 +1976,7 @@ def settlement(request):
                             org_transaction.balance
                             - org_transaction.organisation.minimum_balance_after_settlement,
                             org_transaction.organisation.settlement_fee_percent,
-                            org_transaction.settlement_amount,
+                            custom_bank_amount,
                         ]
                     )
 
@@ -1957,13 +1995,40 @@ def settlement(request):
                         item.organisation.minimum_balance_after_settlement
                     )
                     total += amount_to_settle
+
+                    raw = request.POST.get(f"settlement_amount_{item.id}", "")
+                    try:
+                        custom_bank_amount = float(raw)
+                    except (ValueError, TypeError):
+                        custom_bank_amount = None
+                    if (
+                        custom_bank_amount is None
+                        or custom_bank_amount < 0
+                        or custom_bank_amount > float(item.balance)
+                    ):
+                        messages.error(
+                            request,
+                            f"Invalid settlement amount for {item.organisation.name}: must be between 0 and {item.balance}.",
+                            extra_tags="cobalt-message-danger",
+                        )
+                        return render(
+                            request,
+                            "payments/admin/settlement.html",
+                            {
+                                "orgs": non_zero_orgs,
+                                "form": form,
+                                "xero_available": xero_available,
+                                "totals": totals,
+                            },
+                        )
+
                     trans = update_organisation(
                         organisation=item.organisation,
                         other_organisation=system_org,
                         amount=-amount_to_settle,
-                        description=f"Settlement from {GLOBAL_ORG}. Fees {item.organisation.settlement_fee_percent}%. Net Bank Transfer: {GLOBAL_CURRENCY_SYMBOL}{item.settlement_amount}.",
+                        description=f"Settlement from {GLOBAL_ORG}. Fees {item.organisation.settlement_fee_percent}%. Net Bank Transfer: {GLOBAL_CURRENCY_SYMBOL}{custom_bank_amount:.2f}.",
                         payment_type="Settlement",
-                        bank_settlement_amount=item.settlement_amount,
+                        bank_settlement_amount=custom_bank_amount,
                     )
                     trans_list.append(trans)
 
@@ -2016,7 +2081,12 @@ def settlement(request):
     return render(
         request,
         "payments/admin/settlement.html",
-        {"orgs": non_zero_orgs, "form": form, "xero_available": xero_available},
+        {
+            "orgs": non_zero_orgs,
+            "form": form,
+            "xero_available": xero_available,
+            "totals": totals,
+        },
     )
 
 
@@ -2114,7 +2184,7 @@ def manual_adjust_org(request, org_id=None, default_transaction=None):
         # Create Xero invoice for manual settlement if requested
         if payment_type == "Settlement" and form.cleaned_data.get("use_xero"):
             xero_credentials_exist = XeroCredentials.objects.filter(
-                access_token__gt="", refresh_token__gt=""
+                access_token__gt=""
             ).exists()
             if xero_credentials_exist:
                 try:
