@@ -1821,6 +1821,43 @@ def admin_stripe_rec_download_org(request):
     return response
 
 
+def _build_settlement_orgs(ref_date):
+    """Return (non_zero_orgs, org_list, totals) using balances as of midnight at end of ref_date."""
+    my_tz = pytz.timezone(TIME_ZONE)
+    next_day = ref_date + datetime.timedelta(days=1)
+    ref_datetime = my_tz.localize(
+        datetime.datetime.combine(next_day, datetime.time.min)
+    )
+
+    org_transactions = (
+        OrganisationTransaction.objects.filter(created_date__lt=ref_datetime)
+        .order_by("organisation", "-created_date")
+        .distinct("organisation")
+        .select_related("organisation")
+    )
+    non_zero_orgs = []
+    org_list = []
+    for ot in org_transactions:
+        amount_to_settle = float(ot.balance) - float(
+            ot.organisation.minimum_balance_after_settlement
+        )
+        if amount_to_settle > 0.0:
+            org_list.append((ot.id, ot.organisation.name))
+            ot.amount_to_settle = amount_to_settle
+            non_zero_orgs.append(ot)
+    non_zero_orgs.sort(key=lambda t: t.organisation.org_id or "")
+    totals = {
+        "gross": sum(float(o.balance) for o in non_zero_orgs),
+        "min_balance": sum(
+            float(o.organisation.minimum_balance_after_settlement)
+            for o in non_zero_orgs
+        ),
+        "net": sum(o.amount_to_settle for o in non_zero_orgs),
+        "settlement": sum(o.settlement_amount for o in non_zero_orgs),
+    }
+    return non_zero_orgs, org_list, totals
+
+
 @login_required()
 @transaction.atomic
 def settlement(request):
@@ -1853,260 +1890,267 @@ def settlement(request):
     if not payment_static:
         return HttpResponse("<h1>Payment Static has not been set up</h1>")
 
-    # orgs with outstanding balances
-    # Django is a bit too clever here, so we actually have to include balance=0.0 and filter
-    # it in the code, otherwise we get the most recent non-zero balance. There may be
-    # a way to do this, but I couldn't figure it out.
-    org_transactions = (
-        OrganisationTransaction.objects.order_by("organisation", "-created_date")
-        .distinct("organisation")
-        .select_related("organisation")
-    )
-    org_list = []
+    def _default_ref_date():
+        today = datetime.date.today()
+        return today.replace(day=1) - datetime.timedelta(days=1)
 
-    non_zero_orgs = []
-    for org_transaction in org_transactions:
-        # Take into account minimum_balance_after_settlement
-        amount_to_settle = float(org_transaction.balance) - float(
-            org_transaction.organisation.minimum_balance_after_settlement
-        )
-        if amount_to_settle > 0.0:
-            org_list.append((org_transaction.id, org_transaction.organisation.name))
+    # Determine reference date — parse from POST before form init, fall back to default
+    if request.method == "POST":
+        try:
+            ref_date = datetime.date.fromisoformat(
+                request.POST.get("reference_date", "")
+            )
+        except ValueError:
+            ref_date = _default_ref_date()
+    else:
+        ref_date = _default_ref_date()
 
-            # Add amount_to_settle field to org_transaction
-            org_transaction.amount_to_settle = amount_to_settle
-            non_zero_orgs.append(org_transaction)
-
-    non_zero_orgs.sort(key=lambda t: t.organisation.org_id or "")
-
-    totals = {
-        "gross": sum(float(o.balance) for o in non_zero_orgs),
-        "min_balance": sum(
-            float(o.organisation.minimum_balance_after_settlement)
-            for o in non_zero_orgs
-        ),
-        "net": sum(o.amount_to_settle for o in non_zero_orgs),
-        "settlement": sum(o.settlement_amount for o in non_zero_orgs),
-    }
-
+    non_zero_orgs, org_list, totals = _build_settlement_orgs(ref_date)
     xero_available = XeroCredentials.objects.filter(access_token__gt="").exists()
 
-    if request.method == "POST":
+    if request.method == "GET":
+        form = SettlementForm(
+            initial={"reference_date": ref_date, "use_xero": True}, orgs=org_list
+        )
+        return render(
+            request,
+            "payments/admin/settlement.html",
+            {
+                "orgs": non_zero_orgs,
+                "form": form,
+                "xero_available": xero_available,
+                "totals": totals,
+            },
+        )
 
-        form = SettlementForm(request.POST, orgs=org_list)
-        if form.is_valid():
+    # POST — handle Update before full form validation
+    if "update_date" in request.POST:
+        form = SettlementForm(
+            initial={
+                "reference_date": ref_date,
+                "use_xero": request.POST.get("use_xero") == "on",
+            },
+            orgs=org_list,
+        )
+        return render(
+            request,
+            "payments/admin/settlement.html",
+            {
+                "orgs": non_zero_orgs,
+                "form": form,
+                "xero_available": xero_available,
+                "totals": totals,
+            },
+        )
 
-            # load balances - Important! Do not get the current balance for an
-            # org as this may have changed. Use the list confirmed by the user.
-            settlement_ids = form.cleaned_data["settle_list"]
-            settlements = OrganisationTransaction.objects.filter(
-                pk__in=settlement_ids
-            ).select_related("organisation")
+    form = SettlementForm(request.POST, orgs=org_list)
+    if form.is_valid():
 
-            if "export" in request.POST:  # CSV download
+        # load balances - Important! Do not get the current balance for an
+        # org as this may have changed. Use the list confirmed by the user.
+        settlement_ids = form.cleaned_data["settle_list"]
+        settlements = OrganisationTransaction.objects.filter(
+            pk__in=settlement_ids
+        ).select_related("organisation")
 
-                local_dt = timezone.localtime(timezone.now(), TZ)
-                today = dateformat.format(local_dt, "Y-m-d H:i:s")
+        if "export" in request.POST:  # CSV download
 
-                response = HttpResponse(content_type="text/csv")
-                response["Content-Disposition"] = (
-                    'attachment; filename="settlements.csv"'
-                )
+            local_dt = timezone.localtime(timezone.now(), TZ)
+            today = dateformat.format(local_dt, "Y-m-d H:i:s")
 
-                writer = csv.writer(response)
-                writer.writerow(
-                    [
-                        "Settlements Export",
-                        f"Downloaded by {request.user.full_name}",
-                        today,
-                    ]
-                )
+            response = HttpResponse(content_type="text/csv")
+            response["Content-Disposition"] = 'attachment; filename="settlements.csv"'
 
-                writer.writerow(
-                    [
-                        "CLub Number",
-                        "CLub Name",
-                        "BSB",
-                        "Account Number",
-                        "Gross Amount",
-                        "Minimum Balance",
-                        "Net Amount",
-                        f"{GLOBAL_ORG} fees %",
-                        "Settlement Amount",
-                    ]
-                )
+            writer = csv.writer(response)
+            writer.writerow(
+                [
+                    "Settlements Export",
+                    f"Downloaded by {request.user.full_name}",
+                    today,
+                ]
+            )
 
-                for org_transaction in settlements:
-                    raw = request.POST.get(
-                        f"settlement_amount_{org_transaction.id}", ""
-                    )
-                    try:
-                        custom_bank_amount = float(raw)
-                    except (ValueError, TypeError):
-                        custom_bank_amount = None
-                    if (
-                        custom_bank_amount is None
-                        or custom_bank_amount < 0
-                        or custom_bank_amount > float(org_transaction.balance)
-                    ):
-                        messages.error(
-                            request,
-                            f"Invalid settlement amount for {org_transaction.organisation.name}: must be between 0 and {org_transaction.balance}.",
-                            extra_tags="cobalt-message-danger",
-                        )
-                        return render(
-                            request,
-                            "payments/admin/settlement.html",
-                            {
-                                "orgs": non_zero_orgs,
-                                "form": form,
-                                "xero_available": xero_available,
-                                "totals": totals,
-                            },
-                        )
+            writer.writerow(
+                [
+                    "CLub Number",
+                    "CLub Name",
+                    "BSB",
+                    "Account Number",
+                    "Gross Amount",
+                    "Minimum Balance",
+                    "Net Amount",
+                    f"{GLOBAL_ORG} fees %",
+                    "Settlement Amount",
+                ]
+            )
 
-                    writer.writerow(
-                        [
-                            org_transaction.organisation.org_id,
-                            org_transaction.organisation.name,
-                            org_transaction.organisation.bank_bsb,
-                            org_transaction.organisation.bank_account,
-                            org_transaction.balance,
-                            org_transaction.organisation.minimum_balance_after_settlement,
-                            org_transaction.balance
-                            - org_transaction.organisation.minimum_balance_after_settlement,
-                            org_transaction.organisation.settlement_fee_percent,
-                            custom_bank_amount,
-                        ]
-                    )
-
-                return response
-
-            else:  # confirm payments
-
-                system_org = get_object_or_404(Organisation, pk=GLOBAL_ORG_ID)
-
-                # --- Pass 1: validate all amounts before doing anything ---
-                settlement_items = []
-                for item in settlements:
-                    amount_to_settle = float(item.balance) - float(
-                        item.organisation.minimum_balance_after_settlement
-                    )
-                    raw = request.POST.get(f"settlement_amount_{item.id}", "")
-                    try:
-                        custom_bank_amount = float(raw)
-                    except (ValueError, TypeError):
-                        custom_bank_amount = None
-                    if (
-                        custom_bank_amount is None
-                        or custom_bank_amount < 0
-                        or custom_bank_amount > float(item.balance)
-                    ):
-                        messages.error(
-                            request,
-                            f"Invalid settlement amount for {item.organisation.name}: must be between 0 and {item.balance}.",
-                            extra_tags="cobalt-message-danger",
-                        )
-                        return render(
-                            request,
-                            "payments/admin/settlement.html",
-                            {
-                                "orgs": non_zero_orgs,
-                                "form": form,
-                                "xero_available": xero_available,
-                                "totals": totals,
-                            },
-                        )
-                    settlement_items.append(
-                        {
-                            "item": item,
-                            "amount_to_settle": amount_to_settle,
-                            "custom_bank_amount": custom_bank_amount,
-                        }
-                    )
-
-                # --- Pass 2: process one org at a time — Xero first, then Cobalt ---
-                trans_list = []
-                skipped = []  # {"name": str, "reason": str}
-                total = 0.0
-                use_xero = form.cleaned_data["use_xero"] and xero_available
-                xero = XeroApi() if use_xero else None
-
-                for si in settlement_items:
-                    item = si["item"]
-                    org = item.organisation
-                    xero_invoice = None
-
-                    if use_xero:
-                        reference = (
-                            f"Settlement {org.name} {datetime.date.today():%Y-%m-%d}"
-                        )
-                        try:
-                            xero_invoice = xero.create_settlement_invoice(
-                                organisation=org,
-                                bank_settlement_amount=si["custom_bank_amount"],
-                                reference=reference,
-                            )
-                            if not xero_invoice:
-                                logger.error(
-                                    f"Xero settlement invoice returned None for {org.name}"
-                                )
-                                skipped.append(
-                                    {
-                                        "name": org.name,
-                                        "reason": "Xero invoice creation failed",
-                                    }
-                                )
-                                continue
-                        except Exception as exc:
-                            logger.error(
-                                f"Xero settlement invoice failed for {org.name}: {exc}"
-                            )
-                            skipped.append({"name": org.name, "reason": str(exc)})
-                            continue
-
-                    # Xero succeeded (or not used) — now create the Cobalt transaction
-                    trans = update_organisation(
-                        organisation=org,
-                        other_organisation=system_org,
-                        amount=-si["amount_to_settle"],
-                        description=f"Settlement from {GLOBAL_ORG}. Fees {org.settlement_fee_percent}%. Net Bank Transfer: {GLOBAL_CURRENCY_SYMBOL}{si['custom_bank_amount']:.2f}.",
-                        payment_type="Settlement",
-                        bank_settlement_amount=si["custom_bank_amount"],
-                    )
-                    if xero_invoice:
-                        trans.xero_invoice = xero_invoice
-                        trans.save(update_fields=["xero_invoice"])
-                    trans_list.append(trans)
-                    total += si["amount_to_settle"]
-
-                if not trans_list:
+            for org_transaction in settlements:
+                raw = request.POST.get(f"settlement_amount_{org_transaction.id}", "")
+                try:
+                    custom_bank_amount = float(raw)
+                except (ValueError, TypeError):
+                    custom_bank_amount = None
+                if (
+                    custom_bank_amount is None
+                    or custom_bank_amount < 0
+                    or custom_bank_amount > float(org_transaction.balance)
+                ):
                     messages.error(
                         request,
-                        "Settlement failed — no organisations were processed.",
+                        f"Invalid settlement amount for {org_transaction.organisation.name}: must be between 0 and {org_transaction.balance}.",
                         extra_tags="cobalt-message-danger",
                     )
-                elif skipped:
-                    messages.warning(
+                    return render(
                         request,
-                        "Settlement partially processed — some organisations were skipped.",
-                        extra_tags="cobalt-message-warning",
+                        "payments/admin/settlement.html",
+                        {
+                            "orgs": non_zero_orgs,
+                            "form": form,
+                            "xero_available": xero_available,
+                            "totals": totals,
+                        },
                     )
-                else:
-                    messages.success(
-                        request,
-                        "Settlement processed successfully.",
-                        extra_tags="cobalt-message-success",
-                    )
-                return render(
-                    request,
-                    "payments/admin/settlement-complete.html",
-                    {"trans": trans_list, "skipped": skipped, "total": total},
+
+                writer.writerow(
+                    [
+                        org_transaction.organisation.org_id,
+                        org_transaction.organisation.name,
+                        org_transaction.organisation.bank_bsb,
+                        org_transaction.organisation.bank_account,
+                        org_transaction.balance,
+                        org_transaction.organisation.minimum_balance_after_settlement,
+                        org_transaction.balance
+                        - org_transaction.organisation.minimum_balance_after_settlement,
+                        org_transaction.organisation.settlement_fee_percent,
+                        custom_bank_amount,
+                    ]
                 )
 
-    else:
-        form = SettlementForm(orgs=org_list)
+            return response
 
+        else:  # confirm payments
+
+            system_org = get_object_or_404(Organisation, pk=GLOBAL_ORG_ID)
+
+            # --- Pass 1: validate all amounts before doing anything ---
+            settlement_items = []
+            for item in settlements:
+                amount_to_settle = float(item.balance) - float(
+                    item.organisation.minimum_balance_after_settlement
+                )
+                raw = request.POST.get(f"settlement_amount_{item.id}", "")
+                try:
+                    custom_bank_amount = float(raw)
+                except (ValueError, TypeError):
+                    custom_bank_amount = None
+                if (
+                    custom_bank_amount is None
+                    or custom_bank_amount < 0
+                    or custom_bank_amount > float(item.balance)
+                ):
+                    messages.error(
+                        request,
+                        f"Invalid settlement amount for {item.organisation.name}: must be between 0 and {item.balance}.",
+                        extra_tags="cobalt-message-danger",
+                    )
+                    return render(
+                        request,
+                        "payments/admin/settlement.html",
+                        {
+                            "orgs": non_zero_orgs,
+                            "form": form,
+                            "xero_available": xero_available,
+                            "totals": totals,
+                        },
+                    )
+                settlement_items.append(
+                    {
+                        "item": item,
+                        "amount_to_settle": amount_to_settle,
+                        "custom_bank_amount": custom_bank_amount,
+                    }
+                )
+
+            # --- Pass 2: process one org at a time — Xero first, then Cobalt ---
+            trans_list = []
+            skipped = []  # {"name": str, "reason": str}
+            total = 0.0
+            use_xero = form.cleaned_data["use_xero"] and xero_available
+            xero = XeroApi() if use_xero else None
+
+            for si in settlement_items:
+                item = si["item"]
+                org = item.organisation
+                xero_invoice = None
+
+                if use_xero:
+                    reference = (
+                        f"Settlement {org.name} {datetime.date.today():%Y-%m-%d}"
+                    )
+                    try:
+                        xero_invoice = xero.create_settlement_invoice(
+                            organisation=org,
+                            bank_settlement_amount=si["custom_bank_amount"],
+                            reference=reference,
+                        )
+                        if not xero_invoice:
+                            logger.error(
+                                f"Xero settlement invoice returned None for {org.name}"
+                            )
+                            skipped.append(
+                                {
+                                    "name": org.name,
+                                    "reason": "Xero invoice creation failed",
+                                }
+                            )
+                            continue
+                    except Exception as exc:
+                        logger.error(
+                            f"Xero settlement invoice failed for {org.name}: {exc}"
+                        )
+                        skipped.append({"name": org.name, "reason": str(exc)})
+                        continue
+
+                # Xero succeeded (or not used) — now create the Cobalt transaction
+                trans = update_organisation(
+                    organisation=org,
+                    other_organisation=system_org,
+                    amount=-si["amount_to_settle"],
+                    description=f"Settlement from {GLOBAL_ORG}. Fees {org.settlement_fee_percent}%. Net Bank Transfer: {GLOBAL_CURRENCY_SYMBOL}{si['custom_bank_amount']:.2f}.",
+                    payment_type="Settlement",
+                    bank_settlement_amount=si["custom_bank_amount"],
+                )
+                if xero_invoice:
+                    trans.xero_invoice = xero_invoice
+                    trans.save(update_fields=["xero_invoice"])
+                trans_list.append(trans)
+                total += si["amount_to_settle"]
+
+            if not trans_list:
+                messages.error(
+                    request,
+                    "Settlement failed — no organisations were processed.",
+                    extra_tags="cobalt-message-danger",
+                )
+            elif skipped:
+                messages.warning(
+                    request,
+                    "Settlement partially processed — some organisations were skipped.",
+                    extra_tags="cobalt-message-warning",
+                )
+            else:
+                messages.success(
+                    request,
+                    "Settlement processed successfully.",
+                    extra_tags="cobalt-message-success",
+                )
+            return render(
+                request,
+                "payments/admin/settlement-complete.html",
+                {"trans": trans_list, "skipped": skipped, "total": total},
+            )
+
+    # form.is_valid() failed — re-render with errors
     return render(
         request,
         "payments/admin/settlement.html",

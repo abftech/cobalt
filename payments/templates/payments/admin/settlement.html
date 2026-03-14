@@ -56,6 +56,15 @@
                     <!-- FORM -->
                     <form action="" method="post">
                         {% csrf_token %}
+                        <span id="ignore_cobalt_save" hidden></span>
+
+                        <!-- REFERENCE DATE -->
+                        <div class="d-flex align-items-center mb-3 flex-wrap">
+                            <label class="mr-2 font-weight-bold mb-0">Reference Date:</label>
+                            {{ form.reference_date }}
+                            <button type="submit" name="update_date" class="btn btn-info btn-sm ml-2">Update</button>
+                            <small class="text-muted ml-3">Balances shown as of midnight at the end of this date.</small>
+                        </div>
 
                         <!-- TABLE -->
                         <div class="table-responsive">
