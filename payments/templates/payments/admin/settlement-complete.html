@@ -65,6 +65,7 @@
                         </div>
                         <div class="card-body">
                             <p>The following organisations were skipped because their Xero invoice could not be created. Their MyABF balances have <strong>not</strong> been changed.</p>
+                            <p>More detail may be available in the <a href="{% url "xero:xero_log_view" %}">Xero Logs</a></p>
                             <table class="table">
                                 <thead>
                                     <tr>
@@ -89,7 +90,7 @@
                     {% if skipped %}
                         <a href="{% url "payments:settlement" %}" class="btn btn-warning mr-2">Back to Settlement</a>
                     {% endif %}
-                    <a href="{% url "payments:statement_admin_summary"%}" class="btn btn-success">Return to summary</a>
+                    <a href="{% url "payments:statement_admin_summary"%}" class="btn btn-success">Finance Summary</a>
                 </div>
             </div>
         </div>

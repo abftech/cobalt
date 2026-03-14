@@ -158,6 +158,11 @@
                 updateSettlementTotal();
             });
 
+            var clickedButton = null;
+            $('button[type="submit"]').on('click', function() {
+                clickedButton = this;
+            });
+
             $('form').on('submit', function(e) {
                 var errors = [];
 
@@ -177,12 +182,28 @@
 
                 if (errors.length > 0) {
                     e.preventDefault();
+                    clickedButton = null;
                     Swal.fire({
                         title: 'Invalid Settlement Amount',
                         html: errors.map(function(e) { return '<div>' + e + '</div>'; }).join(''),
                         icon: 'error',
                         confirmButtonColor: '#3085d6',
                     });
+                    return;
+                }
+
+                // Lock down UI after browser has serialised form data
+                if (clickedButton && $(clickedButton).attr('name') === 'confirm') {
+                    setTimeout(function() {
+                        document.body.style.cursor = 'wait';
+                        $('button[type="submit"]').prop('disabled', true);
+                        $('input[type="checkbox"]').prop('disabled', true);
+                        $('input[type="number"]').prop('disabled', true);
+                        $('button[name="confirm"]')
+                            .removeClass('btn-primary')
+                            .addClass('btn-secondary')
+                            .html('<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>Processing…');
+                    }, 0);
                 }
             });
         });
