@@ -94,39 +94,6 @@
                                 {% endfor %}
                             </select>
 
-                            {% if COBALT_HOSTNAME != "www.myabf.com.au" and COBALT_HOSTNAME != "myabf.com.au" %}
-                                <button
-                                    class="btn btn-success mr-1"
-                                    hx-post="{% url "xero:run_xero_api_htmx" %}"
-                                    hx-target="#data"
-                                    hx-include="#org_id"
-                                    hx-vals='{"cmd": "create_contact"}'
-                                    hx-indicator="#spinner"
-                                    data-toggle="tooltip"
-                                    data-placement="top"
-                                    title="Create a Contact in Xero from an Organisation in MyABF"
-                                >Create Club</button>
-
-                                <button
-                                    class="btn btn-primary mr-1"
-                                    hx-post="{% url "xero:run_xero_api_htmx" %}"
-                                    hx-target="#data"
-                                    hx-vals='{"cmd": "create_all_contacts"}'
-                                    hx-indicator="#spinner"
-                                    data-toggle="tooltip"
-                                    data-placement="top"
-                                    title="Creates any contacts in Xero for Organisations that are missing"
-                                >Create All Missing Clubs</button>
-
-                                <button
-                                    class="btn btn-warning mr-1"
-                                    onclick="confirmArchiveAll()"
-                                    data-toggle="tooltip"
-                                    data-placement="top"
-                                    title="Archive All Contacts in test Xero Demo Company system"
-                                >Archive All Contacts</button>
-                            {% endif %}
-
                             <a
                                 href="{% url "xero:xero_log_view" %}"
                                 class="btn btn-secondary mr-1"
@@ -219,31 +186,11 @@
 {% endblock content %}
 
 {% block footer %}
-    <script src="{% static "assets/js/plugins/sweetalert2.js" %}"></script>
     <script>
         $(function () { $('[data-toggle="tooltip"]').tooltip(); });
 
         document.body.addEventListener('htmx:beforeRequest', function () {
             $('[data-toggle="tooltip"]').tooltip('hide');
         });
-
-        function confirmArchiveAll() {
-            Swal.fire({
-                title: 'Archive all contacts?',
-                text: 'This will archive every active contact in Xero. This cannot be undone.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Yes, archive all'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    htmx.ajax('POST', '{% url "xero:run_xero_api_htmx" %}', {
-                        target: '#data',
-                        values: {cmd: 'archive_all_contacts'}
-                    });
-                }
-            });
-        }
     </script>
 {% endblock footer %}
