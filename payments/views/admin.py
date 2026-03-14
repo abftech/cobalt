@@ -1984,18 +1984,14 @@ def settlement(request):
 
             else:  # confirm payments
 
-                trans_list = []
-                total = 0.0
-
                 system_org = get_object_or_404(Organisation, pk=GLOBAL_ORG_ID)
 
-                # Remove money from org accounts
+                # --- Pass 1: validate all amounts before doing anything ---
+                settlement_items = []
                 for item in settlements:
                     amount_to_settle = float(item.balance) - float(
                         item.organisation.minimum_balance_after_settlement
                     )
-                    total += amount_to_settle
-
                     raw = request.POST.get(f"settlement_amount_{item.id}", "")
                     try:
                         custom_bank_amount = float(raw)
@@ -2021,58 +2017,91 @@ def settlement(request):
                                 "totals": totals,
                             },
                         )
-
-                    trans = update_organisation(
-                        organisation=item.organisation,
-                        other_organisation=system_org,
-                        amount=-amount_to_settle,
-                        description=f"Settlement from {GLOBAL_ORG}. Fees {item.organisation.settlement_fee_percent}%. Net Bank Transfer: {GLOBAL_CURRENCY_SYMBOL}{custom_bank_amount:.2f}.",
-                        payment_type="Settlement",
-                        bank_settlement_amount=custom_bank_amount,
+                    settlement_items.append(
+                        {
+                            "item": item,
+                            "amount_to_settle": amount_to_settle,
+                            "custom_bank_amount": custom_bank_amount,
+                        }
                     )
-                    trans_list.append(trans)
 
-                # Create Xero invoices if requested — non-blocking, failures warn but don't abort
-                xero_failures = []
-                if form.cleaned_data["use_xero"] and xero_available:
-                    xero = XeroApi()
-                    for trans in trans_list:
+                # --- Pass 2: process one org at a time — Xero first, then Cobalt ---
+                trans_list = []
+                skipped = []  # {"name": str, "reason": str}
+                total = 0.0
+                use_xero = form.cleaned_data["use_xero"] and xero_available
+                xero = XeroApi() if use_xero else None
+
+                for si in settlement_items:
+                    item = si["item"]
+                    org = item.organisation
+                    xero_invoice = None
+
+                    if use_xero:
+                        reference = (
+                            f"Settlement {org.name} {datetime.date.today():%Y-%m-%d}"
+                        )
                         try:
-                            reference = f"Settlement {trans.organisation.name} {datetime.date.today():%Y-%m-%d}"
                             xero_invoice = xero.create_settlement_invoice(
-                                organisation=trans.organisation,
-                                bank_settlement_amount=float(
-                                    trans.bank_settlement_amount
-                                ),
+                                organisation=org,
+                                bank_settlement_amount=si["custom_bank_amount"],
                                 reference=reference,
                             )
-                            if xero_invoice:
-                                trans.xero_invoice = xero_invoice
-                                trans.save(update_fields=["xero_invoice"])
-                            else:
-                                xero_failures.append(trans.organisation.name)
+                            if not xero_invoice:
+                                logger.error(
+                                    f"Xero settlement invoice returned None for {org.name}"
+                                )
+                                skipped.append(
+                                    {
+                                        "name": org.name,
+                                        "reason": "Xero invoice creation failed",
+                                    }
+                                )
+                                continue
                         except Exception as exc:
                             logger.error(
-                                f"Xero settlement invoice failed for {trans.organisation.name}: {exc}"
+                                f"Xero settlement invoice failed for {org.name}: {exc}"
                             )
-                            xero_failures.append(trans.organisation.name)
+                            skipped.append({"name": org.name, "reason": str(exc)})
+                            continue
 
-                if xero_failures:
+                    # Xero succeeded (or not used) — now create the Cobalt transaction
+                    trans = update_organisation(
+                        organisation=org,
+                        other_organisation=system_org,
+                        amount=-si["amount_to_settle"],
+                        description=f"Settlement from {GLOBAL_ORG}. Fees {org.settlement_fee_percent}%. Net Bank Transfer: {GLOBAL_CURRENCY_SYMBOL}{si['custom_bank_amount']:.2f}.",
+                        payment_type="Settlement",
+                        bank_settlement_amount=si["custom_bank_amount"],
+                    )
+                    if xero_invoice:
+                        trans.xero_invoice = xero_invoice
+                        trans.save(update_fields=["xero_invoice"])
+                    trans_list.append(trans)
+                    total += si["amount_to_settle"]
+
+                if not trans_list:
+                    messages.error(
+                        request,
+                        "Settlement failed — no organisations were processed.",
+                        extra_tags="cobalt-message-danger",
+                    )
+                elif skipped:
                     messages.warning(
                         request,
-                        f"Settlement processed but Xero sync failed for: {', '.join(xero_failures)}",
+                        "Settlement partially processed — some organisations were skipped.",
                         extra_tags="cobalt-message-warning",
                     )
-
-                messages.success(
-                    request,
-                    "Settlement processed successfully.",
-                    extra_tags="cobalt-message-success",
-                )
+                else:
+                    messages.success(
+                        request,
+                        "Settlement processed successfully.",
+                        extra_tags="cobalt-message-success",
+                    )
                 return render(
                     request,
                     "payments/admin/settlement-complete.html",
-                    {"trans": trans_list, "total": total},
+                    {"trans": trans_list, "skipped": skipped, "total": total},
                 )
 
     else:

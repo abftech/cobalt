@@ -27,16 +27,17 @@
             <h2>System Settlement</h2>
         </div>
 
-        <br>
-        <p>This screen does not make bank account payments. Use this screen to
-            confirm the amount required for settlement and make the payments manually through your
-            bank provided application. Once completed, use this screen to insert the corresponding transactions
-            in the system.</p>
-        <p>If you wish to transfer a different amount than the current balance,
-            use the manual adjustment screen.</p>
-        <p>Clubs with balances below their minimum balance are not shown here. You can view them from
-            <a class="btn btn-sm btn-info" href="{% url "payments:admin_orgs_with_balance" %}">Organisations with balances</a>
-        </p>
+        <div class="mx-5 mt-4">
+            <p>This screen can be used for settlement with clubs. If the <b>"Generate Xero Invoices"</b>
+                option is selected then an invoice will be created in Xero for the payments. If there are
+                errors when creating the Xero invoice then payments are not deducted from the account
+                and the settlement for that organisation will not be processed. Other settlements will
+                still continue.
+            </p>
+            <p>Clubs with balances below their minimum balance are not shown here. You can view them from
+                <a class="btn btn-sm btn-info" href="{% url "payments:admin_orgs_with_balance" %}">Organisations with balances</a>
+            </p>
+        </div>
 
         <!-- CARD BODY -->
         <div class="card-body table-responsive">

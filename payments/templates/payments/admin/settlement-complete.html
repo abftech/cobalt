@@ -57,8 +57,39 @@
                     </div>
                 </div>
                 <h2>Total {{ GLOBAL_CURRENCY_SYMBOL }}{{ total|floatformat:2|intcomma }}</h2>
-                <div class="text-center">
-                    <a href="{% url "payments:statement_admin_summary"%}" class="btn btn-success text-center">Return to summary</a>
+
+                {% if skipped %}
+                    <div class="card mt-3">
+                        <div class="card-header card-header-danger">
+                            <h2>Not Processed</h2>
+                        </div>
+                        <div class="card-body">
+                            <p>The following organisations were skipped because their Xero invoice could not be created. Their MyABF balances have <strong>not</strong> been changed.</p>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Organisation</th>
+                                        <th>Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for s in skipped %}
+                                        <tr>
+                                            <td>{{ s.name }}</td>
+                                            <td class="text-danger">{{ s.reason }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="text-center mt-3">
+                    {% if skipped %}
+                        <a href="{% url "payments:settlement" %}" class="btn btn-warning mr-2">Back to Settlement</a>
+                    {% endif %}
+                    <a href="{% url "payments:statement_admin_summary"%}" class="btn btn-success">Return to summary</a>
                 </div>
             </div>
         </div>
