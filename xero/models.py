@@ -68,7 +68,7 @@ class XeroInvoice(models.Model):
     date = models.DateField()
     due_date = models.DateField()
     # Cobalt-assigned idempotency key used as the Xero InvoiceNumber.
-    # Set once at creation; never changed. Format: COBALT-<12 hex chars>.
+    # Set once at creation; never changed. Format: MyABF-<12 hex chars>.
     cobalt_reference = models.CharField(max_length=50, blank=True, default="")
     # Full Xero API payload stored at settlement time; cleared after successful upload.
     upload_payload = models.JSONField(null=True, blank=True)

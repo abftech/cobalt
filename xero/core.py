@@ -741,7 +741,7 @@ class XeroApi:
                 return None
 
         today = date.today()
-        cobalt_reference = f"COBALT-{uuid4().hex[:12].upper()}"
+        cobalt_reference = f"MyABF-{uuid4().hex[:12].upper()}"
 
         upload_payload = {
             "Invoices": [
