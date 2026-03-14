@@ -1821,8 +1821,12 @@ def admin_stripe_rec_download_org(request):
     return response
 
 
-def _build_settlement_orgs(ref_date):
-    """Return (non_zero_orgs, org_list, totals) using balances as of midnight at end of ref_date."""
+def _build_settlement_orgs(ref_date, payment_static):
+    """Return (non_zero_orgs, org_list, totals) using balances as of midnight at end of ref_date.
+
+    Fee overrides are pre-fetched in a single query and cached on each OrganisationTransaction
+    as `settlement_fee_pct` and `settlement_amount_cached` to avoid N+1 queries.
+    """
     my_tz = pytz.timezone(TIME_ZONE)
     next_day = ref_date + datetime.timedelta(days=1)
     ref_datetime = my_tz.localize(
@@ -1846,6 +1850,24 @@ def _build_settlement_orgs(ref_date):
             ot.amount_to_settle = amount_to_settle
             non_zero_orgs.append(ot)
     non_zero_orgs.sort(key=lambda t: t.organisation.org_id or "")
+
+    # Pre-fetch all per-org fee overrides in one query to avoid N+1
+    org_ids = [ot.organisation_id for ot in non_zero_orgs]
+    fee_overrides = {
+        f.organisation_id: float(f.org_fee_percent)
+        for f in OrganisationSettlementFees.objects.filter(organisation_id__in=org_ids)
+    }
+    default_fee = float(payment_static.default_org_fee_percent)
+
+    for ot in non_zero_orgs:
+        fee_pct = fee_overrides.get(ot.organisation_id, default_fee)
+        ot.settlement_fee_pct = fee_pct
+        gross = max(
+            float(ot.balance) - float(ot.organisation.minimum_balance_after_settlement),
+            0,
+        )
+        ot.settlement_amount_cached = round(gross * (1.0 - fee_pct / 100.0), 2)
+
     totals = {
         "gross": sum(float(o.balance) for o in non_zero_orgs),
         "min_balance": sum(
@@ -1853,7 +1875,7 @@ def _build_settlement_orgs(ref_date):
             for o in non_zero_orgs
         ),
         "net": sum(o.amount_to_settle for o in non_zero_orgs),
-        "settlement": sum(o.settlement_amount for o in non_zero_orgs),
+        "settlement": sum(o.settlement_amount_cached for o in non_zero_orgs),
     }
     return non_zero_orgs, org_list, totals
 
@@ -1905,7 +1927,7 @@ def settlement(request):
     else:
         ref_date = _default_ref_date()
 
-    non_zero_orgs, org_list, totals = _build_settlement_orgs(ref_date)
+    non_zero_orgs, org_list, totals = _build_settlement_orgs(ref_date, payment_static)
     xero_available = XeroCredentials.objects.filter(access_token__gt="").exists()
 
     if request.method == "GET":

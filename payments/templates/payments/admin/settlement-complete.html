@@ -41,7 +41,7 @@
                                         <td>{{ tran.organisation }}</td>
                                         <td>{{ tran.organisation.bank_bsb }}</td>
                                         <td>{{ tran.organisation.bank_account }}</td>
-                                        <td>{{ tran.amount }}</td>
+                                        <td>{{ tran.amount|floatformat:2|intcomma }}</td>
                                         <td>{{ tran.created_date }}</td>
                                         <td>
                                             {% if tran.xero_invoice %}
@@ -87,9 +87,7 @@
                 {% endif %}
 
                 <div class="text-center mt-3">
-                    {% if skipped %}
-                        <a href="{% url "payments:settlement" %}" class="btn btn-warning mr-2">Back to Settlement</a>
-                    {% endif %}
+                    <a href="{% url "payments:settlement" %}" class="btn btn-warning mr-2">Back to Settlement</a>
                     <a href="{% url "payments:statement_admin_summary"%}" class="btn btn-success">Finance Summary</a>
                 </div>
             </div>
