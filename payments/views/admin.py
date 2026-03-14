@@ -1909,9 +1909,7 @@ def settlement(request):
     xero_available = XeroCredentials.objects.filter(access_token__gt="").exists()
 
     if request.method == "GET":
-        form = SettlementForm(
-            initial={"reference_date": ref_date, "use_xero": True}, orgs=org_list
-        )
+        form = SettlementForm(initial={"use_xero": True}, orgs=org_list)
         return render(
             request,
             "payments/admin/settlement.html",
@@ -1920,16 +1918,14 @@ def settlement(request):
                 "form": form,
                 "xero_available": xero_available,
                 "totals": totals,
+                "ref_date": ref_date,
             },
         )
 
     # POST — handle Update before full form validation
     if "update_date" in request.POST:
         form = SettlementForm(
-            initial={
-                "reference_date": ref_date,
-                "use_xero": request.POST.get("use_xero") == "on",
-            },
+            initial={"use_xero": request.POST.get("use_xero") == "on"},
             orgs=org_list,
         )
         return render(
@@ -1940,6 +1936,7 @@ def settlement(request):
                 "form": form,
                 "xero_available": xero_available,
                 "totals": totals,
+                "ref_date": ref_date,
             },
         )
 
@@ -1967,6 +1964,7 @@ def settlement(request):
                     "Settlements Export",
                     f"Downloaded by {request.user.full_name}",
                     today,
+                    f"Reference Date: {ref_date:%d %b %Y}",
                 ]
             )
 
@@ -2008,6 +2006,7 @@ def settlement(request):
                             "form": form,
                             "xero_available": xero_available,
                             "totals": totals,
+                            "ref_date": ref_date,
                         },
                     )
 
@@ -2061,6 +2060,7 @@ def settlement(request):
                             "form": form,
                             "xero_available": xero_available,
                             "totals": totals,
+                            "ref_date": ref_date,
                         },
                     )
                 settlement_items.append(
@@ -2159,6 +2159,7 @@ def settlement(request):
             "form": form,
             "xero_available": xero_available,
             "totals": totals,
+            "ref_date": ref_date,
         },
     )
 

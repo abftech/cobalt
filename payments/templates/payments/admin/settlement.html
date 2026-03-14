@@ -59,12 +59,16 @@
                         <span id="ignore_cobalt_save" hidden></span>
 
                         <!-- REFERENCE DATE -->
-                        <div class="d-flex align-items-center mb-3 flex-wrap">
-                            <label class="mr-2 font-weight-bold mb-0">Reference Date:</label>
-                            {{ form.reference_date }}
-                            <button type="submit" name="update_date" class="btn btn-info btn-sm ml-2">Update</button>
-                            <small class="text-muted ml-3">Balances shown as of midnight at the end of this date.</small>
+                        <div class="mb-1">
+                            <div class="d-flex align-items-center flex-wrap">
+                                <label class="mr-2 font-weight-bold mb-0">Reference Date:</label>
+                                <input type="date" name="reference_date" value="{{ ref_date|date:'Y-m-d' }}"
+                                       class="form-control d-inline-block" style="width: auto;">
+                                <button type="submit" name="update_date" class="btn btn-info btn-sm ml-2">Update</button>
+                            </div>
+                            <small class="text-muted">Using the following reference date: <strong>{{ ref_date|date:"j N Y" }}</strong></small>
                         </div>
+                        <div class="mb-3"></div>
 
                         <!-- TABLE -->
                         <div class="table-responsive">
@@ -158,9 +162,21 @@
             $('#id_total_settlement').text('{{ GLOBAL_CURRENCY_SYMBOL }}' + total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
         }
 
+        function updateActionButtons() {
+            var anyChecked = $('input[name="settle_list"]:checked').length > 0;
+            $('button[name="export"], button[name="confirm"]').prop('disabled', !anyChecked);
+        }
+
         $(document).ready(function() {
+            updateActionButtons();
+
             $("#checkall").click(function() {
                 $('input:checkbox').not(this).prop('checked', this.checked);
+                updateActionButtons();
+            });
+
+            $(document).on('change', 'input[name="settle_list"]', function() {
+                updateActionButtons();
             });
 
             $(document).on('input', 'input[name^="settlement_amount_"]', function() {

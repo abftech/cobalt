@@ -113,18 +113,6 @@ class SettlementForm(forms.Form):
         ("Dummy", "Dummy"),
     ]
 
-    reference_date = forms.DateField(
-        required=True,
-        widget=forms.DateInput(
-            attrs={
-                "type": "date",
-                "class": "form-control d-inline-block",
-                "style": "width: auto;",
-            },
-            format="%Y-%m-%d",
-        ),
-    )
-
     # Handle checkboxes
     settle_list = forms.MultipleChoiceField(
         widget=forms.CheckboxSelectMultiple,
