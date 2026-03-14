@@ -249,7 +249,7 @@ class XeroApi:
         XeroLog.objects.create(
             method="GET",
             url=url,
-            response_body=response.text,
+            response_body=json.dumps(result),
             http_status_code=response.status_code,
             status=XeroLog.STATUS_SUCCESS if response.ok else XeroLog.STATUS_FAILURE,
         )
@@ -267,7 +267,7 @@ class XeroApi:
             method="POST",
             url=url,
             request_body=json.dumps(json_data),
-            response_body=response.text,
+            response_body=json.dumps(result),
             http_status_code=response.status_code,
             status=XeroLog.STATUS_SUCCESS if response.ok else XeroLog.STATUS_FAILURE,
         )
@@ -285,7 +285,7 @@ class XeroApi:
             method="PUT",
             url=url,
             request_body=json.dumps(json_data),
-            response_body=response.text,
+            response_body=json.dumps(result),
             http_status_code=response.status_code,
             status=XeroLog.STATUS_SUCCESS if response.ok else XeroLog.STATUS_FAILURE,
         )
