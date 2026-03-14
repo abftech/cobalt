@@ -296,6 +296,12 @@ def transactions_htmx(request):
     """Show local Cobalt XeroInvoice records for an organisation."""
 
     org_id = request.POST.get("org_id")
+    if not org_id:
+        return render(
+            request,
+            "xero/transactions_htmx.html",
+            {"error": "Please select an organisation first."},
+        )
     organisation = Organisation.objects.filter(id=org_id).first()
     if not organisation:
         return render(
@@ -318,6 +324,12 @@ def reconcile_transactions_htmx(request):
     """Compare local XeroInvoice records against Xero for an organisation."""
 
     org_id = request.POST.get("org_id")
+    if not org_id:
+        return render(
+            request,
+            "xero/reconcile_transactions_htmx.html",
+            {"error": "Please select an organisation first."},
+        )
     organisation = Organisation.objects.filter(id=org_id).first()
     if not organisation:
         return render(
@@ -386,6 +398,8 @@ def reconcile_transactions_htmx(request):
 
 def invoice_form_htmx(request):
     """Return the create-invoice form fragment."""
+    from cobalt.settings import XERO_BANK_ACCOUNT_CODE
+
     organisations = (
         Organisation.objects.exclude(xero_contact_id__isnull=True)
         .exclude(xero_contact_id="")
@@ -394,7 +408,10 @@ def invoice_form_htmx(request):
     return render(
         request,
         "xero/invoice_form_htmx.html",
-        {"organisations": organisations},
+        {
+            "organisations": organisations,
+            "default_account_code": XERO_BANK_ACCOUNT_CODE,
+        },
     )
 
 
