@@ -34,11 +34,18 @@ class XeroInvoice(models.Model):
         ("ACCPAY", "Accounts Payable"),
     ]
 
+    STATUS_PENDING_UPLOAD = "PENDING_UPLOAD"
+    STATUS_UPLOADING = "UPLOADING"
+    STATUS_UPLOAD_FAILED = "UPLOAD_FAILED"
+
     STATUS_CHOICES = [
         ("DRAFT", "Draft"),
         ("AUTHORISED", "Authorised"),
         ("PAID", "Paid"),
         ("VOIDED", "Voided"),
+        (STATUS_PENDING_UPLOAD, "Pending Upload"),
+        (STATUS_UPLOADING, "Uploading"),
+        (STATUS_UPLOAD_FAILED, "Upload Failed"),
     ]
 
     organisation = models.ForeignKey(
@@ -46,7 +53,8 @@ class XeroInvoice(models.Model):
         on_delete=models.PROTECT,
         related_name="xero_invoices",
     )
-    xero_invoice_id = models.CharField(max_length=100, unique=True)
+    # Blank for records awaiting upload; populated once Xero returns an InvoiceID.
+    xero_invoice_id = models.CharField(max_length=100, blank=True, default="")
     invoice_number = models.CharField(max_length=50, blank=True, default="")
     invoice_type = models.CharField(
         max_length=10, choices=INVOICE_TYPE_CHOICES, default="ACCREC"
@@ -59,11 +67,21 @@ class XeroInvoice(models.Model):
     online_invoice_url = models.URLField(blank=True, default="")
     date = models.DateField()
     due_date = models.DateField()
+    # Cobalt-assigned idempotency key used as the Xero InvoiceNumber.
+    # Set once at creation; never changed. Format: COBALT-<12 hex chars>.
+    cobalt_reference = models.CharField(max_length=50, blank=True, default="")
+    # Full Xero API payload stored at settlement time; cleared after successful upload.
+    upload_payload = models.JSONField(null=True, blank=True)
+    # Number of failed upload attempts. After 5 failures status becomes UPLOAD_FAILED.
+    upload_attempts = models.PositiveSmallIntegerField(default=0)
+    # Last error message from a failed upload attempt.
+    upload_error = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.invoice_number} - {self.organisation.name} - {self.amount}"
+        label = self.invoice_number or self.cobalt_reference or self.xero_invoice_id
+        return f"{label} - {self.organisation.name} - {self.amount}"
 
 
 class XeroCredentials(models.Model):

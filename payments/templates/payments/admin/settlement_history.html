@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load cobalt_tags %}
+{% block title %} - Settlement History{% endblock %}
+
+{% block content %}
+
+    <nav aria-label="breadcrumb" role="navigation">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url "payments:statement_admin_summary" %}">Payments Admin</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Settlement History</li>
+        </ol>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-header card-header-primary">
+                <h1>{{ BRIDGE_CREDITS }}</h1>
+                <h2>Settlement History</h2>
+            </div>
+            <div class="card-body table-responsive">
+
+                <table class="table table-sm table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Organisation</th>
+                            <th>BSB</th>
+                            <th>Account</th>
+                            <th class="text-right">Cobalt Debit ({{ GLOBAL_CURRENCY_SYMBOL }})</th>
+                            <th class="text-right">Bank Transfer ({{ GLOBAL_CURRENCY_SYMBOL }})</th>
+                            <th>Xero Invoice</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tran in things %}
+                            <tr>
+                                <td style="white-space:nowrap;">{{ tran.created_date|cobalt_nice_datetime }}</td>
+                                <td>{{ tran.organisation }}</td>
+                                <td>{{ tran.organisation.bank_bsb }}</td>
+                                <td>{{ tran.organisation.bank_account }}</td>
+                                <td class="text-right">{{ tran.amount|floatformat:2|intcomma }}</td>
+                                <td class="text-right">
+                                    {% if tran.bank_settlement_amount %}
+                                        {{ tran.bank_settlement_amount|floatformat:2|intcomma }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if tran.xero_invoice %}
+                                        {% if tran.xero_invoice.status == 'PENDING_UPLOAD' %}
+                                            <span class="badge badge-warning">Queued</span>
+                                        {% elif tran.xero_invoice.status == 'UPLOADING' %}
+                                            <span class="badge badge-info">Processing</span>
+                                        {% elif tran.xero_invoice.status == 'UPLOAD_FAILED' %}
+                                            <span class="badge badge-danger"
+                                                  title="{{ tran.xero_invoice.upload_error }}">Failed</span>
+                                        {% elif tran.xero_invoice.status == 'PAID' %}
+                                            <span class="badge badge-success">{{ tran.xero_invoice.invoice_number }}</span>
+                                            <span class="badge badge-success">Paid</span>
+                                        {% else %}
+                                            <span class="badge badge-primary">{{ tran.xero_invoice.invoice_number }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">No settlement transactions found.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                {% include 'utils/pagination_footer.html' %}
+
+                <div class="mt-3">
+                    <a href="{% url "payments:settlement" %}" class="btn btn-warning mr-2">Run Settlement</a>
+                    <a href="{% url "payments:statement_admin_summary" %}" class="btn btn-success">Finance Summary</a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

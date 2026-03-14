@@ -31,7 +31,7 @@ from cobalt.settings import (
     TIME_ZONE,
 )
 from xero.core import XeroApi
-from xero.models import XeroCredentials
+from xero.models import XeroCredentials, XeroInvoice
 from events.models import EventLog
 from logs.views import log_event
 from masterpoints.views import user_summary
@@ -2093,7 +2093,7 @@ def settlement(request):
                     }
                 )
 
-            # --- Pass 2: process one org at a time — Xero first, then Cobalt ---
+            # --- Pass 2: process one org at a time ---
             trans_list = []
             skipped = []  # {"name": str, "reason": str}
             total = 0.0
@@ -2103,7 +2103,6 @@ def settlement(request):
             for si in settlement_items:
                 item = si["item"]
                 org = item.organisation
-                xero_invoice = None
 
                 if use_xero:
                     reference = (
@@ -2117,12 +2116,13 @@ def settlement(request):
                         )
                         if not xero_invoice:
                             logger.error(
-                                f"Xero settlement invoice returned None for {org.name}"
+                                f"Xero settlement invoice returned None for {org.name} "
+                                "(likely contact creation failed)"
                             )
                             skipped.append(
                                 {
                                     "name": org.name,
-                                    "reason": "Xero invoice creation failed",
+                                    "reason": "Xero contact creation failed — invoice not queued",
                                 }
                             )
                             continue
@@ -2132,8 +2132,10 @@ def settlement(request):
                         )
                         skipped.append({"name": org.name, "reason": str(exc)})
                         continue
+                else:
+                    xero_invoice = None
 
-                # Xero succeeded (or not used) — now create the Cobalt transaction
+                # Create the Cobalt transaction
                 trans = update_organisation(
                     organisation=org,
                     other_organisation=system_org,
@@ -2142,7 +2144,8 @@ def settlement(request):
                     payment_type="Settlement",
                     bank_settlement_amount=si["custom_bank_amount"],
                 )
-                if xero_invoice:
+                # Link the queued XeroInvoice if not already linked (dedup protection).
+                if xero_invoice and not trans.xero_invoice_id:
                     trans.xero_invoice = xero_invoice
                     trans.save(update_fields=["xero_invoice"])
                 trans_list.append(trans)
@@ -2166,10 +2169,26 @@ def settlement(request):
                     "Settlement processed successfully.",
                     extra_tags="cobalt-message-success",
                 )
+            trans_ids_csv = ",".join(str(t.pk) for t in trans_list)
+            has_pending = any(
+                t.xero_invoice
+                and t.xero_invoice.status
+                in [XeroInvoice.STATUS_PENDING_UPLOAD, XeroInvoice.STATUS_UPLOADING]
+                for t in trans_list
+            )
+            total_with_xero = sum(1 for t in trans_list if t.xero_invoice)
             return render(
                 request,
                 "payments/admin/settlement-complete.html",
-                {"trans": trans_list, "skipped": skipped, "total": total},
+                {
+                    "trans": trans_list,
+                    "skipped": skipped,
+                    "total": total,
+                    "use_xero": use_xero,
+                    "trans_ids_csv": trans_ids_csv,
+                    "has_pending": has_pending,
+                    "total_with_xero": total_with_xero,
+                },
             )
 
     # form.is_valid() failed — re-render with errors
@@ -2183,6 +2202,83 @@ def settlement(request):
             "totals": totals,
             "ref_date": ref_date,
         },
+    )
+
+
+@login_required()
+def settlement_xero_status_htmx(request):
+    """HTMX endpoint: return updated Xero invoice status rows for the settlement-complete poller.
+
+    Called every 5 seconds by the settlement-complete page while any invoice is still
+    queued or uploading.  Returns HX-Trigger: xero-all-done once all are resolved so
+    the client can remove the polling element.
+    """
+    if not rbac_user_has_role(request.user, "payments.global.edit"):
+        return HttpResponse(status=403)
+
+    ids_csv = request.POST.get("trans_ids", "")
+    trans_ids = [int(i) for i in ids_csv.split(",") if i.strip().isdigit()]
+
+    trans_qs = OrganisationTransaction.objects.filter(pk__in=trans_ids).select_related(
+        "organisation", "xero_invoice"
+    )
+    trans_map = {t.pk: t for t in trans_qs}
+    ordered = [trans_map[pk] for pk in trans_ids if pk in trans_map]
+
+    pending_statuses = {XeroInvoice.STATUS_PENDING_UPLOAD, XeroInvoice.STATUS_UPLOADING}
+    all_resolved = all(
+        not t.xero_invoice or t.xero_invoice.status not in pending_statuses
+        for t in ordered
+    )
+
+    total_with_xero = sum(1 for t in ordered if t.xero_invoice)
+    done = sum(
+        1
+        for t in ordered
+        if t.xero_invoice
+        and t.xero_invoice.status
+        not in {*pending_statuses, XeroInvoice.STATUS_UPLOAD_FAILED}
+    )
+    failed = sum(
+        1
+        for t in ordered
+        if t.xero_invoice and t.xero_invoice.status == XeroInvoice.STATUS_UPLOAD_FAILED
+    )
+
+    ids_csv_out = ",".join(str(pk) for pk in trans_ids)
+
+    return render(
+        request,
+        "payments/admin/_settlement_status_poll_response.html",
+        {
+            "trans": ordered,
+            "trans_ids_csv": ids_csv_out,
+            "total_with_xero": total_with_xero,
+            "done": done,
+            "failed": failed,
+            "all_resolved": all_resolved,
+        },
+    )
+
+
+@login_required()
+def settlement_history(request):
+    """View all past settlement transactions with Xero invoice status."""
+    if not rbac_user_has_role(request.user, "payments.global.view"):
+        return rbac_forbidden(request, "payments.global.view")
+
+    settlements = (
+        OrganisationTransaction.objects.filter(type="Settlement")
+        .select_related("organisation", "xero_invoice")
+        .order_by("-created_date")
+    )
+
+    things = cobalt_paginator(request, settlements)
+
+    return render(
+        request,
+        "payments/admin/settlement_history.html",
+        {"things": things},
     )
 
 

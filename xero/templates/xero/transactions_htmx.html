@@ -48,13 +48,21 @@
                                 <td><small>{{ inv.due_date }}</small></td>
                                 <td class="text-right"><small>${{ inv.amount|floatformat:2|intcomma }}</small></td>
                                 <td>
-                                    <span class="badge
-                                                 {% if inv.status == 'PAID' %}badge-success
-                                                 {% elif inv.status == 'AUTHORISED' %}badge-primary
-                                                 {% elif inv.status == 'VOIDED' %}badge-secondary
-                                                 {% else %}badge-warning{% endif %}">
-                                        {{ inv.status }}
-                                    </span>
+                                    {% if inv.status == 'PAID' %}
+                                        <span class="badge badge-success">PAID</span>
+                                    {% elif inv.status == 'AUTHORISED' %}
+                                        <span class="badge badge-primary">AUTHORISED</span>
+                                    {% elif inv.status == 'VOIDED' %}
+                                        <span class="badge badge-secondary">VOIDED</span>
+                                    {% elif inv.status == 'PENDING_UPLOAD' %}
+                                        <span class="badge badge-warning">Queued</span>
+                                    {% elif inv.status == 'UPLOADING' %}
+                                        <span class="badge badge-info">Processing</span>
+                                    {% elif inv.status == 'UPLOAD_FAILED' %}
+                                        <span class="badge badge-danger" title="{{ inv.upload_error }}">Failed</span>
+                                    {% else %}
+                                        <span class="badge badge-warning">{{ inv.status }}</span>
+                                    {% endif %}
                                 </td>
                                 <td><small class="text-muted">{{ inv.reference }}</small></td>
                                 <td>

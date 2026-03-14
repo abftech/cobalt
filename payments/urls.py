@@ -72,6 +72,16 @@ urlpatterns = [
     path("statement", payments.views.players.statement, name="statement"),
     path("settlement", payments.views.admin.settlement, name="settlement"),
     path(
+        "settlement-xero-status",
+        payments.views.admin.settlement_xero_status_htmx,
+        name="settlement_xero_status_htmx",
+    ),
+    path(
+        "settlement-history",
+        payments.views.admin.settlement_history,
+        name="settlement_history",
+    ),
+    path(
         "manual-adjust-member",
         payments.views.admin.manual_adjust_member,
         name="manual_adjust_member",

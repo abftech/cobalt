@@ -1,8 +1,10 @@
 import json
 import logging
 import base64
+import time
 from datetime import timedelta, date
 from urllib.parse import urlencode
+from uuid import uuid4
 
 import requests
 
@@ -48,6 +50,9 @@ class XeroApi:
         self.b64_id_secret = base64.b64encode(
             bytes(f"{XERO_CLIENT_ID}:{XERO_CLIENT_SECRET}", "utf-8")
         ).decode("utf-8")
+
+        # Proactive rate-limit tracking: timestamps of recent outbound API calls.
+        self._call_timestamps: list[float] = []
 
     def headers(self):
         """return API headers"""
@@ -207,6 +212,49 @@ class XeroApi:
         logger.error(f"Could not determine tenant from {len(connections)} connections")
         return None
 
+    def _throttle(self) -> None:
+        """Proactively sleep if approaching the Xero 60 calls/minute rate limit.
+
+        Prunes the timestamp list to the last 60 seconds, then sleeps if 55 or
+        more calls have already been made in that window (leaving a 5-call safety
+        margin before the hard 60/min cap).
+        """
+        now_ts = time.monotonic()
+        self._call_timestamps = [t for t in self._call_timestamps if now_ts - t < 60]
+        if len(self._call_timestamps) >= 55:
+            oldest = self._call_timestamps[0]
+            sleep_secs = 60 - (now_ts - oldest) + 0.5
+            logger.warning(
+                f"Xero rate limit approaching ({len(self._call_timestamps)} calls in last 60s) "
+                f"— sleeping {sleep_secs:.1f}s"
+            )
+            time.sleep(sleep_secs)
+            now_ts = time.monotonic()
+            self._call_timestamps = [
+                t for t in self._call_timestamps if now_ts - t < 60
+            ]
+        self._call_timestamps.append(time.monotonic())
+
+    def _request_with_retry(self, method, url, **kwargs) -> requests.Response:
+        """Make an HTTP request, retrying up to 3 times on HTTP 429 Too Many Requests.
+
+        Reads the Retry-After response header (defaulting to 60 seconds) to
+        determine how long to sleep before retrying.  Logs a warning for each
+        retry.  Returns the final response regardless of status code.
+        """
+        max_retries = 3
+        for attempt in range(max_retries + 1):
+            response = method(url, **kwargs)
+            if response.status_code != 429 or attempt == max_retries:
+                return response
+            retry_after = int(response.headers.get("Retry-After", 60))
+            logger.warning(
+                f"Xero 429 rate limit on {url} — sleeping {retry_after}s "
+                f"(attempt {attempt + 1}/{max_retries})"
+            )
+            time.sleep(retry_after)
+        return response  # unreachable but satisfies type checkers
+
     def _parse_response(self, response) -> dict:
         """Parse a Xero API response, handling empty or non-JSON bodies."""
         if not response.text:
@@ -244,7 +292,8 @@ class XeroApi:
         if err := self._check_credentials():
             return err
         logger.info(url)
-        response = requests.get(url, headers=self.headers())
+        self._throttle()
+        response = self._request_with_retry(requests.get, url, headers=self.headers())
         result = self._parse_response(response)
         XeroLog.objects.create(
             method="GET",
@@ -261,7 +310,10 @@ class XeroApi:
         if err := self._check_credentials():
             return err
         logger.info(url)
-        response = requests.post(url, headers=self.headers(), json=json_data)
+        self._throttle()
+        response = self._request_with_retry(
+            requests.post, url, headers=self.headers(), json=json_data
+        )
         result = self._parse_response(response)
         XeroLog.objects.create(
             method="POST",
@@ -279,7 +331,10 @@ class XeroApi:
         if err := self._check_credentials():
             return err
         logger.info(url)
-        response = requests.put(url, headers=self.headers(), json=json_data)
+        self._throttle()
+        response = self._request_with_retry(
+            requests.put, url, headers=self.headers(), json=json_data
+        )
         result = self._parse_response(response)
         XeroLog.objects.create(
             method="PUT",
@@ -656,14 +711,15 @@ class XeroApi:
         organisation,
         bank_settlement_amount: float,
         reference: str,
-    ):
-        """Create an ACCPAY invoice in Xero for a settlement payment to a club.
+    ) -> "XeroInvoice | None":
+        """Queue an ACCPAY settlement invoice for asynchronous upload to Xero.
 
-        The invoice is left as AUTHORISED (not paid). Payment confirmation comes
-        later via bank feed reconciliation in Xero, detected by the
-        sync_xero_invoice_status management command.
+        Creates a local XeroInvoice record with status PENDING_UPLOAD containing
+        the full Xero API payload.  The upload_xero_settlements management command
+        handles the actual API call, with idempotency, crash recovery, and retry.
 
-        If the organisation has no xero_contact_id, one is created on demand.
+        If the organisation has no xero_contact_id, one is created on demand
+        (the only synchronous API call made by this method).
 
         Args:
             organisation: The Organisation being settled.
@@ -671,7 +727,7 @@ class XeroApi:
             reference: Human-readable reference string for the invoice.
 
         Returns:
-            XeroInvoice instance on success, None on failure.
+            XeroInvoice instance (PENDING_UPLOAD) on success, None on failure.
         """
         if not organisation.xero_contact_id:
             logger.info(
@@ -684,23 +740,50 @@ class XeroApi:
                 )
                 return None
 
-        line_items = [
-            {
-                "description": reference,
-                "quantity": 1,
-                "unit_amount": bank_settlement_amount,
-                "account_code": XERO_SETTLEMENT_ACCOUNT_CODE,
-                "tax_type": XERO_SETTLEMENT_TAX_TYPE,
-            }
-        ]
+        today = date.today()
+        cobalt_reference = f"COBALT-{uuid4().hex[:12].upper()}"
 
-        return self.create_invoice(
+        upload_payload = {
+            "Invoices": [
+                {
+                    "Type": "ACCPAY",
+                    "Contact": {"ContactID": organisation.xero_contact_id},
+                    "LineItems": [
+                        {
+                            "Description": reference,
+                            "Quantity": 1,
+                            "UnitAmount": float(bank_settlement_amount),
+                            "AccountCode": XERO_SETTLEMENT_ACCOUNT_CODE,
+                            "TaxType": XERO_SETTLEMENT_TAX_TYPE,
+                            "LineAmount": float(bank_settlement_amount),
+                        }
+                    ],
+                    "Date": f"{today:%Y-%m-%d}",
+                    "DueDate": f"{today:%Y-%m-%d}",
+                    "Reference": reference,
+                    "InvoiceNumber": cobalt_reference,
+                    "Status": "AUTHORISED",
+                }
+            ]
+        }
+
+        xero_invoice = XeroInvoice(
             organisation=organisation,
-            line_items=line_items,
-            reference=reference,
+            xero_invoice_id="",
             invoice_type="ACCPAY",
-            due_days=0,
+            amount=bank_settlement_amount,
+            status=XeroInvoice.STATUS_PENDING_UPLOAD,
+            reference=reference,
+            cobalt_reference=cobalt_reference,
+            upload_payload=upload_payload,
+            date=today,
+            due_date=today,
         )
+        xero_invoice.save()
+        logger.info(
+            f"Queued settlement invoice {cobalt_reference} for {organisation.name} (${bank_settlement_amount:.2f})"
+        )
+        return xero_invoice
 
     def get_invoices_for_organisation(
         self,

@@ -1,0 +1,82 @@
+{% load humanize %}
+{# Full replacement for <div id="xero-status-section">.                               #}
+{# When all_resolved the hx-trigger attribute is omitted, stopping the polling cycle. #}
+<div id="xero-status-section"
+     {% if not all_resolved %}
+         hx-post="{% url 'payments:settlement_xero_status_htmx' %}"
+         hx-trigger="every 5s"
+         hx-vals='{"trans_ids": "{{ trans_ids_csv }}"}'
+         hx-swap="outerHTML"
+     {% endif %}>
+
+    {% if not all_resolved %}
+        <div class="alert alert-info mt-0 mb-2">
+            <strong>Xero invoices queued</strong> — they will be uploaded to Xero within 5 minutes by the background process.
+        </div>
+    {% endif %}
+
+    <p class="{% if all_resolved %}text-success{% else %}text-muted{% endif %} small mb-2">
+        {% if all_resolved %}
+            {% if failed %}
+                {{ done }} of {{ total_with_xero }} invoice{{ total_with_xero|pluralize }} uploaded to Xero.
+                <span class="text-danger ml-2">{{ failed }} failed — check
+                    <a href="{% url "xero:xero_log_view" %}">Xero Logs</a> for details.
+                </span>
+            {% else %}
+                All {{ done }} invoice{{ done|pluralize }} successfully uploaded to Xero.
+            {% endif %}
+        {% else %}
+            {{ done }} of {{ total_with_xero }} invoice{{ total_with_xero|pluralize }} uploaded to Xero.
+            {% if failed %}<span class="text-danger">{{ failed }} failed.</span>{% endif %}
+            Next check in <span id="xero-countdown">5</span>s&hellip;
+        {% endif %}
+    </p>
+
+    <div class="card">
+        <div class="card-header card-header-success">
+            <h2>Transactions Generated</h2>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Organisation</th>
+                        <th>BSB</th>
+                        <th>Account Number</th>
+                        <th>Amount ({{ GLOBAL_CURRENCY_SYMBOL }})</th>
+                        <th>Date</th>
+                        <th>Xero Invoice</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tran in trans %}
+                        <tr>
+                            <td>{{ tran.organisation }}</td>
+                            <td>{{ tran.organisation.bank_bsb }}</td>
+                            <td>{{ tran.organisation.bank_account }}</td>
+                            <td>{{ tran.amount|floatformat:2|intcomma }}</td>
+                            <td>{{ tran.created_date }}</td>
+                            <td>
+                                {% if tran.xero_invoice %}
+                                    {% if tran.xero_invoice.status == 'PENDING_UPLOAD' %}
+                                        <span class="badge badge-warning">Queued</span>
+                                    {% elif tran.xero_invoice.status == 'UPLOADING' %}
+                                        <span class="badge badge-info">Processing</span>
+                                    {% elif tran.xero_invoice.status == 'UPLOAD_FAILED' %}
+                                        <span class="badge badge-danger"
+                                              title="{{ tran.xero_invoice.upload_error }}">Failed</span>
+                                    {% else %}
+                                        <span class="badge badge-success">{{ tran.xero_invoice.invoice_number }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>

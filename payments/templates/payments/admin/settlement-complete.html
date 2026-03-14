@@ -19,43 +19,83 @@
                 <h2>Settlement Confirmation</h2>
             </div>
             <div class="card-body table-responsive">
-                <div class="card">
-                    <div class="card-header card-header-success">
-                        <h2>Transactions Generated</h2>
-                    </div>
-                    <div class="card-body">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Organisation</th>
-                                    <th>BSB</th>
-                                    <th>Account Number</th>
-                                    <th>Amount({{ GLOBAL_CURRENCY_SYMBOL }})</th>
-                                    <th>Date</th>
-                                    <th>Xero Invoice</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for tran in trans %}
+
+                {# ------------------------------------------------------------------ #}
+                {# Xero status section — self-polling div that replaces itself         #}
+                {# via outerHTML swap until all invoices are resolved.                 #}
+                {# ------------------------------------------------------------------ #}
+                <div id="xero-status-section"
+                     {% if use_xero and has_pending %}
+                         hx-post="{% url 'payments:settlement_xero_status_htmx' %}"
+                         hx-trigger="every 5s"
+                         hx-vals='{"trans_ids": "{{ trans_ids_csv }}"}'
+                         hx-swap="outerHTML"
+                     {% endif %}>
+
+                    {% if use_xero and has_pending %}
+                        <div class="alert alert-info mt-0 mb-2">
+                            <strong>Xero invoices queued</strong> — they will be uploaded to Xero within 5 minutes by the background process.
+                        </div>
+                    {% endif %}
+
+                    {% if use_xero %}
+                        <p class="text-muted small mb-2">
+                            {% if has_pending %}
+                                0 of {{ total_with_xero }} invoice{{ total_with_xero|pluralize }} uploaded to Xero.
+                                Next check in <span id="xero-countdown">5</span>s&hellip;
+                            {% endif %}
+                        </p>
+                    {% endif %}
+
+                    <div class="card">
+                        <div class="card-header card-header-success">
+                            <h2>Transactions Generated</h2>
+                        </div>
+                        <div class="card-body">
+                            <table class="table">
+                                <thead>
                                     <tr>
-                                        <td>{{ tran.organisation }}</td>
-                                        <td>{{ tran.organisation.bank_bsb }}</td>
-                                        <td>{{ tran.organisation.bank_account }}</td>
-                                        <td>{{ tran.amount|floatformat:2|intcomma }}</td>
-                                        <td>{{ tran.created_date }}</td>
-                                        <td>
-                                            {% if tran.xero_invoice %}
-                                                <span class="badge badge-success">{{ tran.xero_invoice.invoice_number }}</span>
-                                            {% else %}
-                                                <span class="text-muted">—</span>
-                                            {% endif %}
-                                        </td>
+                                        <th>Organisation</th>
+                                        <th>BSB</th>
+                                        <th>Account Number</th>
+                                        <th>Amount({{ GLOBAL_CURRENCY_SYMBOL }})</th>
+                                        <th>Date</th>
+                                        <th>Xero Invoice</th>
                                     </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {% for tran in trans %}
+                                        <tr>
+                                            <td>{{ tran.organisation }}</td>
+                                            <td>{{ tran.organisation.bank_bsb }}</td>
+                                            <td>{{ tran.organisation.bank_account }}</td>
+                                            <td>{{ tran.amount|floatformat:2|intcomma }}</td>
+                                            <td>{{ tran.created_date }}</td>
+                                            <td>
+                                                {% if tran.xero_invoice %}
+                                                    {% if tran.xero_invoice.status == 'PENDING_UPLOAD' %}
+                                                        <span class="badge badge-warning">Queued</span>
+                                                    {% elif tran.xero_invoice.status == 'UPLOADING' %}
+                                                        <span class="badge badge-info">Processing</span>
+                                                    {% elif tran.xero_invoice.status == 'UPLOAD_FAILED' %}
+                                                        <span class="badge badge-danger"
+                                                              title="{{ tran.xero_invoice.upload_error }}">Failed</span>
+                                                    {% else %}
+                                                        <span class="badge badge-success">{{ tran.xero_invoice.invoice_number }}</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted">—</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
+
+                </div>{# /xero-status-section #}
+
                 <h2>Total {{ GLOBAL_CURRENCY_SYMBOL }}{{ total|floatformat:2|intcomma }}</h2>
 
                 {% if skipped %}
@@ -64,7 +104,7 @@
                             <h2>Not Processed</h2>
                         </div>
                         <div class="card-body">
-                            <p>The following organisations were skipped because their Xero invoice could not be created. Their MyABF balances have <strong>not</strong> been changed.</p>
+                            <p>The following organisations were skipped because their Xero contact could not be created. Their MyABF balances have <strong>not</strong> been changed.</p>
                             <p>More detail may be available in the <a href="{% url "xero:xero_log_view" %}">Xero Logs</a></p>
                             <table class="table">
                                 <thead>
@@ -88,6 +128,7 @@
 
                 <div class="text-center mt-3">
                     <a href="{% url "payments:settlement" %}" class="btn btn-warning mr-2">Back to Settlement</a>
+                    <a href="{% url "payments:settlement_history" %}" class="btn btn-info mr-2">View Settlement History</a>
                     <a href="{% url "payments:statement_admin_summary"%}" class="btn btn-success">Finance Summary</a>
                 </div>
             </div>
@@ -95,3 +136,36 @@
     </div>
 
 {% endblock %}
+
+{% block footer %}
+    {% if use_xero and has_pending %}
+        <script>
+            var _countdownTimer = null;
+
+            function startCountdown(seconds) {
+                if (_countdownTimer) clearInterval(_countdownTimer);
+                var remaining = seconds;
+                var el = document.getElementById('xero-countdown');
+                if (el) el.textContent = remaining;
+                _countdownTimer = setInterval(function () {
+                    remaining -= 1;
+                    el = document.getElementById('xero-countdown');
+                    if (!el) { clearInterval(_countdownTimer); return; }
+                    el.textContent = remaining > 0 ? remaining : 0;
+                }, 1000);
+            }
+
+            startCountdown(5);
+
+            // After each poll swap, reset the countdown (the new div is in the DOM)
+            document.body.addEventListener('htmx:afterSettle', function () {
+                if (document.getElementById('xero-countdown')) {
+                    startCountdown(5);
+                } else {
+                    // Countdown span gone — polling has stopped, clean up timer
+                    if (_countdownTimer) clearInterval(_countdownTimer);
+                }
+            });
+        </script>
+    {% endif %}
+{% endblock footer %}

@@ -23,7 +23,7 @@
         <div class="card">
             <!-- MAIN CARD HEADER -->
             <div class="card-header text-white bg-primary">
-                <h1>Xero Functions - Not Production Yet</h1>
+                <h1>Xero Functions</h1>
             </div>
 
             <!-- MAIN CARD BODY -->
@@ -64,7 +64,7 @@
                             hx-indicator="#spinner"
                             data-toggle="tooltip"
                             data-placement="top"
-                            title="Refresh tokens. Happens automatically. Not need to run."
+                            title="Refresh tokens. Happens automatically. No need to run."
                         >Refresh Tokens</a>
                         <div id="refresh"></div>
                     </div>
@@ -77,6 +77,19 @@
                         <span class="htmx-indicator" id="spinner">
                             <img style="width: 40px" src="{% static "assets/img/spinners/bars.svg" %}"/>
                         </span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <a
+                            href="{% url "xero:xero_log_view" %}"
+                            target="_blank"
+                            rel="noopener"
+                            data-toggle="tooltip"
+                            data-placement="top"
+                            title="View Xero API call log"
+                        >View Logs</a>
                     </div>
                 </div>
 
@@ -94,36 +107,8 @@
                                 {% endfor %}
                             </select>
 
-                            <a
-                                href="{% url "xero:xero_log_view" %}"
-                                class="btn btn-secondary mr-1"
-                                data-toggle="tooltip"
-                                data-placement="top"
-                                title="View Xero API call log"
-                            >View Logs</a>
-
                             <button
-                                class="btn btn-info mr-1"
-                                hx-post="{% url "xero:run_xero_api_htmx" %}"
-                                hx-target="#data"
-                                hx-vals='{"cmd": "list_contacts"}'
-                                hx-indicator="#spinner"
-                                data-toggle="tooltip"
-                                data-placement="top"
-                                title="List Contacts in Xero"
-                            >List Contacts (Clubs)</button>
-
-                            <button
-                                class="btn btn-warning mr-1"
-                                hx-post="{% url "xero:reconcile_contacts_htmx" %}"
-                                hx-target="#data"
-                                hx-indicator="#spinner"
-                                data-toggle="tooltip"
-                                data-placement="top"
-                                title="Reconcile Xero and MyABF"
-                            >Reconcile Contacts</button>
-
-                            <button
+                                id="btn-view-transactions"
                                 class="btn btn-info mr-1"
                                 hx-post="{% url "xero:transactions_htmx" %}"
                                 hx-target="#data"
@@ -132,56 +117,77 @@
                                 data-toggle="tooltip"
                                 data-placement="top"
                                 title="View invoices recorded in Cobalt for this organisation"
+                                disabled
                             >View Transactions</button>
-
-                            <button
-                                class="btn btn-warning mr-1"
-                                hx-post="{% url "xero:reconcile_transactions_htmx" %}"
-                                hx-target="#data"
-                                hx-include="#org_id"
-                                hx-indicator="#spinner"
-                                data-toggle="tooltip"
-                                data-placement="top"
-                                title="Compare Cobalt invoice records against Xero for this organisation"
-                            >Reconcile Transactions</button>
-
-                            {% if COBALT_HOSTNAME != "www.myabf.com.au" and COBALT_HOSTNAME != "myabf.com.au" %}
-                                <button
-                                    class="btn btn-info mr-1"
-                                    hx-post="{% url "xero:invoice_form_htmx" %}"
-                                    hx-target="#data"
-                                    hx-indicator="#spinner"
-                                    data-toggle="tooltip"
-                                    data-placement="top"
-                                    title="Create an invoice in Xero"
-                                >Create Invoice</button>
-
-                                <button
-                                    class="btn btn-success mr-1"
-                                    hx-post="{% url "xero:payment_form_htmx" %}"
-                                    hx-target="#data"
-                                    hx-indicator="#spinner"
-                                    data-toggle="tooltip"
-                                    data-placement="top"
-                                    title="Add a Payment to Xero"
-                                >Create Payment</button>
-                            {% endif %}
 
                         </div>
 
-                        <div id="data"></div>
+
                     </div>
                 </div>
 
+                <div class="row">
+                    <div class="col-12">
+                        <div class="col-12">
 
+                            <div class="form-inline mb-2">
+                                {% if COBALT_HOSTNAME != "www.myabf.com.au" and COBALT_HOSTNAME != "myabf.com.au" %}
+                                    <button
+                                        class="btn btn-info mr-1"
+                                        hx-post="{% url "xero:invoice_form_htmx" %}"
+                                        hx-target="#data"
+                                        hx-indicator="#spinner"
+                                        data-toggle="tooltip"
+                                        data-placement="top"
+                                        title="Create an invoice in Xero"
+                                    >Create Invoice</button>
+
+                                    <button
+                                        class="btn btn-success mr-1"
+                                        hx-post="{% url "xero:payment_form_htmx" %}"
+                                        hx-target="#data"
+                                        hx-indicator="#spinner"
+                                        data-toggle="tooltip"
+                                        data-placement="top"
+                                        title="Add a Payment to Xero"
+                                    >Create Payment</button>
+                                {% endif %}
+
+                                <button
+                                    class="btn btn-info mr-1"
+                                    hx-post="{% url "xero:run_xero_api_htmx" %}"
+                                    hx-target="#data"
+                                    hx-vals='{"cmd": "list_contacts"}'
+                                    hx-indicator="#spinner"
+                                    data-toggle="tooltip"
+                                    data-placement="top"
+                                    title="List Contacts in Xero"
+                                >List Contacts (Clubs)</button>
+
+                                <button
+                                    class="btn btn-warning mr-1"
+                                    hx-post="{% url "xero:reconcile_contacts_htmx" %}"
+                                    hx-target="#data"
+                                    hx-indicator="#spinner"
+                                    data-toggle="tooltip"
+                                    data-placement="top"
+                                    title="Reconcile Xero and MyABF"
+                                >Reconcile Contacts</button>
+
+                            </div>
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+                <div id="data"></div>
             </div>
-
         </div>
-    </div>
-    </div>
 
 {# Suppress the "leave page?" prompt from cobalt-core.js #}
-    <span id="ignore_cobalt_save" hidden></span>
+        <span id="ignore_cobalt_save" hidden></span>
 
 {% endblock content %}
 
@@ -192,5 +198,14 @@
         document.body.addEventListener('htmx:beforeRequest', function () {
             $('[data-toggle="tooltip"]').tooltip('hide');
         });
+
+        var orgSelect = document.getElementById('org_id');
+        var btnViewTransactions = document.getElementById('btn-view-transactions');
+
+        function updateViewTransactionsButton() {
+            btnViewTransactions.disabled = !orgSelect.value;
+        }
+
+        orgSelect.addEventListener('change', updateViewTransactionsButton);
     </script>
 {% endblock footer %}
