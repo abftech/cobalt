@@ -68,11 +68,17 @@ class Command(BaseCommand):
                         errors += 1
                         continue
 
-                    xero_status = invoices[0].get("Status")
+                    xero_data = invoices[0]
+                    xero_status = xero_data.get("Status")
+                    xero_number = xero_data.get("InvoiceNumber", "")
+                    changed = False
+                    update_fields = ["updated_at"]
+
                     if xero_status and xero_status != invoice.status:
                         old_status = invoice.status
                         invoice.status = xero_status
-                        invoice.save(update_fields=["status", "updated_at"])
+                        update_fields.append("status")
+                        changed = True
                         logger.info(
                             f"Invoice {invoice.invoice_number} ({invoice.xero_invoice_id}): "
                             f"{old_status} -> {xero_status}"
@@ -80,6 +86,18 @@ class Command(BaseCommand):
                         summary_lines.append(
                             f"  {invoice.invoice_number}: {old_status} -> {xero_status}"
                         )
+
+                    if xero_number and not invoice.invoice_number:
+                        invoice.invoice_number = xero_number
+                        update_fields.append("invoice_number")
+                        changed = True
+                        logger.info(
+                            f"Invoice {invoice.xero_invoice_id}: backfilled number {xero_number}"
+                        )
+                        summary_lines.append(f"  Backfilled number: {xero_number}")
+
+                    if changed:
+                        invoice.save(update_fields=update_fields)
                         updated += 1
 
                 except Exception as exc:

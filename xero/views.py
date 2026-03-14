@@ -480,14 +480,26 @@ def _handle_invoice_webhook(xero_invoice_id: str):
     data = xero.get_invoice(xero_invoice_id)
     invoices = data.get("Invoices", [])
     if invoices:
-        new_status = invoices[0].get("Status")
+        xero_data = invoices[0]
+        new_status = xero_data.get("Status")
+        xero_number = xero_data.get("InvoiceNumber", "")
+        update_fields = ["updated_at"]
+
         if new_status and new_status != local.status:
             old_status = local.status
             local.status = new_status
-            local.save(update_fields=["status", "updated_at"])
+            update_fields.append("status")
             logger.info(
                 f"Xero webhook: invoice {local.invoice_number} {old_status} -> {new_status}"
             )
+
+        if xero_number and not local.invoice_number:
+            local.invoice_number = xero_number
+            update_fields.append("invoice_number")
+            logger.info(f"Xero webhook: backfilled invoice number {xero_number}")
+
+        if len(update_fields) > 1:
+            local.save(update_fields=update_fields)
 
 
 @require_POST
