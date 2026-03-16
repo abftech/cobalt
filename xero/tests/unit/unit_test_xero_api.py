@@ -112,27 +112,30 @@ class XeroApiTests:
         XeroCredentials.objects.get_or_create()
 
         # Organisation used for the majority of tests
-        self.org = Organisation(
+        self.org, _ = Organisation.objects.update_or_create(
             org_id="T001",
-            name="Test Bridge Club",
-            secretary=self.manager.alan,
-            type="Club",
-            club_email="test@example.com",
-            address1="123 Test Street",
-            suburb="Testville",
-            state="NSW",
-            postcode="2000",
+            defaults=dict(
+                name="Test Bridge Club",
+                secretary=self.manager.alan,
+                type="Club",
+                club_email="test@example.com",
+                address1="123 Test Street",
+                suburb="Testville",
+                state="NSW",
+                postcode="2000",
+            ),
         )
-        self.org.save()
 
         # Organisation that deliberately has no xero_contact_id
-        self.org_no_contact = Organisation(
+        self.org_no_contact, _ = Organisation.objects.update_or_create(
             org_id="T002",
-            name="No Contact Club",
-            secretary=self.manager.alan,
-            type="Club",
+            defaults=dict(
+                name="No Contact Club",
+                secretary=self.manager.alan,
+                type="Club",
+                xero_contact_id="",
+            ),
         )
-        self.org_no_contact.save()
 
         # In live mode use the pre-configured contact UUID; in mock mode use a
         # placeholder that the patched API will accept without complaint.

@@ -11,9 +11,11 @@ import requests
 from django.utils.timezone import now
 
 from cobalt.settings import (
+    GLOBAL_CURRENCY_SYMBOL,
     XERO_CLIENT_ID,
     XERO_CLIENT_SECRET,
     XERO_BANK_ACCOUNT_CODE,
+    XERO_FEE_TAX_TYPE,
     XERO_SETTLEMENT_ACCOUNT_CODE,
     XERO_SETTLEMENT_TAX_TYPE,
 )
@@ -782,6 +784,103 @@ class XeroApi:
         xero_invoice.save()
         logger.info(
             f"Queued settlement invoice {cobalt_reference} for {organisation.name} (${bank_settlement_amount:.2f})"
+        )
+        return xero_invoice
+
+    def create_fee_invoice(
+        self,
+        organisation,
+        gross_amount: float,
+        net_amount: float,
+        reference: str,
+        fee_percent: float,
+    ) -> "XeroInvoice | None":
+        """Queue an ACCREC fee-recovery invoice for asynchronous upload to Xero.
+
+        Creates a local XeroInvoice record (PENDING_UPLOAD, auto_record_payment=True)
+        with three line items:
+          1. Gross settlement amount (informational, $0 financial value)
+          2. Processing fee recovery (fee = gross - net, taxed via XERO_FEE_TAX_TYPE)
+          3. Net settlement amount (informational, $0 financial value)
+
+        The upload_xero_settlements management command uploads the invoice and then
+        immediately records a Xero payment equal to AmountDue, closing the invoice
+        to $0 outstanding.
+
+        Returns None (without raising) if there is no fee or if Xero contact
+        creation fails.
+        """
+        fee = round(float(gross_amount) - float(net_amount), 2)
+        if fee <= 0:
+            return None
+
+        if not organisation.xero_contact_id:
+            logger.info(
+                f"Organisation {organisation.name} has no xero_contact_id — creating contact for fee invoice"
+            )
+            contact_id = self.create_organisation_contact(organisation)
+            if not contact_id:
+                logger.error(
+                    f"Failed to create Xero contact for {organisation.name} — cannot create fee invoice"
+                )
+                return None
+
+        today = date.today()
+        cobalt_reference = f"MyABF-{uuid4().hex[:12].upper()}"
+
+        upload_payload = {
+            "Invoices": [
+                {
+                    "Type": "ACCREC",
+                    "Contact": {"ContactID": organisation.xero_contact_id},
+                    "LineItems": [
+                        {
+                            "Description": f"Gross MyABF settlement: {GLOBAL_CURRENCY_SYMBOL}{float(gross_amount):.2f}",
+                            "Quantity": 1,
+                            "UnitAmount": 0,
+                            "AccountCode": XERO_SETTLEMENT_ACCOUNT_CODE,
+                            "TaxType": XERO_SETTLEMENT_TAX_TYPE,
+                        },
+                        {
+                            "Description": f"Recovery of 3rd party transaction processing fees ({fee_percent}%)",
+                            "Quantity": 1,
+                            "UnitAmount": fee,
+                            "AccountCode": XERO_SETTLEMENT_ACCOUNT_CODE,
+                            "TaxType": XERO_FEE_TAX_TYPE,
+                        },
+                        {
+                            "Description": f"Net MyABF Settlement: {GLOBAL_CURRENCY_SYMBOL}{float(net_amount):.2f}",
+                            "Quantity": 1,
+                            "UnitAmount": 0,
+                            "AccountCode": XERO_SETTLEMENT_ACCOUNT_CODE,
+                            "TaxType": XERO_SETTLEMENT_TAX_TYPE,
+                        },
+                    ],
+                    "Date": f"{today:%Y-%m-%d}",
+                    "DueDate": f"{today:%Y-%m-%d}",
+                    "Reference": reference,
+                    "InvoiceNumber": cobalt_reference,
+                    "Status": "AUTHORISED",
+                }
+            ]
+        }
+
+        xero_invoice = XeroInvoice(
+            organisation=organisation,
+            xero_invoice_id="",
+            invoice_type="ACCREC",
+            amount=fee,
+            status=XeroInvoice.STATUS_PENDING_UPLOAD,
+            reference=reference,
+            cobalt_reference=cobalt_reference,
+            upload_payload=upload_payload,
+            auto_record_payment=True,
+            date=today,
+            due_date=today,
+        )
+        xero_invoice.save()
+        logger.info(
+            f"Queued fee invoice {cobalt_reference} for {organisation.name} (fee ${fee:.2f})"
         )
         return xero_invoice
 

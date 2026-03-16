@@ -76,6 +76,9 @@ class XeroInvoice(models.Model):
     upload_attempts = models.PositiveSmallIntegerField(default=0)
     # Last error message from a failed upload attempt.
     upload_error = models.TextField(blank=True, default="")
+    # When True, the upload command records a full-amount Xero payment immediately
+    # after a successful upload, closing the invoice to $0 outstanding.
+    auto_record_payment = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

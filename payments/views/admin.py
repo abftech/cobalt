@@ -2151,6 +2151,25 @@ def settlement(request):
                 trans_list.append(trans)
                 total += si["amount_to_settle"]
 
+                # Queue a fee-recovery invoice for the processing fee (if any).
+                if use_xero and xero_invoice:
+                    fee_amount = float(si["amount_to_settle"]) - float(
+                        si["custom_bank_amount"]
+                    )
+                    if fee_amount > 0:
+                        try:
+                            xero.create_fee_invoice(
+                                organisation=org,
+                                gross_amount=si["amount_to_settle"],
+                                net_amount=si["custom_bank_amount"],
+                                reference=reference,
+                                fee_percent=org.settlement_fee_percent,
+                            )
+                        except Exception as exc:
+                            logger.error(
+                                f"Xero fee invoice failed for {org.name}: {exc}"
+                            )
+
             if not trans_list:
                 messages.error(
                     request,

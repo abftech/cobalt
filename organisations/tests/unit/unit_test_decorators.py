@@ -101,11 +101,17 @@ class ClubMenuDecoratorTests:
         self.colin = self.manager.colin
 
         # Create a club with basic RBAC - we change it later
-        self.club = Organisation(name="Unit Test Club", secretary=self.manager.alan)
-        self.club.type = "Club"
-        self.club.state = "NSW"
-        self.club.save()
-        add_club_defaults(self.club)
+        self.club, created = Organisation.objects.update_or_create(
+            org_id="",
+            defaults=dict(
+                name="Unit Test Club",
+                secretary=self.manager.alan,
+                type="Club",
+                state="NSW",
+            ),
+        )
+        if created:
+            add_club_defaults(self.club)
 
     def test_01_basic_rbac_access(self):
         """Tests for basic RBAC access"""

@@ -47,14 +47,15 @@ class UploadXeroSettlementsTests:
 
         XeroCredentials.objects.get_or_create()
 
-        self.org = Organisation(
+        self.org, _ = Organisation.objects.update_or_create(
             org_id="U001",
-            name="Upload Test Club",
-            secretary=self.manager.alan,
-            type="Club",
-            xero_contact_id="mock-contact-uuid",
+            defaults=dict(
+                name="Upload Test Club",
+                secretary=self.manager.alan,
+                type="Club",
+                xero_contact_id="mock-contact-uuid",
+            ),
         )
-        self.org.save()
 
     def _make_invoice(self, upload_attempts=0) -> XeroInvoice:
         """Create and save a fresh PENDING_UPLOAD XeroInvoice for each test."""

@@ -76,29 +76,31 @@ class CreateSettlementInvoiceTests:
         self.contact_id = "mock-contact-uuid" if MOCK_XERO_API else LIVE_XERO_CONTACT_ID
 
         # Organisation with an existing Xero contact
-        self.org = Organisation(
+        self.org, _ = Organisation.objects.update_or_create(
             org_id="S001",
-            name="Settlement Test Club",
-            secretary=self.manager.alan,
-            type="Club",
-            club_email="settle@example.com",
-            address1="1 Settlement St",
-            suburb="Testville",
-            state="NSW",
-            postcode="2000",
-            xero_contact_id=self.contact_id,
+            defaults=dict(
+                name="Settlement Test Club",
+                secretary=self.manager.alan,
+                type="Club",
+                club_email="settle@example.com",
+                address1="1 Settlement St",
+                suburb="Testville",
+                state="NSW",
+                postcode="2000",
+                xero_contact_id=self.contact_id,
+            ),
         )
-        self.org.save()
 
         # Organisation with no Xero contact
-        self.org_no_contact = Organisation(
+        self.org_no_contact, _ = Organisation.objects.update_or_create(
             org_id="S002",
-            name="No Contact Settlement Club",
-            secretary=self.manager.alan,
-            type="Club",
-            xero_contact_id="",
+            defaults=dict(
+                name="No Contact Settlement Club",
+                secretary=self.manager.alan,
+                type="Club",
+                xero_contact_id="",
+            ),
         )
-        self.org_no_contact.save()
 
     # -----------------------------------------------------------------------
     # Basic record creation

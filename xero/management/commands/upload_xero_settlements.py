@@ -274,6 +274,23 @@ def _upload_invoice(xero: XeroApi, invoice: XeroInvoice, summary_lines: list) ->
             f"upload_xero_settlements: {ref} uploaded successfully as {xero_id}"
         )
 
+        # For fee invoices, immediately record a payment to close the invoice (→ PAID).
+        if invoice.auto_record_payment:
+            try:
+                amount_due = float(
+                    xero_invoice_data.get("AmountDue", float(invoice.amount))
+                )
+                xero.create_payment(xero_id, amount_due)
+                summary_lines.append(f"  {ref}: payment recorded → PAID")
+                logger.info(f"upload_xero_settlements: payment recorded for {ref}")
+            except Exception as pay_exc:
+                logger.error(
+                    f"upload_xero_settlements: payment failed for {ref}: {pay_exc}"
+                )
+                summary_lines.append(
+                    f"  {ref}: AUTHORISED but payment failed — {pay_exc}"
+                )
+
     except Exception as exc:
         invoice.upload_attempts += 1
         invoice.upload_error = str(exc)

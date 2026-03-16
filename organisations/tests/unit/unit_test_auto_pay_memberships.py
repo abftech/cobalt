@@ -119,13 +119,18 @@ class AutoPayMembershipsTests:
         self.manager = manager
 
         # Create a club
-        self.club = Organisation(name="Auto Pay Club", org_id="Bob")
-        self.club.secretary = self.manager.alan
-        self.club.type = "Club"
-        self.club.state = "NSW"
-        self.club.full_club_admin = True
-        self.club.save()
-        add_club_defaults(self.club)
+        self.club, created = Organisation.objects.update_or_create(
+            org_id="Bob",
+            defaults=dict(
+                name="Auto Pay Club",
+                secretary=self.manager.alan,
+                type="Club",
+                state="NSW",
+                full_club_admin=True,
+            ),
+        )
+        if created:
+            add_club_defaults(self.club)
 
         # Create membership type
         self.membership_type = MembershipType(organisation=self.club, name="name")
