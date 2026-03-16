@@ -14,7 +14,7 @@
 
                 <div>
                     <div class="small font-weight-bold text-muted mb-0">Level</div>
-                    <div class="btn-group btn-group-sm" role="group">
+                    <div class="btn-group btn-group-sm" role="group" style="flex-wrap: wrap;">
                         {% for lvl in levels %}
                             <button type="button"
                                     class="btn btn-outline-warning dd-level-btn"
@@ -27,7 +27,7 @@
 
                 <div>
                     <div class="small font-weight-bold text-muted mb-0">Trump</div>
-                    <div class="btn-group btn-group-sm" role="group">
+                    <div class="btn-group btn-group-sm" role="group" style="flex-wrap: wrap;">
                         {% for suit, symbol, color in trumps %}
                             <button type="button"
                                     class="btn btn-outline-primary dd-trump-btn"
@@ -44,7 +44,7 @@
 
                 <div>
                     <div class="small font-weight-bold text-muted mb-0">Declarer</div>
-                    <div class="btn-group btn-group-sm" role="group">
+                    <div class="btn-group btn-group-sm" role="group" style="flex-wrap: wrap;">
                         {% for dir in declarer_dirs %}
                             <button type="button"
                                     class="btn btn-outline-info dd-dir-btn"

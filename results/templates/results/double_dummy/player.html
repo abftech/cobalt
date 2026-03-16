@@ -4,6 +4,15 @@
 {#------------------------------------------------------------------------#}
 {% load cobalt_tags %}
 
+<style>
+    @media (max-width: 575px) {
+        .dd-hand { font-size: medium !important; }
+        .dd-card-rank { min-width: 18px !important; padding: 0 1px !important; font-size: 0.9em !important; }
+        .dd-card-outcome { font-size: 0.5em !important; }
+        .dd-trick-center { width: 80px !important; height: 70px !important; }
+    }
+</style>
+
 {% with trump=state.trump declarer=state.declarer ntp=state.next_to_play %}
 
     <div class="card mt-5">
@@ -44,91 +53,93 @@
             {% endif %}
 
         {# ── Compass table ──────────────────────────────────────────────── #}
-            <table class="mx-auto" style="border-collapse: separate; border-spacing: 4px;">
-                <tr>
-                    <td></td>
-                    <td class="align-bottom">
-                        {% include "results/double_dummy/_hand.html" with direction="N" hand_suits=rendered_hands.N %}
-                    </td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td class="align-middle">
-                        {% include "results/double_dummy/_hand.html" with direction="W" hand_suits=rendered_hands.W %}
-                    </td>
+            <div style="overflow-x: auto;">
+                <table class="mx-auto" style="border-collapse: separate; border-spacing: 4px;">
+                    <tr>
+                        <td></td>
+                        <td class="align-bottom">
+                            {% include "results/double_dummy/_hand.html" with direction="N" hand_suits=rendered_hands.N %}
+                        </td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="align-middle">
+                            {% include "results/double_dummy/_hand.html" with direction="W" hand_suits=rendered_hands.W %}
+                        </td>
 
                 {# ── Trick area (centre cell) ─────────────────────────── #}
-                    <td class="align-middle text-center"
-                        style="width: 110px; height: 90px; position: relative; vertical-align: middle;">
-                        <div style="position: relative; width: 110px; height: 90px; margin: auto;">
+                        <td class="align-middle text-center dd-trick-center"
+                            style="width: 110px; height: 90px; position: relative; vertical-align: middle;">
+                            <div style="position: relative; width: 110px; height: 90px; margin: auto;">
 
                         {# North slot #}
-                            <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%);">
-                                {% if trick_by_dir.N %}{% with c=trick_by_dir.N %}
-                                    <div style="background:white; border:1.5px solid #ccc; border-radius:4px;
-                                                box-shadow:1px 2px 3px rgba(0,0,0,0.2); padding:1px 5px;
-                                                min-width:26px; text-align:center; display:inline-block;
-                                                color:{% if c.suit == 'H' or c.suit == 'D' %}red{% else %}#111{% endif %};">
-                                        <div style="font-weight:bold; font-size:0.85em; line-height:1.2;">{{ c.rank }}</div>
-                                        <div style="font-size:1.5em; line-height:1.1;">{% if c.suit == "S" %}&spadesuit;{% elif c.suit == "H" %}&heartsuit;{% elif c.suit == "D" %}&diamondsuit;{% else %}&clubsuit;{% endif %}</div>
-                                    </div>
-                                {% endwith %}{% endif %}
-                            </div>
+                                <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%);">
+                                    {% if trick_by_dir.N %}{% with c=trick_by_dir.N %}
+                                        <div style="background:white; border:1.5px solid #ccc; border-radius:4px;
+                                                    box-shadow:1px 2px 3px rgba(0,0,0,0.2); padding:1px 5px;
+                                                    min-width:26px; text-align:center; display:inline-block;
+                                                    color:{% if c.suit == 'H' or c.suit == 'D' %}red{% else %}#111{% endif %};">
+                                            <div style="font-weight:bold; font-size:0.85em; line-height:1.2;">{{ c.rank }}</div>
+                                            <div style="font-size:1.5em; line-height:1.1;">{% if c.suit == "S" %}&spadesuit;{% elif c.suit == "H" %}&heartsuit;{% elif c.suit == "D" %}&diamondsuit;{% else %}&clubsuit;{% endif %}</div>
+                                        </div>
+                                    {% endwith %}{% endif %}
+                                </div>
 
                         {# West slot #}
-                            <div style="position: absolute; top: 50%; left: 0; transform: translateY(-50%);">
-                                {% if trick_by_dir.W %}{% with c=trick_by_dir.W %}
-                                    <div style="background:white; border:1.5px solid #ccc; border-radius:4px;
-                                                box-shadow:1px 2px 3px rgba(0,0,0,0.2); padding:1px 5px;
-                                                min-width:26px; text-align:center; display:inline-block;
-                                                color:{% if c.suit == 'H' or c.suit == 'D' %}red{% else %}#111{% endif %};">
-                                        <div style="font-weight:bold; font-size:0.85em; line-height:1.2;">{{ c.rank }}</div>
-                                        <div style="font-size:1.5em; line-height:1.1;">{% if c.suit == "S" %}&spadesuit;{% elif c.suit == "H" %}&heartsuit;{% elif c.suit == "D" %}&diamondsuit;{% else %}&clubsuit;{% endif %}</div>
-                                    </div>
-                                {% endwith %}{% endif %}
-                            </div>
+                                <div style="position: absolute; top: 50%; left: 0; transform: translateY(-50%);">
+                                    {% if trick_by_dir.W %}{% with c=trick_by_dir.W %}
+                                        <div style="background:white; border:1.5px solid #ccc; border-radius:4px;
+                                                    box-shadow:1px 2px 3px rgba(0,0,0,0.2); padding:1px 5px;
+                                                    min-width:26px; text-align:center; display:inline-block;
+                                                    color:{% if c.suit == 'H' or c.suit == 'D' %}red{% else %}#111{% endif %};">
+                                            <div style="font-weight:bold; font-size:0.85em; line-height:1.2;">{{ c.rank }}</div>
+                                            <div style="font-size:1.5em; line-height:1.1;">{% if c.suit == "S" %}&spadesuit;{% elif c.suit == "H" %}&heartsuit;{% elif c.suit == "D" %}&diamondsuit;{% else %}&clubsuit;{% endif %}</div>
+                                        </div>
+                                    {% endwith %}{% endif %}
+                                </div>
 
                         {# East slot #}
-                            <div style="position: absolute; top: 50%; right: 0; transform: translateY(-50%);">
-                                {% if trick_by_dir.E %}{% with c=trick_by_dir.E %}
-                                    <div style="background:white; border:1.5px solid #ccc; border-radius:4px;
-                                                box-shadow:1px 2px 3px rgba(0,0,0,0.2); padding:1px 5px;
-                                                min-width:26px; text-align:center; display:inline-block;
-                                                color:{% if c.suit == 'H' or c.suit == 'D' %}red{% else %}#111{% endif %};">
-                                        <div style="font-weight:bold; font-size:0.85em; line-height:1.2;">{{ c.rank }}</div>
-                                        <div style="font-size:1.5em; line-height:1.1;">{% if c.suit == "S" %}&spadesuit;{% elif c.suit == "H" %}&heartsuit;{% elif c.suit == "D" %}&diamondsuit;{% else %}&clubsuit;{% endif %}</div>
-                                    </div>
-                                {% endwith %}{% endif %}
-                            </div>
+                                <div style="position: absolute; top: 50%; right: 0; transform: translateY(-50%);">
+                                    {% if trick_by_dir.E %}{% with c=trick_by_dir.E %}
+                                        <div style="background:white; border:1.5px solid #ccc; border-radius:4px;
+                                                    box-shadow:1px 2px 3px rgba(0,0,0,0.2); padding:1px 5px;
+                                                    min-width:26px; text-align:center; display:inline-block;
+                                                    color:{% if c.suit == 'H' or c.suit == 'D' %}red{% else %}#111{% endif %};">
+                                            <div style="font-weight:bold; font-size:0.85em; line-height:1.2;">{{ c.rank }}</div>
+                                            <div style="font-size:1.5em; line-height:1.1;">{% if c.suit == "S" %}&spadesuit;{% elif c.suit == "H" %}&heartsuit;{% elif c.suit == "D" %}&diamondsuit;{% else %}&clubsuit;{% endif %}</div>
+                                        </div>
+                                    {% endwith %}{% endif %}
+                                </div>
 
                         {# South slot #}
-                            <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);">
-                                {% if trick_by_dir.S %}{% with c=trick_by_dir.S %}
-                                    <div style="background:white; border:1.5px solid #ccc; border-radius:4px;
-                                                box-shadow:1px 2px 3px rgba(0,0,0,0.2); padding:1px 5px;
-                                                min-width:26px; text-align:center; display:inline-block;
-                                                color:{% if c.suit == 'H' or c.suit == 'D' %}red{% else %}#111{% endif %};">
-                                        <div style="font-weight:bold; font-size:0.85em; line-height:1.2;">{{ c.rank }}</div>
-                                        <div style="font-size:1.5em; line-height:1.1;">{% if c.suit == "S" %}&spadesuit;{% elif c.suit == "H" %}&heartsuit;{% elif c.suit == "D" %}&diamondsuit;{% else %}&clubsuit;{% endif %}</div>
-                                    </div>
-                                {% endwith %}{% endif %}
+                                <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);">
+                                    {% if trick_by_dir.S %}{% with c=trick_by_dir.S %}
+                                        <div style="background:white; border:1.5px solid #ccc; border-radius:4px;
+                                                    box-shadow:1px 2px 3px rgba(0,0,0,0.2); padding:1px 5px;
+                                                    min-width:26px; text-align:center; display:inline-block;
+                                                    color:{% if c.suit == 'H' or c.suit == 'D' %}red{% else %}#111{% endif %};">
+                                            <div style="font-weight:bold; font-size:0.85em; line-height:1.2;">{{ c.rank }}</div>
+                                            <div style="font-size:1.5em; line-height:1.1;">{% if c.suit == "S" %}&spadesuit;{% elif c.suit == "H" %}&heartsuit;{% elif c.suit == "D" %}&diamondsuit;{% else %}&clubsuit;{% endif %}</div>
+                                        </div>
+                                    {% endwith %}{% endif %}
+                                </div>
+
                             </div>
+                        </td>
 
-                        </div>
-                    </td>
-
-                    <td class="align-middle">
-                        {% include "results/double_dummy/_hand.html" with direction="E" hand_suits=rendered_hands.E %}
-                    </td>
-                </tr>
-                <tr>
-                    <td></td>
-                    <td class="align-top">
-                        {% include "results/double_dummy/_hand.html" with direction="S" hand_suits=rendered_hands.S %}
-                    </td>
-                    <td></td>
-                </tr>
-            </table>
+                        <td class="align-middle">
+                            {% include "results/double_dummy/_hand.html" with direction="E" hand_suits=rendered_hands.E %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td class="align-top">
+                            {% include "results/double_dummy/_hand.html" with direction="S" hand_suits=rendered_hands.S %}
+                        </td>
+                        <td></td>
+                    </tr>
+                </table>
+            </div>
 
             {# ── Trick sequence visualiser (bottom-left of card body) ── #}
             {% if tricks_display %}
