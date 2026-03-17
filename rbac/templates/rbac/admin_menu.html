@@ -389,17 +389,14 @@
                                                     </td>
                                                 </tr>
 
-                                                {% if request.user.id == 4 %}
-
-                                                    <tr>
-                                                        <td>
-                                                            <a class="btn btn-sm btn-info btn-block" href="{% url "xero:xero_home" %}">Xero</a>
-                                                        </td>
-                                                        <td class="text-left pl-5">
-                                                            Xero functions
-                                                        </td>
-                                                    </tr>
-                                                {% endif %}
+                                                <tr>
+                                                    <td>
+                                                        <a class="btn btn-sm btn-info btn-block" href="{% url "xero:xero_home" %}">Xero</a>
+                                                    </td>
+                                                    <td class="text-left pl-5">
+                                                        Xero functions
+                                                    </td>
+                                                </tr>
 
                                             {% endif %}
                                         </tbody>
