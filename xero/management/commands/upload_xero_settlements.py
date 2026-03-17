@@ -30,7 +30,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info("upload_xero_settlements starting")
 
-        batch = BatchStatus.objects.create(command="upload_xero_settlements")
+        batch = None
         summary_lines = []
 
         try:
@@ -38,6 +38,23 @@ class Command(BaseCommand):
             if not lock.get_lock():
                 logger.info("upload_xero_settlements already running (locked), exiting")
                 sys.exit(0)
+
+            # Check upfront whether there is any work to do. Skip creating a
+            # BatchStatus log entry entirely when there is nothing to process.
+            uploading_count = XeroInvoice.objects.filter(
+                status=XeroInvoice.STATUS_UPLOADING
+            ).count()
+            pending_count = XeroInvoice.objects.filter(
+                status=XeroInvoice.STATUS_PENDING_UPLOAD
+            ).count()
+
+            if uploading_count == 0 and pending_count == 0:
+                lock.free_lock()
+                lock.delete_lock()
+                logger.info("upload_xero_settlements: nothing to do")
+                return
+
+            batch = BatchStatus.objects.create(command="upload_xero_settlements")
 
             xero = XeroApi()
             processed = 0
@@ -50,7 +67,6 @@ class Command(BaseCommand):
             uploading_records = XeroInvoice.objects.filter(
                 status=XeroInvoice.STATUS_UPLOADING
             )
-            uploading_count = uploading_records.count()
             if uploading_count:
                 summary_lines.append(
                     f"Reconciling {uploading_count} UPLOADING record(s) from previous run..."
@@ -124,7 +140,6 @@ class Command(BaseCommand):
             pending = XeroInvoice.objects.filter(
                 status=XeroInvoice.STATUS_PENDING_UPLOAD
             ).order_by("created_at")
-            pending_count = pending.count()
             summary_lines.append(
                 f"Found {pending_count} PENDING_UPLOAD invoice(s) to process."
             )
@@ -176,10 +191,11 @@ class Command(BaseCommand):
             logger.exception(
                 "upload_xero_settlements failed with an unhandled exception"
             )
-            batch.status = BatchStatus.STATUS_FAILED
-            summary_lines.append(f"\nERROR: {e}")
-            batch.summary = "\n".join(summary_lines)
-            batch.save()
+            if batch:
+                batch.status = BatchStatus.STATUS_FAILED
+                summary_lines.append(f"\nERROR: {e}")
+                batch.summary = "\n".join(summary_lines)
+                batch.save()
             raise
 
         batch.status = BatchStatus.STATUS_SUCCESS

@@ -561,3 +561,13 @@ Summary of Environment Variables
      - Yes (if webhooks are configured)
      - Signing key from the Xero developer portal Webhooks tab. Required to
        verify the HMAC-SHA256 signature on incoming webhook requests.
+
+Resetting the Demo Company
+--------------------------
+
+The demo company will reset back to the defaults after about 28 days.
+If you want to reset it now, you can login and visit: https://my.xero.com/!xkcD/Dashboard
+At the bottom in very small print is the link to reset it.
+
+Resetting the Demo Company breaks the Custom Connection so this needs to be deleted and rebuilt.
+
