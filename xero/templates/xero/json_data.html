@@ -9,7 +9,7 @@
         {% endif %}
 
         <script id="xero-json-data" type="application/json">{{ json_data_str }}</script>
-        {% include "utils/json_tree.html" with data_script_id="xero-json-data" container_id="xero-json-tree" %}
+        {% include "utils/json_tree.html" with data_script_id="xero-json-data" container_id="xero-json-tree" show_level=2 %}
 
     </div>
 </div>

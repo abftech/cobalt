@@ -571,3 +571,13 @@ At the bottom in very small print is the link to reset it.
 
 Resetting the Demo Company breaks the Custom Connection so this needs to be deleted and rebuilt.
 
+After rebuilding it, you will probably want to create the clubs in Xero. To do this, ssh to
+the test server and run::
+
+    ./manage.py shell_plus
+
+    >>> Organisation.objects.update(xero_contact_id="")
+
+Exit shell_plus and run::
+
+    ./manage.py create_missing_xero_contacts
