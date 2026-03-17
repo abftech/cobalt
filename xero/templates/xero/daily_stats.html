@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %} - Xero Daily Stats{% endblock %}
+
+{% block content %}
+
+    <span id="ignore_cobalt_save" hidden></span>
+
+    <nav aria-label="breadcrumb" role="navigation">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url "rbac:admin_menu" %}">IT Admin</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Xero Daily Stats</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header card-header-warning card-header-icon">
+            <div class="card-icon">
+                <i class="material-icons">timeline</i>
+            </div>
+            <h4 class="card-title">Xero API Calls</h4>
+        </div>
+        <div class="card-body">
+
+            {# ── Date range picker ──────────────────────────────────────── #}
+            <form method="get" class="form-inline mb-4" id="stats-form">
+                <input type="hidden" name="preset" id="preset_hidden" value="{{ preset }}">
+                <label class="mr-2 font-weight-bold" for="preset_select">Period</label>
+                <select id="preset_select" class="form-control form-control-sm mr-3"
+                        onchange="applyPreset(this.value)">
+                    <option value=""  {% if not preset %}selected{% endif %}>Custom</option>
+                    <option value="30d" {% if preset == "30d" %}selected{% endif %}>Last 30 days</option>
+                    <option value="3m"  {% if preset == "3m"  %}selected{% endif %}>Last 3 months</option>
+                    <option value="6m"  {% if preset == "6m"  %}selected{% endif %}>Last 6 months</option>
+                    <option value="all" {% if preset == "all" %}selected{% endif %}>All data</option>
+                </select>
+                <label class="mr-2 font-weight-bold" for="start_date">From</label>
+                <input type="date" id="start_date" name="start_date"
+                       class="form-control form-control-sm mr-3"
+                       value="{{ start_date }}"
+                       oninput="clearPreset()">
+                <label class="mr-2 font-weight-bold" for="end_date">To</label>
+                <input type="date" id="end_date" name="end_date"
+                       class="form-control form-control-sm mr-3"
+                       value="{{ end_date }}"
+                       oninput="clearPreset()">
+                <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+            </form>
+
+            {# ── Summary badges ─────────────────────────────────────────── #}
+            <div class="row mb-4">
+                <div class="col-auto">
+                    <div class="card card-stats">
+                        <div class="card-header card-header-info card-header-icon">
+                            <div class="card-icon"><i class="material-icons">swap_horiz</i></div>
+                            <p class="card-category">Total Calls</p>
+                            <h3 class="card-title">{{ total_calls }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="card card-stats">
+                        <div class="card-header card-header-success card-header-icon">
+                            <div class="card-icon"><i class="material-icons">check_circle</i></div>
+                            <p class="card-category">Successful</p>
+                            <h3 class="card-title">{{ total_success }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="card card-stats">
+                        <div class="card-header card-header-danger card-header-icon">
+                            <div class="card-icon"><i class="material-icons">error</i></div>
+                            <p class="card-category">Failed</p>
+                            <h3 class="card-title">{{ total_failure }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="card card-stats">
+                        <div class="card-header card-header-warning card-header-icon">
+                            <div class="card-icon"><i class="material-icons">show_chart</i></div>
+                            <p class="card-category">Daily Average</p>
+                            <h3 class="card-title">{{ daily_avg }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# ── Chart ──────────────────────────────────────────────────── #}
+            <div style="position: relative; height: 320px;">
+                <canvas id="xeroStatsChart"></canvas>
+            </div>
+
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block footer %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script>
+        function applyPreset(value) {
+            document.getElementById('preset_hidden').value = value;
+            // Clear explicit date params so the view uses the preset
+            document.getElementById('start_date').removeAttribute('name');
+            document.getElementById('end_date').removeAttribute('name');
+            document.getElementById('stats-form').submit();
+        }
+
+        function clearPreset() {
+            document.getElementById('preset_hidden').value = '';
+            document.getElementById('preset_select').value = '';
+        }
+    </script>
+    <script>
+        (function () {
+            var DAILY_LIMIT = 1000;
+            var labels      = {{ chart_labels }};
+            var successData = {{ chart_success }};
+            var failureData = {{ chart_failure }};
+
+            new Chart(document.getElementById('xeroStatsChart'), {
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: 'Success',
+                            data: successData,
+                            backgroundColor: 'rgba(0, 188, 212, 0.85)',
+                            stack: 'calls',
+                            order: 2,
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Failures',
+                            data: failureData,
+                            backgroundColor: 'rgba(244, 67, 54, 0.85)',
+                            stack: 'calls',
+                            order: 2,
+                        },
+                        {
+                            type: 'line',
+                            label: 'Daily Limit (1,000)',
+                            data: labels.map(function () { return DAILY_LIMIT; }),
+                            borderColor: '#ff9800',
+                            borderDash: [8, 4],
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            fill: false,
+                            order: 1,
+                        },
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index' },
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                footer: function (items) {
+                                    var total = items
+                                        .filter(function (i) { return i.dataset.type === 'bar'; })
+                                        .reduce(function (s, i) { return s + i.parsed.y; }, 0);
+                                    return 'Total: ' + total;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: { display: false },
+                            ticks: {
+                                maxRotation: 45,
+                                autoSkip: true,
+                                maxTicksLimit: 10,
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            suggestedMax: DAILY_LIMIT * 1.05,
+                            grid: { color: 'rgba(0,0,0,0.06)' },
+                            ticks: { precision: 0 },
+                        }
+                    }
+                }
+            });
+        }());
+    </script>
+{% endblock footer %}

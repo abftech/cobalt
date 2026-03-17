@@ -24,4 +24,5 @@ urlpatterns = [
     ),
     path("webhook", views.xero_webhook, name="xero_webhook"),
     path("logs/", views.xero_log_view, name="xero_log_view"),
+    path("daily-stats/", views.xero_daily_stats, name="xero_daily_stats"),
 ]

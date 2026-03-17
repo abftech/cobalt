@@ -3,9 +3,12 @@ import hashlib
 import hmac as hmac_lib
 import json as json_lib
 import logging
+from collections import defaultdict
+from datetime import date, timedelta
 
 from django.contrib.auth.decorators import user_passes_test
-from django.db.models import Q
+from django.db.models import Count, Q
+from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils.safestring import mark_safe
@@ -585,5 +588,88 @@ def xero_log_view(request):
             "things": things,
             "current_status": status_filter,
             "searchparams": searchparams,
+        },
+    )
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def xero_daily_stats(request):
+    """Show daily Xero API call counts as a Chart.js bar chart."""
+
+    import json as _json
+
+    today = date.today()
+    preset = request.GET.get("preset", "")
+
+    if preset == "30d":
+        start_date = today - timedelta(days=29)
+        end_date = today
+    elif preset == "3m":
+        start_date = today - timedelta(days=89)
+        end_date = today
+    elif preset == "6m":
+        start_date = today - timedelta(days=179)
+        end_date = today
+    elif preset == "all":
+        earliest = (
+            XeroLog.objects.order_by("created_at")
+            .values_list("created_at__date", flat=True)
+            .first()
+        )
+        start_date = earliest if earliest else (today - timedelta(days=30))
+        end_date = today
+    else:
+        default_start = today - timedelta(days=29)
+        try:
+            start_date = date.fromisoformat(request.GET.get("start_date", ""))
+        except ValueError:
+            start_date = default_start
+        try:
+            end_date = date.fromisoformat(request.GET.get("end_date", ""))
+        except ValueError:
+            end_date = today
+
+    rows = (
+        XeroLog.objects.filter(
+            created_at__date__gte=start_date, created_at__date__lte=end_date
+        )
+        .annotate(day=TruncDate("created_at"))
+        .values("day", "status")
+        .annotate(count=Count("id"))
+        .order_by("day")
+    )
+
+    day_map = defaultdict(lambda: {"success": 0, "failure": 0})
+    for row in rows:
+        key = "success" if row["status"] == XeroLog.STATUS_SUCCESS else "failure"
+        day_map[row["day"]][key] += row["count"]
+
+    labels, success_series, failure_series = [], [], []
+    cursor = start_date
+    while cursor <= end_date:
+        labels.append(cursor.strftime("%-d %b"))
+        d = day_map.get(cursor, {})
+        success_series.append(d.get("success", 0))
+        failure_series.append(d.get("failure", 0))
+        cursor += timedelta(days=1)
+
+    total_calls = sum(success_series) + sum(failure_series)
+    n_days = (end_date - start_date).days + 1
+    daily_avg = round(total_calls / n_days, 1) if n_days > 0 else 0
+
+    return render(
+        request,
+        "xero/daily_stats.html",
+        {
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat(),
+            "preset": preset,
+            "chart_labels": mark_safe(_json.dumps(labels)),
+            "chart_success": mark_safe(_json.dumps(success_series)),
+            "chart_failure": mark_safe(_json.dumps(failure_series)),
+            "total_calls": total_calls,
+            "total_success": sum(success_series),
+            "total_failure": sum(failure_series),
+            "daily_avg": daily_avg,
         },
     )
