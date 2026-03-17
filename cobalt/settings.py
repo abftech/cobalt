@@ -174,6 +174,15 @@ XERO_SETTLEMENT_TAX_TYPE = set_value("XERO_SETTLEMENT_TAX_TYPE", "NOTAX")
 #   ACCREC fee invoice. Typically "OUTPUT" (GST on Income, 10%) for Australian entities.
 #   Check Xero Settings > Tax Rates for valid codes.
 XERO_FEE_TAX_TYPE = set_value("XERO_FEE_TAX_TYPE", "OUTPUT")
+#   XERO_ALERT_EMAILS. Comma-separated list of email addresses to notify when a
+#   Xero API call fails completely (after retries). Leave unset or empty to
+#   disable alerts. Example: "admin@example.com,finance@example.com"
+_xero_alert_emails_raw = set_value("XERO_ALERT_EMAILS", "")
+XERO_ALERT_EMAILS = (
+    [e.strip() for e in _xero_alert_emails_raw.split(",") if e.strip()]
+    if _xero_alert_emails_raw
+    else []
+)
 
 DATABASES = {
     "default": {

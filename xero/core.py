@@ -12,6 +12,7 @@ from django.utils.timezone import now
 
 from cobalt.settings import (
     GLOBAL_CURRENCY_SYMBOL,
+    XERO_ALERT_EMAILS,
     XERO_CLIENT_ID,
     XERO_CLIENT_SECRET,
     XERO_BANK_ACCOUNT_CODE,
@@ -22,6 +23,40 @@ from cobalt.settings import (
 from xero.models import XeroCredentials, XeroInvoice, XeroLog
 
 logger = logging.getLogger("etime")
+
+
+def _send_xero_failure_alert(
+    method: str, url: str, status_code: int, error_msg: str
+) -> None:
+    """Send an email alert to XERO_ALERT_EMAILS when a Xero API call fails.
+
+    No-op if XERO_ALERT_EMAILS is empty. Import is deferred to avoid circular
+    imports between xero and notifications apps.
+    """
+    if not XERO_ALERT_EMAILS:
+        return
+    try:
+        from notifications.views.core import send_cobalt_email_preformatted
+
+        subject = f"Xero API failure — {method} returned HTTP {status_code}"
+        msg = (
+            f"<p>A Xero API call failed after all retries.</p>"
+            f"<table>"
+            f"<tr><th align='left'>Method</th><td>{method}</td></tr>"
+            f"<tr><th align='left'>URL</th><td>{url}</td></tr>"
+            f"<tr><th align='left'>HTTP status</th><td>{status_code}</td></tr>"
+            f"<tr><th align='left'>Error</th><td>{error_msg}</td></tr>"
+            f"</table>"
+            f"<p>Check the <a href='/xero/logs'>Xero Logs</a> for more detail.</p>"
+        )
+        send_cobalt_email_preformatted(
+            to_address=XERO_ALERT_EMAILS,
+            subject=subject,
+            msg=msg,
+            priority="now",
+        )
+    except Exception:
+        logger.exception("Failed to send Xero failure alert email")
 
 
 def _raise_xero_validation_error(response: dict, fallback: str) -> None:
@@ -304,6 +339,10 @@ class XeroApi:
             http_status_code=response.status_code,
             status=XeroLog.STATUS_SUCCESS if response.ok else XeroLog.STATUS_FAILURE,
         )
+        if not response.ok:
+            _send_xero_failure_alert(
+                "GET", url, response.status_code, result.get("error", "")
+            )
         return result
 
     def xero_api_post(self, url, json_data):
@@ -325,6 +364,10 @@ class XeroApi:
             http_status_code=response.status_code,
             status=XeroLog.STATUS_SUCCESS if response.ok else XeroLog.STATUS_FAILURE,
         )
+        if not response.ok:
+            _send_xero_failure_alert(
+                "POST", url, response.status_code, result.get("error", "")
+            )
         return result
 
     def xero_api_put(self, url, json_data):
@@ -346,6 +389,10 @@ class XeroApi:
             http_status_code=response.status_code,
             status=XeroLog.STATUS_SUCCESS if response.ok else XeroLog.STATUS_FAILURE,
         )
+        if not response.ok:
+            _send_xero_failure_alert(
+                "PUT", url, response.status_code, result.get("error", "")
+            )
         return result
 
     # -----------------------------------------------------------------------
