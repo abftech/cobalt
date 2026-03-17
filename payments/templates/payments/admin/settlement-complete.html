@@ -28,7 +28,7 @@
                      {% if use_xero and has_pending %}
                          hx-post="{% url 'payments:settlement_xero_status_htmx' %}"
                          hx-trigger="every 5s"
-                         hx-vals='{"trans_ids": "{{ trans_ids_csv }}"}'
+                         hx-vals='{"trans_ids": "{{ trans_ids_csv }}", "fee_invoice_ids": "{{ fee_invoice_ids_csv }}"}'
                          hx-swap="outerHTML"
                      {% endif %}>
 
@@ -60,28 +60,61 @@
                                         <th>Account Number</th>
                                         <th>Amount({{ GLOBAL_CURRENCY_SYMBOL }})</th>
                                         <th>Date</th>
-                                        <th>Xero Invoice</th>
+                                        <th>Settlement Invoice</th>
+                                        <th>Fee Invoice</th>
+                                        <th>Payment</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for tran in trans %}
+                                    {% for row in rows %}
                                         <tr>
-                                            <td>{{ tran.organisation }}</td>
-                                            <td>{{ tran.organisation.bank_bsb }}</td>
-                                            <td>{{ tran.organisation.bank_account }}</td>
-                                            <td>{{ tran.amount|floatformat:2|intcomma }}</td>
-                                            <td>{{ tran.created_date }}</td>
+                                            <td>{{ row.trans.organisation }}</td>
+                                            <td>{{ row.trans.organisation.bank_bsb }}</td>
+                                            <td>{{ row.trans.organisation.bank_account }}</td>
+                                            <td>{{ row.trans.amount|floatformat:2|intcomma }}</td>
+                                            <td>{{ row.trans.created_date }}</td>
                                             <td>
-                                                {% if tran.xero_invoice %}
-                                                    {% if tran.xero_invoice.status == 'PENDING_UPLOAD' %}
+                                                {% if row.trans.xero_invoice %}
+                                                    {% if row.trans.xero_invoice.status == 'PENDING_UPLOAD' %}
                                                         <span class="badge badge-warning">Queued</span>
-                                                    {% elif tran.xero_invoice.status == 'UPLOADING' %}
+                                                    {% elif row.trans.xero_invoice.status == 'UPLOADING' %}
                                                         <span class="badge badge-info">Processing</span>
-                                                    {% elif tran.xero_invoice.status == 'UPLOAD_FAILED' %}
+                                                    {% elif row.trans.xero_invoice.status == 'UPLOAD_FAILED' %}
                                                         <span class="badge badge-danger"
-                                                              title="{{ tran.xero_invoice.upload_error }}">Failed</span>
+                                                              title="{{ row.trans.xero_invoice.upload_error }}">Failed</span>
                                                     {% else %}
-                                                        <span class="badge badge-success">{{ tran.xero_invoice.invoice_number }}</span>
+                                                        <span class="badge badge-success">{{ row.trans.xero_invoice.invoice_number }}</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted">—</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if row.fee_invoice %}
+                                                    {% if row.fee_invoice.status == 'PENDING_UPLOAD' %}
+                                                        <span class="badge badge-warning">Queued</span>
+                                                    {% elif row.fee_invoice.status == 'UPLOADING' %}
+                                                        <span class="badge badge-info">Processing</span>
+                                                    {% elif row.fee_invoice.status == 'UPLOAD_FAILED' %}
+                                                        <span class="badge badge-danger"
+                                                              title="{{ row.fee_invoice.upload_error }}">Failed</span>
+                                                    {% else %}
+                                                        <span class="badge badge-success">{{ row.fee_invoice.invoice_number }}</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted">—</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if row.fee_invoice %}
+                                                    {% if row.fee_invoice.status == 'PAID' %}
+                                                        <span class="badge badge-success">Paid</span>
+                                                    {% elif row.fee_invoice.status == 'AUTHORISED' %}
+                                                        <span class="badge badge-warning">Pending</span>
+                                                    {% elif row.fee_invoice.status == 'UPLOAD_FAILED' %}
+                                                        <span class="badge badge-danger">Failed</span>
+                                                    {% else %}
+                                                        <span class="text-muted">Queued</span>
                                                     {% endif %}
                                                 {% else %}
                                                     <span class="text-muted">—</span>

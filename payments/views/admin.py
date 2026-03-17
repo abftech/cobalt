@@ -2094,7 +2094,9 @@ def settlement(request):
                 )
 
             # --- Pass 2: process one org at a time ---
-            trans_list = []
+            rows = (
+                []
+            )  # [{"trans": OrganisationTransaction, "fee_invoice": XeroInvoice|None}]
             skipped = []  # {"name": str, "reason": str}
             total = 0.0
             use_xero = form.cleaned_data["use_xero"] and xero_available
@@ -2148,17 +2150,17 @@ def settlement(request):
                 if xero_invoice and not trans.xero_invoice_id:
                     trans.xero_invoice = xero_invoice
                     trans.save(update_fields=["xero_invoice"])
-                trans_list.append(trans)
                 total += si["amount_to_settle"]
 
                 # Queue a fee-recovery invoice for the processing fee (if any).
+                fee_invoice = None
                 if use_xero and xero_invoice:
                     fee_amount = float(si["amount_to_settle"]) - float(
                         si["custom_bank_amount"]
                     )
                     if fee_amount > 0:
                         try:
-                            xero.create_fee_invoice(
+                            fee_invoice = xero.create_fee_invoice(
                                 organisation=org,
                                 gross_amount=si["amount_to_settle"],
                                 net_amount=si["custom_bank_amount"],
@@ -2170,6 +2172,9 @@ def settlement(request):
                                 f"Xero fee invoice failed for {org.name}: {exc}"
                             )
 
+                rows.append({"trans": trans, "fee_invoice": fee_invoice})
+
+            trans_list = [r["trans"] for r in rows]
             if not trans_list:
                 messages.error(
                     request,
@@ -2188,23 +2193,36 @@ def settlement(request):
                     "Settlement processed successfully.",
                     extra_tags="cobalt-message-success",
                 )
-            trans_ids_csv = ",".join(str(t.pk) for t in trans_list)
-            has_pending = any(
-                t.xero_invoice
-                and t.xero_invoice.status
-                in [XeroInvoice.STATUS_PENDING_UPLOAD, XeroInvoice.STATUS_UPLOADING]
-                for t in trans_list
+            pending_statuses = {
+                XeroInvoice.STATUS_PENDING_UPLOAD,
+                XeroInvoice.STATUS_UPLOADING,
+            }
+            trans_ids_csv = ",".join(str(r["trans"].pk) for r in rows)
+            fee_invoice_ids_csv = ",".join(
+                str(r["fee_invoice"].pk) if r["fee_invoice"] else "" for r in rows
             )
-            total_with_xero = sum(1 for t in trans_list if t.xero_invoice)
+            has_pending = any(
+                (
+                    r["trans"].xero_invoice
+                    and r["trans"].xero_invoice.status in pending_statuses
+                )
+                or (r["fee_invoice"] and r["fee_invoice"].status in pending_statuses)
+                for r in rows
+            )
+            total_with_xero = sum(
+                (1 if r["trans"].xero_invoice else 0) + (1 if r["fee_invoice"] else 0)
+                for r in rows
+            )
             return render(
                 request,
                 "payments/admin/settlement-complete.html",
                 {
-                    "trans": trans_list,
+                    "rows": rows,
                     "skipped": skipped,
                     "total": total,
                     "use_xero": use_xero,
                     "trans_ids_csv": trans_ids_csv,
+                    "fee_invoice_ids_csv": fee_invoice_ids_csv,
                     "has_pending": has_pending,
                     "total_with_xero": total_with_xero,
                 },
@@ -2238,40 +2256,90 @@ def settlement_xero_status_htmx(request):
     ids_csv = request.POST.get("trans_ids", "")
     trans_ids = [int(i) for i in ids_csv.split(",") if i.strip().isdigit()]
 
+    fee_ids_csv = request.POST.get("fee_invoice_ids", "")
+    # Parallel to trans_ids; empty string means no fee invoice for that row.
+    fee_id_raw = fee_ids_csv.split(",") if fee_ids_csv else [""] * len(trans_ids)
+    fee_ids = [int(v) if v.strip().isdigit() else None for v in fee_id_raw]
+
     trans_qs = OrganisationTransaction.objects.filter(pk__in=trans_ids).select_related(
         "organisation", "xero_invoice"
     )
     trans_map = {t.pk: t for t in trans_qs}
-    ordered = [trans_map[pk] for pk in trans_ids if pk in trans_map]
+
+    fee_pk_set = {fid for fid in fee_ids if fid is not None}
+    fee_inv_map = {fi.pk: fi for fi in XeroInvoice.objects.filter(pk__in=fee_pk_set)}
+
+    rows = []
+    for trans_pk, fee_pk in zip(trans_ids, fee_ids):
+        trans = trans_map.get(trans_pk)
+        if trans is None:
+            continue
+        rows.append(
+            {
+                "trans": trans,
+                "fee_invoice": fee_inv_map.get(fee_pk) if fee_pk else None,
+            }
+        )
 
     pending_statuses = {XeroInvoice.STATUS_PENDING_UPLOAD, XeroInvoice.STATUS_UPLOADING}
     all_resolved = all(
-        not t.xero_invoice or t.xero_invoice.status not in pending_statuses
-        for t in ordered
+        (
+            not r["trans"].xero_invoice
+            or r["trans"].xero_invoice.status not in pending_statuses
+        )
+        and (not r["fee_invoice"] or r["fee_invoice"].status not in pending_statuses)
+        for r in rows
     )
 
-    total_with_xero = sum(1 for t in ordered if t.xero_invoice)
+    total_with_xero = sum(
+        (1 if r["trans"].xero_invoice else 0) + (1 if r["fee_invoice"] else 0)
+        for r in rows
+    )
     done = sum(
-        1
-        for t in ordered
-        if t.xero_invoice
-        and t.xero_invoice.status
-        not in {*pending_statuses, XeroInvoice.STATUS_UPLOAD_FAILED}
+        (
+            1
+            if r["trans"].xero_invoice
+            and r["trans"].xero_invoice.status
+            not in {*pending_statuses, XeroInvoice.STATUS_UPLOAD_FAILED}
+            else 0
+        )
+        + (
+            1
+            if r["fee_invoice"]
+            and r["fee_invoice"].status
+            not in {*pending_statuses, XeroInvoice.STATUS_UPLOAD_FAILED}
+            else 0
+        )
+        for r in rows
     )
     failed = sum(
-        1
-        for t in ordered
-        if t.xero_invoice and t.xero_invoice.status == XeroInvoice.STATUS_UPLOAD_FAILED
+        (
+            1
+            if r["trans"].xero_invoice
+            and r["trans"].xero_invoice.status == XeroInvoice.STATUS_UPLOAD_FAILED
+            else 0
+        )
+        + (
+            1
+            if r["fee_invoice"]
+            and r["fee_invoice"].status == XeroInvoice.STATUS_UPLOAD_FAILED
+            else 0
+        )
+        for r in rows
     )
 
-    ids_csv_out = ",".join(str(pk) for pk in trans_ids)
+    trans_ids_csv_out = ",".join(str(r["trans"].pk) for r in rows)
+    fee_invoice_ids_csv_out = ",".join(
+        str(r["fee_invoice"].pk) if r["fee_invoice"] else "" for r in rows
+    )
 
     return render(
         request,
         "payments/admin/_settlement_status_poll_response.html",
         {
-            "trans": ordered,
-            "trans_ids_csv": ids_csv_out,
+            "rows": rows,
+            "trans_ids_csv": trans_ids_csv_out,
+            "fee_invoice_ids_csv": fee_invoice_ids_csv_out,
             "total_with_xero": total_with_xero,
             "done": done,
             "failed": failed,
