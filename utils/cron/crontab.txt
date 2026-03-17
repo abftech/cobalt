@@ -1,6 +1,6 @@
 # Crontab file for all AWS environments - NEEDS BLANK LINE AT END
 CRON_TZ=Australia/Sydney
-# Run the email check cron every 2 minutes
+# Run the email check cron every 30 seconds
 # use sleep 30 ; to run more often
 * * * * * /var/app/current/utils/cron/wrapper.sh post_office_email_sender_cron
 * * * * * sleep 30; /var/app/current/utils/cron/wrapper.sh post_office_email_sender_cron
@@ -15,3 +15,7 @@ CRON_TZ=Australia/Sydney
 5 23 * * * /var/app/current/utils/cron/wrapper.sh auto_pay_batch
 # Temporary sync with MPC
 # 1 0 * * * /var/app/current/utils/cron/wrapper_by_env.sh mpc_sync
+# Xero - post invoices/payments - every 5 minutes
+*/5 * * * * /var/app/current/utils/cron/wrapper.sh upload_xero_settlements
+# Xero sync in case webhook failed during the day
+15 23 * * * /var/app/current/utils/cron/wrapper.sh sync_xero_invoice_status

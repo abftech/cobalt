@@ -754,10 +754,12 @@ class XeroApi:
                         {
                             "Description": reference,
                             "Quantity": 1,
-                            "UnitAmount": float(bank_settlement_amount),
+                            # bank_settlement_amount is GST-inclusive. Xero ACCPAY does not
+                            # accept LineAmountTypes=INCLUSIVE, so we pass the ex-GST amount
+                            # and let Xero apply the tax rate, giving the correct inclusive total.
+                            "UnitAmount": round(float(bank_settlement_amount) / 1.1, 2),
                             "AccountCode": XERO_SETTLEMENT_ACCOUNT_CODE,
                             "TaxType": XERO_SETTLEMENT_TAX_TYPE,
-                            "LineAmount": float(bank_settlement_amount),
                         }
                     ],
                     "Date": f"{today:%Y-%m-%d}",
@@ -844,7 +846,9 @@ class XeroApi:
                         {
                             "Description": f"Recovery of 3rd party transaction processing fees ({fee_percent}%)",
                             "Quantity": 1,
-                            "UnitAmount": fee,
+                            # fee is GST-inclusive. Pass the ex-GST amount so Xero applies
+                            # the tax rate and arrives at the correct inclusive total.
+                            "UnitAmount": round(fee / 1.1, 2),
                             "AccountCode": XERO_SETTLEMENT_ACCOUNT_CODE,
                             "TaxType": XERO_FEE_TAX_TYPE,
                         },
