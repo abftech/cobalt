@@ -122,7 +122,7 @@
                                     <th class="text-right">Org Min Balance</th>
                                     <th class="text-right">Available Balance</th>
                                     <th class="text-right">Manual Override <i class="material-icons" style="font-size:14px;vertical-align:middle;color:#00bcd4;" title="Optional — leave blank to use Available Balance">edit</i></th>
-                                    <th class="text-right">{{ GLOBAL_ORG }} Costs</th>
+                                    <th class="text-right col-detail">{{ GLOBAL_ORG }} Costs</th>
                                     <th class="text-right">Net Settlement</th>
                                 </thead>
 
@@ -134,7 +134,7 @@
                                         <td></td>
                                         <td class="text-right" id="id_total_net">{{ GLOBAL_CURRENCY_SYMBOL }}0.00</td>
                                         <td></td>
-                                        <td></td>
+                                        <td class="col-detail"></td>
                                         <td class="text-right" id="id_total_settlement">{{ GLOBAL_CURRENCY_SYMBOL }}0.00</td>
                                     </tr>
                                     {% for org in orgs %}
@@ -161,7 +161,7 @@
                                                        class="form-control form-control-sm text-right d-inline-block override-input"
                                                        style="width: 130px;">
                                             </td>
-                                            <td class="text-right">{{ org.settlement_fee_pct }}%</td>
+                                            <td class="text-right col-detail">{{ org.settlement_fee_pct }}%</td>
                                             <td class="text-right">
                                                 <input type="number"
                                                        name="settlement_amount_{{ org.id }}"
