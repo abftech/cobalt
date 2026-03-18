@@ -19,11 +19,18 @@
     </nav>
 
     <style>
-        .net-amount-input:not([disabled]) {
+        .col-detail { display: none; }
+        .show-detail .col-detail { display: table-cell; }
+
+        .override-input:not([disabled]) {
             border: 2px solid #00bcd4;
             background-color: #e8f8fa;
         }
-        .net-amount-input[disabled] {
+        .override-input:not([disabled]).has-value {
+            border: 2px solid #ffc107;
+            background-color: #fff8e1;
+        }
+        .override-input[disabled] {
             background-color: #f5f5f5;
             color: #aaa;
         }
@@ -81,18 +88,40 @@
                         </div>
                         <div class="mb-3"></div>
 
+                        <!-- SUMMARY TOTALS -->
+                        <div class="d-flex flex-wrap mb-4 p-3 border rounded bg-light">
+                            <div class="mr-5">
+                                <div class="text-muted small">Total Liability (sum of club account balances)</div>
+                                <strong>{{ GLOBAL_CURRENCY_SYMBOL }}{{ totals.gross|floatformat:2|intcomma }}</strong>
+                            </div>
+                            <div class="mr-5">
+                                <div class="text-muted small">Max Gross Settlement (account balances &minus; org min balance)</div>
+                                <strong>{{ GLOBAL_CURRENCY_SYMBOL }}{{ totals.net|floatformat:2|intcomma }}</strong>
+                            </div>
+                            <div>
+                                <div class="text-muted small">Max Net Settlement</div>
+                                <strong>{{ GLOBAL_CURRENCY_SYMBOL }}{{ totals.settlement|floatformat:2|intcomma }}</strong>
+                            </div>
+                        </div>
+
                         <!-- TABLE -->
+                        <div class="mb-2 text-right">
+                            <button type="button" id="btn-toggle-detail" class="btn btn-sm btn-outline-secondary">
+                                Show Details
+                            </button>
+                        </div>
                         <div class="table-responsive">
-                            <table class="table table-condensed table-hover bx-5">
+                            <table class="table table-condensed table-hover bx-5" id="settlement-table">
                                 <thead>
                                     <th>Include</th>
-                                    <th>Club Number</th>
-                                    <th>Organisation</th>
-                                    <th>BSB</th>
-                                    <th>Account Number</th>
+                                    <th class="col-detail">Club Number</th>
+                                    <th class="text-left">Organisation</th>
+                                    <th class="col-detail">BSB</th>
+                                    <th class="col-detail">Account Number</th>
                                     <th class="text-right">Account Balance</th>
                                     <th class="text-right">Org Min Balance</th>
-                                    <th class="text-right">Available Balance<i class="material-icons" style="font-size:14px;vertical-align:middle;color:#00bcd4;" title="Editable — tick Include first">edit</i></th>
+                                    <th class="text-right">Available Balance</th>
+                                    <th class="text-right">Manual Override <i class="material-icons" style="font-size:14px;vertical-align:middle;color:#00bcd4;" title="Optional — leave blank to use Available Balance">edit</i></th>
                                     <th class="text-right">{{ GLOBAL_ORG }} Costs</th>
                                     <th class="text-right">Net Settlement</th>
                                 </thead>
@@ -100,10 +129,11 @@
                                 <tbody>
                                     <!-- TOTALS ROW -->
                                     <tr class="table-primary font-weight-bold">
-                                        <td colspan="5">Totals (<span id="id_checked_count">0</span> organisations)</td>
+                                        <td id="id_totals_colspan" colspan="2">Totals (<span id="id_checked_count">0</span> organisations)</td>
                                         <td class="text-right" id="id_total_gross">{{ GLOBAL_CURRENCY_SYMBOL }}0.00</td>
                                         <td></td>
                                         <td class="text-right" id="id_total_net">{{ GLOBAL_CURRENCY_SYMBOL }}0.00</td>
+                                        <td></td>
                                         <td></td>
                                         <td class="text-right" id="id_total_settlement">{{ GLOBAL_CURRENCY_SYMBOL }}0.00</td>
                                     </tr>
@@ -113,21 +143,22 @@
                                                                          data-gross="{{ org.balance|floatformat:2 }}"
                                                                          data-default-net="{{ org.amount_to_settle|floatformat:2 }}"
                                                                          data-fee-pct="{{ org.settlement_fee_pct }}"></td>
-                                            <td><a href="{% url 'organisations:club_menu_tab_finance_statement' club_id=org.organisation.id %}" target="_blank">{{ org.organisation.org_id }}</a></td>
-                                            <td><a href="{% url 'organisations:club_menu_tab_finance_statement' club_id=org.organisation.id %}" target="_blank">{{ org.organisation.name }}</a></td>
-                                            <td>{{ org.organisation.bank_bsb|default_if_none:'<b>NOT SET</b>' }}</td>
-                                            <td>{{ org.organisation.bank_account|default_if_none:'<b>NOT SET</b>' }}</td>
+                                            <td class="col-detail"><a href="{% url 'organisations:club_menu_tab_finance_statement' club_id=org.organisation.id %}" target="_blank">{{ org.organisation.org_id }}</a></td>
+                                            <td class="text-left"><a href="{% url 'organisations:club_menu_tab_finance_statement' club_id=org.organisation.id %}" target="_blank">{{ org.organisation.name }}</a></td>
+                                            <td class="col-detail">{{ org.organisation.bank_bsb|default_if_none:'<b>NOT SET</b>' }}</td>
+                                            <td class="col-detail">{{ org.organisation.bank_account|default_if_none:'<b>NOT SET</b>' }}</td>
                                             <td class="text-right">{{ GLOBAL_CURRENCY_SYMBOL }}{{ org.balance|floatformat:2|intcomma }}</td>
                                             <td class="text-right">{{ GLOBAL_CURRENCY_SYMBOL }}{{ org.organisation.minimum_balance_after_settlement|floatformat:2|intcomma }}</td>
+                                            <td class="text-right">{{ GLOBAL_CURRENCY_SYMBOL }}{{ org.amount_to_settle|floatformat:2|intcomma }}</td>
                                             <td class="text-right">
                                                 <input type="number"
-                                                       name="net_amount_{{ org.id }}"
-                                                       value="0.00"
+                                                       name="override_amount_{{ org.id }}"
+                                                       value=""
                                                        min="0"
                                                        max="{{ org.balance|floatformat:2 }}"
                                                        step="0.01"
                                                        disabled
-                                                       class="form-control form-control-sm text-right d-inline-block net-amount-input"
+                                                       class="form-control form-control-sm text-right d-inline-block override-input"
                                                        style="width: 130px;">
                                             </td>
                                             <td class="text-right">{{ org.settlement_fee_pct }}%</td>
@@ -138,8 +169,9 @@
                                                        min="0"
                                                        max="{{ org.balance|floatformat:2 }}"
                                                        step="0.01"
+                                                       readonly
                                                        class="form-control form-control-sm text-right d-inline-block"
-                                                       style="width: 130px;">
+                                                       style="width: 130px; background-color: #f9f9f9;">
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -185,18 +217,31 @@
             return Math.round(netVal * (1 - feePct / 100) * 100) / 100;
         }
 
+        function effectiveNet(row, checkbox) {
+            var overrideRaw = row.find('input[name^="override_amount_"]').val().trim();
+            var overrideVal = parseFloat(overrideRaw);
+            var defaultNet  = parseFloat($(checkbox).data('default-net')) || 0;
+            return (overrideRaw !== '' && !isNaN(overrideVal)) ? overrideVal : defaultNet;
+        }
+
+        function recalcRow(row, checkbox) {
+            var feePct = parseFloat($(checkbox).data('fee-pct')) || 0;
+            var net = effectiveNet(row, checkbox);
+            row.find('input[name^="settlement_amount_"]').val(calcSettlement(net, feePct).toFixed(2));
+        }
+
         function applyCheckbox(checkbox, checked) {
             var row = $(checkbox).closest('tr');
-            var netInput = row.find('input[name^="net_amount_"]');
+            var overrideInput   = row.find('input[name^="override_amount_"]');
             var settlementInput = row.find('input[name^="settlement_amount_"]');
             var feePct = parseFloat($(checkbox).data('fee-pct')) || 0;
 
             if (checked) {
                 var defaultNet = parseFloat($(checkbox).data('default-net')) || 0;
-                netInput.prop('disabled', false).val(defaultNet.toFixed(2)).removeClass('is-invalid');
+                overrideInput.prop('disabled', false).removeClass('is-invalid');
                 settlementInput.val(calcSettlement(defaultNet, feePct).toFixed(2));
             } else {
-                netInput.prop('disabled', true).val('0.00').removeClass('is-invalid');
+                overrideInput.prop('disabled', true).val('').removeClass('is-invalid has-value');
                 settlementInput.val('0.00');
             }
         }
@@ -206,7 +251,7 @@
             $('input[name="settle_list"]:checked').each(function() {
                 var row = $(this).closest('tr');
                 gross      += parseFloat($(this).data('gross')) || 0;
-                net        += parseFloat(row.find('input[name^="net_amount_"]').val()) || 0;
+                net        += effectiveNet(row, this);
                 settlement += parseFloat(row.find('input[name^="settlement_amount_"]').val()) || 0;
                 count++;
             });
@@ -225,6 +270,12 @@
             updateActionButtons();
             updateTotals();
 
+            $('#btn-toggle-detail').on('click', function() {
+                var showing = $('#settlement-table').toggleClass('show-detail').hasClass('show-detail');
+                $(this).text(showing ? 'Hide Details' : 'Show Details');
+                $('#id_totals_colspan').attr('colspan', showing ? 5 : 2);
+            });
+
             $("#checkall").click(function() {
                 var checked = this.checked;
                 $('input[name="settle_list"]').each(function() {
@@ -241,23 +292,20 @@
                 updateTotals();
             });
 
-            $(document).on('input', 'input[name^="net_amount_"]', function() {
-                var row = $(this).closest('tr');
+            $(document).on('input', 'input[name^="override_amount_"]', function() {
+                var row      = $(this).closest('tr');
                 var checkbox = row.find('input[name="settle_list"]');
-                var feePct = parseFloat(checkbox.data('fee-pct')) || 0;
-                var balance = parseFloat($(this).attr('max')) || 0;
-                var netVal = parseFloat($(this).val());
+                var balance  = parseFloat($(this).attr('max')) || 0;
+                var raw      = $(this).val().trim();
+                var val      = parseFloat(raw);
 
                 $(this).removeClass('is-invalid');
-                if (!isNaN(netVal) && netVal >= 0 && netVal <= balance) {
-                    row.find('input[name^="settlement_amount_"]').val(calcSettlement(netVal, feePct).toFixed(2));
+                if (raw !== '' && (isNaN(val) || val < 0 || val > balance)) {
+                    $(this).addClass('is-invalid').removeClass('has-value');
                 } else {
-                    $(this).addClass('is-invalid');
+                    $(this).toggleClass('has-value', raw !== '');
+                    recalcRow(row, checkbox);
                 }
-                updateTotals();
-            });
-
-            $(document).on('input', 'input[name^="settlement_amount_"]', function() {
                 updateTotals();
             });
 
@@ -270,25 +318,17 @@
                 var errors = [];
 
                 $('input[name="settle_list"]:checked').each(function() {
-                    var row = $(this).closest('tr');
+                    var row     = $(this).closest('tr');
                     var orgName = row.find('td:nth-child(3)').text().trim();
 
-                    var netInput = row.find('input[name^="net_amount_"]');
-                    var netVal = parseFloat(netInput.val());
-                    var netMax = parseFloat(netInput.attr('max'));
-                    netInput.removeClass('is-invalid');
-                    if (isNaN(netVal) || netVal < 0 || netVal > netMax) {
-                        netInput.addClass('is-invalid');
-                        errors.push(orgName + ': net amount must be between 0 and ' + netMax.toFixed(2));
-                    }
-
-                    var settleInput = row.find('input[name^="settlement_amount_"]');
-                    var settleVal = parseFloat(settleInput.val());
-                    var settleMax = parseFloat(settleInput.attr('max'));
-                    settleInput.removeClass('is-invalid');
-                    if (isNaN(settleVal) || settleVal < 0 || settleVal > settleMax) {
-                        settleInput.addClass('is-invalid');
-                        errors.push(orgName + ': settlement amount must be between 0 and ' + settleMax.toFixed(2));
+                    var overrideInput = row.find('input[name^="override_amount_"]');
+                    var raw   = overrideInput.val().trim();
+                    var val   = parseFloat(raw);
+                    var max   = parseFloat(overrideInput.attr('max'));
+                    overrideInput.removeClass('is-invalid');
+                    if (raw !== '' && (isNaN(val) || val < 0 || val > max)) {
+                        overrideInput.addClass('is-invalid');
+                        errors.push(orgName + ': manual override must be between 0 and ' + max.toFixed(2));
                     }
                 });
 
@@ -297,7 +337,7 @@
                     clickedButton = null;
                     Swal.fire({
                         title: 'Invalid Amount',
-                        html: errors.map(function(e) { return '<div>' + e + '</div>'; }).join(''),
+                        html: errors.map(function(err) { return '<div>' + err + '</div>'; }).join(''),
                         icon: 'error',
                         confirmButtonColor: '#3085d6',
                     });
