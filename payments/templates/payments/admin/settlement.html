@@ -89,16 +89,18 @@
                                 <tbody>
                                     <!-- TOTALS ROW -->
                                     <tr class="table-primary font-weight-bold">
-                                        <td colspan="5">Totals ({{ orgs|length }} organisations)</td>
-                                        <td class="text-right">{{ GLOBAL_CURRENCY_SYMBOL }}{{ totals.gross|floatformat:2|intcomma }}</td>
-                                        <td class="text-right">{{ GLOBAL_CURRENCY_SYMBOL }}{{ totals.min_balance|floatformat:2|intcomma }}</td>
-                                        <td class="text-right">{{ GLOBAL_CURRENCY_SYMBOL }}{{ totals.net|floatformat:2|intcomma }}</td>
+                                        <td colspan="5">Totals (<span id="id_checked_count">0</span> organisations)</td>
+                                        <td class="text-right" id="id_total_gross">{{ GLOBAL_CURRENCY_SYMBOL }}0.00</td>
                                         <td></td>
-                                        <td class="text-right" id="id_total_settlement">{{ GLOBAL_CURRENCY_SYMBOL }}{{ totals.settlement|floatformat:2|intcomma }}</td>
+                                        <td class="text-right" id="id_total_net">{{ GLOBAL_CURRENCY_SYMBOL }}0.00</td>
+                                        <td></td>
+                                        <td class="text-right" id="id_total_settlement">{{ GLOBAL_CURRENCY_SYMBOL }}0.00</td>
                                     </tr>
                                     {% for org in orgs %}
                                         <tr>
-                                            <td class="text-left"><input type="checkbox" value="{{ org.id }}" id="id_settle_list" name="settle_list" value="{{ org.id }}"></td>
+                                            <td class="text-left"><input type="checkbox" name="settle_list" value="{{ org.id }}"
+                                                                         data-gross="{{ org.balance|floatformat:2 }}"
+                                                                         data-net="{{ org.amount_to_settle|floatformat:2 }}"></td>
                                             <td><a href="{% url 'organisations:club_menu_tab_finance_statement' club_id=org.organisation.id %}">{{ org.organisation.org_id }}</a></td>
                                             <td><a href="{% url 'organisations:club_menu_tab_finance_statement' club_id=org.organisation.id %}">{{ org.organisation.name }}</a></td>
                                             <td>{{ org.organisation.bank_bsb|default_if_none:'<b>NOT SET</b>' }}</td>
@@ -151,15 +153,25 @@
 {% block footer %}
     <script src="{% static "assets/js/plugins/sweetalert2.js" %}"></script>
     <script>
-        function updateSettlementTotal() {
-            var total = 0;
-            $('input[name^="settlement_amount_"]').each(function() {
-                var val = parseFloat($(this).val());
-                if (!isNaN(val)) {
-                    total += val;
-                }
+        var SYM = '{{ GLOBAL_CURRENCY_SYMBOL }}';
+
+        function fmt(v) {
+            return SYM + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        function updateTotals() {
+            var gross = 0, net = 0, settlement = 0, count = 0;
+            $('input[name="settle_list"]:checked').each(function() {
+                gross += parseFloat($(this).data('gross')) || 0;
+                net   += parseFloat($(this).data('net'))   || 0;
+                var settleInput = $(this).closest('tr').find('input[name^="settlement_amount_"]');
+                settlement += parseFloat(settleInput.val()) || 0;
+                count++;
             });
-            $('#id_total_settlement').text('{{ GLOBAL_CURRENCY_SYMBOL }}' + total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+            $('#id_total_gross').text(fmt(gross));
+            $('#id_total_net').text(fmt(net));
+            $('#id_total_settlement').text(fmt(settlement));
+            $('#id_checked_count').text(count);
         }
 
         function updateActionButtons() {
@@ -169,18 +181,21 @@
 
         $(document).ready(function() {
             updateActionButtons();
+            updateTotals();
 
             $("#checkall").click(function() {
                 $('input:checkbox').not(this).prop('checked', this.checked);
                 updateActionButtons();
+                updateTotals();
             });
 
             $(document).on('change', 'input[name="settle_list"]', function() {
                 updateActionButtons();
+                updateTotals();
             });
 
             $(document).on('input', 'input[name^="settlement_amount_"]', function() {
-                updateSettlementTotal();
+                updateTotals();
             });
 
             var clickedButton = null;
