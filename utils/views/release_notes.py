@@ -183,6 +183,7 @@ def release_notes_view(request):
                 "Restrict uploads for results to be XML only",
                 "Xero API (not complete)",
                 "Bug fix for auto_pay_batch to handle unknown ABF number",
+                "DEV - script to clear locks",
             ],
         },
         {
