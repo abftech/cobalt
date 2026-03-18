@@ -3973,6 +3973,8 @@ def get_auto_pay_memberships_for_club(club, date=None):
             )
             membership.action_type = "unreg"
 
-        memberships.append(membership)
+        # Check we actually got a match for the user
+        if membership.user_or_unreg:
+            memberships.append(membership)
 
     return memberships
