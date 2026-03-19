@@ -235,6 +235,10 @@ The minimum supported Python version is **3.13**. Write code that targets 3.13+ 
 
 Always use **f-strings** for string interpolation. Do not use `%` formatting or `str.format()`. Do not concatenate strings with `+` when an f-string can be used instead.
 
+### List comprehensions
+
+Only use list comprehensions (and dict/set comprehensions) if the expression fits on a **single line**. If it would need to wrap, use an explicit `for` loop instead.
+
 ---
 
 ## Testing
