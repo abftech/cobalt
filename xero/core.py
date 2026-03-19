@@ -3,7 +3,6 @@ import logging
 import base64
 import time
 from datetime import timedelta, date
-from decimal import Decimal, ROUND_HALF_UP
 from urllib.parse import urlencode
 from uuid import uuid4
 
@@ -73,21 +72,6 @@ def _raise_xero_validation_error(response: dict, fallback: str) -> None:
         if messages:
             raise ValueError("; ".join(messages))
     raise ValueError(fallback)
-
-
-def _ex_gst(amount) -> float:
-    """Convert a GST-inclusive amount to an ex-GST unit amount with 4dp precision.
-
-    Xero invoices are submitted ex-GST and Xero applies the tax rate to produce
-    the inclusive total. Using 4 decimal places (Xero's maximum) ensures that
-    Xero's own rounding reproduces the original inclusive amount without ±$0.01
-    discrepancies that occur with only 2dp.
-    """
-    return float(
-        (Decimal(str(amount)) / Decimal("1.1")).quantize(
-            Decimal("0.0001"), rounding=ROUND_HALF_UP
-        )
-    )
 
 
 class XeroApi:
@@ -614,6 +598,7 @@ class XeroApi:
                 {
                     "Type": invoice_type,
                     "Contact": {"ContactID": organisation.xero_contact_id},
+                    "LineAmountTypes": "Inclusive",
                     "LineItems": xero_line_items,
                     "Date": f"{today:%Y-%m-%d}",
                     "DueDate": f"{due_date:%Y-%m-%d}",
@@ -849,14 +834,12 @@ class XeroApi:
                 {
                     "Type": "ACCPAY",
                     "Contact": {"ContactID": organisation.xero_contact_id},
+                    "LineAmountTypes": "Inclusive",
                     "LineItems": [
                         {
                             "Description": reference,
                             "Quantity": 1,
-                            # bank_settlement_amount is GST-inclusive. Xero ACCPAY does not
-                            # accept LineAmountTypes=INCLUSIVE, so we pass the ex-GST amount
-                            # and let Xero apply the tax rate, giving the correct inclusive total.
-                            "UnitAmount": _ex_gst(bank_settlement_amount),
+                            "UnitAmount": float(bank_settlement_amount),
                             "AccountCode": XERO_SETTLEMENT_ACCOUNT_CODE,
                             "TaxType": XERO_SETTLEMENT_TAX_TYPE,
                         }
@@ -934,6 +917,7 @@ class XeroApi:
                 {
                     "Type": "ACCREC",
                     "Contact": {"ContactID": organisation.xero_contact_id},
+                    "LineAmountTypes": "Inclusive",
                     "LineItems": [
                         {
                             "Description": f"Gross MyABF settlement: {GLOBAL_CURRENCY_SYMBOL}{float(gross_amount):.2f}",
@@ -945,9 +929,7 @@ class XeroApi:
                         {
                             "Description": f"Recovery of 3rd party transaction processing fees ({fee_percent}%)",
                             "Quantity": 1,
-                            # fee is GST-inclusive. Pass the ex-GST amount so Xero applies
-                            # the tax rate and arrives at the correct inclusive total.
-                            "UnitAmount": _ex_gst(fee),
+                            "UnitAmount": fee,
                             "AccountCode": XERO_SETTLEMENT_ACCOUNT_CODE,
                             "TaxType": XERO_FEE_TAX_TYPE,
                         },

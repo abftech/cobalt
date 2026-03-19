@@ -167,6 +167,7 @@ class CreateSettlementInvoiceTests:
             and inv_data.get("Type") == "ACCPAY"
             and inv_data.get("InvoiceNumber", "").startswith("MyABF-")
             and inv_data.get("Status") == "AUTHORISED"
+            and inv_data.get("LineAmountTypes") == "Inclusive"
             and line_item.get("UnitAmount") == 123.45
             and line_item.get("AccountCode") == XERO_SETTLEMENT_ACCOUNT_CODE
         )
@@ -175,12 +176,13 @@ class CreateSettlementInvoiceTests:
             test_name="create_settlement_invoice: payload structure",
             test_description=(
                 "Verify upload_payload contains Type=ACCPAY, InvoiceNumber starting with MyABF-, "
-                "Status=AUTHORISED, correct UnitAmount and AccountCode in LineItems"
+                "Status=AUTHORISED, LineAmountTypes=Inclusive, correct UnitAmount and AccountCode in LineItems"
             ),
             output=(
                 f"Type={inv_data.get('Type')!r}. "
                 f"InvoiceNumber={inv_data.get('InvoiceNumber')!r}. "
                 f"Status={inv_data.get('Status')!r}. "
+                f"LineAmountTypes={inv_data.get('LineAmountTypes')!r}. "
                 f"UnitAmount={line_item.get('UnitAmount')!r}. "
                 f"AccountCode={line_item.get('AccountCode')!r}"
             ),
