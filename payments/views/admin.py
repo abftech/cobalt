@@ -2059,6 +2059,14 @@ def settlement(request):
                 amount_to_settle = float(item.balance) - float(
                     item.organisation.minimum_balance_after_settlement
                 )
+                raw_override = request.POST.get(
+                    f"override_amount_{item.id}", ""
+                ).strip()
+                if raw_override:
+                    try:
+                        amount_to_settle = float(raw_override)
+                    except (ValueError, TypeError):
+                        pass
                 raw = request.POST.get(f"settlement_amount_{item.id}", "")
                 try:
                     custom_bank_amount = float(raw)
