@@ -261,6 +261,18 @@ def run_xero_api_htmx(request):
                     failed += 1
             result = {"created": created, "failed": failed, "total": total}
 
+    elif cmd == "send_invoice_email":
+        xero_invoice_id = request.POST.get("xero_invoice_id")
+        if not xero_invoice_id:
+            result = {"error": "No invoice selected"}
+        else:
+            success = xero.send_invoice_email(xero_invoice_id)
+            result = (
+                {"success": True, "message": "Invoice email sent"}
+                if success
+                else {"error": "Failed to send email — check Xero Logs"}
+            )
+
     else:
         result = {"error": f"Unknown command: {cmd!r}"}
 
@@ -277,6 +289,16 @@ def run_xero_api_htmx(request):
     )
     response["HX-Trigger"] = '{"update_config": "true"}'
     return response
+
+
+def email_invoice_form_htmx(request):
+    """Return the send-invoice-email form fragment."""
+    invoices = (
+        XeroInvoice.objects.filter(status="PAID")
+        .select_related("organisation")
+        .order_by("-created_at")[:10]
+    )
+    return render(request, "xero/email_invoice_form_htmx.html", {"invoices": invoices})
 
 
 def payment_form_htmx(request):

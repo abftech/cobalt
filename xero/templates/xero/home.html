@@ -154,6 +154,16 @@
                                 {% endif %}
 
                                 <button
+                                    class="btn btn-warning mr-1"
+                                    hx-post="{% url "xero:email_invoice_form_htmx" %}"
+                                    hx-target="#data"
+                                    hx-indicator="#spinner"
+                                    data-toggle="tooltip"
+                                    data-placement="top"
+                                    title="Send an invoice email to a customer via Xero"
+                                >Email Invoice</button>
+
+                                <button
                                     class="btn btn-info mr-1"
                                     hx-post="{% url "xero:run_xero_api_htmx" %}"
                                     hx-target="#data"

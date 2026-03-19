@@ -10,6 +10,11 @@ urlpatterns = [
     path("refresh", views.refresh_keys_htmx, name="xero_refresh_keys_htmx"),
     path("run-xero-api", views.run_xero_api_htmx, name="run_xero_api_htmx"),
     path("payment-form", views.payment_form_htmx, name="payment_form_htmx"),
+    path(
+        "email-invoice-form",
+        views.email_invoice_form_htmx,
+        name="email_invoice_form_htmx",
+    ),
     path("invoice-form", views.invoice_form_htmx, name="invoice_form_htmx"),
     path(
         "reconcile-contacts",

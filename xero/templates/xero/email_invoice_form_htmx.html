@@ -1,0 +1,63 @@
+{#------------------------------------------------------------------------#}
+{#                                                                        #}
+{# Send Invoice Email form fragment — loaded into #data via HTMX         #}
+{#                                                                        #}
+{#------------------------------------------------------------------------#}
+
+<div class="card mt-3">
+    <div class="card-header">
+        <h4>Email Invoice</h4>
+    </div>
+    <div class="card-body">
+
+        {% if not invoices %}
+            <div class="alert alert-warning">
+                No paid invoices found in the last 10 records.
+            </div>
+        {% else %}
+
+            <form id="email-invoice-form">
+
+                <!-- Invoice -->
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label font-weight-bold">Invoice</label>
+                    <div class="col-sm-9">
+                        <select name="xero_invoice_id" class="form-control" required>
+                            <option value="">-- Select an invoice --</option>
+                            {% for inv in invoices %}
+                                <option value="{{ inv.xero_invoice_id }}">
+                                    {{ inv.invoice_number }} — {{ inv.organisation.name }} — ${{ inv.amount }}{% if inv.reference %} ({{ inv.reference }}){% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Actions -->
+                <div class="form-group row">
+                    <div class="col-sm-9 offset-sm-3">
+                        <button
+                            type="button"
+                            class="btn btn-warning mr-2"
+                            hx-post="{% url "xero:run_xero_api_htmx" %}"
+                            hx-include="#email-invoice-form"
+                            hx-vals='{"cmd": "send_invoice_email"}'
+                            hx-target="#data"
+                            hx-indicator="#spinner"
+                        >Send Email via Xero</button>
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            onclick="document.getElementById('data').innerHTML = ''"
+                        >Cancel</button>
+                    </div>
+                </div>
+
+            </form>
+
+        {% endif %}
+
+    </div>
+</div>

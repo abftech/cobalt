@@ -767,6 +767,42 @@ class XeroApi:
 
         return response
 
+    def send_invoice_email(self, xero_invoice_id: str) -> bool:
+        """Trigger Xero to email an invoice to its contact.
+
+        Returns True on success, False on failure.
+        Note: Xero returns 204 No Content on success, so this method calls the
+        request directly rather than using xero_api_post (which expects JSON).
+        """
+        self.refresh_xero_tokens()
+        if err := self._check_credentials():
+            logger.error(f"send_invoice_email: credentials error: {err}")
+            return False
+        url = f"https://api.xero.com/api.xro/2.0/Invoices/{xero_invoice_id}/Email"
+        self._throttle()
+        response = self._request_with_retry(
+            requests.post, url, headers=self.headers(), json={}
+        )
+        XeroLog.objects.create(
+            method="POST",
+            url=url,
+            request_body="{}",
+            response_body=response.text[:500] if response.text else "(empty)",
+            http_status_code=response.status_code,
+            status=XeroLog.STATUS_SUCCESS if response.ok else XeroLog.STATUS_FAILURE,
+        )
+        if not response.ok:
+            _send_xero_failure_alert(
+                "POST", url, response.status_code, response.text[:200]
+            )
+            logger.error(
+                f"send_invoice_email: failed for {xero_invoice_id} "
+                f"(HTTP {response.status_code})"
+            )
+            return False
+        logger.info(f"send_invoice_email: sent email for invoice {xero_invoice_id}")
+        return True
+
     # -----------------------------------------------------------------------
     # Listing methods
     # -----------------------------------------------------------------------
