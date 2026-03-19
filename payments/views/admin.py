@@ -2218,7 +2218,13 @@ def settlement(request):
                 for r in rows
             )
             total_with_xero = sum(
-                (1 if r["trans"].xero_invoice else 0) + (1 if r["fee_invoice"] else 0)
+                (1 if r["trans"].xero_invoice else 0)
+                + (1 if r["fee_invoice"] else 0)
+                + (
+                    1
+                    if r["fee_invoice"] and r["fee_invoice"].auto_record_payment
+                    else 0
+                )
                 for r in rows
             )
             return render(
@@ -2300,7 +2306,9 @@ def settlement_xero_status_htmx(request):
     )
 
     total_with_xero = sum(
-        (1 if r["trans"].xero_invoice else 0) + (1 if r["fee_invoice"] else 0)
+        (1 if r["trans"].xero_invoice else 0)
+        + (1 if r["fee_invoice"] else 0)
+        + (1 if r["fee_invoice"] and r["fee_invoice"].auto_record_payment else 0)
         for r in rows
     )
     done = sum(
@@ -2316,6 +2324,13 @@ def settlement_xero_status_htmx(request):
             if r["fee_invoice"]
             and r["fee_invoice"].status
             not in {*pending_statuses, XeroInvoice.STATUS_UPLOAD_FAILED}
+            else 0
+        )
+        + (
+            1
+            if r["fee_invoice"]
+            and r["fee_invoice"].auto_record_payment
+            and r["fee_invoice"].status == "PAID"
             else 0
         )
         for r in rows
