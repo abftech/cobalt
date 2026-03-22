@@ -22,17 +22,30 @@
         .col-detail { display: none; }
         .show-detail .col-detail { display: table-cell; }
 
+        /* Override input — neutral when enabled with no value */
         .override-input:not([disabled]) {
-            border: 2px solid #00bcd4;
-            background-color: #e8f8fa;
+            border: 1px solid #ced4da;
+            background-color: #fff;
         }
+        /* Yellow when a valid value has been entered */
         .override-input:not([disabled]).has-value {
             border: 2px solid #ffc107;
             background-color: #fff8e1;
         }
+        /* Red when invalid */
+        .override-input:not([disabled]).is-invalid {
+            border: 2px solid #dc3545 !important;
+            background-color: #fff5f5;
+        }
         .override-input[disabled] {
             background-color: #f5f5f5;
             color: #aaa;
+        }
+        .override-error {
+            display: none;
+            color: #dc3545;
+            font-size: 0.75rem;
+            margin-top: 2px;
         }
     </style>
 
@@ -118,10 +131,11 @@
                                     <th class="text-left">Organisation</th>
                                     <th class="col-detail">BSB</th>
                                     <th class="col-detail">Account Number</th>
-                                    <th class="text-right">Account Balance</th>
+                                    <th class="text-right col-detail">Account Balance</th>
                                     <th class="text-right">Org Min Balance</th>
-                                    <th class="text-right">Available Balance</th>
-                                    <th class="text-right">Manual Override <i class="material-icons" style="font-size:14px;vertical-align:middle;color:#00bcd4;" title="Optional — leave blank to use Available Balance">edit</i></th>
+                                    <th class="text-right">Balance Less Min</th>
+                                    <th class="text-right">Manual Override <i class="material-icons" style="font-size:14px;vertical-align:middle;color:#888;" title="Optional — leave blank to settle the full Balance Less Min">edit</i></th>
+                                    <th class="text-right">Gross Settlement</th>
                                     <th class="text-right col-detail">{{ GLOBAL_ORG }} Costs</th>
                                     <th class="text-right">Net Settlement</th>
                                 </thead>
@@ -130,24 +144,28 @@
                                     <!-- TOTALS ROW -->
                                     <tr class="table-primary font-weight-bold">
                                         <td id="id_totals_colspan" colspan="2">Totals (<span id="id_checked_count">0</span> organisations)</td>
-                                        <td class="text-right" id="id_total_gross">{{ GLOBAL_CURRENCY_SYMBOL }}0.00</td>
+                                        <td class="text-right col-detail" id="id_total_gross"></td>
                                         <td></td>
-                                        <td class="text-right" id="id_total_net">{{ GLOBAL_CURRENCY_SYMBOL }}0.00</td>
                                         <td></td>
+                                        <td></td>
+                                        <td class="text-right" id="id_total_gross_settlement">{{ GLOBAL_CURRENCY_SYMBOL }}0.00</td>
                                         <td class="col-detail"></td>
                                         <td class="text-right" id="id_total_settlement">{{ GLOBAL_CURRENCY_SYMBOL }}0.00</td>
                                     </tr>
                                     {% for org in orgs %}
                                         <tr>
-                                            <td class="text-left"><input type="checkbox" name="settle_list" value="{{ org.id }}"
-                                                                         data-gross="{{ org.balance|floatformat:2 }}"
-                                                                         data-default-net="{{ org.amount_to_settle|floatformat:2 }}"
-                                                                         data-fee-pct="{{ org.settlement_fee_pct }}"></td>
+                                            <td class="text-left">
+                                                <input type="checkbox" name="settle_list" value="{{ org.id }}"
+                                                       data-gross="{{ org.balance|floatformat:2 }}"
+                                                       data-default-net="{{ org.amount_to_settle|floatformat:2 }}"
+                                                       data-fee-pct="{{ org.settlement_fee_pct }}"
+                                                       data-current-balance="{{ org.current_balance|floatformat:2 }}">
+                                            </td>
                                             <td class="col-detail"><a href="{% url 'organisations:club_menu_tab_finance_statement' club_id=org.organisation.id %}" target="_blank">{{ org.organisation.org_id }}</a></td>
                                             <td class="text-left"><a href="{% url 'organisations:club_menu_tab_finance_statement' club_id=org.organisation.id %}" target="_blank">{{ org.organisation.name }}</a></td>
                                             <td class="col-detail">{{ org.organisation.bank_bsb|default_if_none:'<b>NOT SET</b>' }}</td>
                                             <td class="col-detail">{{ org.organisation.bank_account|default_if_none:'<b>NOT SET</b>' }}</td>
-                                            <td class="text-right">{{ GLOBAL_CURRENCY_SYMBOL }}{{ org.balance|floatformat:2|intcomma }}</td>
+                                            <td class="text-right col-detail">{{ GLOBAL_CURRENCY_SYMBOL }}{{ org.balance|floatformat:2|intcomma }}</td>
                                             <td class="text-right">{{ GLOBAL_CURRENCY_SYMBOL }}{{ org.organisation.minimum_balance_after_settlement|floatformat:2|intcomma }}</td>
                                             <td class="text-right">{{ GLOBAL_CURRENCY_SYMBOL }}{{ org.amount_to_settle|floatformat:2|intcomma }}</td>
                                             <td class="text-right">
@@ -155,11 +173,22 @@
                                                        name="override_amount_{{ org.id }}"
                                                        value=""
                                                        min="0"
-                                                       max="{{ org.balance|floatformat:2 }}"
+                                                       max="{{ org.amount_to_settle|floatformat:2 }}"
                                                        step="0.01"
                                                        disabled
                                                        class="form-control form-control-sm text-right d-inline-block override-input"
                                                        style="width: 130px;">
+                                                <div class="override-error"></div>
+                                            </td>
+                                            <td class="text-right">
+                                                <input type="number"
+                                                       name="gross_settlement_{{ org.id }}"
+                                                       value="0.00"
+                                                       min="0"
+                                                       step="0.01"
+                                                       readonly
+                                                       class="form-control form-control-sm text-right d-inline-block"
+                                                       style="width: 130px; background-color: #fff;">
                                             </td>
                                             <td class="text-right col-detail">{{ org.settlement_fee_pct }}%</td>
                                             <td class="text-right">
@@ -167,11 +196,10 @@
                                                        name="settlement_amount_{{ org.id }}"
                                                        value="0.00"
                                                        min="0"
-                                                       max="{{ org.balance|floatformat:2 }}"
                                                        step="0.01"
                                                        readonly
                                                        class="form-control form-control-sm text-right d-inline-block"
-                                                       style="width: 130px; background-color: #f9f9f9;">
+                                                       style="width: 130px; background-color: #fff;">
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -185,11 +213,23 @@
                         </div>
                         {% if xero_available %}
                             <div class="mt-3 mb-2">
-
                                 <input class="form-check-input" type="checkbox" name="use_xero" id="id_use_xero" checked>
                                 Generate Xero invoices
                             </div>
                         {% endif %}
+
+                        <!-- BOTTOM TOTALS (mirrors top totals row, visible near action buttons) -->
+                        <div class="d-flex justify-content-end mb-3 p-2 border rounded bg-light">
+                            <div class="mr-4 text-right">
+                                <div class="text-muted small">Gross Settlement (<span id="id_checked_count_bottom">0</span> orgs)</div>
+                                <strong id="id_total_gross_settlement_bottom">{{ GLOBAL_CURRENCY_SYMBOL }}0.00</strong>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-muted small">Net Settlement</div>
+                                <strong id="id_total_settlement_bottom">{{ GLOBAL_CURRENCY_SYMBOL }}0.00</strong>
+                            </div>
+                        </div>
+
                         <div class="text-center">
                             <button class="btn btn-success" type="submit" name="export">Export Selected to CSV</button>
                             <button class="btn btn-primary" type="submit" name="confirm">Confirm Payment</button>
@@ -213,52 +253,60 @@
             return SYM + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         }
 
-        function calcSettlement(netVal, feePct) {
-            return Math.round(netVal * (1 - feePct / 100) * 100) / 100;
+        function calcSettlement(grossVal, feePct) {
+            return Math.round(grossVal * (1 - feePct / 100) * 100) / 100;
         }
 
-        function effectiveNet(row, checkbox) {
+        function effectiveGross(row, checkbox) {
             var overrideRaw = row.find('input[name^="override_amount_"]').val().trim();
             var overrideVal = parseFloat(overrideRaw);
             var defaultNet  = parseFloat($(checkbox).data('default-net')) || 0;
-            return (overrideRaw !== '' && !isNaN(overrideVal)) ? overrideVal : defaultNet;
+            return (overrideRaw !== '' && !isNaN(overrideVal) && overrideVal >= 0) ? overrideVal : defaultNet;
         }
 
         function recalcRow(row, checkbox) {
             var feePct = parseFloat($(checkbox).data('fee-pct')) || 0;
-            var net = effectiveNet(row, checkbox);
-            row.find('input[name^="settlement_amount_"]').val(calcSettlement(net, feePct).toFixed(2));
+            var gross = effectiveGross(row, checkbox);
+            row.find('input[name^="gross_settlement_"]').val(gross.toFixed(2));
+            row.find('input[name^="settlement_amount_"]').val(calcSettlement(gross, feePct).toFixed(2));
         }
 
         function applyCheckbox(checkbox, checked) {
             var row = $(checkbox).closest('tr');
             var overrideInput   = row.find('input[name^="override_amount_"]');
+            var grossInput      = row.find('input[name^="gross_settlement_"]');
             var settlementInput = row.find('input[name^="settlement_amount_"]');
             var feePct = parseFloat($(checkbox).data('fee-pct')) || 0;
 
             if (checked) {
                 var defaultNet = parseFloat($(checkbox).data('default-net')) || 0;
-                overrideInput.prop('disabled', false).removeClass('is-invalid');
+                overrideInput.prop('disabled', false).removeClass('is-invalid has-value');
+                row.find('.override-error').hide().text('');
+                grossInput.val(defaultNet.toFixed(2));
                 settlementInput.val(calcSettlement(defaultNet, feePct).toFixed(2));
             } else {
                 overrideInput.prop('disabled', true).val('').removeClass('is-invalid has-value');
+                row.find('.override-error').hide().text('');
+                grossInput.val('0.00');
                 settlementInput.val('0.00');
             }
         }
 
         function updateTotals() {
-            var gross = 0, net = 0, settlement = 0, count = 0;
+            var grossSettlement = 0, settlement = 0, count = 0;
             $('input[name="settle_list"]:checked').each(function() {
                 var row = $(this).closest('tr');
-                gross      += parseFloat($(this).data('gross')) || 0;
-                net        += effectiveNet(row, this);
-                settlement += parseFloat(row.find('input[name^="settlement_amount_"]').val()) || 0;
+                grossSettlement += effectiveGross(row, this);
+                settlement      += parseFloat(row.find('input[name^="settlement_amount_"]').val()) || 0;
                 count++;
             });
-            $('#id_total_gross').text(fmt(gross));
-            $('#id_total_net').text(fmt(net));
+            $('#id_total_gross_settlement').text(fmt(grossSettlement));
             $('#id_total_settlement').text(fmt(settlement));
             $('#id_checked_count').text(count);
+            // Mirror at bottom
+            $('#id_total_gross_settlement_bottom').text(fmt(grossSettlement));
+            $('#id_total_settlement_bottom').text(fmt(settlement));
+            $('#id_checked_count_bottom').text(count);
         }
 
         function updateActionButtons() {
@@ -273,7 +321,7 @@
             $('#btn-toggle-detail').on('click', function() {
                 var showing = $('#settlement-table').toggleClass('show-detail').hasClass('show-detail');
                 $(this).text(showing ? 'Hide Details' : 'Show Details');
-                $('#id_totals_colspan').attr('colspan', showing ? 5 : 2);
+                $('#id_totals_colspan').attr('colspan', showing ? 6 : 2);
             });
 
             $("#checkall").click(function() {
@@ -292,18 +340,42 @@
                 updateTotals();
             });
 
+            // Block characters that number inputs pass through but make no sense here
+            $(document).on('keydown', 'input[name^="override_amount_"]', function(e) {
+                if (e.key === '-' || e.key === 'e' || e.key === '+') {
+                    e.preventDefault();
+                }
+            });
+
             $(document).on('input', 'input[name^="override_amount_"]', function() {
                 var row      = $(this).closest('tr');
                 var checkbox = row.find('input[name="settle_list"]');
-                var balance  = parseFloat($(this).attr('max')) || 0;
+                var refMax   = parseFloat($(this).attr('max')) || 0;
+                var currBal  = parseFloat($(checkbox).data('current-balance'));
+                var effectiveMax = isNaN(currBal) ? refMax : Math.min(refMax, currBal);
                 var raw      = $(this).val().trim();
                 var val      = parseFloat(raw);
+                var errorDiv = row.find('.override-error');
 
-                $(this).removeClass('is-invalid');
-                if (raw !== '' && (isNaN(val) || val < 0 || val > balance)) {
-                    $(this).addClass('is-invalid').removeClass('has-value');
+                $(this).removeClass('is-invalid has-value');
+                errorDiv.hide().text('');
+
+                if (raw !== '') {
+                    if (isNaN(val) || val < 0) {
+                        $(this).addClass('is-invalid');
+                        errorDiv.text('Must be a positive number').show();
+                    } else if (val > refMax) {
+                        $(this).addClass('is-invalid');
+                        errorDiv.text('Exceeds available balance (' + fmt(refMax) + ')').show();
+                    } else if (!isNaN(currBal) && val > currBal) {
+                        $(this).addClass('is-invalid');
+                        errorDiv.text('Exceeds current balance (' + fmt(currBal) + ')').show();
+                    } else {
+                        $(this).addClass('has-value');
+                        recalcRow(row, checkbox);
+                    }
                 } else {
-                    $(this).toggleClass('has-value', raw !== '');
+                    // Blank = use default; recalc to default
                     recalcRow(row, checkbox);
                 }
                 updateTotals();
@@ -324,11 +396,17 @@
                     var overrideInput = row.find('input[name^="override_amount_"]');
                     var raw   = overrideInput.val().trim();
                     var val   = parseFloat(raw);
-                    var max   = parseFloat(overrideInput.attr('max'));
+                    var refMax = parseFloat(overrideInput.attr('max'));
+                    var currBal = parseFloat($(this).data('current-balance'));
+                    var effectiveMax = isNaN(currBal) ? refMax : Math.min(refMax, currBal);
+
                     overrideInput.removeClass('is-invalid');
-                    if (raw !== '' && (isNaN(val) || val < 0 || val > max)) {
+                    if (raw !== '' && (isNaN(val) || val < 0 || val > refMax)) {
                         overrideInput.addClass('is-invalid');
-                        errors.push(orgName + ': manual override must be between 0 and ' + max.toFixed(2));
+                        errors.push(orgName + ': manual override must be between 0 and ' + fmt(refMax));
+                    } else if (raw !== '' && !isNaN(currBal) && val > currBal) {
+                        overrideInput.addClass('is-invalid');
+                        errors.push(orgName + ': manual override exceeds current balance of ' + fmt(currBal));
                     }
                 });
 

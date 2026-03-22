@@ -1859,7 +1859,19 @@ def _build_settlement_orgs(ref_date, payment_static):
     }
     default_fee = float(payment_static.default_org_fee_percent)
 
+    # Fetch each org's current (today's) balance for live validation in the UI.
+    # This may differ from the ref-date balance if transactions occurred since ref_date.
+    current_txns = (
+        OrganisationTransaction.objects.filter(organisation_id__in=org_ids)
+        .order_by("organisation", "-created_date")
+        .distinct("organisation")
+    )
+    current_balance_map = {t.organisation_id: float(t.balance) for t in current_txns}
+
     for ot in non_zero_orgs:
+        ot.current_balance = current_balance_map.get(
+            ot.organisation_id, float(ot.balance)
+        )
         fee_pct = fee_overrides.get(ot.organisation_id, default_fee)
         ot.settlement_fee_pct = fee_pct
         gross = max(
