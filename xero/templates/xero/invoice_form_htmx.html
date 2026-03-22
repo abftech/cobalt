@@ -100,6 +100,20 @@
                     <div class="col-sm-6 col-form-label text-muted">Xero GL account code for this line item</div>
                 </div>
 
+                <!-- Tax Type -->
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label font-weight-bold">Tax Type</label>
+                    <div class="col-sm-4">
+                        <select name="tax_type" class="form-control">
+                            <option value="">-- None (no tax) --</option>
+                            <option value="OUTPUT">OUTPUT — GST on Income (10%)</option>
+                            <option value="INPUT">INPUT — GST on Expenses (10%)</option>
+                            <option value="BASEXCLUDED">BASEXCLUDED — BAS Excluded</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-5 col-form-label text-muted">Xero tax rate for this line item</div>
+                </div>
+
                 <hr>
 
                 <!-- Actions -->

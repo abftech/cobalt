@@ -68,7 +68,7 @@ Chart of accounts
 
 Cobalt creates invoices and records payments against specific GL account codes.
 Those accounts must exist in the Xero chart of accounts before Cobalt can use
-them. Three categories of account are required:
+them. Two account codes are configured via environment variables:
 
 .. list-table::
    :header-rows: 1
@@ -84,30 +84,62 @@ them. Three categories of account are required:
      - Used when ``create_payment()`` records that a club has paid an invoice.
        Must be a Bank-type account so it appears under **Banking** in Xero and
        can receive bank feed transactions for reconciliation.
-   * - Club settlement payables
+   * - Settlement payables account
      - ``XERO_SETTLEMENT_ACCOUNT_CODE``
      - **Current Liability**
-     - Line-item account on ACCPAY (accounts payable) invoices raised by
-       ``create_settlement_invoice()``. Represents money owed to clubs pending
-       bank transfer. Use an Accounts Payable or Current Liability type.
-   * - Revenue / income accounts
-     - Passed per ``create_invoice()`` call
+     - Used on the ACCPAY settlement bill (no GST) and the informational ``$0``
+       lines on the ACCREC fee invoice. Must accept ``BASEXCLUDED`` / ``NOTAX``
+       tax types. **Do not** use a revenue account here.
+   * - Fee income account
+     - ``XERO_FEE_ACCOUNT_CODE``
      - **Revenue** or **Other Income**
-     - One or more accounts for ACCREC (accounts receivable) invoice line items.
-       The ABF uses separate codes for affiliation fees, table fees, etc. These
-       codes are not stored in Cobalt's environment variables — they are chosen
-       by the code that calls ``create_invoice()``.
+     - Used on the fee-recovery line of the ACCREC fee invoice (with GST).
+       Must be a revenue-type account so that Xero accepts ``OUTPUT`` (GST on
+       Income) as the tax type. Liability accounts cannot accept ``OUTPUT`` and
+       will cause invoice creation to fail.
 
-Tax type
-~~~~~~~~
+Additionally, ``create_invoice()`` accepts arbitrary account codes per line item.
+These are passed by the calling code and not stored in environment variables —
+create the appropriate Revenue or Other Income accounts in Xero for each income
+category (affiliation fees, table fees, etc.).
 
-Cobalt sends ``TaxType: "NONE"`` on every invoice line item by default. This
-means all accounts used for invoice line items must be configured to allow
-**No Tax** (or **Tax Exempt**) in Xero. Accounts that require GST on all
-transactions will cause invoice creation to fail.
+Tax types
+~~~~~~~~~
 
-If any line items need GST applied, the calling code can pass ``tax_type``
-explicitly in the line item dict (e.g. ``"tax_type": "OUTPUT2"`` for 10% GST).
+Cobalt sends ``LineAmountTypes: "Inclusive"`` on all invoices, meaning every
+``UnitAmount`` passed to Xero already **includes** any applicable GST. Cobalt
+uses two distinct tax types for the automatically-created settlement invoices:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 20 50
+
+   * - Cobalt setting
+     - Default value
+     - Where used
+   * - ``XERO_SETTLEMENT_TAX_TYPE``
+     - ``NOTAX``
+     - Line items on the **ACCPAY settlement invoice** (the bill paid to the
+       club) and the informational ``$0`` lines on the ACCREC fee invoice.
+       The ABF is not charging GST on the disbursement — it is passing through
+       money that was always the club's. Set to ``BASEXCLUDED`` in the Xero
+       chart of accounts (BAS Excluded).
+   * - ``XERO_FEE_TAX_TYPE``
+     - ``OUTPUT``
+     - The fee-recovery line item on the **ACCREC fee invoice** (the invoice
+       billed to the club for the ABF's processing fee). The ABF charges GST
+       on this service fee. ``OUTPUT`` means 10% GST on income (standard
+       Australian rate).
+
+Both values are Xero tax type codes. Valid codes for Australian organisations
+include ``OUTPUT`` (GST on income), ``INPUT`` (GST on expenses),
+``BASEXCLUDED`` (BAS excluded), and ``NOTAX`` (no tax / exempt). Check
+**Accounting → Tax Rates** in Xero for the exact codes available in your
+organisation.
+
+The ``create_invoice()`` method (used for manually-created invoices) also
+accepts an optional ``tax_type`` per line item; if omitted, no ``TaxType``
+is sent and Xero uses the account's default tax setting.
 
 ----
 
@@ -190,7 +222,19 @@ shell exports):
      - Xero account code for the bank/clearing account used when recording
        payments (e.g. ``090``). Look this up in **Chart of Accounts** in Xero.
    * - ``XERO_SETTLEMENT_ACCOUNT_CODE``
-     - Xero account code for the club settlement payables account.
+     - Xero account code for the settlement payables account (Current Liability).
+       Used on the ACCPAY bill and the informational lines of the ACCREC invoice.
+   * - ``XERO_FEE_ACCOUNT_CODE``
+     - Xero account code for the fee income account (Revenue / Other Income).
+       Used on the fee-recovery line of the ACCREC invoice. Must be a revenue
+       account so that ``OUTPUT`` tax type is accepted.
+   * - ``XERO_SETTLEMENT_TAX_TYPE``
+     - Xero tax type code for the settlement disbursement lines (no GST).
+       Default: ``NOTAX``. The ABF typically sets this to ``BASEXCLUDED``.
+   * - ``XERO_FEE_TAX_TYPE``
+     - Xero tax type code for the processing-fee recovery line on ACCREC
+       invoices. Default: ``OUTPUT`` (10% GST on income — the ABF charges GST
+       on its service fee).
 
 Test vs production values
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -332,25 +376,43 @@ invoice has been paid.
 Settlement payables account (XERO_SETTLEMENT_ACCOUNT_CODE)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This account is the line-item account on ACCPAY (accounts payable) invoices
-raised by ``create_settlement_invoice()`` when paying out clubs.
+Used on the ACCPAY settlement invoice (the bill paid to the club) and on the
+informational ``$0`` lines of the ACCREC fee invoice.
 
 * **Xero account type**: ``Current Liability`` (or ``Accounts Payable``)
-* **Tax**: set to **No Tax** / **Tax Exempt**
-* This account accumulates what the ABF owes to clubs. When the ABF transfers
-  money to a club's bank account and reconciles the transaction in Xero, the
-  ACCPAY invoice is marked paid and this liability is cleared.
+* **Tax type**: ``BASEXCLUDED`` / ``NOTAX`` — no GST applies. The ABF is
+  disbursing money that was always the club's; it is not the ABF's income.
+* When the ABF transfers money to a club and reconciles the bank transaction in
+  Xero, the ACCPAY invoice is marked paid and this liability is cleared.
 
-Revenue / income accounts (ACCREC line items)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Fee income account (XERO_FEE_ACCOUNT_CODE)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-ACCREC invoices (sent to clubs requesting payment) reference one or more
-revenue account codes as line items. These codes are passed by the calling
-code, not stored in Cobalt's environment variables.
+Used on the fee-recovery line item of the ACCREC fee invoice (the charge billed
+to the club for the ABF's processing fee).
 
 * **Xero account type**: ``Revenue`` or ``Other Income``
-* **Tax**: set to **No Tax** / **Tax Exempt** (Cobalt sends ``TaxType: "NONE"``
-  by default; accounts that require GST will cause invoice creation to fail)
+* **Tax type**: ``OUTPUT`` (10% GST on income) — the ABF charges GST on its
+  processing fee because it is taxable income for the ABF.
+* This **must** be a revenue-type account. Current Liability accounts (such as
+  ``XERO_SETTLEMENT_ACCOUNT_CODE``) cannot accept ``OUTPUT`` tax type in Xero,
+  which would cause invoice creation to fail with the error
+  *"The TaxType code 'OUTPUT' cannot be used with account code 'NNN'."*
+
+Revenue / income accounts (``create_invoice()`` line items)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The generic ``create_invoice()`` method (used for manually-created invoices such
+as affiliation fees) references revenue account codes passed by the calling code.
+These codes are **not** stored in Cobalt's environment variables.
+
+* **Xero account type**: ``Revenue`` or ``Other Income``
+* **Tax**: Cobalt now sends ``LineAmountTypes: "Inclusive"`` on all invoices.
+  If a line item does not include an explicit ``tax_type``, Xero uses the
+  account's default tax setting. Set the account default to match what is
+  expected (e.g. ``OUTPUT`` for taxable income, ``BASEXCLUDED`` for non-taxable).
+* The **Create Invoice** tool in the Xero admin screen (``/xero/``) includes
+  a Tax Type dropdown so the correct rate can be selected per line item.
 * Create a separate account for each income category, e.g.:
 
   * Affiliation fees
@@ -527,6 +589,16 @@ Troubleshooting
    * - Account code not found error on invoice creation
      - The account code passed to ``create_invoice()`` does not exist in the
        connected Xero organisation. Add it in **Accounting → Chart of Accounts**.
+   * - Fee invoice shows ``AUTHORISED`` but not ``PAID`` in Xero
+     - The auto-payment step after uploading the fee invoice failed. Check the
+       ``BatchStatus`` summary for ``upload_xero_settlements`` in Django admin
+       (``/admin/utils/batchstatus/``) — the exact Xero error is recorded there.
+       Common causes: ``XERO_BANK_ACCOUNT_CODE`` not set or set to an invalid
+       code; Xero rejected the payment amount.
+   * - GST not appearing on the fee recovery invoice
+     - ``XERO_FEE_TAX_TYPE`` is not set to ``OUTPUT``. Check the environment
+       variable and ensure the ``XERO_SETTLEMENT_ACCOUNT_CODE`` account in Xero
+       does not restrict the tax type to BAS Excluded only.
    * - Token refresh succeeds but tenant ID is blank
      - ``set_tenant_id()`` could not retrieve a connection. Check the application
        logs and confirm the Custom Connection app is linked to an organisation in
@@ -553,10 +625,25 @@ Summary of Environment Variables
      - From Xero developer portal.
    * - ``XERO_BANK_ACCOUNT_CODE``
      - Yes
-     - GL account code for recording payments.
+     - GL account code for the bank/clearing account used when recording
+       payments. Must be a Bank-type account in Xero.
    * - ``XERO_SETTLEMENT_ACCOUNT_CODE``
      - Yes
-     - GL account code for club settlement payables.
+     - GL account code for the settlement payables account (Current Liability).
+       Used on ACCPAY bills and the informational lines of ACCREC fee invoices.
+   * - ``XERO_FEE_ACCOUNT_CODE``
+     - Yes
+     - GL account code for the fee income account (Revenue / Other Income).
+       Used on the fee-recovery line of the ACCREC invoice. Must accept
+       ``OUTPUT`` tax type — use a revenue account, not a liability account.
+   * - ``XERO_SETTLEMENT_TAX_TYPE``
+     - No
+     - Xero tax type for settlement disbursement lines. Default: ``NOTAX``.
+       Set to ``BASEXCLUDED`` for Australian BAS-excluded disbursements.
+   * - ``XERO_FEE_TAX_TYPE``
+     - No
+     - Xero tax type for the fee-recovery line on ACCREC invoices.
+       Default: ``OUTPUT`` (10% GST on income).
    * - ``XERO_WEBHOOK_KEY``
      - Yes (if webhooks are configured)
      - Signing key from the Xero developer portal Webhooks tab. Required to
@@ -581,3 +668,4 @@ the test server and run::
 Exit shell_plus and run::
 
     ./manage.py create_missing_xero_contacts
+

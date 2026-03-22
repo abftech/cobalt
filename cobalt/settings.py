@@ -170,6 +170,12 @@ XERO_SETTLEMENT_ACCOUNT_CODE = set_value("XERO_SETTLEMENT_ACCOUNT_CODE", "not-se
 #   from your Xero chart of accounts — typically "NOTAX" (BAS Excluded) for
 #   settlement disbursements. Check Xero Settings > Tax Rates for valid codes.
 XERO_SETTLEMENT_TAX_TYPE = set_value("XERO_SETTLEMENT_TAX_TYPE", "NOTAX")
+#   XERO_FEE_ACCOUNT_CODE. GL account code for the processing-fee recovery line on the
+#   ACCREC fee invoice. This must be a Revenue/Income-type account in Xero so that it
+#   accepts OUTPUT (GST on Income) as its tax type. Liability accounts such as the
+#   XERO_SETTLEMENT_ACCOUNT_CODE cannot accept OUTPUT tax, so a separate income account
+#   is required here.
+XERO_FEE_ACCOUNT_CODE = set_value("XERO_FEE_ACCOUNT_CODE", "not-set")
 #   XERO_FEE_TAX_TYPE. Tax type applied to the processing-fee recovery line on the
 #   ACCREC fee invoice. Typically "OUTPUT" (GST on Income, 10%) for Australian entities.
 #   Check Xero Settings > Tax Rates for valid codes.

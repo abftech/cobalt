@@ -2123,6 +2123,7 @@ def settlement(request):
                             organisation=org,
                             bank_settlement_amount=si["custom_bank_amount"],
                             reference=reference,
+                            invoice_date=ref_date,
                         )
                         if not xero_invoice:
                             logger.error(
@@ -2174,6 +2175,7 @@ def settlement(request):
                                 net_amount=si["custom_bank_amount"],
                                 reference=reference,
                                 fee_percent=org.settlement_fee_percent,
+                                invoice_date=ref_date,
                             )
                         except Exception as exc:
                             logger.error(

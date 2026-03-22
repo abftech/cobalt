@@ -151,11 +151,13 @@ class CreateSettlementInvoiceTests:
         ):
             return
 
+        test_date = date(2025, 3, 31)
         xero = _make_api()
         invoice = xero.create_settlement_invoice(
             organisation=self.org,
             bank_settlement_amount=123.45,
             reference="Test payload ref",
+            invoice_date=test_date,
         )
 
         payload = invoice.upload_payload if invoice else {}
@@ -168,6 +170,7 @@ class CreateSettlementInvoiceTests:
             and inv_data.get("InvoiceNumber", "").startswith("MyABF-")
             and inv_data.get("Status") == "AUTHORISED"
             and inv_data.get("LineAmountTypes") == "Inclusive"
+            and inv_data.get("Date") == "2025-03-31"
             and line_item.get("UnitAmount") == 123.45
             and line_item.get("AccountCode") == XERO_SETTLEMENT_ACCOUNT_CODE
         )
@@ -176,13 +179,14 @@ class CreateSettlementInvoiceTests:
             test_name="create_settlement_invoice: payload structure",
             test_description=(
                 "Verify upload_payload contains Type=ACCPAY, InvoiceNumber starting with MyABF-, "
-                "Status=AUTHORISED, LineAmountTypes=Inclusive, correct UnitAmount and AccountCode in LineItems"
+                "Status=AUTHORISED, LineAmountTypes=Inclusive, Date=invoice_date, correct UnitAmount and AccountCode"
             ),
             output=(
                 f"Type={inv_data.get('Type')!r}. "
                 f"InvoiceNumber={inv_data.get('InvoiceNumber')!r}. "
                 f"Status={inv_data.get('Status')!r}. "
                 f"LineAmountTypes={inv_data.get('LineAmountTypes')!r}. "
+                f"Date={inv_data.get('Date')!r}. "
                 f"UnitAmount={line_item.get('UnitAmount')!r}. "
                 f"AccountCode={line_item.get('AccountCode')!r}"
             ),

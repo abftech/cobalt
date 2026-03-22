@@ -90,6 +90,9 @@ class XeroInvoice(models.Model):
 class XeroCredentials(models.Model):
     """persistent store for Xero credentials"""
 
+    class Meta:
+        verbose_name_plural = "Xero credentials"
+
     # The authorisation code is given to use by the user who provides authorisation. We get this from a callback
     authorisation_code = models.CharField(max_length=100, blank=True, default="")
 

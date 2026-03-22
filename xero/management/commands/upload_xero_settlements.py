@@ -296,7 +296,7 @@ def _upload_invoice(xero: XeroApi, invoice: XeroInvoice, summary_lines: list) ->
                 amount_due = float(
                     xero_invoice_data.get("AmountDue", float(invoice.amount))
                 )
-                xero.create_payment(xero_id, amount_due)
+                xero.create_payment(xero_id, amount_due, payment_date=invoice.date)
                 summary_lines.append(f"  {ref}: payment recorded → PAID")
                 logger.info(f"upload_xero_settlements: payment recorded for {ref}")
             except Exception as pay_exc:

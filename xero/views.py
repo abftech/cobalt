@@ -55,7 +55,7 @@ def connect_htmx(request):
 def home(request):
     """Main page for Xero"""
     xero = XeroApi()
-    organisations = Organisation.objects.order_by("name")
+    organisations = Organisation.objects.filter(status="Open").order_by("name")
     return render(
         request, "xero/home.html", {"xero": xero, "organisations": organisations}
     )
@@ -142,6 +142,7 @@ def run_xero_api_htmx(request):
                             "quantity": float(request.POST.get("quantity", 1)),
                             "unit_amount": float(request.POST.get("unit_amount", 0)),
                             "account_code": request.POST.get("account_code", ""),
+                            "tax_type": request.POST.get("tax_type") or None,
                         }
                     ]
                     invoice = xero.create_invoice(

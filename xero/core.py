@@ -16,6 +16,7 @@ from cobalt.settings import (
     XERO_CLIENT_ID,
     XERO_CLIENT_SECRET,
     XERO_BANK_ACCOUNT_CODE,
+    XERO_FEE_ACCOUNT_CODE,
     XERO_FEE_TAX_TYPE,
     XERO_SETTLEMENT_ACCOUNT_CODE,
     XERO_SETTLEMENT_TAX_TYPE,
@@ -797,6 +798,7 @@ class XeroApi:
         organisation,
         bank_settlement_amount: float,
         reference: str,
+        invoice_date: date | None = None,
     ) -> "XeroInvoice | None":
         """Queue an ACCPAY settlement invoice for asynchronous upload to Xero.
 
@@ -811,6 +813,9 @@ class XeroApi:
             organisation: The Organisation being settled.
             bank_settlement_amount: Net amount to be paid out (after ABF fees).
             reference: Human-readable reference string for the invoice.
+            invoice_date: Date to stamp on the invoice. Defaults to today.
+                          Pass the settlement reference date so invoices appear
+                          in the correct Xero period (e.g. end of month).
 
         Returns:
             XeroInvoice instance (PENDING_UPLOAD) on success, None on failure.
@@ -826,7 +831,7 @@ class XeroApi:
                 )
                 return None
 
-        today = date.today()
+        invoice_date = invoice_date or date.today()
         cobalt_reference = f"MyABF-{uuid4().hex[:12].upper()}"
 
         upload_payload = {
@@ -844,8 +849,8 @@ class XeroApi:
                             "TaxType": XERO_SETTLEMENT_TAX_TYPE,
                         }
                     ],
-                    "Date": f"{today:%Y-%m-%d}",
-                    "DueDate": f"{today:%Y-%m-%d}",
+                    "Date": f"{invoice_date:%Y-%m-%d}",
+                    "DueDate": f"{invoice_date:%Y-%m-%d}",
                     "Reference": reference,
                     "InvoiceNumber": cobalt_reference,
                     "Status": "AUTHORISED",
@@ -862,8 +867,8 @@ class XeroApi:
             reference=reference,
             cobalt_reference=cobalt_reference,
             upload_payload=upload_payload,
-            date=today,
-            due_date=today,
+            date=invoice_date,
+            due_date=invoice_date,
         )
         xero_invoice.save()
         logger.info(
@@ -878,6 +883,7 @@ class XeroApi:
         net_amount: float,
         reference: str,
         fee_percent: float,
+        invoice_date: date | None = None,
     ) -> "XeroInvoice | None":
         """Queue an ACCREC fee-recovery invoice for asynchronous upload to Xero.
 
@@ -890,6 +896,16 @@ class XeroApi:
         The upload_xero_settlements management command uploads the invoice and then
         immediately records a Xero payment equal to AmountDue, closing the invoice
         to $0 outstanding.
+
+        Args:
+            organisation: The Organisation being invoiced.
+            gross_amount: Total amount collected from the club.
+            net_amount: Amount paid out to the club (after fees).
+            reference: Human-readable reference string for the invoice.
+            fee_percent: Fee percentage (informational, shown in line description).
+            invoice_date: Date to stamp on the invoice. Defaults to today.
+                          Pass the settlement reference date so invoices appear
+                          in the correct Xero period (e.g. end of month).
 
         Returns None (without raising) if there is no fee or if Xero contact
         creation fails.
@@ -909,7 +925,7 @@ class XeroApi:
                 )
                 return None
 
-        today = date.today()
+        invoice_date = invoice_date or date.today()
         cobalt_reference = f"MyABF-{uuid4().hex[:12].upper()}"
 
         upload_payload = {
@@ -930,7 +946,7 @@ class XeroApi:
                             "Description": f"Recovery of 3rd party transaction processing fees ({fee_percent}%)",
                             "Quantity": 1,
                             "UnitAmount": fee,
-                            "AccountCode": XERO_SETTLEMENT_ACCOUNT_CODE,
+                            "AccountCode": XERO_FEE_ACCOUNT_CODE,
                             "TaxType": XERO_FEE_TAX_TYPE,
                         },
                         {
@@ -941,8 +957,8 @@ class XeroApi:
                             "TaxType": XERO_SETTLEMENT_TAX_TYPE,
                         },
                     ],
-                    "Date": f"{today:%Y-%m-%d}",
-                    "DueDate": f"{today:%Y-%m-%d}",
+                    "Date": f"{invoice_date:%Y-%m-%d}",
+                    "DueDate": f"{invoice_date:%Y-%m-%d}",
                     "Reference": reference,
                     "InvoiceNumber": cobalt_reference,
                     "Status": "AUTHORISED",
@@ -960,8 +976,8 @@ class XeroApi:
             cobalt_reference=cobalt_reference,
             upload_payload=upload_payload,
             auto_record_payment=True,
-            date=today,
-            due_date=today,
+            date=invoice_date,
+            due_date=invoice_date,
         )
         xero_invoice.save()
         logger.info(
