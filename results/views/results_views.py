@@ -744,7 +744,7 @@ def _set_icon_based_on_cross_imp_points(cross_imp_points):
 
 
 def cross_imp_results_summary_view(request, usebio, results_file, masterpoint_type):
-    """Show the two-field summary results for a CROSS_IMP event."""
+    """Show the summary results for a CROSS_IMP event (single-field or two-field)."""
 
     ns_scores = []
     ew_scores = []
@@ -762,7 +762,7 @@ def cross_imp_results_summary_view(request, usebio, results_file, masterpoint_ty
         position = int(item["PLACE"])
         masterpoints = int(item.get("MASTER_POINTS_AWARDED", 0)) / 100.0
         pair_number = item["PAIR_NUMBER"]
-        direction = item["DIRECTION"]
+        direction = item.get("DIRECTION")
         total_score = float(item["TOTAL_SCORE"])
         total_score_display = (
             f"+{total_score:.2f}" if total_score >= 0 else f"{total_score:.2f}"
@@ -800,6 +800,9 @@ def cross_imp_results_summary_view(request, usebio, results_file, masterpoint_ty
     ns_scores = sorted(ns_scores, key=lambda d: d["position"])
     ew_scores = sorted(ew_scores, key=lambda d: d["position"])
 
+    # Single-field events have no NS pairs — all pairs share one combined ranking
+    single_field = not ns_scores
+
     return render(
         request,
         "results/usebio/usebio_results_summary_cross_imp_view.html",
@@ -808,6 +811,7 @@ def cross_imp_results_summary_view(request, usebio, results_file, masterpoint_ty
             "usebio": usebio,
             "ns_scores": ns_scores,
             "ew_scores": ew_scores,
+            "single_field": single_field,
             "masterpoint_type": masterpoint_type,
         },
     )

@@ -14,69 +14,103 @@
         {% include "results/usebio/usebio_results_header.html" %}
 
         <div class="card-body">
-            <div class="card">
-                <div class="card-header card-header-warning">
-                    <h2>North-South</h2>
-                </div>
-                <div class="card-body">
-                    <table class="table table-condensed table-hover">
-                        <thead class="text-primary">
-                            <tr>
-                                <th>Place</th>
-                                <th class="text-left">Players</th>
-                                <th>IMPs</th>
-                                <th>{{ masterpoint_type }} Masterpoints</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for row in ns_scores %}
-                                <tr onclick="window.location='{% url "results:cross_imp_pairs_details_view" results_file_id=results_file.id pair_id=row.pair_number %}'">
-                                    <td class="{{ row.tr_highlight }}">{{ row.position }}</td>
-                                    <td class="text-left {{ row.tr_highlight }}">{{ row.players_names }}</td>
-                                    <td class="{{ row.tr_highlight }}">{{ row.total_score_display }}</td>
-                                    <td class="{{ row.tr_highlight }}">
-                                        {% if row.masterpoints > 0 %}
-                                            {{ row.masterpoints|floatformat:2 }}
-                                        {% endif %}
-                                    </td>
+            {% if single_field %}
+                <div class="card">
+                    <div class="card-header card-header-warning">
+                        <h2>Results</h2>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-condensed table-hover">
+                            <thead class="text-primary">
+                                <tr>
+                                    <th>Place</th>
+                                    <th class="text-left">Players</th>
+                                    <th>IMPs</th>
+                                    <th>{{ masterpoint_type }} Masterpoints</th>
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {% for row in ew_scores %}
+                                    <tr onclick="window.location='{% url "results:cross_imp_pairs_details_view" results_file_id=results_file.id pair_id=row.pair_number %}'">
+                                        <td class="{{ row.tr_highlight }}">{{ row.position }}</td>
+                                        <td class="text-left {{ row.tr_highlight }}">{{ row.players_names }}</td>
+                                        <td class="{{ row.tr_highlight }}">{{ row.total_score_display }}</td>
+                                        <td class="{{ row.tr_highlight }}">
+                                            {% if row.masterpoints > 0 %}
+                                                {{ row.masterpoints|floatformat:2 }}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+            {% else %}
+                <div class="card">
+                    <div class="card-header card-header-warning">
+                        <h2>North-South</h2>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-condensed table-hover">
+                            <thead class="text-primary">
+                                <tr>
+                                    <th>Place</th>
+                                    <th class="text-left">Players</th>
+                                    <th>IMPs</th>
+                                    <th>{{ masterpoint_type }} Masterpoints</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in ns_scores %}
+                                    <tr onclick="window.location='{% url "results:cross_imp_pairs_details_view" results_file_id=results_file.id pair_id=row.pair_number %}'">
+                                        <td class="{{ row.tr_highlight }}">{{ row.position }}</td>
+                                        <td class="text-left {{ row.tr_highlight }}">{{ row.players_names }}</td>
+                                        <td class="{{ row.tr_highlight }}">{{ row.total_score_display }}</td>
+                                        <td class="{{ row.tr_highlight }}">
+                                            {% if row.masterpoints > 0 %}
+                                                {{ row.masterpoints|floatformat:2 }}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-            <div class="card">
-                <div class="card-header card-header-success">
-                    <h2>East-West</h2>
-                </div>
-                <div class="card-body">
-                    <table class="table table-condensed table-hover">
-                        <thead class="text-primary">
-                            <tr>
-                                <th>Place</th>
-                                <th class="text-left">Players</th>
-                                <th>IMPs</th>
-                                <th>{{ masterpoint_type }} Masterpoints</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for row in ew_scores %}
-                                <tr onclick="window.location='{% url "results:cross_imp_pairs_details_view" results_file_id=results_file.id pair_id=row.pair_number %}'">
-                                    <td class="{{ row.tr_highlight }}">{{ row.position }}</td>
-                                    <td class="text-left {{ row.tr_highlight }}">{{ row.players_names }}</td>
-                                    <td class="{{ row.tr_highlight }}">{{ row.total_score_display }}</td>
-                                    <td class="{{ row.tr_highlight }}">
-                                        {% if row.masterpoints > 0 %}
-                                            {{ row.masterpoints|floatformat:2 }}
-                                        {% endif %}
-                                    </td>
+                <div class="card">
+                    <div class="card-header card-header-success">
+                        <h2>East-West</h2>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-condensed table-hover">
+                            <thead class="text-primary">
+                                <tr>
+                                    <th>Place</th>
+                                    <th class="text-left">Players</th>
+                                    <th>IMPs</th>
+                                    <th>{{ masterpoint_type }} Masterpoints</th>
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {% for row in ew_scores %}
+                                    <tr onclick="window.location='{% url "results:cross_imp_pairs_details_view" results_file_id=results_file.id pair_id=row.pair_number %}'">
+                                        <td class="{{ row.tr_highlight }}">{{ row.position }}</td>
+                                        <td class="text-left {{ row.tr_highlight }}">{{ row.players_names }}</td>
+                                        <td class="{{ row.tr_highlight }}">{{ row.total_score_display }}</td>
+                                        <td class="{{ row.tr_highlight }}">
+                                            {% if row.masterpoints > 0 %}
+                                                {{ row.masterpoints|floatformat:2 }}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+            {% endif %}
         </div>
     </div>
 
