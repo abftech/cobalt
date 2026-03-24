@@ -1,6 +1,6 @@
 {#------------------------------------------------------------------------#}
 {#                                                                        #}
-{# Traveller view for a CROSS_IMP board                                  #}
+{# Traveller view for an IMP-scored board                                 #}
 {#                                                                        #}
 {#------------------------------------------------------------------------#}
 {% extends 'base.html' %}
@@ -32,12 +32,12 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             {% if previous_board %}
-                                <a href="{% url "results:cross_imp_board_view" board_number=previous_board pair_id=pair_id results_file_id=results_file.id %}" class="btn btn-sm btn-secondary">Previous</a>
+                                <a href="{% url "results:imp_board_view" board_number=previous_board pair_id=pair_id results_file_id=results_file.id %}" class="btn btn-sm btn-secondary">Previous</a>
                             {% endif %}
                         </div>
                         <div>
                             {% if next_board %}
-                                <a href="{% url "results:cross_imp_board_view" board_number=next_board pair_id=pair_id results_file_id=results_file.id %}" class="btn btn-sm btn-secondary">Next</a>
+                                <a href="{% url "results:imp_board_view" board_number=next_board pair_id=pair_id results_file_id=results_file.id %}" class="btn btn-sm btn-secondary">Next</a>
                             {% endif %}
                         </div>
                     </div>
@@ -107,8 +107,8 @@
 
                                 {% else %}
                                     <tr>
-                                        <td class="text-left {{ row.tr_highlight }}"><a href="{% url "results:cross_imp_pairs_details_view" pair_id=row.ns_pair_number results_file_id=results_file.id %}">{{ row.ns_pair }}</a></td>
-                                        <td class="text-left {{ row.tr_highlight }}"><a href="{% url "results:cross_imp_pairs_details_view" pair_id=row.ew_pair_number results_file_id=results_file.id %}">{{ row.ew_pair }}</a></td>
+                                        <td class="text-left {{ row.tr_highlight }}"><a href="{% url "results:imp_pairs_details_view" pair_id=row.ns_pair_number results_file_id=results_file.id %}">{{ row.ns_pair }}</a></td>
+                                        <td class="text-left {{ row.tr_highlight }}"><a href="{% url "results:imp_pairs_details_view" pair_id=row.ew_pair_number results_file_id=results_file.id %}">{{ row.ew_pair }}</a></td>
                                         <td class="{{ row.tr_highlight }}">{{ row.contract|cobalt_suit_replace|default_if_none:""|safe }}</td>
                                         <td class="{{ row.tr_highlight }}">{{ row.played_by }}</td>
                                         <td class="d-none d-sm-table-cell {{ row.tr_highlight }}">{{ row.lead|cobalt_suit_replace|safe }}</td>
@@ -116,9 +116,9 @@
                                         <td class="{{ row.tr_highlight }}">{{ row.score|default_if_none:"" }}</td>
                                         <td class="d-none d-sm-table-cell {{ row.tr_highlight }}">
                                             {% if ns_flag %}
-                                                {{ row.ns_cross_imp_points|floatformat:2 }}
+                                                {{ row.ns_imp_points|floatformat:2 }}
                                             {% else %}
-                                                {{ row.ew_cross_imp_points|floatformat:2 }}
+                                                {{ row.ew_imp_points|floatformat:2 }}
                                             {% endif %}
                                         </td>
                                         <td><div>{{ row.indicator|safe }}</div></td>
@@ -251,7 +251,7 @@
 
             $('#board_jump').on('change', function () {
                 const board = $(this).val();
-                window.location = "/results/cross-imp-board-details/{{ results_file.id }}/" + board + "/{{ pair_id }}";
+                window.location = "/results/imp-board-details/{{ results_file.id }}/" + board + "/{{ pair_id }}";
             });
 
             if (Cookies.get('results-show-total-tricks') === 'set') {

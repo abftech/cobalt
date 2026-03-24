@@ -140,10 +140,11 @@ def usebio_mp_pairs_results_summary_view(request, results_file_id):
 
     masterpoint_type = usebio.get("MASTER_POINT_TYPE", "No").title()
 
-    if results_file.event_type == ResultsFile.EventType.CROSS_IMP:
-        return cross_imp_results_summary_view(
-            request, usebio, results_file, masterpoint_type
-        )
+    if results_file.event_type in [
+        ResultsFile.EventType.CROSS_IMP,
+        ResultsFile.EventType.BUTLER_PAIRS,
+    ]:
+        return imp_results_summary_view(request, usebio, results_file, masterpoint_type)
 
     # MP_PAIRS (default)
     # TODO: Error checking, handle ties, one field or two
@@ -729,21 +730,21 @@ def calculate_hcp_and_ltc(hand):
     return hcp, ltc
 
 
-def _set_icon_based_on_cross_imp_points(cross_imp_points):
-    """Set a material icon based on cross IMP points for a single board."""
+def _set_icon_based_on_imp_points(imp_points):
+    """Set a material icon based on IMP points for a single board."""
 
-    if cross_imp_points > 5:
+    if imp_points > 5:
         return "<i class='material-icons' style='color: orange'>star</i>"
-    if cross_imp_points > 1.5:
+    if imp_points > 1.5:
         return "<i class='material-icons' style='color: blue'>check_circle</i>"
-    if cross_imp_points > -1.5:
+    if imp_points > -1.5:
         return "<span style='color: blue; font-size: larger;'>=</span>"
-    if cross_imp_points > -5:
+    if imp_points > -5:
         return "<i class='material-icons' style='color: red'>expand_more</i>"
     return "<i class='material-icons' style='color: red'>cancel</i>"
 
 
-def cross_imp_results_summary_view(request, usebio, results_file, masterpoint_type):
+def imp_results_summary_view(request, usebio, results_file, masterpoint_type):
     """Show the summary results for a CROSS_IMP event (single-field or two-field)."""
 
     ns_scores = []
@@ -805,7 +806,7 @@ def cross_imp_results_summary_view(request, usebio, results_file, masterpoint_ty
 
     return render(
         request,
-        "results/usebio/usebio_results_summary_cross_imp_view.html",
+        "results/usebio/usebio_results_summary_imp_view.html",
         {
             "results_file": results_file,
             "usebio": usebio,
@@ -818,7 +819,7 @@ def cross_imp_results_summary_view(request, usebio, results_file, masterpoint_ty
 
 
 @login_required()
-def cross_imp_pairs_details_view(request, results_file_id, pair_id):
+def imp_pairs_details_view(request, results_file_id, pair_id):
     """Show board-by-board CROSS_IMP results for a pair."""
 
     results_file = get_object_or_404(ResultsFile, pk=results_file_id)
@@ -841,6 +842,13 @@ def cross_imp_pairs_details_view(request, results_file_id, pair_id):
             break
 
     player_dict = _get_player_names_by_id(usebio)
+
+    if results_file.event_type == ResultsFile.EventType.BUTLER_PAIRS:
+        ns_imp_key = "NS_BUTLER_POINTS"
+        ew_imp_key = "EW_BUTLER_POINTS"
+    else:
+        ns_imp_key = "NS_CROSS_IMP_POINTS"
+        ew_imp_key = "EW_CROSS_IMP_POINTS"
 
     if "BOARD" not in usebio:
         return render(
@@ -876,16 +884,14 @@ def cross_imp_pairs_details_view(request, results_file_id, pair_id):
             tricks = traveller_line.get("TRICKS") or ""
             score = traveller_line.get("SCORE", "0")
 
-            ns_cross_imp = float(traveller_line.get("NS_CROSS_IMP_POINTS", 0))
-            ew_cross_imp = float(traveller_line.get("EW_CROSS_IMP_POINTS", 0))
-            cross_imp_points = ns_cross_imp if ns_flag else ew_cross_imp
-            cross_imp_display = (
-                f"+{cross_imp_points:.2f}"
-                if cross_imp_points >= 0
-                else f"{cross_imp_points:.2f}"
+            ns_imp = float(traveller_line.get(ns_imp_key, 0))
+            ew_imp = float(traveller_line.get(ew_imp_key, 0))
+            imp_points = ns_imp if ns_flag else ew_imp
+            imp_display = (
+                f"+{imp_points:.2f}" if imp_points >= 0 else f"{imp_points:.2f}"
             )
 
-            indicator = _set_icon_based_on_cross_imp_points(cross_imp_points)
+            indicator = _set_icon_based_on_imp_points(imp_points)
 
             if opponents_pair_id != last_opponent:
                 bg_colour = not bg_colour
@@ -901,8 +907,8 @@ def cross_imp_pairs_details_view(request, results_file_id, pair_id):
                     "score": score,
                     "opponents": opponents,
                     "opponents_pair_id": opponents_pair_id,
-                    "cross_imp_points": cross_imp_points,
-                    "cross_imp_display": cross_imp_display,
+                    "imp_points": imp_points,
+                    "imp_display": imp_display,
                     "indicator": indicator,
                     "bg_colour": bg_colour,
                 }
@@ -912,7 +918,7 @@ def cross_imp_pairs_details_view(request, results_file_id, pair_id):
 
     return render(
         request,
-        "results/usebio/usebio_results_cross_imp_pairs_detail.html",
+        "results/usebio/usebio_results_imp_pairs_detail.html",
         {
             "usebio": usebio,
             "results_file": results_file,
@@ -925,10 +931,10 @@ def cross_imp_pairs_details_view(request, results_file_id, pair_id):
     )
 
 
-def _get_cross_imp_traveller_info_process_board(
-    board, player_dict, pair_id, board_number, ns_flag, request
+def _get_imp_traveller_info_process_board(
+    board, player_dict, pair_id, board_number, ns_flag, request, ns_imp_key, ew_imp_key
 ):
-    """Process a single board's traveller lines for CROSS_IMP."""
+    """Process a single board's traveller lines for IMP-scored events (Cross IMP or Butler)."""
 
     board_data = []
 
@@ -947,11 +953,11 @@ def _get_cross_imp_traveller_info_process_board(
         except (ValueError, TypeError):
             pass
 
-        ns_cross_imp_points = float(traveller_line.get("NS_CROSS_IMP_POINTS", 0))
-        ew_cross_imp_points = float(traveller_line.get("EW_CROSS_IMP_POINTS", 0))
-        cross_imp_points = ns_cross_imp_points if ns_flag else ew_cross_imp_points
+        ns_imp_points = float(traveller_line.get(ns_imp_key, 0))
+        ew_imp_points = float(traveller_line.get(ew_imp_key, 0))
+        imp_points = ns_imp_points if ns_flag else ew_imp_points
 
-        indicator = _set_icon_based_on_cross_imp_points(cross_imp_points)
+        indicator = _set_icon_based_on_imp_points(imp_points)
 
         if pair_id in [ns_pair_number, ew_pair_number]:
             if request.user.system_number in player_dict["system_numbers"].get(
@@ -977,29 +983,36 @@ def _get_cross_imp_traveller_info_process_board(
                 "ew_pair": ew_pair,
                 "tr_highlight": tr_highlight,
                 "indicator": indicator,
-                "ns_cross_imp_points": ns_cross_imp_points,
-                "ew_cross_imp_points": ew_cross_imp_points,
-                "cross_imp_points": cross_imp_points,
+                "ns_imp_points": ns_imp_points,
+                "ew_imp_points": ew_imp_points,
+                "imp_points": imp_points,
             }
         )
 
     return board_data
 
 
-def get_cross_imp_traveller_info(
-    usebio, board_number, player_dict, ns_flag, pair_id, request
+def get_imp_traveller_info(
+    usebio, board_number, player_dict, ns_flag, pair_id, request, ns_imp_key, ew_imp_key
 ):
-    """Extract traveller information for a CROSS_IMP board."""
+    """Extract traveller information for an IMP-scored board (Cross IMP or Butler)."""
 
     for board in usebio["EVENT"]["BOARD"]:
         if int(board.get("BOARD_NUMBER")) == board_number:
-            return _get_cross_imp_traveller_info_process_board(
-                board, player_dict, pair_id, board_number, ns_flag, request
+            return _get_imp_traveller_info_process_board(
+                board,
+                player_dict,
+                pair_id,
+                board_number,
+                ns_flag,
+                request,
+                ns_imp_key,
+                ew_imp_key,
             )
 
 
 @login_required()
-def cross_imp_board_view(request, results_file_id, board_number, pair_id):
+def imp_board_view(request, results_file_id, board_number, pair_id):
     """Show the traveller + hand record for a CROSS_IMP board."""
 
     results_file = get_object_or_404(ResultsFile, pk=results_file_id)
@@ -1008,8 +1021,22 @@ def cross_imp_board_view(request, results_file_id, board_number, pair_id):
     player_dict = _get_player_names_by_id(usebio["EVENT"])
     ns_flag = _get_pair_direction_for_board(usebio, board_number, pair_id)
 
-    board_data = get_cross_imp_traveller_info(
-        usebio, board_number, player_dict, ns_flag, pair_id, request
+    if results_file.event_type == ResultsFile.EventType.BUTLER_PAIRS:
+        ns_imp_key = "NS_BUTLER_POINTS"
+        ew_imp_key = "EW_BUTLER_POINTS"
+    else:
+        ns_imp_key = "NS_CROSS_IMP_POINTS"
+        ew_imp_key = "EW_CROSS_IMP_POINTS"
+
+    board_data = get_imp_traveller_info(
+        usebio,
+        board_number,
+        player_dict,
+        ns_flag,
+        pair_id,
+        request,
+        ns_imp_key,
+        ew_imp_key,
     )
 
     hand = {}
@@ -1079,7 +1106,7 @@ def cross_imp_board_view(request, results_file_id, board_number, pair_id):
 
     return render(
         request,
-        "results/usebio/usebio_results_board_detail_cross_imp.html",
+        "results/usebio/usebio_results_board_detail_imp.html",
         {
             "usebio": usebio.get("EVENT"),
             "results_file": results_file,

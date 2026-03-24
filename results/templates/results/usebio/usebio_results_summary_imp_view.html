@@ -31,7 +31,7 @@
                             </thead>
                             <tbody>
                                 {% for row in ew_scores %}
-                                    <tr onclick="window.location='{% url "results:cross_imp_pairs_details_view" results_file_id=results_file.id pair_id=row.pair_number %}'">
+                                    <tr onclick="window.location='{% url "results:imp_pairs_details_view" results_file_id=results_file.id pair_id=row.pair_number %}'">
                                         <td class="{{ row.tr_highlight }}">{{ row.position }}</td>
                                         <td class="text-left {{ row.tr_highlight }}">{{ row.players_names }}</td>
                                         <td class="{{ row.tr_highlight }}">{{ row.total_score_display }}</td>
@@ -63,7 +63,7 @@
                             </thead>
                             <tbody>
                                 {% for row in ns_scores %}
-                                    <tr onclick="window.location='{% url "results:cross_imp_pairs_details_view" results_file_id=results_file.id pair_id=row.pair_number %}'">
+                                    <tr onclick="window.location='{% url "results:imp_pairs_details_view" results_file_id=results_file.id pair_id=row.pair_number %}'">
                                         <td class="{{ row.tr_highlight }}">{{ row.position }}</td>
                                         <td class="text-left {{ row.tr_highlight }}">{{ row.players_names }}</td>
                                         <td class="{{ row.tr_highlight }}">{{ row.total_score_display }}</td>
@@ -95,7 +95,7 @@
                             </thead>
                             <tbody>
                                 {% for row in ew_scores %}
-                                    <tr onclick="window.location='{% url "results:cross_imp_pairs_details_view" results_file_id=results_file.id pair_id=row.pair_number %}'">
+                                    <tr onclick="window.location='{% url "results:imp_pairs_details_view" results_file_id=results_file.id pair_id=row.pair_number %}'">
                                         <td class="{{ row.tr_highlight }}">{{ row.position }}</td>
                                         <td class="text-left {{ row.tr_highlight }}">{{ row.players_names }}</td>
                                         <td class="{{ row.tr_highlight }}">{{ row.total_score_display }}</td>

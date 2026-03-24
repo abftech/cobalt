@@ -25,7 +25,7 @@ from organisations.views.club_menu import tab_results_htmx
 from results.models import ResultsFile
 from results.views.usebio import (
     parse_usebio_file,
-    create_player_records_from_usebio_format_cross_imp,
+    create_player_records_from_usebio_format_imp,
     create_player_records_from_usebio_format_pairs,
 )
 
@@ -74,8 +74,11 @@ def upload_results_file_valid(request, form, club):
     results_file.save()
 
     # Create the player records so people know the results are there
-    if event_type == ResultsFile.EventType.CROSS_IMP:
-        create_player_records_from_usebio_format_cross_imp(results_file, usebio)
+    if event_type in [
+        ResultsFile.EventType.CROSS_IMP,
+        ResultsFile.EventType.BUTLER_PAIRS,
+    ]:
+        create_player_records_from_usebio_format_imp(results_file, usebio)
     else:
         create_player_records_from_usebio_format_pairs(results_file, usebio)
 
@@ -168,7 +171,10 @@ def _send_results_emails(results_file, club, request):
         complete=True,
     )
 
-    is_cross_imp = results_file.event_type == ResultsFile.EventType.CROSS_IMP
+    is_imp_event = results_file.event_type in [
+        ResultsFile.EventType.CROSS_IMP,
+        ResultsFile.EventType.BUTLER_PAIRS,
+    ]
 
     # Go through data, and email results to players
     for item in usebio["EVENT"]["PARTICIPANTS"]["PAIR"]:
@@ -185,7 +191,7 @@ def _send_results_emails(results_file, club, request):
         # COB-807 - throwing exception if no masterpoints in file
         masterpoints = int(item.get("MASTER_POINTS_AWARDED", 0)) / 100.0
 
-        if is_cross_imp:
+        if is_imp_event:
             total_score = float(item["TOTAL_SCORE"])
             score_str = (
                 f"+{total_score:.2f}" if total_score >= 0 else f"{total_score:.2f}"

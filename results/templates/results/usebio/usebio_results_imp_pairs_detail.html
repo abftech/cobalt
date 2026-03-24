@@ -40,29 +40,29 @@
                                         style="background-color: #E5E4E2"
                                     {% endif %}
                                 >
-                                    <td onclick="window.location='{% url "results:cross_imp_board_view" results_file_id=results_file.id board_number=row.board_number pair_id=pair_id %}'">{{ row.board_number }}</td>
+                                    <td onclick="window.location='{% url "results:imp_board_view" results_file_id=results_file.id board_number=row.board_number pair_id=pair_id %}'">{{ row.board_number }}</td>
                                     <td
-                                        onclick="window.location='{% url "results:cross_imp_pairs_details_view" results_file_id=results_file.id pair_id=row.opponents_pair_id %}'"
+                                        onclick="window.location='{% url "results:imp_pairs_details_view" results_file_id=results_file.id pair_id=row.opponents_pair_id %}'"
                                         class="text-left">{{ row.opponents }}</td>
                                     <td
-                                        onclick="window.location='{% url "results:cross_imp_board_view" results_file_id=results_file.id board_number=row.board_number pair_id=pair_id %}'"
+                                        onclick="window.location='{% url "results:imp_board_view" results_file_id=results_file.id board_number=row.board_number pair_id=pair_id %}'"
                                         class="text-left">{{ row.contract|cobalt_suit_replace|default_if_none:""|safe }}</td>
                                     <td
-                                        onclick="window.location='{% url "results:cross_imp_board_view" results_file_id=results_file.id board_number=row.board_number pair_id=pair_id %}'"
+                                        onclick="window.location='{% url "results:imp_board_view" results_file_id=results_file.id board_number=row.board_number pair_id=pair_id %}'"
                                     >{{ row.played_by }}</td>
                                     <td
-                                        onclick="window.location='{% url "results:cross_imp_board_view" results_file_id=results_file.id board_number=row.board_number pair_id=pair_id %}'"
+                                        onclick="window.location='{% url "results:imp_board_view" results_file_id=results_file.id board_number=row.board_number pair_id=pair_id %}'"
                                     >{{ row.lead|cobalt_suit_replace|safe }}</td>
                                     <td
-                                        onclick="window.location='{% url "results:cross_imp_board_view" results_file_id=results_file.id board_number=row.board_number pair_id=pair_id %}'"
+                                        onclick="window.location='{% url "results:imp_board_view" results_file_id=results_file.id board_number=row.board_number pair_id=pair_id %}'"
                                     >{{ row.tricks }}</td>
                                     <td
                                         class="text-right"
-                                        onclick="window.location='{% url "results:cross_imp_board_view" results_file_id=results_file.id board_number=row.board_number pair_id=pair_id %}'"
+                                        onclick="window.location='{% url "results:imp_board_view" results_file_id=results_file.id board_number=row.board_number pair_id=pair_id %}'"
                                     >{{ row.score }}</td>
                                     <td
-                                        onclick="window.location='{% url "results:cross_imp_board_view" results_file_id=results_file.id board_number=row.board_number pair_id=pair_id %}'"
-                                        class="text-right">{{ row.cross_imp_display }}</td>
+                                        onclick="window.location='{% url "results:imp_board_view" results_file_id=results_file.id board_number=row.board_number pair_id=pair_id %}'"
+                                        class="text-right">{{ row.imp_display }}</td>
                                     <td><div>{{ row.indicator|safe }}</div></td>
                                 </tr>
                             {% endfor %}

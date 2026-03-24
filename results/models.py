@@ -28,6 +28,7 @@ class ResultsFile(models.Model):
     class EventType(models.TextChoices):
         MP_PAIRS = "MP_PAIRS", "MP Pairs"
         CROSS_IMP = "CROSS_IMP", "Cross IMP"
+        BUTLER_PAIRS = "BUTLER_PAIRS", "Butler Pairs"
 
     results_file = models.FileField(upload_to=_results_file_directory_path)
     description = models.CharField(max_length=200)

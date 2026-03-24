@@ -36,9 +36,7 @@ def boards_from_usebio(results_file: ResultsFile) -> list:
     return [board["BOARD_NUMBER"] for board in xml["HANDSET"]["BOARD"]]
 
 
-def create_player_records_from_usebio_format_cross_imp(
-    results_file: ResultsFile, xml: dict
-):
+def create_player_records_from_usebio_format_imp(results_file: ResultsFile, xml: dict):
     """Take a CROSS_IMP usebio structure and generate PlayerSummaryResult records."""
 
     xml_event = xml.get("EVENT")
