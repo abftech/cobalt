@@ -67,9 +67,19 @@ def upload_results_file_valid(request, form, club):
     results_file.event_date = event_date
 
     # Detect event type from the XML attribute (xmltodict prefixes XML attributes with @)
-    event_type = usebio.get("EVENT", {}).get(
-        "@EVENT_TYPE", ResultsFile.EventType.MP_PAIRS
-    )
+    event_type = usebio.get("EVENT", {}).get("@EVENT_TYPE")
+
+    supported_types = [v for v, _ in ResultsFile.EventType.choices]
+    if event_type not in supported_types:
+        results_file.delete()
+        logger.warning(
+            f"Unsupported event type '{event_type}' uploaded by user: {request.user}"
+        )
+        return tab_results_htmx(
+            request,
+            message=f"Event type '{event_type}' is not currently supported.",
+        )
+
     results_file.event_type = event_type
     results_file.save()
 
