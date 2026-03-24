@@ -74,7 +74,7 @@ These environment variables must be set (via Elastic Beanstalk config or a local
      - Client secret from the Xero Custom Connection app
    * - ``XERO_BANK_ACCOUNT_CODE``
      - Default Xero account code used when recording payments (e.g. ``"090"``)
-   * - ``XERO_SETTLEMENT_ACCOUNT_CODE``
+   * - ``XERO_PAYABLE_ACCOUNT_CODE``
      - Xero account code for club settlement payables
 
 ----

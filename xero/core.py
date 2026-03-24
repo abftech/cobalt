@@ -18,8 +18,8 @@ from cobalt.settings import (
     XERO_BANK_ACCOUNT_CODE,
     XERO_FEE_ACCOUNT_CODE,
     XERO_FEE_TAX_TYPE,
-    XERO_SETTLEMENT_ACCOUNT_CODE,
-    XERO_SETTLEMENT_TAX_TYPE,
+    XERO_PAYABLE_ACCOUNT_CODE,
+    XERO_PAYABLE_TAX_TYPE,
 )
 from xero.models import XeroCredentials, XeroInvoice, XeroLog
 
@@ -845,8 +845,8 @@ class XeroApi:
                             "Description": reference,
                             "Quantity": 1,
                             "UnitAmount": float(bank_settlement_amount),
-                            "AccountCode": XERO_SETTLEMENT_ACCOUNT_CODE,
-                            "TaxType": XERO_SETTLEMENT_TAX_TYPE,
+                            "AccountCode": XERO_PAYABLE_ACCOUNT_CODE,
+                            "TaxType": XERO_PAYABLE_TAX_TYPE,
                         }
                     ],
                     "Date": f"{invoice_date:%Y-%m-%d}",
@@ -939,8 +939,8 @@ class XeroApi:
                             "Description": f"Gross MyABF settlement: {GLOBAL_CURRENCY_SYMBOL}{float(gross_amount):.2f}",
                             "Quantity": 1,
                             "UnitAmount": 0,
-                            "AccountCode": XERO_SETTLEMENT_ACCOUNT_CODE,
-                            "TaxType": XERO_SETTLEMENT_TAX_TYPE,
+                            "AccountCode": XERO_PAYABLE_ACCOUNT_CODE,
+                            "TaxType": XERO_PAYABLE_TAX_TYPE,
                         },
                         {
                             "Description": f"Recovery of 3rd party transaction processing fees ({fee_percent}%)",
@@ -953,8 +953,8 @@ class XeroApi:
                             "Description": f"Net MyABF Settlement: {GLOBAL_CURRENCY_SYMBOL}{float(net_amount):.2f}",
                             "Quantity": 1,
                             "UnitAmount": 0,
-                            "AccountCode": XERO_SETTLEMENT_ACCOUNT_CODE,
-                            "TaxType": XERO_SETTLEMENT_TAX_TYPE,
+                            "AccountCode": XERO_PAYABLE_ACCOUNT_CODE,
+                            "TaxType": XERO_PAYABLE_TAX_TYPE,
                         },
                     ],
                     "Date": f"{invoice_date:%Y-%m-%d}",

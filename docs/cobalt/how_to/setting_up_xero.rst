@@ -85,7 +85,7 @@ them. Two account codes are configured via environment variables:
        Must be a Bank-type account so it appears under **Banking** in Xero and
        can receive bank feed transactions for reconciliation.
    * - Settlement payables account
-     - ``XERO_SETTLEMENT_ACCOUNT_CODE``
+     - ``XERO_PAYABLE_ACCOUNT_CODE``
      - **Current Liability**
      - Used on the ACCPAY settlement bill (no GST) and the informational ``$0``
        lines on the ACCREC fee invoice. Must accept ``BASEXCLUDED`` / ``NOTAX``
@@ -117,7 +117,7 @@ uses two distinct tax types for the automatically-created settlement invoices:
    * - Cobalt setting
      - Default value
      - Where used
-   * - ``XERO_SETTLEMENT_TAX_TYPE``
+   * - ``XERO_PAYABLE_TAX_TYPE``
      - ``NOTAX``
      - Line items on the **ACCPAY settlement invoice** (the bill paid to the
        club) and the informational ``$0`` lines on the ACCREC fee invoice.
@@ -221,14 +221,14 @@ shell exports):
    * - ``XERO_BANK_ACCOUNT_CODE``
      - Xero account code for the bank/clearing account used when recording
        payments (e.g. ``090``). Look this up in **Chart of Accounts** in Xero.
-   * - ``XERO_SETTLEMENT_ACCOUNT_CODE``
+   * - ``XERO_PAYABLE_ACCOUNT_CODE``
      - Xero account code for the settlement payables account (Current Liability).
        Used on the ACCPAY bill and the informational lines of the ACCREC invoice.
    * - ``XERO_FEE_ACCOUNT_CODE``
      - Xero account code for the fee income account (Revenue / Other Income).
        Used on the fee-recovery line of the ACCREC invoice. Must be a revenue
        account so that ``OUTPUT`` tax type is accepted.
-   * - ``XERO_SETTLEMENT_TAX_TYPE``
+   * - ``XERO_PAYABLE_TAX_TYPE``
      - Xero tax type code for the settlement disbursement lines (no GST).
        Default: ``NOTAX``. The ABF typically sets this to ``BASEXCLUDED``.
    * - ``XERO_FEE_TAX_TYPE``
@@ -265,7 +265,7 @@ in the **Code** column. Common codes used by the ABF:
    * - ``XERO_BANK_ACCOUNT_CODE``
      - ``090``
      - Business bank account or clearing account
-   * - ``XERO_SETTLEMENT_ACCOUNT_CODE``
+   * - ``XERO_PAYABLE_ACCOUNT_CODE``
      - ``800``
      - Club settlement payable / accounts payable clearing
 
@@ -344,7 +344,7 @@ Step 5 — Set Up GL Account Codes in Xero
 
 Before invoices can be created, the Xero chart of accounts must contain the
 account codes referenced in ``XERO_BANK_ACCOUNT_CODE`` and
-``XERO_SETTLEMENT_ACCOUNT_CODE``, and any line-item account codes passed to
+``XERO_PAYABLE_ACCOUNT_CODE``, and any line-item account codes passed to
 ``create_invoice()``. Each account must be the **correct Xero account type** —
 using the wrong type will cause API errors.
 
@@ -373,7 +373,7 @@ invoice has been paid.
    Payments API. Attempting to record a payment against a non-Bank account will
    return an error.
 
-Settlement payables account (XERO_SETTLEMENT_ACCOUNT_CODE)
+Settlement payables account (XERO_PAYABLE_ACCOUNT_CODE)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Used on the ACCPAY settlement invoice (the bill paid to the club) and on the
@@ -395,7 +395,7 @@ to the club for the ABF's processing fee).
 * **Tax type**: ``OUTPUT`` (10% GST on income) — the ABF charges GST on its
   processing fee because it is taxable income for the ABF.
 * This **must** be a revenue-type account. Current Liability accounts (such as
-  ``XERO_SETTLEMENT_ACCOUNT_CODE``) cannot accept ``OUTPUT`` tax type in Xero,
+  ``XERO_PAYABLE_ACCOUNT_CODE``) cannot accept ``OUTPUT`` tax type in Xero,
   which would cause invoice creation to fail with the error
   *"The TaxType code 'OUTPUT' cannot be used with account code 'NNN'."*
 
@@ -597,7 +597,7 @@ Troubleshooting
        code; Xero rejected the payment amount.
    * - GST not appearing on the fee recovery invoice
      - ``XERO_FEE_TAX_TYPE`` is not set to ``OUTPUT``. Check the environment
-       variable and ensure the ``XERO_SETTLEMENT_ACCOUNT_CODE`` account in Xero
+       variable and ensure the ``XERO_PAYABLE_ACCOUNT_CODE`` account in Xero
        does not restrict the tax type to BAS Excluded only.
    * - Token refresh succeeds but tenant ID is blank
      - ``set_tenant_id()`` could not retrieve a connection. Check the application
@@ -627,7 +627,7 @@ Summary of Environment Variables
      - Yes
      - GL account code for the bank/clearing account used when recording
        payments. Must be a Bank-type account in Xero.
-   * - ``XERO_SETTLEMENT_ACCOUNT_CODE``
+   * - ``XERO_PAYABLE_ACCOUNT_CODE``
      - Yes
      - GL account code for the settlement payables account (Current Liability).
        Used on ACCPAY bills and the informational lines of ACCREC fee invoices.
@@ -636,7 +636,7 @@ Summary of Environment Variables
      - GL account code for the fee income account (Revenue / Other Income).
        Used on the fee-recovery line of the ACCREC invoice. Must accept
        ``OUTPUT`` tax type — use a revenue account, not a liability account.
-   * - ``XERO_SETTLEMENT_TAX_TYPE``
+   * - ``XERO_PAYABLE_TAX_TYPE``
      - No
      - Xero tax type for settlement disbursement lines. Default: ``NOTAX``.
        Set to ``BASEXCLUDED`` for Australian BAS-excluded disbursements.

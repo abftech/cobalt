@@ -159,21 +159,21 @@ XERO_CLIENT_ID = set_value("XERO_CLIENT_ID")
 XERO_CLIENT_SECRET = set_value("XERO_CLIENT_SECRET")
 XERO_WEBHOOK_KEY = set_value("XERO_WEBHOOK_KEY")
 XERO_BANK_ACCOUNT_CODE = set_value("XERO_BANK_ACCOUNT_CODE", "not-set")
-#   XERO_SETTLEMENT_ACCOUNT_CODE. When creating an ACCPAY invoice line item, Xero needs to know
+#   XERO_PAYABLE_ACCOUNT_CODE. When creating an ACCPAY invoice line item, Xero needs to know
 #   which GL account to classify the expense/payable against in the chart of
-#    accounts (e.g. a "Club Settlement Payouts" account). This is separate from
-#    XERO_BANK_ACCOUNT_CODE, which identifies the physical bank account that money
-#    flows through. You create/identify the account in Xero's chart of accounts.
-XERO_SETTLEMENT_ACCOUNT_CODE = set_value("XERO_SETTLEMENT_ACCOUNT_CODE", "not-set")
-#   XERO_SETTLEMENT_TAX_TYPE. The Xero tax type applied to ACCPAY settlement invoice
+#   accounts (e.g. a "Club Settlement Payouts" Current Liability account). This is
+#   separate from XERO_BANK_ACCOUNT_CODE, which identifies the physical bank account
+#   that money flows through. You create/identify the account in Xero's chart of accounts.
+XERO_PAYABLE_ACCOUNT_CODE = set_value("XERO_PAYABLE_ACCOUNT_CODE", "not-set")
+#   XERO_PAYABLE_TAX_TYPE. The Xero tax type applied to ACCPAY settlement invoice
 #   line items. Xero requires a TaxType on ACCPAY line items. Use the tax type code
 #   from your Xero chart of accounts — typically "NOTAX" (BAS Excluded) for
 #   settlement disbursements. Check Xero Settings > Tax Rates for valid codes.
-XERO_SETTLEMENT_TAX_TYPE = set_value("XERO_SETTLEMENT_TAX_TYPE", "NOTAX")
+XERO_PAYABLE_TAX_TYPE = set_value("XERO_PAYABLE_TAX_TYPE", "NOTAX")
 #   XERO_FEE_ACCOUNT_CODE. GL account code for the processing-fee recovery line on the
 #   ACCREC fee invoice. This must be a Revenue/Income-type account in Xero so that it
 #   accepts OUTPUT (GST on Income) as its tax type. Liability accounts such as the
-#   XERO_SETTLEMENT_ACCOUNT_CODE cannot accept OUTPUT tax, so a separate income account
+#   XERO_PAYABLE_ACCOUNT_CODE cannot accept OUTPUT tax, so a separate income account
 #   is required here.
 XERO_FEE_ACCOUNT_CODE = set_value("XERO_FEE_ACCOUNT_CODE", "not-set")
 #   XERO_FEE_TAX_TYPE. Tax type applied to the processing-fee recovery line on the

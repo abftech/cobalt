@@ -18,7 +18,7 @@ from contextlib import nullcontext
 from datetime import date
 from unittest.mock import patch
 
-from cobalt.settings import XERO_SETTLEMENT_ACCOUNT_CODE
+from cobalt.settings import XERO_PAYABLE_ACCOUNT_CODE
 from organisations.models import Organisation
 from tests.test_manager import CobaltTestManagerUnit
 from xero.core import XeroApi
@@ -172,7 +172,7 @@ class CreateSettlementInvoiceTests:
             and inv_data.get("LineAmountTypes") == "Inclusive"
             and inv_data.get("Date") == "2025-03-31"
             and line_item.get("UnitAmount") == 123.45
-            and line_item.get("AccountCode") == XERO_SETTLEMENT_ACCOUNT_CODE
+            and line_item.get("AccountCode") == XERO_PAYABLE_ACCOUNT_CODE
         )
         self.manager.save_results(
             status=status,
