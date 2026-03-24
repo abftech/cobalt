@@ -2310,12 +2310,18 @@ def settlement_xero_status_htmx(request):
         )
 
     pending_statuses = {XeroInvoice.STATUS_PENDING_UPLOAD, XeroInvoice.STATUS_UPLOADING}
+    payment_terminal = {"PAID", XeroInvoice.STATUS_UPLOAD_FAILED}
     all_resolved = all(
         (
             not r["trans"].xero_invoice
             or r["trans"].xero_invoice.status not in pending_statuses
         )
         and (not r["fee_invoice"] or r["fee_invoice"].status not in pending_statuses)
+        and (
+            not r["fee_invoice"]
+            or not r["fee_invoice"].auto_record_payment
+            or r["fee_invoice"].status in payment_terminal
+        )
         for r in rows
     )
 

@@ -23,7 +23,7 @@
                     <a href="{% url "xero:xero_log_view" %}">Xero Logs</a> for details.
                 </span>
             {% else %}
-                All {{ done }} transaction{{ done|pluralize }} successfully uploaded to Xero.
+                All {{ total_with_xero }} transaction{{ total_with_xero|pluralize }} successfully uploaded to Xero.
             {% endif %}
         {% else %}
             {{ done }} of {{ total_with_xero }} transaction{{ total_with_xero|pluralize }} uploaded to Xero.
