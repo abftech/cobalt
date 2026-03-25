@@ -126,18 +126,21 @@
                         <div class="table-responsive">
                             <table class="table table-condensed table-hover bx-5" id="settlement-table">
                                 <thead>
-                                    <th>Include</th>
-                                    <th class="col-detail">Club Number</th>
-                                    <th class="text-left">Organisation</th>
-                                    <th class="col-detail">BSB</th>
-                                    <th class="col-detail">Account Number</th>
-                                    <th class="text-right col-detail">Account Balance</th>
-                                    <th class="text-right">Org Min Balance</th>
-                                    <th class="text-right">Balance Less Min</th>
-                                    <th class="text-right">Manual Override <i class="material-icons" style="font-size:14px;vertical-align:middle;color:#888;" title="Optional — leave blank to settle the full Balance Less Min">edit</i></th>
-                                    <th class="text-right">Gross Settlement</th>
-                                    <th class="text-right col-detail">{{ GLOBAL_ORG }} Costs</th>
-                                    <th class="text-right">Net Settlement</th>
+                                    <tr>
+                                        <th></th>
+                                        <th class="col-detail">Club Number</th>
+                                        <th class="text-left">Organisation</th>
+                                        <th class="col-detail">BSB</th>
+                                        <th class="col-detail">Account Number</th>
+                                        <th class="text-right col-detail">Account Balance</th>
+                                        <th class="text-right">Org Min Balance</th>
+                                        <th class="text-right">Balance Less Min</th>
+                                        <th class="text-right">Manual Override <i class="material-icons" style="font-size:14px;vertical-align:middle;color:#888;" title="Optional — leave blank to settle the full Balance Less Min">edit</i></th>
+                                        <th class="text-right">Gross Settlement</th>
+                                        <th class="text-right col-detail">{{ GLOBAL_ORG }} Costs</th>
+                                        <th class="text-right">Net Settlement</th>
+                                    </tr>
+
                                 </thead>
 
                                 <tbody>
@@ -152,6 +155,12 @@
                                         <td class="col-detail"></td>
                                         <td class="text-right" id="id_total_settlement">{{ GLOBAL_CURRENCY_SYMBOL }}0.00</td>
                                     </tr>
+
+                                    <tr>
+                                        <td class="text-left" colspan="2"><input class="checkall" type="checkbox" value="All"> Select All</td>
+                                    </tr>
+
+
                                     {% for org in orgs %}
                                         <tr>
                                             <td class="text-left">
@@ -209,7 +218,7 @@
                                         </tr>
                                     {% endfor %}
                                     <tr>
-                                        <td class="text-left" colspan="2"><input id="checkall" type="checkbox" value="All"> Select All</td>
+                                        <td class="text-left" colspan="2"><input class="checkall" type="checkbox" value="All"> Select All</td>
                                     </tr>
                                 </tbody>
 
@@ -329,8 +338,9 @@
                 $('#id_totals_colspan').attr('colspan', showing ? 6 : 2);
             });
 
-            $("#checkall").click(function() {
+            $(".checkall").click(function() {
                 var checked = this.checked;
+                $(".checkall").prop('checked', checked);
                 $('input[name="settle_list"]').each(function() {
                     $(this).prop('checked', checked);
                     applyCheckbox(this, checked);
