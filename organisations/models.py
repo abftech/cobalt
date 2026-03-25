@@ -205,7 +205,7 @@ class Organisation(models.Model):
     send_results_email = models.BooleanField(default=True)
     """ Club level control over whether an email is sent to members when results are published """
 
-    results_email_message = models.TextField(default="")
+    results_email_message = models.TextField(default="", blank=True)
     """ Message sent with the results emails """
 
     minimum_balance_after_settlement = models.DecimalField(
@@ -218,6 +218,12 @@ class Organisation(models.Model):
 
     use_last_payment_method_for_player_sessions = models.BooleanField(default=False)
     """ some clubs want to default payments for sessions to use whatever the player last paid with """
+
+    internal_settlement_org = models.BooleanField(
+        default=False,
+        help_text="If set, settlement creates Cobalt transactions but no Xero invoices.",
+    )
+    """ internal orgs are settled in Cobalt only — no Xero invoices are created """
 
     old_mpc_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
     """ temporary link to record in MPC """

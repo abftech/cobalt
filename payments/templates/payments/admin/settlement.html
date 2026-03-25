@@ -162,7 +162,12 @@
                                                        data-current-balance="{{ org.current_balance|floatformat:2 }}">
                                             </td>
                                             <td class="col-detail"><a href="{% url 'organisations:club_menu_tab_finance_statement' club_id=org.organisation.id %}" target="_blank">{{ org.organisation.org_id }}</a></td>
-                                            <td class="text-left"><a href="{% url 'organisations:club_menu_tab_finance_statement' club_id=org.organisation.id %}" target="_blank">{{ org.organisation.name }}</a></td>
+                                            <td class="text-left">
+                                                <a href="{% url 'organisations:club_menu_tab_finance_statement' club_id=org.organisation.id %}" target="_blank">{{ org.organisation.name }}</a>
+                                                {% if org.organisation.internal_settlement_org %}
+                                                    <span class="badge badge-info ml-1">Internal</span>
+                                                {% endif %}
+                                            </td>
                                             <td class="col-detail">{{ org.organisation.bank_bsb|default_if_none:'<b>NOT SET</b>' }}</td>
                                             <td class="col-detail">{{ org.organisation.bank_account|default_if_none:'<b>NOT SET</b>' }}</td>
                                             <td class="text-right col-detail">{{ GLOBAL_CURRENCY_SYMBOL }}{{ org.balance|floatformat:2|intcomma }}</td>

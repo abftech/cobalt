@@ -2126,7 +2126,7 @@ def settlement(request):
                 item = si["item"]
                 org = item.organisation
 
-                if use_xero:
+                if use_xero and not org.internal_settlement_org:
                     reference = f"Settlement {org.name} {ref_date}"
                     try:
                         xero_invoice = xero.create_settlement_invoice(

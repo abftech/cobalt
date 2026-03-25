@@ -76,6 +76,8 @@
                                     {% else %}
                                         <span class="badge badge-success">{{ row.trans.xero_invoice.invoice_number }}</span>
                                     {% endif %}
+                                {% elif row.trans.organisation.internal_settlement_org %}
+                                    <span class="text-muted">Internal</span>
                                 {% else %}
                                     <span class="text-muted">—</span>
                                 {% endif %}
