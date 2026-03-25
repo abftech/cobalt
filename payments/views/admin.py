@@ -2127,9 +2127,7 @@ def settlement(request):
                 org = item.organisation
 
                 if use_xero:
-                    reference = (
-                        f"Settlement {org.name} {datetime.date.today():%Y-%m-%d}"
-                    )
+                    reference = f"Settlement {org.name} {ref_date}"
                     try:
                         xero_invoice = xero.create_settlement_invoice(
                             organisation=org,
@@ -2235,7 +2233,7 @@ def settlement(request):
                 (1 if r["trans"].xero_invoice else 0)
                 + (1 if r["fee_invoice"] else 0)
                 + (
-                    1
+                    2
                     if r["fee_invoice"] and r["fee_invoice"].auto_record_payment
                     else 0
                 )
@@ -2325,10 +2323,11 @@ def settlement_xero_status_htmx(request):
         for r in rows
     )
 
+    # Count individual Xero operations (4 per org that has settlement + fee + payment + email).
     total_with_xero = sum(
         (1 if r["trans"].xero_invoice else 0)
         + (1 if r["fee_invoice"] else 0)
-        + (1 if r["fee_invoice"] and r["fee_invoice"].auto_record_payment else 0)
+        + (2 if r["fee_invoice"] and r["fee_invoice"].auto_record_payment else 0)
         for r in rows
     )
     done = sum(
@@ -2353,6 +2352,13 @@ def settlement_xero_status_htmx(request):
             and r["fee_invoice"].status == "PAID"
             else 0
         )
+        + (
+            1
+            if r["fee_invoice"]
+            and r["fee_invoice"].auto_record_payment
+            and r["fee_invoice"].email_sent
+            else 0
+        )
         for r in rows
     )
     failed = sum(
@@ -2370,6 +2376,33 @@ def settlement_xero_status_htmx(request):
         )
         for r in rows
     )
+    email_failed = sum(
+        (
+            1
+            if r["fee_invoice"]
+            and r["fee_invoice"].auto_record_payment
+            and r["fee_invoice"].status == "PAID"
+            and not r["fee_invoice"].email_sent
+            else 0
+        )
+        for r in rows
+    )
+
+    # Find any other queued invoices not part of this settlement (informational).
+    shown_invoice_pks = set()
+    for r in rows:
+        if r["trans"].xero_invoice:
+            shown_invoice_pks.add(r["trans"].xero_invoice.pk)
+        if r["fee_invoice"]:
+            shown_invoice_pks.add(r["fee_invoice"].pk)
+    other_pending = list(
+        XeroInvoice.objects.filter(
+            status__in=[XeroInvoice.STATUS_PENDING_UPLOAD, XeroInvoice.STATUS_UPLOADING]
+        )
+        .exclude(pk__in=shown_invoice_pks)
+        .select_related("organisation")
+        .order_by("created_at")
+    )
 
     trans_ids_csv_out = ",".join(str(r["trans"].pk) for r in rows)
     fee_invoice_ids_csv_out = ",".join(
@@ -2381,11 +2414,13 @@ def settlement_xero_status_htmx(request):
         "payments/admin/_settlement_status_poll_response.html",
         {
             "rows": rows,
+            "other_pending": other_pending,
             "trans_ids_csv": trans_ids_csv_out,
             "fee_invoice_ids_csv": fee_invoice_ids_csv_out,
             "total_with_xero": total_with_xero,
             "done": done,
             "failed": failed,
+            "email_failed": email_failed,
             "all_resolved": all_resolved,
         },
     )

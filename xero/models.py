@@ -79,6 +79,8 @@ class XeroInvoice(models.Model):
     # When True, the upload command records a full-amount Xero payment immediately
     # after a successful upload, closing the invoice to $0 outstanding.
     auto_record_payment = models.BooleanField(default=False)
+    # Set to True once Xero has been asked to email this invoice to the club contact.
+    email_sent = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

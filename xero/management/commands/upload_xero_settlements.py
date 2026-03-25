@@ -290,7 +290,8 @@ def _upload_invoice(xero: XeroApi, invoice: XeroInvoice, summary_lines: list) ->
             f"upload_xero_settlements: {ref} uploaded successfully as {xero_id}"
         )
 
-        # For fee invoices, immediately record a payment to close the invoice (→ PAID).
+        # For fee invoices, immediately record a payment to close the invoice (→ PAID),
+        # then trigger Xero to email the invoice to the club.
         if invoice.auto_record_payment:
             try:
                 amount_due = float(
@@ -299,6 +300,23 @@ def _upload_invoice(xero: XeroApi, invoice: XeroInvoice, summary_lines: list) ->
                 xero.create_payment(xero_id, amount_due, payment_date=invoice.date)
                 summary_lines.append(f"  {ref}: payment recorded → PAID")
                 logger.info(f"upload_xero_settlements: payment recorded for {ref}")
+
+                email_ok = xero.send_invoice_email(xero_id)
+                invoice.email_sent = email_ok
+                invoice.save(update_fields=["email_sent", "updated_at"])
+                if email_ok:
+                    summary_lines.append(f"  {ref}: fee invoice email sent to club")
+                    logger.info(
+                        f"upload_xero_settlements: fee invoice email sent for {ref}"
+                    )
+                else:
+                    summary_lines.append(
+                        f"  {ref}: fee invoice email FAILED — check Xero logs"
+                    )
+                    logger.error(
+                        f"upload_xero_settlements: fee invoice email failed for {ref}"
+                    )
+
             except Exception as pay_exc:
                 logger.error(
                     f"upload_xero_settlements: payment failed for {ref}: {pay_exc}"

@@ -62,7 +62,8 @@
                                         <th>Date</th>
                                         <th>Settlement Invoice</th>
                                         <th>Fee Invoice</th>
-                                        <th>Payment</th>
+                                        <th>Fee Payment</th>
+                                        <th>Fee Email</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -115,6 +116,19 @@
                                                         <span class="badge badge-danger">Failed</span>
                                                     {% else %}
                                                         <span class="text-muted">Queued</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted">—</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if row.fee_invoice and row.fee_invoice.auto_record_payment %}
+                                                    {% if row.fee_invoice.email_sent %}
+                                                        <span class="badge badge-success">Sent</span>
+                                                    {% elif row.fee_invoice.status == 'PAID' %}
+                                                        <span class="badge badge-danger">Failed</span>
+                                                    {% else %}
+                                                        <span class="text-muted">Pending</span>
                                                     {% endif %}
                                                 {% else %}
                                                     <span class="text-muted">—</span>

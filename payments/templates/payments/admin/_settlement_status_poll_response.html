@@ -22,6 +22,11 @@
                 <span class="text-danger ml-2">{{ failed }} failed — check
                     <a href="{% url "xero:xero_log_view" %}">Xero Logs</a> for details.
                 </span>
+            {% elif email_failed %}
+                {{ done }} of {{ total_with_xero }} transaction{{ total_with_xero|pluralize }} processed in Xero.
+                <span class="text-warning ml-2">{{ email_failed }} fee invoice email{{ email_failed|pluralize }} failed to send — check
+                    <a href="{% url "xero:xero_log_view" %}">Xero Logs</a> for details.
+                </span>
             {% else %}
                 All {{ total_with_xero }} transaction{{ total_with_xero|pluralize }} successfully uploaded to Xero.
             {% endif %}
@@ -47,7 +52,8 @@
                         <th>Date</th>
                         <th>Settlement Invoice</th>
                         <th>Fee Invoice</th>
-                        <th>Payment</th>
+                        <th>Fee Payment</th>
+                        <th>Fee Email</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -105,11 +111,61 @@
                                     <span class="text-muted">—</span>
                                 {% endif %}
                             </td>
+                            <td>
+                                {% if row.fee_invoice and row.fee_invoice.auto_record_payment %}
+                                    {% if row.fee_invoice.email_sent %}
+                                        <span class="badge badge-success">Sent</span>
+                                    {% elif row.fee_invoice.status == 'PAID' %}
+                                        <span class="badge badge-danger">Failed</span>
+                                    {% else %}
+                                        <span class="text-muted">Pending</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
+
+    {% if other_pending %}
+        <div class="card mt-3">
+            <div class="card-header card-header-warning">
+                <h2>Also Queued</h2>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-2">These invoices were queued before this settlement and are also waiting to be uploaded.</p>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Organisation</th>
+                            <th>Type</th>
+                            <th>Amount ({{ GLOBAL_CURRENCY_SYMBOL }})</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inv in other_pending %}
+                            <tr>
+                                <td>{{ inv.organisation }}</td>
+                                <td>{{ inv.get_invoice_type_display }}</td>
+                                <td>{{ inv.amount|floatformat:2|intcomma }}</td>
+                                <td>
+                                    {% if inv.status == 'PENDING_UPLOAD' %}
+                                        <span class="badge badge-warning">Queued</span>
+                                    {% elif inv.status == 'UPLOADING' %}
+                                        <span class="badge badge-info">Processing</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
 
 </div>
