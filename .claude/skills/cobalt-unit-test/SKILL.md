@@ -1,6 +1,11 @@
 ---
 name: cobalt-unit-test
-description: Write unit tests for a Cobalt app feature following the project's custom test framework. Use when asked to write, add, or scaffold unit tests for any app in this project.
+description: >-
+  Write unit tests for a Cobalt app feature following the project's custom test framework.
+  Use this whenever the user wants to test, verify, or add coverage to any feature in this
+  project — even if they don't say "unit test" explicitly. Triggers include "test this",
+  "I need tests for X", "can you test this function", "add test coverage", "write tests for
+  the payments app", or any time new code is written and tests would be appropriate.
 argument-hint: [app-name] [feature description]
 ---
 
@@ -40,42 +45,22 @@ class <FeatureName>Tests:
 - Shared helpers go in `tests/unit/general_test_functions.py`.
 
 ## Mocking external APIs
-Patch at the **method level** using `patch.object`, not at the `requests` level:
+Patch at the **method level** using `patch.object`, not at the `requests` level — this avoids token-refresh side effects and keeps tests clean:
 
 ```python
 from unittest.mock import patch
 
 def test_something(self):
-    xero = XeroApi()
-    mock_response = {"Contacts": [{"ContactID": "abc"}]}
-    with patch.object(xero, "xero_api_post", return_value=mock_response) as mock_post:
-        result = xero.some_method(...)
+    api = SomeExternalApi()
+    mock_response = {"key": "value"}
+    with patch.object(api, "method_name", return_value=mock_response) as mock_call:
+        result = api.some_method(...)
 
-    payload = mock_post.call_args[0][1]
+    payload = mock_call.call_args[0][1]  # inspect what was sent
     self.manager.save_results(status=..., ...)
 ```
 
-For mock/live toggle pattern, use `contextlib.nullcontext` as the no-op:
-
-```python
-from contextlib import nullcontext
-
-MOCK_API = True  # set at top of file
-
-def _patch_post(instance, response):
-    if MOCK_API:
-        return patch.object(instance, "method_name", return_value=response)
-    return nullcontext(None)
-```
-
-Tests that inspect `mock.call_args` must guard with an early return when not mocked:
-
-```python
-def test_payload_structure(self):
-    if not MOCK_API:
-        self.manager.save_results(status=True, test_name="... [SKIPPED]", test_description="Skipped in live mode", output="")
-        return
-```
+For services that may sometimes be tested live, use a `MOCK_API = True` flag at the top of the file and `contextlib.nullcontext` as the no-op alternative. Tests that inspect `mock.call_args` must guard with an early return when `MOCK_API` is false. See `xero/tests/unit/unit_test_xero_api.py` for the full reference pattern.
 
 ## Running tests
 ```bash

@@ -19,5 +19,4 @@ venv
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
-.claude/*
-!.claude/skills
+!.claude

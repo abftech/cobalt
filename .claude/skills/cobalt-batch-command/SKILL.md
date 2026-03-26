@@ -1,6 +1,11 @@
 ---
 name: cobalt-batch-command
-description: Scaffold a Django management command for Cobalt following the BatchStatus + CobaltLock pattern. Use when creating a new background job, cron task, or management command.
+description: >-
+  Scaffold a Django management command for Cobalt following the BatchStatus + CobaltLock
+  pattern. Use whenever the user wants to automate something on a schedule, run a nightly
+  job, create a background task, or add a management command — even if they don't use those
+  exact words. Triggers include "I need a job that...", "run this automatically", "automate
+  this nightly", "create a cron task", or "add a management command".
 argument-hint: [command-name] [description of what it does]
 ---
 
@@ -8,6 +13,12 @@ Create a Django management command following the Cobalt batch job pattern exactl
 
 ## File location
 `<app>/management/commands/<command_name>.py`
+
+Ensure the directory exists and has an `__init__.py`:
+```bash
+mkdir -p <app>/management/commands
+touch <app>/management/__init__.py <app>/management/commands/__init__.py
+```
 
 ## Required pattern
 
@@ -33,7 +44,7 @@ class Command(BaseCommand):
         summary_lines = []
 
         try:
-            lock = CobaltLock("<command_name>", expiry=10)
+            lock = CobaltLock("<command_name>", expiry=10)  # expiry in minutes
             if not lock.get_lock():
                 logger.info("<command_name> already running (locked), exiting")
                 sys.exit(0)
