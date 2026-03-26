@@ -43,43 +43,11 @@ We use HTMX extensively for partial page updates instead of a full SPA framework
 
 #### Confirmation dialogs — use SweetAlert2, not `confirm()`
 
-Never use the browser's native `confirm()` for destructive actions. Use SweetAlert2 instead. Load it in `{% block footer %}` and trigger HTMX programmatically via `htmx.ajax()`:
-
-```html
-{% block footer %}
-    <script src="{% static "assets/js/plugins/sweetalert2.js" %}"></script>
-    <script>
-        function confirmDelete() {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: 'This cannot be undone.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Yes, delete it'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    htmx.ajax('POST', '{% url "app:some_view" %}', {
-                        target: '#some-div',
-                        values: {key: 'value'}
-                    });
-                }
-            });
-        }
-    </script>
-{% endblock footer %}
-```
-
-The button just calls the JS function: `<button onclick="confirmDelete()">Delete</button>` — no `hx-post` on the button itself.
+Never use the browser's native `confirm()` for destructive actions. Use SweetAlert2 instead — use the **cobalt-htmx-confirm** skill to add a confirmation dialog.
 
 #### Suppressing the "leave page?" prompt
 
-`cobalt-core.js` registers a `beforeunload` handler that warns users about unsaved form changes. Pages that manage their own state (e.g. HTMX-driven admin tools) should suppress it by adding a hidden element anywhere in the template:
-
-```html
-<span id="ignore_cobalt_save" hidden></span>
-```
+`cobalt-core.js` registers a `beforeunload` handler that warns users about unsaved form changes. Pages that manage their own state (e.g. HTMX-driven admin tools) should suppress it by adding `<span id="ignore_cobalt_save" hidden></span>` anywhere in the template.
 
 ### Models stay thin
 
@@ -95,61 +63,7 @@ Background/scheduled work is handled by Django management commands run by cron o
 
 ### Batch job pattern
 
-Every management command **must** follow this pattern (see `organisations/management/commands/auto_pay_batch.py` as the reference):
-
-```python
-import logging
-import sys
-
-from django.core.management.base import BaseCommand
-
-from utils.models import BatchStatus
-from utils.views.cobalt_lock import CobaltLock
-
-logger = logging.getLogger("cobalt")
-
-
-class Command(BaseCommand):
-    help = "..."
-
-    def handle(self, *args, **options):
-        logger.info("<command name> starting")
-
-        batch = BatchStatus.objects.create(command="<command_name>")
-        summary_lines = []
-
-        try:
-            lock = CobaltLock("<command_name>", expiry=10)
-            if not lock.get_lock():
-                logger.info("<command name> already running (locked), exiting")
-                sys.exit(0)
-
-            # ... do work, appending human-readable lines to summary_lines ...
-
-            lock.free_lock()
-            lock.delete_lock()
-
-        except Exception as e:
-            logger.exception("<command name> failed with an unhandled exception")
-            batch.status = BatchStatus.STATUS_FAILED
-            summary_lines.append(f"\nERROR: {e}")
-            batch.summary = "\n".join(summary_lines)
-            batch.save()
-            raise
-
-        batch.status = BatchStatus.STATUS_SUCCESS
-        batch.summary = "\n".join(summary_lines)
-        batch.save()
-
-        logger.info("<command name> finished")
-```
-
-Key rules:
-- Always create a `BatchStatus` record at the start (status defaults to `STATUS_STARTED`).
-- Use `CobaltLock` to prevent concurrent runs on multiple servers; call `sys.exit(0)` if lock is not acquired.
-- Accumulate a human-readable `summary_lines` list throughout; join it into `batch.summary` at the end.
-- The outer `try/except` catches unhandled exceptions, sets `STATUS_FAILED`, saves the summary, then **re-raises** so the error is visible in cron logs.
-- On success, set `STATUS_SUCCESS` and save the batch record after releasing the lock.
+Every management command **must** use `BatchStatus` + `CobaltLock` — use the **cobalt-batch-command** skill to scaffold a new command. Reference implementation: `organisations/management/commands/auto_pay_batch.py`.
 
 ### Configuration via environment variables
 
@@ -261,81 +175,7 @@ Test data is seeded with `python manage.py add_test_data`. Pre-populated test us
 
 Each app has tests in `<app>/tests/unit/` (unit) and `<app>/tests/integration/` (Selenium/client). See `tests/test_manager.py` for the test framework core.
 
-### Unit test class structure
-
-Unit test files live in `<app>/tests/unit/unit_test_*.py`. The test runner discovers them by glob and instantiates every class it finds. **Do not inherit from `django.test.TestCase`** — just define a plain class.
-
-```python
-from tests.test_manager import CobaltTestManagerUnit
-
-class MyFeatureTests:
-    def __init__(self, manager: CobaltTestManagerUnit):
-        self.manager = manager
-        # Create any fixtures needed across all tests in this class
-
-    def test_01_something(self):
-        result = do_something()
-        self.manager.save_results(
-            status=result == expected,          # bool
-            test_name="Human-readable name",
-            test_description="What this test checks",
-            output=f"Got {result!r}, expected {expected!r}",
-        )
-```
-
-Key rules:
-- `__init__` receives the `CobaltTestManagerUnit` instance; store it as `self.manager`.
-- Every method whose name starts with `test_` is auto-discovered and run.
-- Use `self.manager.save_results()` to record outcomes — no `assert` statements.
-- Pre-built users are available as `self.manager.alan`, `.betty`, `.colin`, etc.
-- All DB writes are wrapped in a rolled-back transaction, so tests are isolated from the live database.
-- Helper functions shared across multiple test files live in `tests/unit/general_test_functions.py`.
-
-### Mocking external APIs in unit tests
-
-Use `unittest.mock.patch.object` as a context manager to patch at the method level rather than at the `requests` level — this is cleaner and avoids token-refresh side effects:
-
-```python
-from unittest.mock import patch
-
-def test_something(self):
-    xero = XeroApi()
-    mock_response = {"Contacts": [{"ContactID": "abc"}]}
-    with patch.object(xero, "xero_api_post", return_value=mock_response) as mock_post:
-        result = xero.some_method(...)
-
-    # Inspect the payload that was sent
-    payload = mock_post.call_args[0][1]
-    self.manager.save_results(status=..., ...)
-```
-
-For tests that can run both mocked and live (e.g. toggled by a `MOCK_XERO_API` flag), use `contextlib.nullcontext` as the no-op alternative:
-
-```python
-from contextlib import nullcontext
-
-def _patch_post(xero, response):
-    if MOCK_XERO_API:
-        return patch.object(xero, "xero_api_post", return_value=response)
-    return nullcontext(None)
-```
-
-Tests that inspect `mock.call_args` (payload structure, URL parameters) must always run mocked. Guard them with an early return:
-
-```python
-def test_payload_structure(self):
-    if not MOCK_XERO_API:
-        self.manager.save_results(status=True, test_name="... [SKIPPED]", ...)
-        return
-    # ... patch and inspect ...
-```
-
-### Testing integrations with external services (Xero, Stripe, etc.)
-
-- **Default to mocked.** Tests that hit live external APIs are slow, require credentials, and create persistent data that cannot be rolled back.
-- **Use a sandbox/demo account** when live testing is necessary. Never run live API tests against production credentials.
-- **Data created via API calls is not rolled back** even though the Django DB transaction is. Live test runs will leave contacts, invoices, or payments in the external system.
-- **Document the flag clearly** at the top of the test file, including what credentials or IDs are needed for live mode and what tests will be skipped. See `xero/tests/unit/unit_test_xero_api.py` for the reference implementation of this pattern.
+Use the **cobalt-unit-test** skill to scaffold new test files. See `xero/tests/unit/unit_test_xero_api.py` for the reference pattern on mocking/live toggle for external API tests.
 
 ---
 
@@ -361,66 +201,3 @@ def test_payload_structure(self):
 | Production | www.myabf.com.au |
 
 `DISABLE_PLAYPEN=OFF` on non-production environments prevents real emails from being sent. Set `DISABLE_PLAYPEN=ON` only on production.
-
----
-
-## Running Django Locally Against a Real Database
-
-To run `manage.py` commands (shell, migrations, tests, benchmarks) against the test database:
-
-```bash
-source ~/bin/cobalt-common-variables.env   # loads AWS credentials and most env vars
-export RDS_DB_NAME=cobalttestwhite         # point at the test DB (safe to modify)
-python manage.py <command>
-```
-
-- `cobalttestwhite` is the test database. It is **not** production data and can be freely read and written to for testing purposes.
-- Never set `RDS_DB_NAME` to `cobalt` (production) when running local scripts or migrations.
-- The env file sets `AWS_REGION_NAME`, `RDS_HOSTNAME`, `RDS_USERNAME`, `RDS_PASSWORD`, and other required variables.
-
-### Ad-hoc SQL benchmarking via the Django shell
-
-Use `python manage.py shell` with `EXPLAIN ANALYZE` to diagnose slow queries:
-
-```python
-from django.db import connection
-
-with connection.cursor() as c:
-    c.execute("EXPLAIN ANALYZE SELECT * FROM some_table WHERE col = 'value'")
-    for row in c.fetchall():
-        print(row[0])
-```
-
-To benchmark ORM calls, use `time.perf_counter()`:
-
-```python
-import time
-from myapp.models import MyModel
-
-start = time.perf_counter()
-for val in test_values:
-    try:
-        MyModel.objects.get(some_field=val)
-    except MyModel.DoesNotExist:
-        pass
-elapsed = time.perf_counter() - start
-print(f"{len(test_values)} lookups: {elapsed:.3f}s  (avg {elapsed/len(test_values)*1000:.1f}ms each)")
-```
-
-To seed bulk test rows for a benchmark and clean them up afterwards:
-
-```python
-from django.db import connection
-
-# Seed
-with connection.cursor() as c:
-    c.execute("""
-        INSERT INTO some_table (col1, col2, ...)
-        SELECT 'value', 'bench-' || generate_series(1, 100000)
-    """)
-
-# ... run benchmark ...
-
-# Clean up
-with connection.cursor() as c:
-    c.execute("DELETE FROM some_table WHERE col2 LIKE 'bench-%'")
