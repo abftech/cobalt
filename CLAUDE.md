@@ -361,3 +361,66 @@ def test_payload_structure(self):
 | Production | www.myabf.com.au |
 
 `DISABLE_PLAYPEN=OFF` on non-production environments prevents real emails from being sent. Set `DISABLE_PLAYPEN=ON` only on production.
+
+---
+
+## Running Django Locally Against a Real Database
+
+To run `manage.py` commands (shell, migrations, tests, benchmarks) against the test database:
+
+```bash
+source ~/bin/cobalt-common-variables.env   # loads AWS credentials and most env vars
+export RDS_DB_NAME=cobalttestwhite         # point at the test DB (safe to modify)
+python manage.py <command>
+```
+
+- `cobalttestwhite` is the test database. It is **not** production data and can be freely read and written to for testing purposes.
+- Never set `RDS_DB_NAME` to `cobalt` (production) when running local scripts or migrations.
+- The env file sets `AWS_REGION_NAME`, `RDS_HOSTNAME`, `RDS_USERNAME`, `RDS_PASSWORD`, and other required variables.
+
+### Ad-hoc SQL benchmarking via the Django shell
+
+Use `python manage.py shell` with `EXPLAIN ANALYZE` to diagnose slow queries:
+
+```python
+from django.db import connection
+
+with connection.cursor() as c:
+    c.execute("EXPLAIN ANALYZE SELECT * FROM some_table WHERE col = 'value'")
+    for row in c.fetchall():
+        print(row[0])
+```
+
+To benchmark ORM calls, use `time.perf_counter()`:
+
+```python
+import time
+from myapp.models import MyModel
+
+start = time.perf_counter()
+for val in test_values:
+    try:
+        MyModel.objects.get(some_field=val)
+    except MyModel.DoesNotExist:
+        pass
+elapsed = time.perf_counter() - start
+print(f"{len(test_values)} lookups: {elapsed:.3f}s  (avg {elapsed/len(test_values)*1000:.1f}ms each)")
+```
+
+To seed bulk test rows for a benchmark and clean them up afterwards:
+
+```python
+from django.db import connection
+
+# Seed
+with connection.cursor() as c:
+    c.execute("""
+        INSERT INTO some_table (col1, col2, ...)
+        SELECT 'value', 'bench-' || generate_series(1, 100000)
+    """)
+
+# ... run benchmark ...
+
+# Clean up
+with connection.cursor() as c:
+    c.execute("DELETE FROM some_table WHERE col2 LIKE 'bench-%'")
