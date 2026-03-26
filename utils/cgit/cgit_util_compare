@@ -37,7 +37,19 @@ sed -i -e "s#!!OTHERBRANCH!!#$NEW#g" /tmp/temp.html
 
 if [ $# -gt 2 ]
 then
-git diff "$NEW" "$OLD" --name-only | grep -Ev "$4" | xargs git diff "$NEW" -- | diff2html -i stdin -s side --su open --htmlWrapperTemplate /tmp/temp.html
+  DIFF=$(git diff "$NEW" "$OLD" --name-only | grep -Ev "$4" | xargs git diff "$NEW" --)
+  FILE_COUNT=$(git diff "$NEW" "$OLD" --name-only | grep -Ev "$4" | wc -l | tr -d ' ')
+  STAT=$(git diff "$NEW" "$OLD" --name-only | grep -Ev "$4" | xargs git diff "$NEW" --shortstat --)
 else
-  git diff -w "$NEW" "$OLD" | diff2html -i stdin -s side --su open --htmlWrapperTemplate /tmp/temp.html
+  DIFF=$(git diff -w "$NEW" "$OLD")
+  FILE_COUNT=$(git diff -w "$NEW" "$OLD" --name-only | wc -l | tr -d ' ')
+  STAT=$(git diff -w "$NEW" "$OLD" --shortstat)
 fi
+
+INSERTIONS=$(echo "$STAT" | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo 0)
+DELETIONS=$(echo "$STAT" | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo 0)
+TOTAL_LINES=$(( ${INSERTIONS:-0} + ${DELETIONS:-0} ))
+
+printf "\n${BLUE}Summary:${NC} ${GREEN}$FILE_COUNT files changed${NC}, ${GREEN}$TOTAL_LINES lines affected${NC} (${GREEN}+$INSERTIONS${NC} / ${RED}-$DELETIONS${NC})\n\n"
+
+echo "$DIFF" | diff2html -i stdin -s side --su open --htmlWrapperTemplate /tmp/temp.html
