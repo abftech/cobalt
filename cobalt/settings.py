@@ -183,6 +183,7 @@ XERO_FEE_TAX_TYPE = set_value("XERO_FEE_TAX_TYPE", "OUTPUT")
 #   XERO_ALERT_EMAILS. Comma-separated list of email addresses to notify when a
 #   Xero API call fails completely (after retries). Leave unset or empty to
 #   disable alerts. Example: "admin@example.com,finance@example.com"
+XERO_BRANDING_THEME_ID = set_value("XERO_BRANDING_THEME_ID", "")
 _xero_alert_emails_raw = set_value("XERO_ALERT_EMAILS", "")
 XERO_ALERT_EMAILS = (
     [e.strip() for e in _xero_alert_emails_raw.split(",") if e.strip()]

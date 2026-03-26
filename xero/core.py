@@ -13,6 +13,7 @@ from django.utils.timezone import now
 from cobalt.settings import (
     GLOBAL_CURRENCY_SYMBOL,
     XERO_ALERT_EMAILS,
+    XERO_BRANDING_THEME_ID,
     XERO_CLIENT_ID,
     XERO_CLIENT_SECRET,
     XERO_BANK_ACCOUNT_CODE,
@@ -962,6 +963,11 @@ class XeroApi:
                     "Reference": reference,
                     "InvoiceNumber": cobalt_reference,
                     "Status": "AUTHORISED",
+                    **(
+                        {"BrandingThemeID": XERO_BRANDING_THEME_ID}
+                        if XERO_BRANDING_THEME_ID
+                        else {}
+                    ),
                 }
             ]
         }
