@@ -101,9 +101,7 @@
                 <div class="card">
                     <div class="card-header card-header-danger">
                         <h2>Stripe</h2>
-                        <h3>Balance: <span hx-get="{% url 'payments:statement_admin_summary_stripe_balance' %}"
-                                           hx-trigger="load"
-                                           hx-swap="outerHTML">loading...</span></h3>
+                        <h3>Balance: {{ stripe_balance|cobalt_currency }}</h3>
                     </div>
                     <div class="card-body">
                         <table>

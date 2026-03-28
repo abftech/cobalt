@@ -1,3 +1,4 @@
+import concurrent.futures
 import csv
 import datetime
 import logging
@@ -11,7 +12,7 @@ from dateutil.relativedelta import relativedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.db.transaction import atomic
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
@@ -123,37 +124,49 @@ def statement_admin_summary(request):
         HTTPResponse
     """
 
-    # Member summary
-    total_members = User.objects.count()
-    auto_top_up = User.objects.filter(stripe_auto_confirmed="On").count()
+    # Kick off the Stripe API call in a thread so it runs concurrently with DB work
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        stripe_future = executor.submit(stripe_current_balance)
 
-    member_balances = list(
-        MemberTransaction.objects.order_by("member", "-created_date")
-        .distinct("member")
-        .values_list("balance", flat=True)
-    )
-    total_balance_members = sum(b for b in member_balances if b)
-    members_with_balances = sum(1 for b in member_balances if b)
+        # Member summary
+        total_members = User.objects.count()
+        auto_top_up = User.objects.filter(stripe_auto_confirmed="On").count()
 
-    # Organisation summary
-    total_orgs = Organisation.objects.count()
+        latest_member_txns = MemberTransaction.objects.order_by(
+            "member", "-created_date"
+        ).distinct("member")
+        member_agg = (
+            MemberTransaction.objects.filter(pk__in=latest_member_txns.values("pk"))
+            .exclude(balance=0)
+            .aggregate(total=Sum("balance"), count=Count("pk"))
+        )
+        total_balance_members = member_agg["total"] or 0
+        members_with_balances = member_agg["count"]
 
-    org_balances = list(
-        OrganisationTransaction.objects.order_by("organisation", "-created_date")
-        .distinct("organisation")
-        .values_list("balance", flat=True)
-    )
-    total_balance_orgs = sum(b for b in org_balances if b)
-    orgs_with_balances = sum(1 for b in org_balances if b)
+        # Organisation summary
+        total_orgs = Organisation.objects.count()
 
-    # Stripe 30-day summary (balance loaded lazily via HTMX)
-    today = timezone.now()
-    ref_date = today - datetime.timedelta(days=30)
-    stripe = (
-        StripeTransaction.objects.filter(created_date__gte=ref_date)
-        .exclude(stripe_method=None)
-        .aggregate(Sum("amount"))
-    )
+        latest_org_txns = OrganisationTransaction.objects.order_by(
+            "organisation", "-created_date"
+        ).distinct("organisation")
+        org_agg = (
+            OrganisationTransaction.objects.filter(pk__in=latest_org_txns.values("pk"))
+            .exclude(balance=0)
+            .aggregate(total=Sum("balance"), count=Count("pk"))
+        )
+        total_balance_orgs = org_agg["total"] or 0
+        orgs_with_balances = org_agg["count"]
+
+        # Stripe Summary
+        today = timezone.now()
+        ref_date = today - datetime.timedelta(days=30)
+        stripe = (
+            StripeTransaction.objects.filter(created_date__gte=ref_date)
+            .exclude(stripe_method=None)
+            .aggregate(Sum("amount"))
+        )
+
+        stripe_balance = stripe_future.result()
 
     return render(
         request,
@@ -168,18 +181,8 @@ def statement_admin_summary(request):
             "orgs_with_balances": orgs_with_balances,
             "balance": total_balance_orgs + total_balance_members,
             "stripe": stripe,
+            "stripe_balance": stripe_balance,
         },
-    )
-
-
-@rbac_check_role("payments.global.view")
-def statement_admin_summary_stripe_balance(request):
-    """HTMX endpoint — returns the live Stripe balance as a plain text fragment."""
-    balance = stripe_current_balance()
-    return render(
-        request,
-        "payments/admin/statement_admin_summary_stripe_balance_htmx.html",
-        {"stripe_balance": balance},
     )
 
 
