@@ -1,4 +1,3 @@
-import concurrent.futures
 import csv
 import datetime
 import logging
@@ -124,49 +123,43 @@ def statement_admin_summary(request):
         HTTPResponse
     """
 
-    # Kick off the Stripe API call in a thread so it runs concurrently with DB work
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        stripe_future = executor.submit(stripe_current_balance)
+    # Member summary
+    total_members = User.objects.count()
+    auto_top_up = User.objects.filter(stripe_auto_confirmed="On").count()
 
-        # Member summary
-        total_members = User.objects.count()
-        auto_top_up = User.objects.filter(stripe_auto_confirmed="On").count()
+    latest_member_txns = MemberTransaction.objects.order_by(
+        "member", "-created_date"
+    ).distinct("member")
+    member_agg = (
+        MemberTransaction.objects.filter(pk__in=latest_member_txns.values("pk"))
+        .exclude(balance=0)
+        .aggregate(total=Sum("balance"), count=Count("pk"))
+    )
+    total_balance_members = member_agg["total"] or 0
+    members_with_balances = member_agg["count"]
 
-        latest_member_txns = MemberTransaction.objects.order_by(
-            "member", "-created_date"
-        ).distinct("member")
-        member_agg = (
-            MemberTransaction.objects.filter(pk__in=latest_member_txns.values("pk"))
-            .exclude(balance=0)
-            .aggregate(total=Sum("balance"), count=Count("pk"))
-        )
-        total_balance_members = member_agg["total"] or 0
-        members_with_balances = member_agg["count"]
+    # Organisation summary
+    total_orgs = Organisation.objects.count()
 
-        # Organisation summary
-        total_orgs = Organisation.objects.count()
+    latest_org_txns = OrganisationTransaction.objects.order_by(
+        "organisation", "-created_date"
+    ).distinct("organisation")
+    org_agg = (
+        OrganisationTransaction.objects.filter(pk__in=latest_org_txns.values("pk"))
+        .exclude(balance=0)
+        .aggregate(total=Sum("balance"), count=Count("pk"))
+    )
+    total_balance_orgs = org_agg["total"] or 0
+    orgs_with_balances = org_agg["count"]
 
-        latest_org_txns = OrganisationTransaction.objects.order_by(
-            "organisation", "-created_date"
-        ).distinct("organisation")
-        org_agg = (
-            OrganisationTransaction.objects.filter(pk__in=latest_org_txns.values("pk"))
-            .exclude(balance=0)
-            .aggregate(total=Sum("balance"), count=Count("pk"))
-        )
-        total_balance_orgs = org_agg["total"] or 0
-        orgs_with_balances = org_agg["count"]
-
-        # Stripe Summary
-        today = timezone.now()
-        ref_date = today - datetime.timedelta(days=30)
-        stripe = (
-            StripeTransaction.objects.filter(created_date__gte=ref_date)
-            .exclude(stripe_method=None)
-            .aggregate(Sum("amount"))
-        )
-
-        stripe_balance = stripe_future.result()
+    # Stripe 30-day summary (balance loaded lazily via HTMX)
+    today = timezone.now()
+    ref_date = today - datetime.timedelta(days=30)
+    stripe = (
+        StripeTransaction.objects.filter(created_date__gte=ref_date)
+        .exclude(stripe_method=None)
+        .aggregate(Sum("amount"))
+    )
 
     return render(
         request,
@@ -181,8 +174,18 @@ def statement_admin_summary(request):
             "orgs_with_balances": orgs_with_balances,
             "balance": total_balance_orgs + total_balance_members,
             "stripe": stripe,
-            "stripe_balance": stripe_balance,
         },
+    )
+
+
+@rbac_check_role("payments.global.view")
+def statement_admin_summary_stripe_balance(request):
+    """HTMX endpoint — returns the live Stripe balance as a plain text fragment."""
+    balance = stripe_current_balance()
+    return render(
+        request,
+        "payments/admin/statement_admin_summary_stripe_balance_htmx.html",
+        {"stripe_balance": balance},
     )
 
 

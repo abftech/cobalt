@@ -172,6 +172,11 @@ urlpatterns = [
         name="statement_admin_summary",
     ),
     path(
+        "statement-admin-summary/stripe-balance",
+        payments.views.admin.statement_admin_summary_stripe_balance,
+        name="statement_admin_summary_stripe_balance",
+    ),
+    path(
         "organisation-movement-report",
         payments.views.admin.organisation_movement_report,
         name="organisation_movement_report",
