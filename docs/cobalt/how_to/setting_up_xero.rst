@@ -235,6 +235,14 @@ shell exports):
      - Xero tax type code for the processing-fee recovery line on ACCREC
        invoices. Default: ``OUTPUT`` (10% GST on income — the ABF charges GST
        on its service fee).
+   * - ``XERO_BRANDING_THEME_ID``
+     - Optional. UUID of a Xero branding theme to apply to settlement
+       invoices. If set, the theme is included on the ACCREC fee invoice
+       payload. Leave blank to use the default Xero theme.
+   * - ``XERO_ALERT_EMAILS``
+     - Optional. Comma-separated list of email addresses to notify when a
+       Xero API call fails completely. Leave unset or empty to disable alerts.
+       Example: ``admin@example.com,finance@example.com``
 
 Test vs production values
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -648,6 +656,14 @@ Summary of Environment Variables
      - Yes (if webhooks are configured)
      - Signing key from the Xero developer portal Webhooks tab. Required to
        verify the HMAC-SHA256 signature on incoming webhook requests.
+   * - ``XERO_BRANDING_THEME_ID``
+     - No
+     - UUID of a Xero branding theme to apply to settlement invoices. Omit
+       to use the Xero default theme.
+   * - ``XERO_ALERT_EMAILS``
+     - No
+     - Comma-separated email addresses notified when a Xero API call fails.
+       Leave unset to disable failure alerts.
 
 Resetting the Demo Company
 --------------------------
