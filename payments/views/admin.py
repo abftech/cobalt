@@ -1,3 +1,4 @@
+import concurrent.futures
 import csv
 import datetime
 import logging
@@ -11,7 +12,7 @@ from dateutil.relativedelta import relativedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.db.transaction import atomic
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
@@ -123,55 +124,49 @@ def statement_admin_summary(request):
         HTTPResponse
     """
 
-    # Member summary
-    total_members = User.objects.count()
-    auto_top_up = User.objects.filter(stripe_auto_confirmed="On").count()
+    # Kick off the Stripe API call in a thread so it runs concurrently with DB work
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        stripe_future = executor.submit(stripe_current_balance)
 
-    members_list = MemberTransaction.objects.order_by(
-        "member", "-created_date"
-    ).distinct("member")
+        # Member summary
+        total_members = User.objects.count()
+        auto_top_up = User.objects.filter(stripe_auto_confirmed="On").count()
 
-    # exclude zeros
-    total_balance_members_list = []
-    for member in members_list:
-        if member.balance != 0:
-            total_balance_members_list.append(member)
+        latest_member_txns = MemberTransaction.objects.order_by(
+            "member", "-created_date"
+        ).distinct("member")
+        member_agg = (
+            MemberTransaction.objects.filter(pk__in=latest_member_txns.values("pk"))
+            .exclude(balance=0)
+            .aggregate(total=Sum("balance"), count=Count("pk"))
+        )
+        total_balance_members = member_agg["total"] or 0
+        members_with_balances = member_agg["count"]
 
-    total_balance_members = 0
-    members_with_balances = 0
-    for item in total_balance_members_list:
-        total_balance_members += item.balance
-        members_with_balances += 1
+        # Organisation summary
+        total_orgs = Organisation.objects.count()
 
-    # Organisation summary
-    total_orgs = Organisation.objects.count()
+        latest_org_txns = OrganisationTransaction.objects.order_by(
+            "organisation", "-created_date"
+        ).distinct("organisation")
+        org_agg = (
+            OrganisationTransaction.objects.filter(pk__in=latest_org_txns.values("pk"))
+            .exclude(balance=0)
+            .aggregate(total=Sum("balance"), count=Count("pk"))
+        )
+        total_balance_orgs = org_agg["total"] or 0
+        orgs_with_balances = org_agg["count"]
 
-    orgs_list = OrganisationTransaction.objects.order_by(
-        "organisation", "-created_date"
-    ).distinct("organisation")
+        # Stripe Summary
+        today = timezone.now()
+        ref_date = today - datetime.timedelta(days=30)
+        stripe = (
+            StripeTransaction.objects.filter(created_date__gte=ref_date)
+            .exclude(stripe_method=None)
+            .aggregate(Sum("amount"))
+        )
 
-    # exclude zeros
-    total_balance_orgs_list = []
-    for org in orgs_list:
-        if org.balance != 0:
-            total_balance_orgs_list.append(org)
-
-    orgs_with_balances = 0
-    total_balance_orgs = 0
-    for item in total_balance_orgs_list:
-        total_balance_orgs += item.balance
-        orgs_with_balances += 1
-
-    # Stripe Summary
-    today = timezone.now()
-    ref_date = today - datetime.timedelta(days=30)
-    stripe = (
-        StripeTransaction.objects.filter(created_date__gte=ref_date)
-        .exclude(stripe_method=None)
-        .aggregate(Sum("amount"))
-    )
-
-    stripe_balance = stripe_current_balance()
+        stripe_balance = stripe_future.result()
 
     return render(
         request,
