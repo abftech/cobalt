@@ -264,6 +264,13 @@ class MemberTransaction(AbstractTransaction):
             )
         super(MemberTransaction, self).save(*args, **kwargs)
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["member", "-created_date"], name="pmtxn_member_date_idx"
+            ),
+        ]
+
     def __str__(self):
         return f"{self.member} - {self.type}"
 
@@ -338,6 +345,13 @@ class OrganisationTransaction(AbstractTransaction):
         settlement_value = gross_amount * percent
 
         return round(settlement_value, 2)
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["organisation", "-created_date"], name="porgtxn_org_date_idx"
+            ),
+        ]
 
     def __str__(self):
         return f"{self.organisation.name} - {self.id}"
