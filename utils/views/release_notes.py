@@ -184,6 +184,7 @@ def release_notes_view(request):
                 "Xero API (not complete)",
                 "Bug fix for auto_pay_batch to handle unknown ABF number",
                 "DEV - script to clear locks",
+                "Improve performance of ABF finance screen",
             ],
         },
         {

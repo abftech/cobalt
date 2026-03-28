@@ -11,7 +11,7 @@ from dateutil.relativedelta import relativedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Count, Sum
+from django.db.models import Sum
 from django.db.transaction import atomic
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
@@ -127,30 +127,24 @@ def statement_admin_summary(request):
     total_members = User.objects.count()
     auto_top_up = User.objects.filter(stripe_auto_confirmed="On").count()
 
-    latest_member_txns = MemberTransaction.objects.order_by(
-        "member", "-created_date"
-    ).distinct("member")
-    member_agg = (
-        MemberTransaction.objects.filter(pk__in=latest_member_txns.values("pk"))
-        .exclude(balance=0)
-        .aggregate(total=Sum("balance"), count=Count("pk"))
+    member_balances = list(
+        MemberTransaction.objects.order_by("member", "-created_date")
+        .distinct("member")
+        .values_list("balance", flat=True)
     )
-    total_balance_members = member_agg["total"] or 0
-    members_with_balances = member_agg["count"]
+    total_balance_members = sum(b for b in member_balances if b)
+    members_with_balances = sum(1 for b in member_balances if b)
 
     # Organisation summary
     total_orgs = Organisation.objects.count()
 
-    latest_org_txns = OrganisationTransaction.objects.order_by(
-        "organisation", "-created_date"
-    ).distinct("organisation")
-    org_agg = (
-        OrganisationTransaction.objects.filter(pk__in=latest_org_txns.values("pk"))
-        .exclude(balance=0)
-        .aggregate(total=Sum("balance"), count=Count("pk"))
+    org_balances = list(
+        OrganisationTransaction.objects.order_by("organisation", "-created_date")
+        .distinct("organisation")
+        .values_list("balance", flat=True)
     )
-    total_balance_orgs = org_agg["total"] or 0
-    orgs_with_balances = org_agg["count"]
+    total_balance_orgs = sum(b for b in org_balances if b)
+    orgs_with_balances = sum(1 for b in org_balances if b)
 
     # Stripe 30-day summary (balance loaded lazily via HTMX)
     today = timezone.now()
