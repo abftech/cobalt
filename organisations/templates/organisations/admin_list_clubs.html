@@ -49,11 +49,15 @@
                                             <td>
                                                 {% if club.user_can_edit %}
                                                     <a href="{% url "organisations:club_menu" club_id=club.id %}"
-                                                        class="btn btn-sm btn-info">Club Menu</a>
+                                                       class="btn btn-sm btn-info">Club Menu</a>
                                                     {% if club.manually_added %}
                                                         <a href="{% url "organisations:admin_convert_manual_club_to_automatic" club_id=club.id %}"
-                                                            class="btn btn-sm btn-success">Convert from Manual</a>
+                                                           class="btn btn-sm btn-success">Convert from Manual</a>
                                                     {% endif %}
+                                                {% endif %}
+                                                {% if is_global_admin %}
+                                                    <a href="{% url "organisations:admin_edit_club" club_id=club.id %}"
+                                                       class="btn btn-sm btn-warning">Edit</a>
                                                 {% endif %}
                                             </td>
                                         </tr>

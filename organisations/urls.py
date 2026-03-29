@@ -42,6 +42,11 @@ urlpatterns = [
         name="admin_add_club",
     ),
     path(
+        "admin/edit-club/<int:club_id>",
+        admin.admin_edit_club,
+        name="admin_edit_club",
+    ),
+    path(
         "admin/blocked-memberships",
         admin.admin_blocked_memberships,
         name="admin_blocked_memberships",

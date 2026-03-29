@@ -414,8 +414,21 @@ class XeroApi:
                     "Name": organisation.name,
                     "EmailAddress": organisation.club_email or "",
                     **(
-                        {"Website": organisation.club_website}
+                        {
+                            "Website": (
+                                organisation.club_website
+                                if "://" in organisation.club_website
+                                else f"https://{organisation.club_website}"
+                            )
+                        }
                         if organisation.club_website
+                        else {}
+                    ),
+                    **(
+                        {
+                            "BankAccountDetails": f"{organisation.bank_bsb or ''} {organisation.bank_account or ''}".strip()
+                        }
+                        if organisation.bank_bsb or organisation.bank_account
                         else {}
                     ),
                     "Addresses": [
@@ -475,8 +488,21 @@ class XeroApi:
                     "Name": organisation.name,
                     "EmailAddress": organisation.club_email or "",
                     **(
-                        {"Website": organisation.club_website}
+                        {
+                            "Website": (
+                                organisation.club_website
+                                if "://" in organisation.club_website
+                                else f"https://{organisation.club_website}"
+                            )
+                        }
                         if organisation.club_website
+                        else {}
+                    ),
+                    **(
+                        {
+                            "BankAccountDetails": f"{organisation.bank_bsb or ''} {organisation.bank_account or ''}".strip()
+                        }
+                        if organisation.bank_bsb or organisation.bank_account
                         else {}
                     ),
                     "Addresses": [

@@ -37,7 +37,9 @@ from rbac.core import (
     rbac_get_admin_group_by_name,
 )
 from rbac.models import RBACGroupRole, RBACUserGroup, RBACGroup
+from rbac.decorators import rbac_check_role
 from rbac.views import rbac_forbidden
+from xero.core import XeroApi
 
 
 def get_secretary_from_org_form(org_form):
@@ -268,10 +270,56 @@ def admin_list_clubs(request):
         else:
             grouped_by_state[club.state] = [club]
 
+    is_global_admin = rbac_user_has_role(request.user, "orgs.admin.edit")
+
     return render(
         request,
         "organisations/admin_list_clubs.html",
-        {"grouped_by_state": grouped_by_state},
+        {"grouped_by_state": grouped_by_state, "is_global_admin": is_global_admin},
+    )
+
+
+@rbac_check_role("orgs.admin.edit")
+def admin_edit_club(request, club_id):
+    """Edit an existing organisation. For ABF Administrators only."""
+
+    org = get_object_or_404(Organisation, pk=club_id)
+    form = OrgForm(request.POST or None, instance=org, user=request.user)
+    form.fields["org_id"].disabled = True
+
+    if request.method == "POST" and form.is_valid():
+        org = form.save(commit=False)
+        org.last_updated_by = request.user
+        org.last_updated = timezone.localtime()
+        org.save()
+
+        xero = XeroApi()
+        if xero.update_organisation_contact(org):
+            messages.success(
+                request,
+                f"{org.name} updated and Xero contact synced.",
+                extra_tags="cobalt-message-success",
+            )
+        else:
+            messages.warning(
+                request,
+                f"{org.name} updated but Xero contact could not be synced.",
+                extra_tags="cobalt-message-warning",
+            )
+
+        return redirect("organisations:admin_list_clubs")
+
+    secretary_id, secretary_name = get_secretary_from_org_form(form)
+
+    return render(
+        request,
+        "organisations/admin_edit_club.html",
+        {
+            "form": form,
+            "org": org,
+            "secretary_id": secretary_id,
+            "secretary_name": secretary_name,
+        },
     )
 
 

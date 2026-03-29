@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load crispy_forms_filters %}
+{% load static %}
+{% load cobalt_tags %}
+{% block title %} - Edit Club{% endblock %}
+{% block content %}
+
+    {% include "accounts/search/user_search_include_htmx.html" with search_id=1 callback='cobaltMemberSearchOk' include_me=1 %}
+
+    <!-- BREADCRUMBS -->
+
+    <nav aria-label="breadcrumb" role="navigation">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url "rbac:admin_menu" %}">Admin</a></li>
+            <li class="breadcrumb-item"><a href="{% url "rbac:admin_menu" %}#orgs">Organisations</a></li>
+            <li class="breadcrumb-item"><a href="{% url "organisations:admin_list_clubs" %}">List Clubs</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Edit Club</li>
+        </ol>
+    </nav>
+
+    <div class="">
+        <div class="card col-md-12 align-content-center">
+            <div class="card-header card-header-primary">
+                <h2>Edit Club: {{ org.name }}</h2>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <div class="col-10">
+                        <div class="card-body">
+
+                            <form method="POST">
+                                {% csrf_token %}
+
+                                <div class="card">
+                                    <div class="card-header card-header-danger">
+                                        <h2>{{ org.name }}</h2>
+                                    </div>
+                                    <div class="card-body">
+
+                                        <div class="row">
+                                            {# secretary #}
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <b>Club Secretary: </b><span id="dummy_name">{{ secretary_name }}</span>
+                                                    <input type="hidden" id="id_secretary" name="secretary" value="{{ secretary_id|default_if_none:"3" }}">
+                                                    <span class="cobalt-form-error">{{ form.secretary.errors }}</span>
+                                                    <button id="id_search_button" type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#userSearchModal1">Edit</button>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    {% cobalt_bs4_field form.state %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                {% cobalt_bs4_field form.name %}
+                                            </div>
+                                            <div class="col-md-3">
+                                                {% cobalt_bs4_field form.org_id %}
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                {% cobalt_bs4_field form.club_email %}
+                                            </div>
+                                            <div class="col-md-6">
+                                                {% cobalt_bs4_field form.club_website %}
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                {% cobalt_bs4_field form.address1 %}
+                                            </div>
+                                            <div class="col-md-3">
+                                                {% cobalt_bs4_field form.suburb %}
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                {% cobalt_bs4_field form.address2 %}
+                                            </div>
+                                            <div class="col-md-2">
+                                                {% cobalt_bs4_field form.postcode %}
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                {% cobalt_bs4_field form.bank_bsb %}
+                                            </div>
+                                            <div class="col-md-6">
+                                                {% cobalt_bs4_field form.bank_account %}
+                                            </div>
+                                        </div>
+
+                                        {% if form.default_secondary_payment_method %}
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Default Secondary Payment Method</label>
+                                                        {% cobalt_bs4_field form.default_secondary_payment_method %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+
+                                    </div>
+                                </div>
+
+                                <br>
+                                <button type="submit" name="Save" class="cobalt-save btn btn-success">Save</button>
+                                <a href="{% url "organisations:admin_list_clubs" %}" class="btn btn-default">Cancel</a>
+
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}
+
+{% block footer %}
+    {% include "accounts/search/user_search_include_js_htmx.html" with search_id=1 include_me='yes' %}
+
+    <script>
+        function cobaltMemberSearchOk(search_id, member_id, member_name) {
+            $('#id_secretary').val(member_id);
+            $('#dummy_name').text(member_name);
+        }
+    </script>
+{% endblock footer %}
