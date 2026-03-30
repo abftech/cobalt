@@ -217,9 +217,10 @@ def admin_list_clubs(request):
     clubs = Organisation.objects.order_by("state", "name").select_related("secretary")
 
     # Check roles so we only show clubs user can edit
+    is_global_admin = rbac_user_has_role(request.user, "orgs.admin.edit")
 
     # Global admin - gets everything
-    if rbac_user_has_role(request.user, "orgs.admin.edit"):
+    if is_global_admin:
         for club in clubs:
             club.user_can_edit = True
 
@@ -270,8 +271,6 @@ def admin_list_clubs(request):
         else:
             grouped_by_state[club.state] = [club]
 
-    is_global_admin = rbac_user_has_role(request.user, "orgs.admin.edit")
-
     return render(
         request,
         "organisations/admin_list_clubs.html",
@@ -290,7 +289,6 @@ def admin_edit_club(request, club_id):
     if request.method == "POST" and form.is_valid():
         org = form.save(commit=False)
         org.last_updated_by = request.user
-        org.last_updated = timezone.localtime()
         org.save()
 
         xero = XeroApi()

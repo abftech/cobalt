@@ -401,50 +401,46 @@ class XeroApi:
     # Customer (Contact) methods
     # -----------------------------------------------------------------------
 
+    def _contact_fields_for_org(self, organisation) -> dict:
+        """Build the Xero contact field dict from an Organisation instance.
+
+        Used by both create and update to avoid duplication.
+        """
+        fields = {
+            "AccountNumber": organisation.org_id,
+            "Name": organisation.name,
+            "EmailAddress": organisation.club_email or "",
+        }
+        if organisation.club_website:
+            website = organisation.club_website
+            fields["Website"] = website if "://" in website else f"https://{website}"
+        if organisation.bank_bsb or organisation.bank_account:
+            fields["BankAccountDetails"] = (
+                f"{organisation.bank_bsb or ''} {organisation.bank_account or ''}".strip()
+            )
+        fields["Addresses"] = [
+            {
+                "AddressType": "STREET",
+                "AddressLine1": organisation.address1 or "",
+                "AddressLine2": organisation.address2 or "",
+                "City": organisation.suburb or "",
+                "Region": organisation.state or "",
+                "PostalCode": organisation.postcode or "",
+                "Country": "Australia",
+            }
+        ]
+        return fields
+
     def create_organisation_contact(self, organisation) -> str | None:
         """Create a Xero contact for an Organisation and save the contact ID back.
 
         Returns the Xero ContactID on success, or None on failure.
         """
-        payload = {
-            "Contacts": [
-                {
-                    "AccountNumber": organisation.org_id,
-                    "ContactStatus": "ACTIVE",
-                    "Name": organisation.name,
-                    "EmailAddress": organisation.club_email or "",
-                    **(
-                        {
-                            "Website": (
-                                organisation.club_website
-                                if "://" in organisation.club_website
-                                else f"https://{organisation.club_website}"
-                            )
-                        }
-                        if organisation.club_website
-                        else {}
-                    ),
-                    **(
-                        {
-                            "BankAccountDetails": f"{organisation.bank_bsb or ''} {organisation.bank_account or ''}".strip()
-                        }
-                        if organisation.bank_bsb or organisation.bank_account
-                        else {}
-                    ),
-                    "Addresses": [
-                        {
-                            "AddressType": "STREET",
-                            "AddressLine1": organisation.address1 or "",
-                            "AddressLine2": organisation.address2 or "",
-                            "City": organisation.suburb or "",
-                            "Region": organisation.state or "",
-                            "PostalCode": organisation.postcode or "",
-                            "Country": "Australia",
-                        }
-                    ],
-                }
-            ]
+        contact = {
+            "ContactStatus": "ACTIVE",
+            **self._contact_fields_for_org(organisation),
         }
+        payload = {"Contacts": [contact]}
         response = self.xero_api_post(
             "https://api.xero.com/api.xro/2.0/Contacts", payload
         )
@@ -480,45 +476,11 @@ class XeroApi:
             )
             return False
 
-        payload = {
-            "Contacts": [
-                {
-                    "ContactID": organisation.xero_contact_id,
-                    "AccountNumber": organisation.org_id,
-                    "Name": organisation.name,
-                    "EmailAddress": organisation.club_email or "",
-                    **(
-                        {
-                            "Website": (
-                                organisation.club_website
-                                if "://" in organisation.club_website
-                                else f"https://{organisation.club_website}"
-                            )
-                        }
-                        if organisation.club_website
-                        else {}
-                    ),
-                    **(
-                        {
-                            "BankAccountDetails": f"{organisation.bank_bsb or ''} {organisation.bank_account or ''}".strip()
-                        }
-                        if organisation.bank_bsb or organisation.bank_account
-                        else {}
-                    ),
-                    "Addresses": [
-                        {
-                            "AddressType": "STREET",
-                            "AddressLine1": organisation.address1 or "",
-                            "AddressLine2": organisation.address2 or "",
-                            "City": organisation.suburb or "",
-                            "Region": organisation.state or "",
-                            "PostalCode": organisation.postcode or "",
-                            "Country": "Australia",
-                        }
-                    ],
-                }
-            ]
+        contact = {
+            "ContactID": organisation.xero_contact_id,
+            **self._contact_fields_for_org(organisation),
         }
+        payload = {"Contacts": [contact]}
         response = self.xero_api_post(
             "https://api.xero.com/api.xro/2.0/Contacts", payload
         )
