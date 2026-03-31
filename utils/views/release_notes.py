@@ -191,6 +191,7 @@ def release_notes_view(request):
                 "DEV - script to clear locks",
                 "DEV - archive old data script - not complete",
                 "Improve performance of ABF finance screen",
+                "DEV - Improve performance of API for sending results",
             ],
         },
         {

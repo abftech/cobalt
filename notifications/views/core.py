@@ -596,13 +596,22 @@ def send_cobalt_bulk_notifications(
     """
 
     unregistered_users = []
-    uncontactable_users = []
-    sent_users = []
+    contactable_users = []
 
-    # For now we just store the users, could change this to store users and devices, for non-blank headers this can be
-    # worked out anyway
-    fcm_sent_users = []
-    fcm_failed_users = []
+    # load data — one DB query to find all FCM devices for users in the file
+    app_users, fcm_lookup = _send_cobalt_bulk_notification_get_data(msg_list)
+
+    # Pre-compute who is registered and reachable before spawning the thread,
+    # so we can return an accurate response immediately.
+    contactable_items = []
+    for item in msg_list:
+        system_number, msg = item
+        msg = msg.replace("<br>", "\n")
+        if fcm_lookup.get(system_number):
+            contactable_users.append(system_number)
+            contactable_items.append((system_number, msg, fcm_lookup[system_number]))
+        else:
+            unregistered_users.append(system_number)
 
     # Log this batch
     header = RealtimeNotificationHeader(
@@ -613,51 +622,50 @@ def send_cobalt_bulk_notifications(
         total_record_number=total_file_rows,
         sender_identification=sender_identification,
     )
-    header.save()
-
-    # load data
-
-    app_users, fcm_lookup = _send_cobalt_bulk_notification_get_data(msg_list)
-
-    # Go through and try to send the messages
-    for item in msg_list:
-        system_number, msg = item
-        # Reformat string
-        msg = msg.replace("<br>", "\n")
-
-        fcm_device_list = fcm_lookup.get(system_number)
-        if fcm_device_list:
-            # If it works for any device, count that as successful
-            worked = False
-
-            for index, fcm_device in enumerate(fcm_device_list):
-                # Only add the first message to the database
-                add_message_to_database = index == 0
-                if send_fcm_message(
-                    fcm_device, msg, admin, header, add_message_to_database
-                ):
-                    worked = True
-
-            if worked:
-                fcm_sent_users.append(system_number)
-            else:
-                fcm_failed_users.append(system_number)
-                uncontactable_users.append(system_number)
-
-        else:
-            unregistered_users.append(system_number)
-
-    # Update header
-    header.send_status = bool(sent_users + fcm_sent_users)
-    header.successful_send_number = len(sent_users) + len(fcm_sent_users)
-
-    # Save lists as strings using model functions
-    header.set_uncontactable_users(uncontactable_users)
     header.set_unregistered_users(unregistered_users)
     header.set_invalid_lines(invalid_lines)
     header.save()
 
-    return sent_users + fcm_sent_users, unregistered_users, uncontactable_users
+    # Send FCM messages in a background thread so the API returns immediately.
+    # The header record is updated with final counts once sending completes.
+    Thread(
+        target=_send_bulk_fcm_in_background,
+        args=(contactable_items, admin, header),
+        daemon=True,
+    ).start()
+
+    return contactable_users, unregistered_users, []
+
+
+def _send_bulk_fcm_in_background(contactable_items, admin, header):
+    """Send FCM messages for a bulk notification upload.
+
+    Runs in a background thread. Each item in contactable_items is a tuple of
+    (system_number, msg, fcm_device_list). Updates the header record with final
+    sent/uncontactable counts once all sends have been attempted.
+    """
+    fcm_sent_users = []
+    uncontactable_users = []
+
+    for system_number, msg, fcm_device_list in contactable_items:
+        worked = False
+        for index, fcm_device in enumerate(fcm_device_list):
+            # Only add the first message to the database
+            add_message_to_database = index == 0
+            if send_fcm_message(
+                fcm_device, msg, admin, header, add_message_to_database
+            ):
+                worked = True
+
+        if worked:
+            fcm_sent_users.append(system_number)
+        else:
+            uncontactable_users.append(system_number)
+
+    header.send_status = bool(fcm_sent_users)
+    header.successful_send_number = len(fcm_sent_users)
+    header.set_uncontactable_users(uncontactable_users)
+    header.save()
 
 
 def _send_cobalt_bulk_notification_get_data(msg_list):
