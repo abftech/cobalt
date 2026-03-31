@@ -109,8 +109,11 @@ Do not access this directly — ``XeroApi.__init__`` loads it automatically.
 XeroInvoice
 ~~~~~~~~~~~
 
-A local mirror of every invoice issued through Cobalt. Created by ``create_invoice()``
-and updated in-place by ``void_invoice()`` and ``create_payment()``.
+A local mirror of every invoice issued through Cobalt. Records created by
+``create_invoice()`` are uploaded synchronously. Records created by
+``create_settlement_invoice()`` and ``create_fee_invoice()`` start as
+``PENDING_UPLOAD`` and are uploaded asynchronously by the
+``upload_xero_settlements`` cron job.
 
 .. list-table::
    :header-rows: 1
@@ -120,22 +123,75 @@ and updated in-place by ``void_invoice()`` and ``create_payment()``.
      - Notes
    * - ``organisation``
      - FK to ``organisations.Organisation``
-   * - ``xero_invoice_id``
-     - Xero UUID (unique)
    * - ``invoice_number``
      - Human-readable number assigned by Xero (e.g. ``INV-0042``)
    * - ``invoice_type``
      - ``ACCREC`` (accounts receivable) or ``ACCPAY`` (accounts payable)
    * - ``amount``
      - Total invoice amount
+   * - ``xero_invoice_id``
+     - Xero UUID. Empty string for records awaiting upload (``PENDING_UPLOAD``).
+   * - ``cobalt_reference``
+     - Cobalt-assigned idempotency key used as the Xero invoice number.
+       Format: ``MyABF-<12 hex chars>``. Set once at creation, never changed.
+       Used by the upload command to detect duplicates after a crash.
    * - ``status``
-     - ``DRAFT`` / ``AUTHORISED`` / ``PAID`` / ``VOIDED``
+     - See `Invoice status lifecycle`_ below.
    * - ``reference``
      - Free-text reference string
    * - ``date``
      - Invoice date
    * - ``due_date``
      - Payment due date
+   * - ``upload_payload``
+     - Full Xero API payload (JSON) stored at queue time. Cleared after a
+       successful upload.
+   * - ``upload_attempts``
+     - Number of failed upload attempts. After ``MAX_UPLOAD_ATTEMPTS`` (5)
+       failures the status becomes ``UPLOAD_FAILED``.
+   * - ``upload_error``
+     - Last error message from a failed upload attempt.
+   * - ``auto_record_payment``
+     - When ``True``, the upload command records a full-amount Xero payment
+       immediately after upload, closing the invoice to $0 outstanding.
+       Set on fee-recovery invoices.
+   * - ``email_sent``
+     - ``True`` once Xero has been asked to email the invoice to the club contact.
+
+Invoice status lifecycle
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 75
+
+   * - Status
+     - Meaning
+   * - ``PENDING_UPLOAD``
+     - Queued by the settlement process. ``xero_invoice_id`` is blank.
+       Waiting to be picked up by the ``upload_xero_settlements`` cron job.
+   * - ``UPLOADING``
+     - The upload command has claimed this record and is currently making the
+       Xero API call. If the process crashes, the command resets any stuck
+       ``UPLOADING`` records back to ``PENDING_UPLOAD`` on the next run.
+   * - ``AUTHORISED``
+     - Successfully uploaded to Xero. ``xero_invoice_id`` is now set.
+   * - ``PAID``
+     - A payment has been recorded against the invoice in Xero.
+   * - ``VOIDED``
+     - The invoice has been voided in Xero.
+   * - ``UPLOAD_FAILED``
+     - All ``MAX_UPLOAD_ATTEMPTS`` (5) upload attempts have failed.
+       An alert email is sent to admins. Manual intervention is required.
+   * - ``DRAFT``
+     - Created in Xero as a draft (not used by the settlement workflow).
+
+Normal state transitions::
+
+    PENDING_UPLOAD → UPLOADING → AUTHORISED → PAID
+                                           ↘ VOIDED
+    UPLOADING → PENDING_UPLOAD   (crash recovery)
+    UPLOADING → UPLOAD_FAILED    (after 5 failed attempts)
 
 ----
 
@@ -289,6 +345,112 @@ Payment methods
 
         xero.create_payment(invoice.xero_invoice_id, amount=344.55)
 
+Settlement invoice methods
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These two methods implement the **deferred-upload settlement workflow** used by
+the ABF payments settlement process. Unlike ``create_invoice()``, they do not
+call Xero immediately — they write a ``PENDING_UPLOAD`` record to the database
+and return. The actual upload happens asynchronously via the
+``upload_xero_settlements`` cron job (see `Background jobs`_).
+
+Per settlement, the payments code calls both methods: one ACCPAY for the payout
+to the club, and one ACCREC for the ABF fee recovery.
+
+``create_settlement_invoice(organisation, bank_settlement_amount, reference, invoice_date=None) -> XeroInvoice | None``
+    Queues an **ACCPAY** (accounts payable) invoice representing the net payout
+    to the club. If the organisation has no ``xero_contact_id`` a contact is
+    created on demand — this is the only synchronous Xero API call made by this
+    method.
+
+    .. list-table::
+       :header-rows: 1
+       :widths: 25 75
+
+       * - Parameter
+         - Description
+       * - ``organisation``
+         - The Organisation being settled.
+       * - ``bank_settlement_amount``
+         - Net amount to be paid out (after ABF fees).
+       * - ``reference``
+         - Human-readable reference string stamped on the invoice.
+       * - ``invoice_date``
+         - Invoice date as ``datetime.date``. Defaults to today. Pass the
+           settlement reference date so invoices appear in the correct Xero
+           period (e.g. end of month).
+
+    Returns a ``XeroInvoice`` instance with ``status=PENDING_UPLOAD`` on
+    success, ``None`` on failure (e.g. contact creation failed).
+
+    ::
+
+        from xero.core import XeroApi
+
+        xero = XeroApi()
+        xero_invoice = xero.create_settlement_invoice(
+            organisation=org,
+            bank_settlement_amount=344.55,
+            reference="Settlement June 2026 — ABC Bridge Club",
+            invoice_date=date(2026, 6, 30),
+        )
+
+``create_fee_invoice(organisation, gross_amount, net_amount, reference, fee_percent, invoice_date=None) -> XeroInvoice | None``
+    Queues an **ACCREC** (accounts receivable) fee-recovery invoice charged
+    back to the club for ABF transaction processing costs. Returns ``None``
+    silently (without error) if the fee is zero or negative — no invoice is
+    created in that case.
+
+    The invoice has three line items:
+
+    1. **Gross settlement** — ``$0`` informational line showing the total
+       collected amount.
+    2. **Processing fee recovery** — the actual fee amount (``gross - net``),
+       taxed via ``XERO_FEE_TAX_TYPE``, booked to ``XERO_FEE_ACCOUNT_CODE``.
+    3. **Net settlement** — ``$0`` informational line showing the payout amount.
+
+    ``auto_record_payment`` is set to ``True`` on the created record, so the
+    upload command immediately records a full-amount Xero payment after
+    upload, closing the invoice to $0 outstanding. The club is also emailed
+    the invoice automatically after upload.
+
+    .. list-table::
+       :header-rows: 1
+       :widths: 25 75
+
+       * - Parameter
+         - Description
+       * - ``organisation``
+         - The Organisation being invoiced.
+       * - ``gross_amount``
+         - Total amount collected from the club before fees.
+       * - ``net_amount``
+         - Amount paid out to the club (after fees).
+       * - ``reference``
+         - Human-readable reference string.
+       * - ``fee_percent``
+         - Fee percentage (informational; shown in the line item description).
+       * - ``invoice_date``
+         - Invoice date as ``datetime.date``. Defaults to today.
+
+    ::
+
+        xero_fee_invoice = xero.create_fee_invoice(
+            organisation=org,
+            gross_amount=362.00,
+            net_amount=344.55,
+            reference="Settlement June 2026 — ABC Bridge Club",
+            fee_percent=4.83,
+            invoice_date=date(2026, 6, 30),
+        )
+        # Returns None if fee == 0 (no invoice created)
+
+``send_invoice_email(xero_invoice_id) -> bool``
+    Asks Xero to email an invoice to the contact on the invoice. Called
+    automatically by the upload command for fee invoices (``email_sent`` is
+    set to ``True`` on success). Returns ``True`` on success, ``False`` on
+    failure.
+
 Listing methods
 ~~~~~~~~~~~~~~~
 
@@ -404,6 +566,64 @@ Cancelling an invoice
 ::
 
     success = xero.void_invoice(invoice.xero_invoice_id)
+
+----
+
+Background jobs
+---------------
+
+``upload_xero_settlements``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Location:** ``xero/management/commands/upload_xero_settlements.py``
+
+**Schedule:** run by cron (see ``utils/cron/crontab.txt``).
+
+This command uploads queued ``XeroInvoice`` records to Xero and is the only
+component that ever makes Xero API calls on behalf of the settlement workflow.
+
+**What it does (in order):**
+
+1. **Crash recovery** — resets any ``UPLOADING`` records back to
+   ``PENDING_UPLOAD``. These are records that were claimed by a previous run
+   that crashed before completing.
+
+2. **Claim records** — fetches all ``PENDING_UPLOAD`` invoices and marks each
+   one ``UPLOADING`` before attempting the upload.
+
+3. **Idempotency check** — before calling ``POST /Invoices``, searches Xero
+   for an invoice with the same ``cobalt_reference`` (the value stored in
+   ``XeroInvoice.cobalt_reference`` and used as the Xero ``InvoiceNumber``).
+   If a match is found the local record is linked to the existing Xero invoice
+   rather than creating a duplicate. This handles the case where a previous
+   upload succeeded in Xero but the process crashed before the response was
+   saved locally.
+
+4. **Upload** — POSTs the stored ``upload_payload`` to Xero. On success,
+   saves ``xero_invoice_id``, ``invoice_number``, ``online_invoice_url``, and
+   sets ``status=AUTHORISED``. Clears ``upload_payload``.
+
+5. **Auto-payment** — if ``auto_record_payment=True`` (set on fee invoices),
+   immediately calls ``create_payment()`` for the full amount due, closing the
+   invoice to $0 outstanding.
+
+6. **Email** — if ``auto_record_payment=True`` and payment succeeded, calls
+   ``send_invoice_email()`` to email the invoice to the club contact.
+
+7. **Retry / failure** — on any Xero API error, increments ``upload_attempts``
+   and sets ``status=PENDING_UPLOAD`` (so it will be retried next run). After
+   ``MAX_UPLOAD_ATTEMPTS`` (5) consecutive failures, sets
+   ``status=UPLOAD_FAILED`` and sends an alert email to admins.
+
+**Handling ``UPLOAD_FAILED`` records:**
+
+Manual intervention is required. Options:
+
+* Investigate the ``upload_error`` field on the ``XeroInvoice`` record to
+  diagnose the cause.
+* Reset ``status`` back to ``PENDING_UPLOAD`` and ``upload_attempts`` to ``0``
+  once the root cause is fixed — the command will pick it up on the next run.
+* Void the record and create a replacement if the data was incorrect.
 
 ----
 
