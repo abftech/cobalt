@@ -25,10 +25,12 @@ def register_user(
         system_number: ABF Number
     """
     # Set user up as valid
-    un_reg = User.all_objects.filter(username=system_number).first() or User(username=system_number)
+    un_reg = User.all_objects.filter(username=system_number).first() or User(
+        username=system_number
+    )
     un_reg.is_abf_active = True
     un_reg.system_number = int(system_number)
-    un_reg.user_type=User.UserType.UNREGISTERED
+    un_reg.user_type = User.UserType.UNREGISTERED
     un_reg.first_name = "Julie"
     un_reg.last_name = "Guthrie"
 
@@ -60,7 +62,7 @@ def register_user(
     # Give it a second...
     time.sleep(3)
 
-    user = User.objects.filter(system_number=system_number).first()
+    user = User.all_objects.filter(system_number=system_number).first()
     user.is_active = True
     user.save()
 
