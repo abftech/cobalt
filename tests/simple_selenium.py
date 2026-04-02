@@ -11,6 +11,8 @@ from django.utils.safestring import mark_safe
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
@@ -69,7 +71,10 @@ class SimpleSelenium:
             },
         )
 
-        self.driver = webdriver.Chrome(options=options)
+        # Use ChromeDriverManager to automatically download the correct chromedriver version
+        self.driver = webdriver.Chrome(
+            service=Service(ChromeDriverManager().install()), options=options
+        )
         url = f"{base_url}/accounts/login"
 
         # Store progress messages
@@ -385,8 +390,20 @@ class SimpleSelenium:
         # Login
         self.super_click("Login")
 
-        # Check we are logged in
-        self.find_by_text("Bridge Credits")
+        # Wait for the post-login redirect to complete
+        try:
+            WebDriverWait(self.driver, 10).until(
+                expected_conditions.presence_of_element_located(
+                    ("xpath", "//*[contains(text(), 'Bridge Credits')]")
+                )
+            )
+        except TimeoutException:
+            self.add_message(
+                "Timed out waiting for login to complete (Bridge Credits not found)"
+            )
+            self.handle_fatal_error()
+
+        self.add_message("Looked for 'Bridge Credits' and found it")
 
         # Take a screenshot
         self.screenshot("Logged in")

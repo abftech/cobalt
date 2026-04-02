@@ -1,0 +1,17 @@
+title "Account Profile"
+# Verifies a user can view and navigate their profile and settings
+
+login 101
+find "Bridge Credits"
+screenshot "Dashboard as Betty"
+
+go /accounts/profile
+find "Email address"
+screenshot "Profile Page"
+
+go /accounts/settings
+screenshot "Settings Page"
+
+go /notifications/
+find "Your Notifications"
+screenshot "Notification Preferences"

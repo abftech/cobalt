@@ -1,0 +1,8 @@
+title "Club Administration"
+# Verifies a club admin can access the club menu page
+
+login 100
+go /organisations/club-menu/13/1
+screenshot "Club Menu"
+find "Club Menu"
+screenshot "Club Menu Confirmed"

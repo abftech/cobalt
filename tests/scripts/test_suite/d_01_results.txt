@@ -1,0 +1,9 @@
+title "Results"
+# Verifies the results page loads and sections are present
+
+login 100
+go /results/
+find "Your Recent Results"
+screenshot "Results Page"
+find "All Clubs Recent Results"
+screenshot "Results Sections Confirmed"

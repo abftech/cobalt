@@ -45,7 +45,9 @@ def build_commands(script):
     for line_number, line in enumerate(script):
         line = line.strip()
 
-        # Handle comments
+        # Skip blank lines and comments
+        if not line:
+            continue
         if line[0] == "#":
             continue
         if comment := re.search("#", line):

@@ -1,0 +1,11 @@
+title "Events"
+# Verifies event listing and congress navigation
+
+login 100
+go /events/
+find "Event Type"
+screenshot "Events List"
+click "View completed events"
+screenshot "Completed Events"
+find "View running and upcoming events"
+screenshot "Events Confirmed"

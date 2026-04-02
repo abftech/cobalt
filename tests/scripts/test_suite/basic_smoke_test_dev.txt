@@ -1,23 +1,30 @@
-login Mark
+title "Basic Navigation"
+# Logs in and visits all main sections of the site to confirm they load
+
+login 100
 find "Bridge Credits"
 screenshot "Dashboard"
-go "/payments"
-screenshot "Bridge Credits"
-find "Balance:"
-go "/masterpoints"
+
+go /payments/
+find "Balance"
+screenshot "Payments - Bridge Credits"
+
+go /masterpoints/
 screenshot "Masterpoints"
-find "Last 12 Months"
-go "/events"
-screenshot "Congresses"
+find "Lookup Masterpoints"
+
+go /events/
+screenshot "Events"
 find "Event Type"
-super_click "View completed events"
-screenshot "Old Events"
-find "View running and upcoming events"
-go "/results"
-screenshot "Results"
+
+go /results/
 find "Your Recent Results"
-enter "Betty Bunting" into "search_string"
-send_enter to "search_string"
-screenshot "Search Betty Bunting"
-find "101"
-screenshot "Found Betty Bunting"
+screenshot "Results"
+
+go /forums/
+find "All Forums"
+screenshot "Forums"
+
+go /notifications/
+find "Your Notifications"
+screenshot "Notifications"

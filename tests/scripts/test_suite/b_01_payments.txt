@@ -1,0 +1,9 @@
+title "Payments - Bridge Credits"
+# Verifies the payments/Bridge Credits pages load and show expected content
+
+login 100
+go /payments/
+find "Balance"
+screenshot "Bridge Credits Statement"
+find "Bridge Credits"
+screenshot "Bridge Credits Info"

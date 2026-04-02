@@ -11,7 +11,7 @@ export DUMMY_DATA_COUNT=1
 
 # Get arguments
 COVERAGE=0
-SILENT=0
+SHOW=0
 LIST=0
 MODULE=""
 
@@ -21,8 +21,8 @@ while [[ $# -gt 0 ]]; do
       COVERAGE=1
       shift # past argument
       ;;
-    -s|--silent)
-      SILENT=1
+    --show)
+      SHOW=1
       shift # past argument
       ;;
     -l|--list)
@@ -43,10 +43,10 @@ done
 
 _cgit_test_start --django
 
-COMMAND="./manage.py run_tests_smoke --base_url=http://127.0.0.1:$PORT --show"
+COMMAND="./manage.py run_tests_smoke --base_url=http://127.0.0.1:$PORT --silent"
 
-if [ $SILENT = 1 ]; then
-  COMMAND="$COMMAND --silent"
+if [ $SHOW = 1 ]; then
+  COMMAND="$COMMAND --show"
 fi
 
 if [ $COVERAGE -eq 1 ]
@@ -105,6 +105,9 @@ done
 # Create summary HTML report
 
 ./manage.py create_smoke_test_report
+
+# Open summary report
+open /tmp/cobalt/smoke_test/test_suite/smoke-test-output.html
 
 # Tidy up
 _cgit_test_finish
