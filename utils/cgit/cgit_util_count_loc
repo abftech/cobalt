@@ -4,8 +4,16 @@
 
 HTML=$1
 
+if [ "$HTML" != "--html" ]; then
+  echo ""
+  echo "Counts all first-party tracked files (git ls-files)."
+  echo "Excluded: static assets, docs/_build, .xml files, migrations, binary files (png, jpg, ico, so, pptx, pdf)."
+  echo "Included: Python, HTML templates, RST docs, shell scripts, CSV data, config files, etc."
+  echo ""
+fi
+
 # Total size of Cobalt - lines of code
-TOTAL=$(git ls-files | grep -Ev 'static|_build|.xml' | xargs wc -l | tail -1 | awk '{print $1}')
+TOTAL=$(git ls-files | grep -Ev 'static|_build|.xml|migrations' | xargs wc -l | tail -1 | awk '{print $1}')
 
 # print header
 if [ "$HTML" = "--html" ]; then
@@ -15,8 +23,10 @@ if [ "$HTML" = "--html" ]; then
 
 else
   echo ""
-  echo "Application         Models  Functions  Templates  Lines of Code  Percentage"
-  echo "===========         ======  =========  =========  =============  =========="
+  APP_SEP="+----------------------+--------+-----------+-----------+---------------+------------+"
+  echo "$APP_SEP"
+  printf "| %-20s | %6s | %9s | %9s | %13s | %10s |\n" "Application" "Models" "Functions" "Templates" "Lines of Code" "Percentage"
+  echo "$APP_SEP"
 fi
 
 # go through dirs (some excluded) and get size of each cobalt app
@@ -24,7 +34,7 @@ for DIR in $(ls -d */ | grep -Ev 'static|docs|media|htmlcov|__pycache__')
 do
   cd "$DIR"
   NAME=$(echo $DIR | cut -d "/" -f1)
-  APP=$(git ls-files | grep -Ev 'static|_build|.xml' | xargs wc -l | tail -1 | awk '{print $1}')
+  APP=$(git ls-files | grep -Ev 'static|_build|.xml|migrations' | xargs wc -l | tail -1 | awk '{print $1}')
   FUNCS=$(grep -r --include "*.py" "^def " . | grep -v migrations | wc | awk '{print $1}')
   MODELS=$(grep -r --include "models.py" "^class" . | wc | awk '{print $1}')
   TEMPLATES=$(find . -name "*.html" | grep template | wc | awk '{print $1}')
@@ -35,15 +45,7 @@ do
     echo "<tr><td>$NAME<td class='text-end'>$MODELS<td class='text-end'>$FUNCS<td class='text-end'>$TEMPLATES<td class='text-end'>$APP_FMT<td class='text-end'>$PERCENT<td>"
 
   else
-
-  printf '%-20s' "$NAME"
-  printf '%6s' "$MODELS"
-  printf '%11s' "$FUNCS"
-  printf '%11s' "$TEMPLATES"
-  printf '%15s' "$APP_FMT"
-  printf '%11s%%' "$PERCENT"
-  printf "  "
-
+    printf "| %-20s | %6s | %9s | %9s | %13s | %9s%% | " "$NAME" "$MODELS" "$FUNCS" "$TEMPLATES" "$APP_FMT" "$PERCENT"
   fi
 
 # print * for every percentage
@@ -64,13 +66,71 @@ done
 if [ "$HTML" = "--html" ]; then
   printf "<tr><td colspan='7'><b>Total Lines of Code: %'d</tr>" $TOTAL
 else
-printf "\nTotal %'d lines of code\n" $TOTAL
+  echo "$APP_SEP"
+  printf "| %-20s | %6s | %9s | %9s | %13s | %10s |\n" "TOTAL" "" "" "" "$(printf "%'d" $TOTAL)" ""
+  echo "$APP_SEP"
 fi
 
 if [ "$HTML" = "--html" ]; then
     echo "</table>"
 else
-  # Get total size - ignore .git dir, but we don't ignore all of the .gitignore stuff - approx value
-  DIR_SIZE=$(du -hs -I .git | awk '{print $1}')
-  echo "Total directory size: $DIR_SIZE"
+  DIR_SIZE=$(du -hs . 2>/dev/null | awk '{print $1}')
+  GIT_SIZE=$(git ls-files | xargs du -sc 2>/dev/null | tail -1 | awk '{print $1}')
+  GIT_SIZE_FMT=$(echo "scale=1; $GIT_SIZE / 1024" | bc)
+  echo ""
+  echo "Total directory size: $DIR_SIZE  (git-tracked files: ${GIT_SIZE_FMT}MB)"
+fi
+
+# Author breakdown via git blame (shows who wrote currently-existing lines)
+if [ "$HTML" != "--html" ]; then
+  echo ""
+  echo "Calculating author breakdown via git blame — this will take 1-2 minutes..."
+fi
+echo ""
+if [ "$HTML" = "--html" ]; then
+  echo "<table class='table table-hover table-bordered'>"
+  echo "<thead><tr><th>Author<th class='text-end'>Lines<th class='text-end'>Percentage</tr></thead>"
+  echo "<tbody>"
+else
+  AUTH_SEP="+----------------------+----------+------------+"
+  echo "$AUTH_SEP"
+  printf "| %-20s | %8s | %10s |\n" "Author" "Lines" "Percentage"
+  echo "$AUTH_SEP"
+fi
+
+BLAME_TOTAL=$(git ls-files | grep -Ev 'static|_build|.xml|migrations' | grep -Ev '\.(png|jpg|ico|so|pptx|pdf)$' \
+  | xargs -I{} git blame --line-porcelain {} 2>/dev/null \
+  | grep '^author ' \
+  | sed 's/^author //' \
+  | sed 's/^mgu3$/Mark Guthrie/' \
+  | sed 's/^Tanmay$/Tanmay Dutta/' \
+  | grep -v 'Not Committed Yet' \
+  | sort | uniq -c | sort -rn \
+  | awk '{sum += $1} END {print sum}')
+
+git ls-files | grep -Ev 'static|_build|.xml|migrations' | grep -Ev '\.(png|jpg|ico|so|pptx|pdf)$' \
+  | xargs -I{} git blame --line-porcelain {} 2>/dev/null \
+  | grep '^author ' \
+  | sed 's/^author //' \
+  | sed 's/^mgu3$/Mark Guthrie/' \
+  | sed 's/^Tanmay$/Tanmay Dutta/' \
+  | grep -v 'Not Committed Yet' \
+  | sort | uniq -c | sort -rn \
+  | while read COUNT NAME; do
+      PERCENT=$(echo "scale=1; 100 * $COUNT / $BLAME_TOTAL" | bc)
+      COUNT_FMT=$(printf "%'d" $COUNT)
+      if [ "$HTML" = "--html" ]; then
+        echo "<tr><td>$NAME<td class='text-end'>$COUNT_FMT<td class='text-end'>${PERCENT}%</tr>"
+      else
+        printf "| %-20s | %8s | %9s%% |\n" "$NAME" "$COUNT_FMT" "$PERCENT"
+      fi
+    done
+
+if [ "$HTML" = "--html" ]; then
+  printf "<tr><td><b>Total<td class='text-end'><b>%'d<td></tr>" $BLAME_TOTAL
+  echo "</table>"
+else
+  echo "$AUTH_SEP"
+  printf "| %-20s | %8s | %10s |\n" "TOTAL" "$(printf "%'d" $BLAME_TOTAL)" ""
+  echo "$AUTH_SEP"
 fi
