@@ -4,6 +4,29 @@
 
 HTML=$1
 
+# Author identity mappings: normalise old/alternate git identities to canonical names.
+# Add entries here if git authors have used multiple names/emails.
+# Format: "old_name:canonical_name" — old_name is matched exactly against git blame output.
+AUTHOR_ALIASES=(
+  "mgu3:Mark Guthrie"
+  "Tanmay:Tanmay Dutta"
+)
+
+# Apply AUTHOR_ALIASES mappings to each line of stdin
+apply_author_aliases() {
+  while IFS= read -r name; do
+    for alias in "${AUTHOR_ALIASES[@]}"; do
+      old="${alias%%:*}"
+      new="${alias##*:}"
+      if [ "$name" = "$old" ]; then
+        name="$new"
+        break
+      fi
+    done
+    echo "$name"
+  done
+}
+
 if [ "$HTML" != "--html" ]; then
   echo ""
   echo "Counts all first-party tracked files (git ls-files)."
@@ -102,8 +125,7 @@ BLAME_TOTAL=$(git ls-files | grep -Ev 'static|_build|.xml|migrations' | grep -Ev
   | xargs -I{} git blame --line-porcelain {} 2>/dev/null \
   | grep '^author ' \
   | sed 's/^author //' \
-  | sed 's/^mgu3$/Mark Guthrie/' \
-  | sed 's/^Tanmay$/Tanmay Dutta/' \
+  | apply_author_aliases \
   | grep -v 'Not Committed Yet' \
   | sort | uniq -c | sort -rn \
   | awk '{sum += $1} END {print sum}')
@@ -112,8 +134,7 @@ git ls-files | grep -Ev 'static|_build|.xml|migrations' | grep -Ev '\.(png|jpg|i
   | xargs -I{} git blame --line-porcelain {} 2>/dev/null \
   | grep '^author ' \
   | sed 's/^author //' \
-  | sed 's/^mgu3$/Mark Guthrie/' \
-  | sed 's/^Tanmay$/Tanmay Dutta/' \
+  | apply_author_aliases \
   | grep -v 'Not Committed Yet' \
   | sort | uniq -c | sort -rn \
   | while read COUNT NAME; do

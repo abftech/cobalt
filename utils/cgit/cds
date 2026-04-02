@@ -2,4 +2,4 @@
 
 # about: shortname for cgit_dev_save
 
-cgit_dev_save "$*"
+cgit_dev_save "$@"

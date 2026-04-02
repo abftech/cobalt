@@ -59,7 +59,7 @@ if [ $? -ne 0 ];then
     echo "Failed to save changes, do this manually."
     echo ""
     echo "git add -A"
-    echo "git commit -m \"$BRANCH\""
+    echo "git commit -m \"$1\""
     echo ""
     echo "Then run this:"
     echo ""

@@ -1,8 +1,10 @@
 #!/bin/bash
 
-# about: deploy changes to UAT\n
+# about: deploy changes to UAT
 
-. utils/cgit/_cgit_include_vars
+source utils/cgit/_cgit_include_vars
+
+BRANCH=$(git branch --show-current)
 
 if [ "$BRANCH" != "develop" ]
 then
@@ -21,7 +23,7 @@ echo "First we will give this release a new version number."
 echo "Then we will create a release branch and deploy it to UAT."
 echo ""
 
-OLDRELEASE=`grep VER $CGIT_ENV/version.py | awk '{print $3}' | tr -d "\""`
+OLDRELEASE=$(grep VER $CGIT_ENV/version.py | awk '{print $3}' | tr -d "\"")
 
 echo "Last release was $OLDRELEASE"
 echo ""
@@ -94,10 +96,10 @@ echo ""
 echo "Deploying to UAT server..."
 echo ""
 
-UATENV=`eb list | grep $COBALT_UAT`
-UATNUM=`eb list | grep $COBALT_UAT | wc | awk '{print $1}'`
+UATENV=$(eb list | grep $COBALT_UAT)
+UATNUM=$(eb list | grep $COBALT_UAT | wc -l)
 
-if [ "$UATNUM" = "1" ]
+if [ "$UATNUM" -eq 1 ]
 then
     # Get number of EC2 instances running. We want at least 2
     utils/cgit/_cgit_scale_environment_for_deployment $UATENV

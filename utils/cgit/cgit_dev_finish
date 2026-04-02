@@ -88,10 +88,10 @@ then
   echo ""
 
 # Remove * if this is default env for eb
-  TESTENV=`eb list | grep $CGIT_ENV-test | tr \* " "`
-  TESTNUM=`eb list | grep $CGIT_ENV-test | wc | awk '{print $1}'`
+  TESTENV=$(eb list | grep $CGIT_ENV-test | tr \* " ")
+  TESTNUM=$(eb list | grep $CGIT_ENV-test | wc -l)
 
-  if [ "$TESTNUM" = "1" ]
+  if [ "$TESTNUM" -eq 1 ]
   then
    echo "Deploying code to $TESTENV..."
    DATE=$(date '+%a_%d/%m/%Y_%H:%M:%S')
@@ -106,7 +106,7 @@ else
   echo ""
   echo ""
   echo "Cannot comply with request."
-  echo "You can probably fix this by running cgi_test_save."
+  echo "You can probably fix this by running cgit_dev_save."
   echo "There are uncommitted changes or other problems with your git status. See below."
   echo ""
   echo ""
@@ -119,8 +119,8 @@ fi
 echo "Putting you back onto $BRANCH"
 git checkout "$BRANCH"
 
-#echo "Deleting branch $BRANCH..."
-#echo ""
-#
-#git branch -d $BRANCH
-#git push -d origin $BRANCH
+echo ""
+echo "Branch '$BRANCH' has not been deleted. To delete it manually:"
+echo "  git branch -d $BRANCH          # delete local branch"
+echo "  git push -d origin $BRANCH     # delete remote branch"
+echo ""
