@@ -70,5 +70,8 @@ fi
 # run it
 echo "Running: $COMMAND"
 $COMMAND
+TEST_RESULT=$?
 
 _cgit_test_finish
+
+exit $TEST_RESULT

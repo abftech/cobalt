@@ -13,12 +13,11 @@ cgit_dev_test_unit --coverage
 UNIT_TEST_RESULTS=$?
 
 # Integration Tests
-# Only seems to work if running in the foreground, add --show for now
-cgit_dev_test_integration --coverage --show
+cgit_dev_test_integration --coverage
 INTEGRATION_TEST_RESULTS=$?
 
 # Smoke Tests
-cgit_dev_test_smoke --coverage --silent
+cgit_dev_test_smoke
 SMOKE_TEST_RESULTS=$?
 
 # Create coverage

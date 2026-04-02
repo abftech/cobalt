@@ -531,7 +531,8 @@ class CobaltTestManagerIntegration(CobaltTestManagerAbstract):
             # Default timeout for waiting for things - 5 secs
             options.timeouts = {"implicit": 5000}
             if headless:
-                options.headless = True
+                options.add_argument("--headless=new")
+                options.add_argument("--window-size=1600,900")
 
             # Use ChromeDriverManager to automatically get the right version - avoids having to deal with brew upgrade
             self.driver = webdriver.Chrome(

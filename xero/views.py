@@ -17,6 +17,7 @@ from django.views.decorators.http import require_POST
 
 from cobalt.settings import COBALT_HOSTNAME, XERO_WEBHOOK_KEY
 from organisations.models import Organisation
+from rbac.decorators import rbac_check_role
 from utils.utils import cobalt_paginator
 from xero.core import XeroApi
 from xero.models import XeroCredentials, XeroInvoice, XeroLog
@@ -26,6 +27,7 @@ logger = logging.getLogger("cobalt")
 PRODUCTION_HOSTS = ["myabf.com.au", "www.myabf.com.au"]
 
 
+@rbac_check_role("payments.global.edit")
 def connect_htmx(request):
     """Get a client-credentials token and resolve the tenant ID."""
 
@@ -52,6 +54,7 @@ def connect_htmx(request):
     return response
 
 
+@rbac_check_role("payments.global.edit")
 def home(request):
     """Main page for Xero"""
     xero = XeroApi()
@@ -61,6 +64,7 @@ def home(request):
     )
 
 
+@rbac_check_role("payments.global.edit")
 def home_configuration_htmx(request):
     """HTMX table with config data"""
 
@@ -73,6 +77,7 @@ def home_configuration_htmx(request):
     )
 
 
+@rbac_check_role("payments.global.edit")
 def refresh_keys_htmx(request):
     """Refresh Xero access tokens"""
 
@@ -84,6 +89,7 @@ def refresh_keys_htmx(request):
     return response
 
 
+@rbac_check_role("payments.global.edit")
 def run_xero_api_htmx(request):
     """Run a named Xero API command and return the result as JSON"""
 
@@ -292,6 +298,7 @@ def run_xero_api_htmx(request):
     return response
 
 
+@rbac_check_role("payments.global.edit")
 def email_invoice_form_htmx(request):
     """Return the send-invoice-email form fragment."""
     invoices = (
@@ -302,6 +309,7 @@ def email_invoice_form_htmx(request):
     return render(request, "xero/email_invoice_form_htmx.html", {"invoices": invoices})
 
 
+@rbac_check_role("payments.global.edit")
 def payment_form_htmx(request):
     """Return the create-payment form fragment."""
     from cobalt.settings import XERO_BANK_ACCOUNT_CODE
@@ -318,6 +326,7 @@ def payment_form_htmx(request):
     )
 
 
+@rbac_check_role("payments.global.edit")
 def transactions_htmx(request):
     """Show local Cobalt XeroInvoice records for an organisation."""
 
@@ -346,6 +355,7 @@ def transactions_htmx(request):
     )
 
 
+@rbac_check_role("payments.global.edit")
 def reconcile_transactions_htmx(request):
     """Compare local XeroInvoice records against Xero for an organisation."""
 
@@ -422,6 +432,7 @@ def reconcile_transactions_htmx(request):
     )
 
 
+@rbac_check_role("payments.global.edit")
 def invoice_form_htmx(request):
     """Return the create-invoice form fragment."""
     from cobalt.settings import XERO_BANK_ACCOUNT_CODE
@@ -441,6 +452,7 @@ def invoice_form_htmx(request):
     )
 
 
+@rbac_check_role("payments.global.edit")
 def reconcile_contacts_htmx(request):
     """Compare active Xero contacts against Cobalt organisations and report discrepancies."""
     xero = XeroApi()
@@ -592,7 +604,7 @@ def xero_webhook(request):
     return HttpResponse(status=200)
 
 
-@user_passes_test(lambda u: u.is_superuser)
+@rbac_check_role("payments.global.edit")
 def xero_log_view(request):
     """View Xero API call log"""
 
@@ -615,7 +627,7 @@ def xero_log_view(request):
     )
 
 
-@user_passes_test(lambda u: u.is_superuser)
+@rbac_check_role("payments.global.edit")
 def xero_daily_stats(request):
     """Show daily Xero API call counts as a Chart.js bar chart."""
 

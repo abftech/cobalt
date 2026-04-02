@@ -61,5 +61,5 @@ class Command(BaseCommand):
             print("All tests passed\n")
             print(f"Results are in {output_file}\n")
         else:
-            # We have errors, so show output
             os.system(f"open {output_file}")
+            sys.exit(1)

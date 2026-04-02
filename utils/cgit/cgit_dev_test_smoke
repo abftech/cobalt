@@ -10,17 +10,12 @@ export RDS_DB_NAME=test
 export DUMMY_DATA_COUNT=1
 
 # Get arguments
-COVERAGE=0
 SHOW=0
 LIST=0
 MODULE=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    -c|--coverage)
-      COVERAGE=1
-      shift # past argument
-      ;;
     --show)
       SHOW=1
       shift # past argument
@@ -47,11 +42,6 @@ COMMAND="./manage.py run_tests_smoke --base_url=http://127.0.0.1:$PORT --silent"
 
 if [ $SHOW = 1 ]; then
   COMMAND="$COMMAND --show"
-fi
-
-if [ $COVERAGE -eq 1 ]
-then
-  COMMAND="coverage run -p $COMMAND"
 fi
 
 if [ $LIST -eq 1 ]
