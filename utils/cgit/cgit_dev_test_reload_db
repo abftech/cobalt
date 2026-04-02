@@ -2,6 +2,8 @@
 
 # about: full rebuild of the test database
 
+source utils/cgit/_cgit_db_helper
+
 # Variables
 export RDS_DB_NAME=test
 export DUMMY_DATA_COUNT=1
@@ -12,13 +14,7 @@ if [ $# -eq 1 ]; then
 fi
 
 # Rebuild database
-cat << EOF > /tmp/drop_db
-\c postgres
-drop database IF EXISTS $RDS_DB_NAME;
-create database $RDS_DB_NAME with owner $CGIT_ENV;
-EOF
-
-psql </tmp/drop_db
+drop_and_recreate_db "$RDS_DB_NAME" "$CGIT_ENV"
 
 # build database using test data directory - not currently using core
 utils/aws/rebuild_test_database_subcommands.sh

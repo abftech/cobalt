@@ -34,8 +34,7 @@ echo ""
 echo "Congratulations on finishing a feature."
 echo ""
 echo "I will check your branch is clean and then merge your changes into"
-echo "the develop branch. I will then deploy to the test system"
-echo "and if that works, delete the branch '$BRANCH'."
+echo "the develop branch. I will then deploy develop to the test system."
 echo ""
 read -p "Press key to continue..." -n1 -s
 
@@ -116,8 +115,8 @@ else
   exit
 fi
 
-echo "Putting you back onto $BRANCH"
-git checkout "$BRANCH"
+echo "Switching to develop branch..."
+git checkout develop
 
 echo ""
 echo "Branch '$BRANCH' has not been deleted. To delete it manually:"

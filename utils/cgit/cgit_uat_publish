@@ -49,6 +49,17 @@ if [ $? -ne 0 ];then
 fi
 
 echo ""
+echo "Running unit tests before creating release..."
+echo ""
+cgit_dev_test_unit
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "Unit tests failed. Fix the failures before releasing to UAT."
+  exit 1
+fi
+echo "Tests passed."
+
+echo ""
 echo "Updating release version in $CGIT_ENV code..."
 echo ""
 
@@ -101,6 +112,12 @@ UATNUM=$(eb list | grep $COBALT_UAT | wc -l)
 
 if [ "$UATNUM" -eq 1 ]
 then
+    # Capture current version for rollback hint
+    PREV_VERSION=$(aws elasticbeanstalk describe-environments \
+      --environment-names "$UATENV" \
+      --query 'Environments[0].VersionLabel' \
+      --output text 2>/dev/null)
+
     # Get number of EC2 instances running. We want at least 2
     utils/cgit/_cgit_scale_environment_for_deployment $UATENV
     ec2_instances=$?
@@ -119,6 +136,16 @@ then
       eb scale "$ec2_instances" "$UATENV"
 
    fi
+
+   echo ""
+   echo "Deployment of release/$RELEASE to UAT complete."
+   if [ -n "$PREV_VERSION" ]; then
+     echo ""
+     echo "Previous version was: $PREV_VERSION"
+     echo "To roll back if needed:"
+     echo "  eb deploy -l \"$PREV_VERSION\" $UATENV"
+   fi
+   echo ""
 
 else
    echo "Cannot deploy to UAT, found more than one UAT environment."

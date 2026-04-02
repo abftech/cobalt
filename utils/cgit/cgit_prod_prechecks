@@ -58,22 +58,29 @@ fi
 # Backups
 get_response 1 "Did backups completed successfully?"
 
-# Prod copy
+# Prod copy and smoke test
 echo ""
 echo "#########################################"
 echo "Running migrations to update database..."
 export RDS_DB_NAME=prod_load
 ./manage.py migrate
-echo "Santising production data so you can do a basic smoke test..."
+echo "Sanitising production data for smoke test..."
 cgit_dev_run_prod_copy
-get_response 2 "Did you complete the smoke test?"
+echo ""
+echo "Running smoke test against prod_load..."
+cgit_dev_test_smoke
+if [ $? -ne 0 ]; then
+  get_response 2 "Smoke test had failures. Are you happy to continue?"
+else
+  echo "[2/$STEPS] Smoke test passed."
+fi
 
 # Compare versions
 echo ""
 echo "#########################################"
 echo "Comparing this version with production..."
 cgit_util_compare_env production
-get_response 3 "Are you happy with the changes?"
+get_response 3 "Have you reviewed the changes above and are happy to proceed?"
 get_response 4 "Did you review any changes to models.py that could prevent rollback?"
 
 # Rollback
