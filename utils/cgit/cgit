@@ -117,7 +117,13 @@ def _extract_params_structured(path: str) -> list[dict]:
                     }
                 )
             else:
-                name = raw.split(None, 1)[0]
+                # Support  # param: name [type]  where type is a picker hint
+                pm = re.match(r"^(\w+)\s+\[(\w+)\]$", raw)
+                if pm:
+                    name, picker = pm.group(1), pm.group(2)
+                else:
+                    name = raw.split(None, 1)[0]
+                    picker = ""
                 params.append(
                     {
                         "display": name,
@@ -128,6 +134,7 @@ def _extract_params_structured(path: str) -> list[dict]:
                         "positional": True,
                         "enabled": True,
                         "value": "",
+                        "picker": picker,
                     }
                 )
         return params  # explicit metadata takes full priority
@@ -264,6 +271,31 @@ def _add_to_history(cmd: str) -> None:
                 f.write(f"{cmd}\n")
     except OSError:
         pass
+
+
+# ---------------------------------------------------------------------------
+# Branch helpers
+# ---------------------------------------------------------------------------
+
+
+def _get_recent_branches(limit: int = 10) -> list[str]:
+    """Return up to `limit` local branches ordered by most recent commit."""
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "for-each-ref",
+                "--sort=-committerdate",
+                "--format=%(refname:short)",
+                "refs/heads/",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        branches = [b.strip() for b in result.stdout.splitlines() if b.strip()]
+        return branches[:limit]
+    except Exception:
+        return []
 
 
 # ---------------------------------------------------------------------------
@@ -476,6 +508,16 @@ class CgitTUI:
                 self._execute_command()
             return True
 
+        # Tab opens the branch picker for branch-type params
+        if key == ord("\t") and n > 0 and self.run_idx < n:
+            p = params[self.run_idx]
+            if p.get("picker") == "branch":
+                chosen = self._pick_branch()
+                if chosen is not None:
+                    p["value"] = chosen
+                self.stdscr.clear()
+                return True
+
         # Determine if the current param is a text input field
         on_value = (
             n > 0
@@ -524,6 +566,99 @@ class CgitTUI:
         self.run_params = copy.deepcopy(cmd["params"])
         self.run_idx = 0
         self.state = "run"
+
+    def _pick_branch(self) -> str | None:
+        """Show a branch-picker overlay; return the selected branch or None."""
+        branches = _get_recent_branches()
+        if not branches:
+            return None
+
+        idx = 0
+        while True:
+            h, w = self.stdscr.getmaxyx()
+
+            box_w = min(w - 6, max(40, max(len(b) for b in branches) + 6))
+            box_h = len(branches) + 4
+            box_y = max(2, (h - box_h) // 2)
+            box_x = max(2, (w - box_w) // 2)
+
+            # Draw shadow
+            for dy in range(1, box_h + 1):
+                sy = box_y + dy
+                sx = box_x + 2
+                if 0 <= sy < h:
+                    for dx in range(min(box_w + 2, w - sx)):
+                        try:
+                            ch = self.stdscr.inch(sy, sx + dx) & 0xFF
+                            self.stdscr.addch(sy, sx + dx, ch, curses.A_DIM)
+                        except curses.error:
+                            pass
+
+            # Draw box border
+            try:
+                self.stdscr.attron(curses.color_pair(C_SEL))
+                self.stdscr.addstr(box_y, box_x, "┌" + "─" * (box_w - 2) + "┐")
+                for dy in range(1, box_h - 1):
+                    self.stdscr.addstr(box_y + dy, box_x, "│" + " " * (box_w - 2) + "│")
+                self.stdscr.addstr(
+                    box_y + box_h - 1, box_x, "└" + "─" * (box_w - 2) + "┘"
+                )
+                self.stdscr.attroff(curses.color_pair(C_SEL))
+            except curses.error:
+                pass
+
+            title = " Select branch "
+            _put(
+                self.stdscr,
+                box_y,
+                box_x + (box_w - len(title)) // 2,
+                title,
+                curses.color_pair(C_HEADER) | curses.A_BOLD,
+            )
+
+            for i, branch in enumerate(branches):
+                row = box_y + 2 + i
+                if row >= box_y + box_h - 1:
+                    break
+                sel = i == idx
+                line = f" {branch:<{box_w - 4}} "
+                if sel:
+                    _put(
+                        self.stdscr,
+                        row,
+                        box_x + 1,
+                        line,
+                        curses.color_pair(C_SEL) | curses.A_BOLD,
+                    )
+                else:
+                    _put(
+                        self.stdscr,
+                        row,
+                        box_x + 1,
+                        line,
+                        curses.color_pair(C_ACCENT),
+                    )
+
+            hint = " ↑↓ navigate  Enter select  Esc cancel "
+            _put(
+                self.stdscr,
+                box_y + box_h - 2,
+                box_x + 1,
+                hint[: box_w - 2],
+                curses.color_pair(C_FOOTER),
+            )
+
+            self.stdscr.refresh()
+            key = self.stdscr.getch()
+
+            if key in (curses.KEY_UP, ord("k")):
+                idx = max(0, idx - 1)
+            elif key in (curses.KEY_DOWN, ord("j")):
+                idx = min(len(branches) - 1, idx + 1)
+            elif key in (10, 13, curses.KEY_ENTER):
+                return branches[idx]
+            elif key == 27:
+                return None
 
     def _execute_command(self) -> None:
         """Exit curses, run the command, record in history, then restore curses."""
@@ -932,6 +1067,13 @@ class CgitTUI:
             hints.append(("Space", "toggle"))
         if has_vals:
             hints.append(("Type", "enter value"))
+        on_branch = (
+            params
+            and self.run_idx < len(params)
+            and params[self.run_idx].get("picker") == "branch"
+        )
+        if on_branch:
+            hints.append(("Tab", "pick branch"))
         hints.extend([("Enter", "run"), ("Esc", "back")])
         self._footer(hints)
 

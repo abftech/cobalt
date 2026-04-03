@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # about: compare the code on two branches
-# param: new_branch
-# param: old_branch
+# param: new_branch [branch]
+# param: old_branch [branch]
 # param: --ignore PATTERN
 
 source utils/cgit/_cgit_include_vars
