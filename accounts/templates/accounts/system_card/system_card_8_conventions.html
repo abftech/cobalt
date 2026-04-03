@@ -13,15 +13,141 @@
 <div class="card mt-5">
     <a href="#top">
         <div class="card-header card-header-danger pt-2 pb-0">
-            <h2>Other Conventions</h2>
+            <h2 class="sc-section-header">Conventions</h2>
         </div>
     </a>
     <div class="card-body">
-        <p>Coming later</p>
+
+        <!-- UNUSUAL NT -->
+        <div class="row my-1">
+            <div class="col-md-4"><b>Unusual !N:</b></div>
+            <div class="col-md-8">{% system_card_basic_field form.conv_unusual_nt editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- 4TH SUIT FORCING -->
+        <div class="row my-1">
+            <div class="col-md-4"><b>4th Suit Forcing</b></div>
+            <div class="col-md-8">
+                {% if editable %}
+                    <label class="mr-3">
+                        <input type="checkbox" name="conv_4th_suit_one_round" id="id_conv_4th_suit_one_round" {% if form.conv_4th_suit_one_round.value %}checked="checked"{% endif %}>
+                        One round
+                    </label>
+                    <label>
+                        <input type="checkbox" name="conv_4th_suit_game_force" id="id_conv_4th_suit_game_force" {% if form.conv_4th_suit_game_force.value %}checked="checked"{% endif %}>
+                        Game force
+                    </label>
+                {% else %}
+                    {% if system_card.conv_4th_suit_one_round %}<span class="badge badge-secondary mr-2">One round</span>{% endif %}
+                    {% if system_card.conv_4th_suit_game_force %}<span class="badge badge-secondary mr-2">Game force</span>{% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- NT CHECKBACK -->
+        <div class="row my-1">
+            <div class="col-md-4">
+                <b>!N Checkback</b>
+                {% if editable %}
+                    <input type="checkbox" class="ml-2" name="conv_nt_checkback" id="id_conv_nt_checkback" {% if form.conv_nt_checkback.value %}checked="checked"{% endif %}>
+                {% else %}
+                    {% if system_card.conv_nt_checkback %}<span class="badge badge-secondary ml-2">Yes</span>{% endif %}
+                {% endif %}
+            </div>
+            <div class="col-md-8">
+                <span class="mr-2">Priorities:</span>{% system_card_basic_field form.conv_nt_checkback_priorities editable large=True table_cell=False %}
+            </div>
+        </div>
+
+        <!-- DEFENCE TO 3NT -->
+        <div class="row my-1">
+            <div class="col-md-4"><b>Defence to 3!N opening</b></div>
+            <div class="col-md-8">{% system_card_basic_field form.conv_defence_3nt editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- DEFENCE TO OPENING TWOS -->
+        <div class="row my-1">
+            <div class="col-md-4"><b>Defence to Opening Twos</b></div>
+            <div class="col-md-8">{% system_card_basic_field form.conv_defence_opening_twos editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- MULTI 2D -->
+        <div class="row my-1">
+            <div class="col-md-4"><b>Multi 2!D</b></div>
+            <div class="col-md-8">{% system_card_basic_field form.conv_multi_2d editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- RCO 2S -->
+        <div class="row my-1">
+            <div class="col-md-4"><b>RCO style 2!S</b></div>
+            <div class="col-md-8">{% system_card_basic_field form.conv_rco_2s editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- OTHER 2S -->
+        <div class="row my-1">
+            <div class="col-md-4"><b>Other 2!S</b></div>
+            <div class="col-md-8">{% system_card_basic_field form.conv_other_2s editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- DEFENCE TO STRONG 1C / 2C -->
+        <div class="row my-1">
+            <div class="col-12"><b>Defence to strong 1!C / 2!C</b></div>
+        </div>
+        <div class="row my-1">
+            <div class="col-md-2 offset-md-1"><span>(1!C):</span></div>
+            <div class="col-md-9">{% system_card_basic_field form.conv_defence_strong_1c editable large=True table_cell=False %}</div>
+        </div>
+        <div class="row my-1">
+            <div class="col-md-2 offset-md-1"><span>(2!C):</span></div>
+            <div class="col-md-9">{% system_card_basic_field form.conv_defence_strong_2c editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- OVER 1NT INTERFERENCE -->
+        <div class="row my-1">
+            <div class="col-md-4"><b>Over 1!N Interference</b></div>
+            <div class="col-md-8">{% system_card_basic_field form.conv_over_1nt_interference editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- LEBENSOHL -->
+        <div class="row my-1">
+            <div class="col-md-4"><b>Lebensohl &mdash; other uses</b></div>
+            <div class="col-md-8">{% system_card_basic_field form.conv_lebensohl editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- TAKE OUT OF 4-LEVEL PRE-EMPTS -->
+        <div class="row my-1">
+            <div class="col-12"><b>Take out of 4 level pre-empts</b></div>
+        </div>
+        <div class="row my-1">
+            <div class="col-md-2 offset-md-1">4!C / 4!D:</div>
+            <div class="col-md-9">{% system_card_basic_field form.conv_takeout_4c_4d editable large=True table_cell=False %}</div>
+        </div>
+        <div class="row my-1">
+            <div class="col-md-2 offset-md-1">4!H:</div>
+            <div class="col-md-9">{% system_card_basic_field form.conv_takeout_4h editable large=True table_cell=False %}</div>
+        </div>
+        <div class="row my-1">
+            <div class="col-md-2 offset-md-1">4!S:</div>
+            <div class="col-md-9">{% system_card_basic_field form.conv_takeout_4s editable large=True table_cell=False %}</div>
+        </div>
+
+        <hr>
+
+        <!-- OTHER CONVENTIONS (PDF §7) -->
+        <div class="row my-1">
+            <div class="col-md-4"><b>Other Conventions</b></div>
+            <div class="col-md-8">{% system_card_basic_field form.other_conventions editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- OTHER NOTES (PDF §10) -->
+        <div class="row my-1">
+            <div class="col-md-4"><b>Other Notes</b></div>
+            <div class="col-md-8">{% system_card_basic_field form.other_notes editable large=True table_cell=False %}</div>
+        </div>
+
         <div class="text-right">
             <span class="to-top"><a href="#top">Back to top</a></span>
         </div>
     </div>
 </div>
-
 

@@ -288,6 +288,19 @@
         <div class="form-group">
             <button id="password-change" onclick="location.href='/accounts/change-password';" class="btn-success btn">Change Password</button>
         </div>
+
+        {% if user.pk == 4 %}
+            <div class="card mt-3">
+                <div class="card-header card-header-danger">
+                    <h4>System Cards</h4>
+                </div>
+                <div class="card-body">
+                    <p>Manage your ABF system cards.</p>
+                    <a href="{% url 'accounts:system_card_list' %}" class="btn btn-danger">My System Cards</a>
+                </div>
+            </div>
+        {% endif %}
+
     </div>
 {% endblock %}
 

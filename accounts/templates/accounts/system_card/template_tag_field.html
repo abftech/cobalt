@@ -7,9 +7,7 @@
 {#------------------------------------------------------------------------#}
 
 <input
-    {% if not min_width %}
-        class="input-group"
-    {% endif %}
+    class="{% if min_width %}sc-field-input-narrow{% else %}sc-field-input{% endif %}"
     type="text"
     name="{{ field.name }}"
     value="{{ field.value }}"

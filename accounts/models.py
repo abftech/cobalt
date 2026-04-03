@@ -22,11 +22,12 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, RegexValidator
 from django.db import models
+
+
 def no_future(value):
     today = date.today()
     if value > today:
         raise ValidationError("Date cannot be in the future.")
-
 
 
 class User(AbstractUser):
@@ -142,7 +143,9 @@ class User(AbstractUser):
         unique=True,
         db_index=True,
     )
-    user_type = models.CharField(max_length=1, choices=UserType.choices, default=UserType.USER)
+    user_type = models.CharField(
+        max_length=1, choices=UserType.choices, default=UserType.USER
+    )
 
     deceased = models.BooleanField("Deceased", default=False)
     """ Player is deceased, status set by My ABF support """
@@ -453,6 +456,7 @@ class UserAdditionalInfo(models.Model):
     as the User is getting overloaded and is accessed constantly by Django so we should
     try to keep it clean.
     """
+
     # Import here to avoid circular dependencies
     from organisations.models import Organisation
 
@@ -643,9 +647,33 @@ class SystemCard(models.Model):
 
     # Slams
     slam_conventions = models.CharField(max_length=200, blank=True)
+    slam_gerber = models.BooleanField(default=False)
+    slam_blackwood = models.BooleanField(default=False)
+    slam_rkcb = models.BooleanField(default=False)
+    slam_asking_bids = models.BooleanField(default=False)
+    slam_cue_bids = models.BooleanField(default=False)
 
     # Other
     other_conventions = models.CharField(max_length=200, blank=True)
+
+    # Conventions (PDF §9)
+    conv_unusual_nt = models.CharField(max_length=200, blank=True)
+    conv_4th_suit_one_round = models.BooleanField(default=False)
+    conv_4th_suit_game_force = models.BooleanField(default=False)
+    conv_nt_checkback = models.BooleanField(default=False)
+    conv_nt_checkback_priorities = models.CharField(max_length=200, blank=True)
+    conv_defence_3nt = models.CharField(max_length=200, blank=True)
+    conv_defence_opening_twos = models.CharField(max_length=200, blank=True)
+    conv_multi_2d = models.CharField(max_length=200, blank=True)
+    conv_rco_2s = models.CharField(max_length=200, blank=True)
+    conv_other_2s = models.CharField(max_length=200, blank=True)
+    conv_defence_strong_1c = models.CharField(max_length=200, blank=True)
+    conv_defence_strong_2c = models.CharField(max_length=200, blank=True)
+    conv_over_1nt_interference = models.CharField(max_length=200, blank=True)
+    conv_lebensohl = models.CharField(max_length=200, blank=True)
+    conv_takeout_4c_4d = models.CharField(max_length=200, blank=True)
+    conv_takeout_4h = models.CharField(max_length=200, blank=True)
+    conv_takeout_4s = models.CharField(max_length=200, blank=True)
 
     # Responses
     # 1C

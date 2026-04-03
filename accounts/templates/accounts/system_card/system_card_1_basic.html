@@ -5,7 +5,7 @@
 {#------------------------------------------------------------------------#}
 {% load system_card_tags %}
 
-<h1>ABF System Card</h1>
+<h1 class="sc-title">ABF System Card</h1>
 
 {% if editable %}
     <!-- SHOW INSTRUCTIONS -->
@@ -29,9 +29,9 @@
         </div>
     </div>
 {% endif %}
-<h2>
+<h2 class="sc-title">
     {% cobalt_edit_or_show form.player1 editable min_width=True %}
-    -
+    &mdash;
     {% cobalt_edit_or_show form.player2 editable min_width=True %}
 </h2>
 

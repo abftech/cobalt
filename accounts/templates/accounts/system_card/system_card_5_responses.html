@@ -11,26 +11,186 @@
 <div class="card mt-5">
     <a href="#top">
         <div class="card-header card-header-danger pt-2 pb-0">
-            <h2>Responses</h2>
+            <h2 class="sc-section-header">Responses</h2>
         </div>
     </a>
     <div class="card-body">
 
-        <p>Click on opening bid to see responses:</p>
+        {% if editable %}
 
-        {% for bid, responses in all_responses.items %}
-            {% include "accounts/system_card/system_card_responses_headings.html" with data=response %}
-        {% endfor %}
+            {# ---------- EDIT MODE: labelled input fields grouped by opening bid ---------- #}
 
-        <div class="py-3"></div>
+            <h5 class="mt-2">1<span class="club"></span> Responses</h5>
+            <div class="row bg-colour-1 py-1 mb-3">
+                {% system_card_basic_field form.response_1c_1d editable "1!D" %}
+                {% system_card_basic_field form.response_1c_1h editable "1!H" %}
+                {% system_card_basic_field form.response_1c_1s editable "1!S" %}
+                {% system_card_basic_field form.response_1c_1n editable "1!N" %}
+                {% system_card_basic_field form.response_1c_2c editable "2!C" %}
+                {% system_card_basic_field form.response_1c_2d editable "2!D" %}
+                {% system_card_basic_field form.response_1c_2h editable "2!H" %}
+                {% system_card_basic_field form.response_1c_2s editable "2!S" %}
+                {% system_card_basic_field form.response_1c_2n editable "2!N" %}
+                {% system_card_basic_field form.response_1c_3c editable "3!C" %}
+                {% system_card_basic_field form.response_1c_3d editable "3!D" %}
+                {% system_card_basic_field form.response_1c_3h editable "3!H" %}
+                {% system_card_basic_field form.response_1c_3s editable "3!S" %}
+                {% system_card_basic_field form.response_1c_3n editable "3!N" %}
+                {% system_card_basic_field form.response_1c_other editable "Other" large=True %}
+            </div>
 
-        {% for bid, responses in all_responses.items %}
-            {% include "accounts/system_card/system_card_responses_body.html" with data=response %}
-        {% endfor %}
+            <h5 class="mt-2">1<span class="diamond"></span> Responses</h5>
+            <div class="row bg-colour-1 py-1 mb-3">
+                {% system_card_basic_field form.response_1d_1h editable "1!H" %}
+                {% system_card_basic_field form.response_1d_1s editable "1!S" %}
+                {% system_card_basic_field form.response_1d_1n editable "1!N" %}
+                {% system_card_basic_field form.response_1d_2c editable "2!C" %}
+                {% system_card_basic_field form.response_1d_2d editable "2!D" %}
+                {% system_card_basic_field form.response_1d_2h editable "2!H" %}
+                {% system_card_basic_field form.response_1d_2s editable "2!S" %}
+                {% system_card_basic_field form.response_1d_2n editable "2!N" %}
+                {% system_card_basic_field form.response_1d_3c editable "3!C" %}
+                {% system_card_basic_field form.response_1d_3d editable "3!D" %}
+                {% system_card_basic_field form.response_1d_3h editable "3!H" %}
+                {% system_card_basic_field form.response_1d_3s editable "3!S" %}
+                {% system_card_basic_field form.response_1d_3n editable "3!N" %}
+                {% system_card_basic_field form.response_1d_other editable "Other" large=True %}
+            </div>
+
+            <h5 class="mt-2">1<span class="heart"></span> Responses</h5>
+            <div class="row bg-colour-1 py-1 mb-3">
+                {% system_card_basic_field form.response_1h_1s editable "1!S" %}
+                {% system_card_basic_field form.response_1h_1n editable "1!N" %}
+                {% system_card_basic_field form.response_1h_2c editable "2!C" %}
+                {% system_card_basic_field form.response_1h_2d editable "2!D" %}
+                {% system_card_basic_field form.response_1h_2h editable "2!H" %}
+                {% system_card_basic_field form.response_1h_2s editable "2!S" %}
+                {% system_card_basic_field form.response_1h_2n editable "2!N" %}
+                {% system_card_basic_field form.response_1h_3c editable "3!C" %}
+                {% system_card_basic_field form.response_1h_3d editable "3!D" %}
+                {% system_card_basic_field form.response_1h_3h editable "3!H" %}
+                {% system_card_basic_field form.response_1h_3s editable "3!S" %}
+                {% system_card_basic_field form.response_1h_3n editable "3!N" %}
+                {% system_card_basic_field form.response_1h_other editable "Other" large=True %}
+            </div>
+
+            <h5 class="mt-2">1<span class="spade"></span> Responses</h5>
+            <div class="row bg-colour-1 py-1 mb-3">
+                {% system_card_basic_field form.response_1s_1n editable "1!N" %}
+                {% system_card_basic_field form.response_1s_2c editable "2!C" %}
+                {% system_card_basic_field form.response_1s_2d editable "2!D" %}
+                {% system_card_basic_field form.response_1s_2h editable "2!H" %}
+                {% system_card_basic_field form.response_1s_2s editable "2!S" %}
+                {% system_card_basic_field form.response_1s_2n editable "2!N" %}
+                {% system_card_basic_field form.response_1s_3c editable "3!C" %}
+                {% system_card_basic_field form.response_1s_3d editable "3!D" %}
+                {% system_card_basic_field form.response_1s_3h editable "3!H" %}
+                {% system_card_basic_field form.response_1s_3s editable "3!S" %}
+                {% system_card_basic_field form.response_1s_3n editable "3!N" %}
+                {% system_card_basic_field form.response_1s_other editable "Other" large=True %}
+            </div>
+
+            <h5 class="mt-2">1<span class="nt"></span> Responses</h5>
+            <div class="row bg-colour-1 py-1 mb-3">
+                {% system_card_basic_field form.response_1n_3c editable "3!C" %}
+                {% system_card_basic_field form.response_1n_3d editable "3!D" %}
+                {% system_card_basic_field form.response_1n_3h editable "3!H" %}
+                {% system_card_basic_field form.response_1n_3s editable "3!S" %}
+                {% system_card_basic_field form.response_1n_3n editable "3!N" %}
+                {% system_card_basic_field form.response_1n_other editable "Other" large=True %}
+            </div>
+
+            <h5 class="mt-2">2<span class="club"></span> Responses</h5>
+            <div class="row bg-colour-1 py-1 mb-3">
+                {% system_card_basic_field form.response_2c_2d editable "2!D" %}
+                {% system_card_basic_field form.response_2c_2h editable "2!H" %}
+                {% system_card_basic_field form.response_2c_2s editable "2!S" %}
+                {% system_card_basic_field form.response_2c_2n editable "2!N" %}
+                {% system_card_basic_field form.response_2c_3c editable "3!C" %}
+                {% system_card_basic_field form.response_2c_3d editable "3!D" %}
+                {% system_card_basic_field form.response_2c_3h editable "3!H" %}
+                {% system_card_basic_field form.response_2c_3s editable "3!S" %}
+                {% system_card_basic_field form.response_2c_3n editable "3!N" %}
+                {% system_card_basic_field form.response_2c_other editable "Other" large=True %}
+            </div>
+
+            <h5 class="mt-2">2<span class="diamond"></span> Responses</h5>
+            <div class="row bg-colour-1 py-1 mb-3">
+                {% system_card_basic_field form.response_2d_2h editable "2!H" %}
+                {% system_card_basic_field form.response_2d_2s editable "2!S" %}
+                {% system_card_basic_field form.response_2d_2n editable "2!N" %}
+                {% system_card_basic_field form.response_2d_3c editable "3!C" %}
+                {% system_card_basic_field form.response_2d_3d editable "3!D" %}
+                {% system_card_basic_field form.response_2d_3h editable "3!H" %}
+                {% system_card_basic_field form.response_2d_3s editable "3!S" %}
+                {% system_card_basic_field form.response_2d_3n editable "3!N" %}
+                {% system_card_basic_field form.response_2d_other editable "Other" large=True %}
+            </div>
+
+            <h5 class="mt-2">2<span class="heart"></span> Responses</h5>
+            <div class="row bg-colour-1 py-1 mb-3">
+                {% system_card_basic_field form.response_2h_2s editable "2!S" %}
+                {% system_card_basic_field form.response_2h_2n editable "2!N" %}
+                {% system_card_basic_field form.response_2h_3c editable "3!C" %}
+                {% system_card_basic_field form.response_2h_3d editable "3!D" %}
+                {% system_card_basic_field form.response_2h_3h editable "3!H" %}
+                {% system_card_basic_field form.response_2h_3s editable "3!S" %}
+                {% system_card_basic_field form.response_2h_3n editable "3!N" %}
+                {% system_card_basic_field form.response_2h_other editable "Other" large=True %}
+            </div>
+
+            <h5 class="mt-2">2<span class="spade"></span> Responses</h5>
+            <div class="row bg-colour-1 py-1 mb-3">
+                {% system_card_basic_field form.response_2s_2n editable "2!N" %}
+                {% system_card_basic_field form.response_2s_3c editable "3!C" %}
+                {% system_card_basic_field form.response_2s_3d editable "3!D" %}
+                {% system_card_basic_field form.response_2s_3h editable "3!H" %}
+                {% system_card_basic_field form.response_2s_3s editable "3!S" %}
+                {% system_card_basic_field form.response_2s_3n editable "3!N" %}
+                {% system_card_basic_field form.response_2s_other editable "Other" large=True %}
+            </div>
+
+            <h5 class="mt-2">2<span class="nt"></span> Responses</h5>
+            <div class="row bg-colour-1 py-1 mb-3">
+                {% system_card_basic_field form.response_2n_3c editable "3!C" %}
+                {% system_card_basic_field form.response_2n_3d editable "3!D" %}
+                {% system_card_basic_field form.response_2n_3h editable "3!H" %}
+                {% system_card_basic_field form.response_2n_3s editable "3!S" %}
+                {% system_card_basic_field form.response_2n_3n editable "3!N" %}
+                {% system_card_basic_field form.response_2n_other editable "Other" large=True %}
+            </div>
+
+            <div class="row mt-2">
+                <div class="col-md-2"><b>Notes</b></div>
+                <div class="col-md-10">{% system_card_basic_field form.response_notes editable large=True table_cell=False %}</div>
+            </div>
+
+        {% else %}
+
+            {# ---------- VIEW MODE: clickable buttons reveal response tables ---------- #}
+            <p>Click on opening bid to see responses:</p>
+
+            {% for bid, responses in all_responses.items %}
+                {% include "accounts/system_card/system_card_responses_headings.html" %}
+            {% endfor %}
+
+            <div class="py-3"></div>
+
+            {% for bid, responses in all_responses.items %}
+                {% include "accounts/system_card/system_card_responses_body.html" %}
+            {% endfor %}
+
+            {% if system_card.response_notes %}
+                <div class="row mt-3">
+                    <div class="col-md-2"><b>Notes</b></div>
+                    <div class="col-md-10">{{ system_card.response_notes|card_symbol_bang }}</div>
+                </div>
+            {% endif %}
+
+        {% endif %}
 
         <div class="text-right">
             <span class="to-top"><a href="#top">Back to top</a></span>
         </div>
     </div>
 </div>
-

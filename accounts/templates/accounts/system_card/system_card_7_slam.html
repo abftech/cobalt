@@ -12,11 +12,61 @@
 <div class="card mt-5">
     <a href="#top">
         <div class="card-header card-header-danger pt-2 pb-0">
-            <h2>Slam Bidding</h2>
+            <h2 class="sc-section-header">Slam Bidding</h2>
         </div>
     </a>
     <div class="card-body">
-        <p>Coming later</p>
+
+        <!-- SLAM CONVENTION CHECKBOXES -->
+        {% if editable %}
+
+            <div class="row mb-3">
+                <div class="col-12">
+                    <label class="mr-4">
+                        <input type="checkbox" name="slam_gerber" id="id_slam_gerber" {% if form.slam_gerber.value %}checked="checked"{% endif %}>
+                        4<span class="club"></span> Gerber
+                    </label>
+                    <label class="mr-4">
+                        <input type="checkbox" name="slam_blackwood" id="id_slam_blackwood" {% if form.slam_blackwood.value %}checked="checked"{% endif %}>
+                        4<span class="nt"></span> Blackwood
+                    </label>
+                    <label class="mr-4">
+                        <input type="checkbox" name="slam_rkcb" id="id_slam_rkcb" {% if form.slam_rkcb.value %}checked="checked"{% endif %}>
+                        RKCB
+                    </label>
+                    <label class="mr-4">
+                        <input type="checkbox" name="slam_asking_bids" id="id_slam_asking_bids" {% if form.slam_asking_bids.value %}checked="checked"{% endif %}>
+                        Asking Bids
+                    </label>
+                    <label class="mr-4">
+                        <input type="checkbox" name="slam_cue_bids" id="id_slam_cue_bids" {% if form.slam_cue_bids.value %}checked="checked"{% endif %}>
+                        Cue Bids
+                    </label>
+                </div>
+            </div>
+
+        {% else %}
+
+            <div class="row mb-3">
+                <div class="col-12">
+                    {% if system_card.slam_gerber %}<span class="badge badge-secondary mr-2">4<span class="club"></span> Gerber</span>{% endif %}
+                    {% if system_card.slam_blackwood %}<span class="badge badge-secondary mr-2">4<span class="nt"></span> Blackwood</span>{% endif %}
+                    {% if system_card.slam_rkcb %}<span class="badge badge-secondary mr-2">RKCB</span>{% endif %}
+                    {% if system_card.slam_asking_bids %}<span class="badge badge-secondary mr-2">Asking Bids</span>{% endif %}
+                    {% if system_card.slam_cue_bids %}<span class="badge badge-secondary mr-2">Cue Bids</span>{% endif %}
+                </div>
+            </div>
+
+        {% endif %}
+
+        <!-- SLAM NOTES -->
+        <div class="row">
+            <div class="col-md-2"><b>Notes</b></div>
+            <div class="col-md-10">
+                {% system_card_basic_field form.slam_conventions editable large=True table_cell=False %}
+            </div>
+        </div>
+
         <div class="text-right">
             <span class="to-top"><a href="#top">Back to top</a></span>
         </div>

@@ -11,19 +11,39 @@
 <span id="pre-alerts"></span>
 <div class="card mt-5"><a href="#top">
     <div class="card-header card-header-danger pt-2 pb-0">
-        <h2>Pre Alerts</h2>
+        <h2 class="sc-section-header">Pre Alerts</h2>
     </div>
 </a>
     <div class="card-body">
-        <p class="brown-sticker">
-            BROWN STICKER<br>Why? - Unanchored 2 bids
-        </p>
-        <ul>
-            <li>Opening two bids are unusual, see below</li>
-            <li>Transfer responses to 1<span style="font-size: larger">&clubs;</span></li>
-            <li>Shape more important than points</li>
-            <li>Occasional psyches</li>
-        </ul>
+
+        {% if system_card.brown_sticker %}
+            <p class="brown-sticker">
+                BROWN STICKER
+                {% if system_card.brown_sticker_why %}
+                    &mdash; {{ system_card.brown_sticker_why }}
+                {% endif %}
+            </p>
+        {% endif %}
+
+        {% if editable %}
+            <div class="row">
+                <div class="col-12">
+                    <label><b>Pre-Alert notes:</b></label>
+                    <textarea
+                        class="form-control"
+                        name="{{ form.pre_alerts.name }}"
+                        id="id_{{ form.pre_alerts.name }}"
+                        rows="5"
+                    >{{ form.pre_alerts.value|default:"" }}</textarea>
+                </div>
+            </div>
+        {% else %}
+            {% if system_card.pre_alerts %}
+                <p style="white-space: pre-wrap">{{ system_card.pre_alerts }}</p>
+            {% else %}
+                <p class="text-muted"><em>No pre-alerts recorded.</em></p>
+            {% endif %}
+        {% endif %}
 
         <div class="text-right">
             <span class="to-top"><a href="#top">Back to top</a></span>

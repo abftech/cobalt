@@ -13,11 +13,86 @@
 <div class="card mt-5">
     <a href="#top">
         <div class="card-header card-header-danger pt-2 pb-0">
-            <h2>Defensive Carding</h2>
+            <h2 class="sc-section-header">Play Conventions</h2>
         </div>
     </a>
     <div class="card-body">
-        <p>Coming later</p>
+
+        <!-- COLUMN HEADERS -->
+        <div class="row font-weight-bold mb-1 border-bottom">
+            <div class="col-md-4"></div>
+            <div class="col-md-4">Versus Suit</div>
+            <div class="col-md-4">Versus !N</div>
+        </div>
+
+        <!-- LEADS: SEQUENCES -->
+        <div class="row my-1 align-items-center">
+            <div class="col-md-4"><b>Leads &mdash; Sequences</b></div>
+            <div class="col-md-4">{% system_card_basic_field form.play_suit_lead_sequence editable large=True table_cell=False %}</div>
+            <div class="col-md-4">{% system_card_basic_field form.play_nt_lead_sequence editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- LEADS: FOUR OR MORE WITH AN HONOUR -->
+        <div class="row my-1 align-items-center">
+            <div class="col-md-4"><b>Four or more with an honour</b></div>
+            <div class="col-md-4">{% system_card_basic_field form.play_suit_lead_4_or_more editable large=True table_cell=False %}</div>
+            <div class="col-md-4">{% system_card_basic_field form.play_nt_lead_4_or_more editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- LEADS: FROM 4 SMALL -->
+        <div class="row my-1 align-items-center">
+            <div class="col-md-4"><b>From 4 small</b></div>
+            <div class="col-md-4">{% system_card_basic_field form.play_suit_lead_4_small editable large=True table_cell=False %}</div>
+            <div class="col-md-4">{% system_card_basic_field form.play_nt_lead_4_small editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- LEADS: FROM 3 CARDS -->
+        <div class="row my-1 align-items-center">
+            <div class="col-md-4"><b>From 3 cards (no honour)</b></div>
+            <div class="col-md-4">{% system_card_basic_field form.play_suit_lead_3 editable large=True table_cell=False %}</div>
+            <div class="col-md-4">{% system_card_basic_field form.play_nt_lead_3 editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- LEADS: IN PARTNER'S SUIT -->
+        <div class="row my-1 align-items-center">
+            <div class="col-md-4"><b>In partner's suit</b></div>
+            <div class="col-md-4">{% system_card_basic_field form.play_suit_lead_in_partners_suit editable large=True table_cell=False %}</div>
+            <div class="col-md-4">{% system_card_basic_field form.play_nt_lead_in_partners_suit editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- DISCARDS -->
+        <div class="row my-1 align-items-center">
+            <div class="col-md-4"><b>Discards</b></div>
+            <div class="col-md-4">{% system_card_basic_field form.play_suit_discards editable large=True table_cell=False %}</div>
+            <div class="col-md-4">{% system_card_basic_field form.play_nt_discards editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- COUNT -->
+        <div class="row my-1 align-items-center">
+            <div class="col-md-4"><b>Count</b></div>
+            <div class="col-md-4">{% system_card_basic_field form.play_suit_count editable large=True table_cell=False %}</div>
+            <div class="col-md-4">{% system_card_basic_field form.play_nt_count editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- SIGNAL ON PARTNER'S LEAD -->
+        <div class="row my-1 align-items-center">
+            <div class="col-md-4"><b>Signal on partner's lead</b></div>
+            <div class="col-md-4">{% system_card_basic_field form.play_suit_signal_on_partner_lead editable large=True table_cell=False %}</div>
+            <div class="col-md-4">{% system_card_basic_field form.play_nt_signal_on_partner_lead editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- SIGNAL ON DECLARER'S LEAD -->
+        <div class="row my-1 align-items-center">
+            <div class="col-md-4"><b>Signal on declarer's lead</b></div>
+            <div class="col-md-8">{% system_card_basic_field form.play_signal_declarer_lead editable large=True table_cell=False %}</div>
+        </div>
+
+        <!-- NOTES -->
+        <div class="row my-1 align-items-center">
+            <div class="col-md-4"><b>Notes</b></div>
+            <div class="col-md-8">{% system_card_basic_field form.play_notes editable large=True table_cell=False %}</div>
+        </div>
+
         <div class="text-right">
             <span class="to-top"><a href="#top">Back to top</a></span>
         </div>

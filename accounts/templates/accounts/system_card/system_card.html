@@ -21,69 +21,83 @@
 
     <div id="ignore_cobalt_save"></div>
 
-    <!-- WRAP THIS IN AN 11-1 BOOTSTRAP COL THING AND A FORM IF WE ARE EDITING IT -->
     {% if editable %}
 
-        <!-- MAKE THIS A FORM -->
         <form method="POST"
-            hx-post="{% url "accounts:system_card_edit" system_card_name=system_card.card_name %}"
-            hx-target="#save_msg"
+              hx-post="{% url "accounts:system_card_edit" system_card_name=system_card.card_name %}"
+              hx-target="#save_msg"
         >
             {% csrf_token %}
 
+            <!-- CARD NAME + FLOATING SAVE PANEL -->
+            <div class="d-flex align-items-center mb-3 px-2">
+                <i class="material-icons text-danger mr-2" style="font-size:1.6rem">style</i>
+                <input
+                    type="text"
+                    name="card_new_name"
+                    value="{{ system_card.card_name }}"
+                    maxlength="100"
+                    id="id_card_new_name"
+                    class="sc-card-name-input"
+                    placeholder="Card name"
+                >
+            </div>
 
-            <h2>Card Name:
-                <input type="text" name="card_new_name" value="{{ system_card.card_name }}" max_length="100" id="id_card_new_name">
-            </h2>
-
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-11">
-
-    {% endif %}
-
-    <!-- JUMBOTRON FOR MAIN CARD VIEW -->
-    <div class="jumbotron" id="top">
-
-        {% include "accounts/system_card/system_card_1_basic.html" %}
-        {% include "accounts/system_card/system_card_2_navigation.html" %}
-        {% include "accounts/system_card/system_card_3_pre_alerts.html" %}
-        {% include "accounts/system_card/system_card_4_openings.html" %}
-        {% include "accounts/system_card/system_card_5_responses.html" %}
-        {% include "accounts/system_card/system_card_6_competitive.html" %}
-        {% include "accounts/system_card/system_card_7_slam.html" %}
-        {% include "accounts/system_card/system_card_8_conventions.html" %}
-        {% include "accounts/system_card/system_card_9_defence.html" %}
-
-        <!-- END JUMBOTRON -->
-    </div>
-
-    <!-- CLOSE WRAPPER IF EDITABLE -->
-    {% if editable %}
-        </div>
-        <div class="col-1" style="z-index: 10">
-            <div class="save-button mt-5">
-                <!-- SAVE BUTTON STAYS IN PLACE AS WE SCROLL -->
-                <div class="col-12 text-center">
-                    <a target="_blank" href="{% url "accounts:create_pdf_system_card" system_card_name=system_card.card_name %}" class="btn btn-sm btn-info mx-auto">Print</a>
-                </div>
-                <div class="col-12 text-center">
-                    <button class="btn btn-success btn-sm">Save</button>
-                </div>
-                <div class="col-12" id="save_msg"></div>
-                <div class="col-12 text-center">
-                    <a
-                        class="btn btn-sm btn-primary"
-                        href="{% url "accounts:system_card_view" user_id=user.id system_card_name=system_card.card_name %}"
-                        target="_blank"
-                    >View
-                    </a>
+            <!-- FLOATING SAVE PANEL -->
+            <div class="sc-save-panel">
+                <div class="card">
+                    <div class="card-body p-2 d-flex flex-column" style="gap:6px">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="material-icons">save</i>
+                            Save
+                        </button>
+                        <a target="_blank"
+                           href="{% url "accounts:create_pdf_system_card" system_card_name=system_card.card_name %}"
+                           class="btn btn-info w-100">
+                            <i class="material-icons">print</i>
+                            Print
+                        </a>
+                        <a class="btn btn-primary w-100"
+                           href="{% url "accounts:system_card_view" user_id=user.id system_card_name=system_card.card_name %}"
+                           target="_blank">
+                            <i class="material-icons">visibility</i>
+                            View
+                        </a>
+                        <div id="save_msg" class="text-success"></div>
+                    </div>
                 </div>
             </div>
-        </div>
-        </div>
-        </div>
+
+            <div class="sc-content-wrap">
+                <div id="top">
+                    {% include "accounts/system_card/system_card_1_basic.html" %}
+                    {% include "accounts/system_card/system_card_2_navigation.html" %}
+                    {% include "accounts/system_card/system_card_3_pre_alerts.html" %}
+                    {% include "accounts/system_card/system_card_4_openings.html" %}
+                    {% include "accounts/system_card/system_card_5_responses.html" %}
+                    {% include "accounts/system_card/system_card_6_competitive.html" %}
+                    {% include "accounts/system_card/system_card_7_slam.html" %}
+                    {% include "accounts/system_card/system_card_8_conventions.html" %}
+                    {% include "accounts/system_card/system_card_9_defence.html" %}
+                </div>
+            </div>
+
         </form>
+
+    {% else %}
+
+        <!-- VIEW MODE -->
+        <div id="top">
+            {% include "accounts/system_card/system_card_1_basic.html" %}
+            {% include "accounts/system_card/system_card_2_navigation.html" %}
+            {% include "accounts/system_card/system_card_3_pre_alerts.html" %}
+            {% include "accounts/system_card/system_card_4_openings.html" %}
+            {% include "accounts/system_card/system_card_5_responses.html" %}
+            {% include "accounts/system_card/system_card_6_competitive.html" %}
+            {% include "accounts/system_card/system_card_7_slam.html" %}
+            {% include "accounts/system_card/system_card_8_conventions.html" %}
+            {% include "accounts/system_card/system_card_9_defence.html" %}
+        </div>
 
     {% endif %}
 
@@ -109,23 +123,17 @@
             })
 
             // handle clicking on the opening bid in the response section
-            // we hide all other and toggle this one
             $(".response-button").on("click", function () {
-
-                // get the id from the button and create the jquery selector for this section
                 const button_id = $(this).attr('id');
                 const section_id = button_id.replace("button_","");
                 const button_selector = $("#" + button_id);
                 const section_selector = $("#" + section_id);
 
-                // see if this is showing its data
                 const is_hidden = section_selector.hasClass('hidden-class');
 
-                // hide everything
                 $(".bid").addClass("hidden-class");
                 $(".response-button").removeClass("response-highlight");
 
-                // set on this element
                 if (is_hidden) {
                     section_selector.removeClass("hidden-class");
                     button_selector.addClass("response-highlight");

@@ -188,6 +188,16 @@ urlpatterns = [
         name="unregistered_settings",
     ),
     path(
+        "system-cards/",
+        accounts.views.system_card.system_card_list,
+        name="system_card_list",
+    ),
+    path(
+        "system-cards/create",
+        accounts.views.system_card.system_card_create,
+        name="system_card_create",
+    ),
+    path(
         "system-card/<int:user_id>/<str:system_card_name>",
         accounts.views.system_card.system_card_view,
         name="system_card_view",

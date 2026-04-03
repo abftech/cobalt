@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load system_card_tags %}
+
+{% block content %}
+    <div class="container">
+
+        <h2>My System Cards</h2>
+
+        {% if system_cards %}
+            <div class="card mt-3">
+                <div class="card-header card-header-danger">
+                    <h4>Your Cards</h4>
+                </div>
+                <div class="card-body">
+                    <table class="table table-condensed">
+                        <thead>
+                            <tr>
+                                <th>Card Name</th>
+                                <th>System</th>
+                                <th>Last Saved</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for card in system_cards %}
+                                <tr>
+                                    <td>{{ card.card_name }}</td>
+                                    <td>{{ card.basic_system }}</td>
+                                    <td>{{ card.save_date|date:"j M Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'accounts:system_card_edit' system_card_name=card.card_name %}"
+                                           class="btn btn-sm btn-primary">Edit</a>
+                                        <a href="{% url 'accounts:system_card_view' user_id=request.user.pk system_card_name=card.card_name %}"
+                                           class="btn btn-sm btn-info">View</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% else %}
+            <p class="mt-3 text-muted">You have no system cards yet. Create one below.</p>
+        {% endif %}
+
+        <div class="card mt-4">
+            <div class="card-header card-header-success">
+                <h4>Create New Card</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'accounts:system_card_create' %}">
+                    {% csrf_token %}
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Card Name</label>
+                                <input type="text" name="card_name" class="form-control" placeholder="e.g. Standard American" maxlength="100" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-success mt-2">Create Card</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <a href="{% url 'accounts:user_profile' %}" class="btn btn-default mt-3">Back to Profile</a>
+
+    </div>
+{% endblock %}
