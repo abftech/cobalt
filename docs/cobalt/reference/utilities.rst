@@ -460,7 +460,34 @@ Additionally you need to install a diff viewer to use the reporting::
 Usage
 -----
 
-cgit_help provides a list of all of the commands. They should be used in order.
+cgit TUI Navigator
+^^^^^^^^^^^^^^^^^^
+
+The primary way to use cgit is the interactive TUI (terminal user interface) navigator::
+
+    cgit
+
+This opens a full-screen curses-based menu that lets you browse commands by category,
+configure parameters, and run them — all without having to remember flag names or
+argument order.
+
+- **Category screen**: Browse ``dev``, ``prod``, ``uat``, ``util`` and ``run`` categories
+  using the arrow keys or ``j``/``k``. Press Enter or ``→`` to open a category.
+- **Command screen**: Select a command from the list. The right-hand panel shows a
+  description and any available parameters. Press Enter to configure and run it.
+- **Run screen**: Fill in parameter values and toggle boolean flags with Space.
+  A live command preview is shown at the bottom. Press Enter to execute.
+  Press Esc to go back without running.
+
+You can jump straight to a category by passing it as an argument::
+
+    cgit dev
+    cgit util
+
+cgit_help
+^^^^^^^^^
+
+cgit_help provides a text listing of all of the commands with their descriptions.
 Cgit_help also shows the current versions installed in each environment.
 
 Cgit adds descriptions to the Elastic Beanstalk releases so it can

@@ -595,7 +595,7 @@ class CgitTUI:
             self.stdscr,
             2,
             3,
-            "Your development toolkit",
+            "Cobalt - Git - AWS - Utils",
             curses.color_pair(C_DIM) | curses.A_DIM,
         )
         _put(self.stdscr, 3, 2, "─" * (w - 4), curses.color_pair(C_DIM) | curses.A_DIM)
