@@ -1,58 +1,953 @@
-#!/bin/bash
-# Menu command for cgit
+#!/usr/bin/env python3
+# about: interactive TUI navigator for cgit commands
 
-function level_1 () {
-  TEMP_FILE=/tmp/cgit_cmd
-  rm -f $TEMP_FILE
+"""cgit TUI — browse, configure parameters, and run cgit commands."""
 
-  echo ""
-  echo "CGIT High Level Commands"
-  echo "========================"
-  echo ""
+import copy
+import curses
+import os
+import re
+import shlex
+import subprocess
+import sys
+import time
 
-  # list cgit commands and get the high level name eg test, uat, util
-  for FILE_AND_PATH in utils/cgit/cgit_*; do
-    FILE_NAME=$(basename "$FILE_AND_PATH")
-    # Get high level area e.g. cgit_dev_start - we want dev
-    echo "$FILE_NAME" | awk -F '_' '{print $2}' >> $TEMP_FILE
-  done
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
-  # Get unique commands from file
-  cat $TEMP_FILE | sort -u
-
-  echo ""
-  echo "Run cgit with the high level command to see options. e.g. cgit dev"
-  echo ""
-
-  rm -f $TEMP_FILE
+CATEGORY_DESCRIPTIONS = {
+    "dev": "Development workflow",
+    "prod": "Production releases",
+    "uat": "UAT deployments",
+    "util": "Utility tools",
+    "run": "Test runners",
 }
 
-function level_2 () {
-  # Get next level of commands
-  LEVEL_1=$1
-
-  for FILE_AND_PATH in utils/cgit/cgit_"$LEVEL_1"_*; do
-    FILE_NAME=$(basename "$FILE_AND_PATH")
-
-    about="$(grep -i about: "$FILE_AND_PATH" | grep -v cgit_help | cut -d' ' -f3-)"
-    printf "%-40s" "$FILE_NAME"
-    echo "- $about"
-  done
-}
-
-# Called with no parameters
-if [ "$#" -eq 0 ]
-then
-  level_1
-  exit
-fi
-
-# Called with one parameter
-if [ "$#" -eq 1 ]
-then
-  level_2 "$1"
-  exit
-fi
+# Curses color pair IDs
+C_HEADER = 1
+C_SEL = 2
+C_CAT = 3
+C_NORMAL = 4
+C_PARAM = 5
+C_FOOTER = 6
+C_DIM = 7
+C_ACCENT = 8
+C_INPUT = 9  # active value field
+C_CHECKED = 10  # enabled boolean checkbox
+C_PREVIEW = 11  # command preview line
 
 
-echo "level 2"
+# ---------------------------------------------------------------------------
+# Script metadata extraction
+# ---------------------------------------------------------------------------
+
+
+def _extract_about(path: str) -> str:
+    """Return the # about: description from a script (first 15 lines)."""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            for i, line in enumerate(f):
+                if i > 15:
+                    break
+                m = re.match(r"#\s*about:\s*(.+)", line)
+                if m:
+                    return m.group(1).strip()
+    except OSError:
+        pass
+    return ""
+
+
+def _clean_about(about: str) -> str:
+    """Strip inline flag hints from about text (shown separately in params)."""
+    m = re.search(r"\s+--[\w]", about)
+    if not m:
+        return about
+    trimmed = re.sub(r"\.\s+\w+\s*$", "", about[: m.start()]).rstrip(". ").strip()
+    return trimmed or about[: m.start()].rstrip(". ")
+
+
+def _extract_params_structured(path: str) -> list[dict]:
+    """
+    Return a list of param dicts extracted from a script via three strategies:
+      1. case statement arms (shows short+long form, detects value-taking via double shift)
+      2. flags in the # about: line (supplements missing case patterns)
+      3. positional args from Usage: echo lines
+
+    Each dict has keys:
+      display, long_flag, short_flag, takes_value, value_hint,
+      positional (bool), enabled (bool), value (str)
+    """
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            content = f.read()
+    except OSError:
+        return []
+
+    params: list[dict] = []
+    seen: set[str] = set()
+
+    # Strategy 0: # param: lines — explicit metadata, highest priority.
+    # Format:  # param: name           → positional arg (no --)
+    #          # param: --flag         → boolean flag
+    #          # param: --flag VALUE   → value flag (VALUE is UPPERCASE hint)
+    param_lines = re.findall(r"#\s*param:\s*(.+)", content)
+    if param_lines:
+        for raw in param_lines:
+            raw = raw.strip()
+            if not raw:
+                continue
+            if raw.startswith("--"):
+                parts = raw.split(None, 2)
+                long_flag = parts[0]
+                # Second token is a value hint when ALL_CAPS
+                if len(parts) >= 2 and re.match(r"^[A-Z][A-Z0-9_-]*$", parts[1]):
+                    value_hint, takes_value = parts[1], True
+                else:
+                    value_hint, takes_value = "", False
+                display = f"{long_flag} {value_hint}".strip()
+                params.append(
+                    {
+                        "display": display,
+                        "long_flag": long_flag,
+                        "short_flag": "",
+                        "takes_value": takes_value,
+                        "value_hint": value_hint,
+                        "positional": False,
+                        "enabled": False,
+                        "value": "",
+                    }
+                )
+            else:
+                name = raw.split(None, 1)[0]
+                params.append(
+                    {
+                        "display": name,
+                        "long_flag": "",
+                        "short_flag": "",
+                        "takes_value": True,
+                        "value_hint": name,
+                        "positional": True,
+                        "enabled": True,
+                        "value": "",
+                    }
+                )
+        return params  # explicit metadata takes full priority
+
+    # Build value-hint map from about line: --module [MODULE] → {"--module": "MODULE"}
+    value_hints: dict[str, str] = {}
+    about_line = ""
+    for line in content.splitlines()[:15]:
+        m = re.match(r"#\s*about:\s*(.+)", line)
+        if m:
+            about_line = m.group(1)
+            for fm in re.finditer(r"(--[\w-]+)\s+\[(\w+)\]", about_line):
+                value_hints[fm.group(1)] = fm.group(2).upper()
+            break
+
+    # Strategy 1: parse case statement arms
+    for arm_m in re.finditer(
+        r"(-[a-z]\|--[\w-]+|--[\w-]+|-[a-z])\)\s*\n?(.*?);;",
+        content,
+        re.DOTALL,
+    ):
+        flag = arm_m.group(1)
+        arm_body = arm_m.group(2)
+        if flag in ("-*", "--*", "-h"):
+            continue
+        if "|" in flag:
+            short_flag, long_flag = flag.split("|", 1)
+        elif flag.startswith("--"):
+            short_flag, long_flag = "", flag
+        else:
+            short_flag, long_flag = flag, ""
+        key = long_flag or short_flag
+        if key in seen:
+            continue
+        seen.add(key)
+        shift_count = len(re.findall(r"\bshift\b", arm_body))
+        takes_value = shift_count >= 2 or "$2" in arm_body
+        value_hint = value_hints.get(long_flag, "VALUE") if takes_value else ""
+        params.append(
+            {
+                "display": ", ".join(p for p in [short_flag, long_flag] if p),
+                "long_flag": long_flag,
+                "short_flag": short_flag,
+                "takes_value": takes_value,
+                "value_hint": value_hint,
+                "positional": False,
+                "enabled": False,
+                "value": "",
+            }
+        )
+
+    # Strategy 2: flags in # about: line not already found in case statements
+    if about_line:
+        for fm in re.finditer(r"(--[\w-]+)(?:\s+\[(\w+)\])?", about_line):
+            long_flag = fm.group(1)
+            hint = fm.group(2)
+            if long_flag not in seen:
+                seen.add(long_flag)
+                takes_value = hint is not None
+                params.append(
+                    {
+                        "display": long_flag,
+                        "long_flag": long_flag,
+                        "short_flag": "",
+                        "takes_value": takes_value,
+                        "value_hint": hint.upper() if hint else "VALUE",
+                        "positional": False,
+                        "enabled": False,
+                        "value": "",
+                    }
+                )
+
+    # Strategy 3: positional args from Usage: echo lines (skip if flags mixed in)
+    for um in re.finditer(r"[Uu]sage[:\s]+(?:\$0|\S+\.py)\s+(.+)", content):
+        usage = um.group(1).strip().strip("\"'")
+        if "--" in usage or "$" in usage or "(" in usage:
+            continue
+        usage = usage.strip("'\"")
+        if usage:
+            params.append(
+                {
+                    "display": usage,
+                    "long_flag": "",
+                    "short_flag": "",
+                    "takes_value": True,
+                    "value_hint": usage,
+                    "positional": True,
+                    "enabled": True,
+                    "value": "",
+                }
+            )
+        break  # only the first valid Usage line
+
+    return params
+
+
+# ---------------------------------------------------------------------------
+# Command building and execution helpers
+# ---------------------------------------------------------------------------
+
+
+def _build_cmd_str(script_ref: str, params: list[dict]) -> str:
+    """Build a shell command string from script reference and current param state."""
+    parts = [script_ref]
+    positional_parts: list[str] = []
+    for p in params:
+        if p.get("positional"):
+            if p["value"].strip():
+                positional_parts.append(shlex.quote(p["value"].strip()))
+        elif p["takes_value"]:
+            if p["value"].strip():
+                flag = p["long_flag"] or p["short_flag"]
+                parts.append(f"{flag} {shlex.quote(p['value'].strip())}")
+        else:
+            if p["enabled"]:
+                parts.append(p["long_flag"] or p["short_flag"])
+    parts.extend(positional_parts)
+    return " ".join(parts)
+
+
+def _add_to_history(cmd: str) -> None:
+    """Append the command to the current shell's history file."""
+    shell = os.environ.get("SHELL", "")
+    home = os.path.expanduser("~")
+    try:
+        if "zsh" in shell:
+            hist_file = os.path.join(home, ".zsh_history")
+            ts = int(time.time())
+            with open(hist_file, "a", encoding="utf-8") as f:
+                f.write(f": {ts}:0;{cmd}\n")
+        else:
+            hist_file = os.path.join(home, ".bash_history")
+            with open(hist_file, "a", encoding="utf-8") as f:
+                f.write(f"{cmd}\n")
+    except OSError:
+        pass
+
+
+# ---------------------------------------------------------------------------
+# Command scanning
+# ---------------------------------------------------------------------------
+
+
+def scan_commands() -> dict[str, list[dict]]:
+    """Scan cgit_*_* scripts in SCRIPT_DIR and return {category: [cmd_dict, ...]}."""
+    result: dict[str, list[dict]] = {}
+    try:
+        entries = sorted(os.listdir(SCRIPT_DIR))
+    except OSError:
+        return result
+    for name in entries:
+        if not re.match(r"^cgit_[a-z]+_.+", name):
+            continue
+        if "help" in name:
+            continue
+        path = os.path.join(SCRIPT_DIR, name)
+        if not os.path.isfile(path):
+            continue
+        parts = name.split("_")
+        if len(parts) < 3:
+            continue
+        category = parts[1]
+        about_raw = _extract_about(path)
+        result.setdefault(category, []).append(
+            {
+                "name": name,
+                "about": _clean_about(about_raw),
+                "params": _extract_params_structured(path),
+                "path": path,
+            }
+        )
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Curses drawing helper
+# ---------------------------------------------------------------------------
+
+
+def _put(win: curses.window, y: int, x: int, text: str, attr: int = 0) -> None:
+    """Write text to window, clipping safely to bounds."""
+    try:
+        h, w = win.getmaxyx()
+        if y < 0 or y >= h or x < 0 or x >= w:
+            return
+        avail = w - x - 1
+        if avail > 0:
+            win.addstr(y, x, text[:avail], attr)
+    except curses.error:
+        pass
+
+
+# ---------------------------------------------------------------------------
+# TUI
+# ---------------------------------------------------------------------------
+
+# Layout constants for the run (parameter) screen
+_LABEL_X = 4  # start of param label after indicator
+_FIELD_X = 30  # start of value input box
+
+
+class CgitTUI:
+    MIN_W = 62
+    MIN_H = 14
+
+    def __init__(self, stdscr: curses.window, start_category: str | None = None):
+        self.stdscr = stdscr
+        self.commands = scan_commands()
+        self.categories = list(self.commands.keys())
+        self.cat_idx = 0
+        self.cmd_idx = 0
+        self.cmd_scroll = 0
+        self.state = "categories"
+
+        # Run-screen state
+        self.run_cmd: dict | None = None
+        self.run_params: list[dict] = []
+        self.run_idx = 0
+
+        if start_category and start_category in self.categories:
+            self.cat_idx = self.categories.index(start_category)
+            self.state = "commands"
+
+        self._init_colors()
+
+    def _init_colors(self) -> None:
+        curses.start_color()
+        curses.use_default_colors()
+        curses.init_pair(C_HEADER, curses.COLOR_WHITE, curses.COLOR_BLUE)
+        curses.init_pair(C_SEL, curses.COLOR_BLACK, curses.COLOR_CYAN)
+        curses.init_pair(C_CAT, curses.COLOR_YELLOW, -1)
+        curses.init_pair(C_NORMAL, -1, -1)
+        curses.init_pair(C_PARAM, curses.COLOR_GREEN, -1)
+        curses.init_pair(C_FOOTER, curses.COLOR_WHITE, curses.COLOR_BLUE)
+        curses.init_pair(C_DIM, curses.COLOR_WHITE, -1)
+        curses.init_pair(C_ACCENT, curses.COLOR_CYAN, -1)
+        curses.init_pair(C_INPUT, curses.COLOR_BLACK, curses.COLOR_WHITE)
+        curses.init_pair(C_CHECKED, curses.COLOR_GREEN, -1)
+        curses.init_pair(C_PREVIEW, curses.COLOR_BLACK, curses.COLOR_GREEN)
+
+    # ------------------------------------------------------------------
+    # Main loop
+    # ------------------------------------------------------------------
+
+    def run(self) -> None:
+        curses.curs_set(0)
+        self.stdscr.keypad(True)
+        while True:
+            h, w = self.stdscr.getmaxyx()
+            self.stdscr.clear()
+
+            if h < self.MIN_H or w < self.MIN_W:
+                _put(
+                    self.stdscr,
+                    0,
+                    0,
+                    f"Terminal too small ({w}x{h}). Need {self.MIN_W}x{self.MIN_H}. Press q to quit.",
+                )
+                self.stdscr.refresh()
+                if self.stdscr.getch() in (ord("q"), ord("Q")):
+                    return
+                continue
+
+            if self.state == "categories":
+                self._draw_categories()
+                curses.curs_set(0)
+            elif self.state == "commands":
+                self._draw_commands()
+                curses.curs_set(0)
+            else:
+                self._draw_run()
+                # Show blinking cursor inside active value field
+                on_value = (
+                    self.run_params
+                    and self.run_idx < len(self.run_params)
+                    and (
+                        self.run_params[self.run_idx]["takes_value"]
+                        or self.run_params[self.run_idx].get("positional")
+                    )
+                )
+                curses.curs_set(1 if on_value else 0)
+
+            self.stdscr.refresh()
+
+            if not self._handle_key(self.stdscr.getch()):
+                return
+
+    # ------------------------------------------------------------------
+    # Key handling (dispatched by state)
+    # ------------------------------------------------------------------
+
+    def _handle_key(self, key: int) -> bool:
+        if self.state == "categories":
+            return self._handle_categories(key)
+        elif self.state == "commands":
+            return self._handle_commands(key)
+        else:
+            return self._handle_run(key)
+
+    def _handle_categories(self, key: int) -> bool:
+        if key in (curses.KEY_UP, ord("k")):
+            self.cat_idx = max(0, self.cat_idx - 1)
+        elif key in (curses.KEY_DOWN, ord("j")):
+            self.cat_idx = min(len(self.categories) - 1, self.cat_idx + 1)
+        elif key in (10, 13, curses.KEY_ENTER, curses.KEY_RIGHT, ord("l")):
+            self.state = "commands"
+            self.cmd_idx = 0
+            self.cmd_scroll = 0
+        elif key in (ord("q"), ord("Q"), 27):
+            return False
+        return True
+
+    def _handle_commands(self, key: int) -> bool:
+        cat = self.categories[self.cat_idx]
+        cmds = self.commands.get(cat, [])
+        h, _ = self.stdscr.getmaxyx()
+        visible = max(1, h - 6)
+        if key in (curses.KEY_UP, ord("k")):
+            if self.cmd_idx > 0:
+                self.cmd_idx -= 1
+                self.cmd_scroll = min(self.cmd_scroll, self.cmd_idx)
+        elif key in (curses.KEY_DOWN, ord("j")):
+            if self.cmd_idx < len(cmds) - 1:
+                self.cmd_idx += 1
+                if self.cmd_idx >= self.cmd_scroll + visible:
+                    self.cmd_scroll += 1
+        elif key in (10, 13, curses.KEY_ENTER):
+            if cmds:
+                self._enter_run(cmds[self.cmd_idx])
+        elif key in (27, curses.KEY_LEFT, ord("h")):
+            self.state = "categories"
+        elif key in (ord("q"), ord("Q")):
+            return False
+        return True
+
+    def _handle_run(self, key: int) -> bool:
+        params = self.run_params
+        n = len(params)
+
+        if key == 27:  # Esc always goes back
+            self.state = "commands"
+            return True
+
+        if key in (10, 13, curses.KEY_ENTER):  # Enter always runs
+            if self.run_cmd:
+                self._execute_command()
+            return True
+
+        # Determine if the current param is a text input field
+        on_value = (
+            n > 0
+            and self.run_idx < n
+            and (
+                params[self.run_idx]["takes_value"]
+                or params[self.run_idx].get("positional")
+            )
+        )
+
+        # Printable characters go into the active value field
+        if on_value and 32 <= key <= 126:
+            params[self.run_idx]["value"] += chr(key)
+            return True
+
+        # Backspace removes the last character from the active value field
+        if on_value and key in (curses.KEY_BACKSPACE, 127, 8):
+            p = params[self.run_idx]
+            if p["value"]:
+                p["value"] = p["value"][:-1]
+            return True
+
+        # Arrow keys navigate between params
+        if key == curses.KEY_UP:
+            self.run_idx = max(0, self.run_idx - 1)
+        elif key == curses.KEY_DOWN:
+            self.run_idx = min(n - 1, self.run_idx + 1) if n > 0 else 0
+        elif key == ord(" "):
+            # Space toggles boolean (non-value) params
+            if n > 0 and self.run_idx < n:
+                p = params[self.run_idx]
+                if not p["takes_value"] and not p.get("positional"):
+                    p["enabled"] = not p["enabled"]
+        elif key in (ord("q"), ord("Q")) and not on_value:
+            return False
+
+        return True
+
+    # ------------------------------------------------------------------
+    # Run screen setup and command execution
+    # ------------------------------------------------------------------
+
+    def _enter_run(self, cmd: dict) -> None:
+        """Transition to the run/parameter screen for the given command."""
+        self.run_cmd = cmd
+        self.run_params = copy.deepcopy(cmd["params"])
+        self.run_idx = 0
+        self.state = "run"
+
+    def _execute_command(self) -> None:
+        """Exit curses, run the command, record in history, then restore curses."""
+        cmd = self.run_cmd
+        if not cmd:
+            return
+
+        display_cmd = _build_cmd_str(cmd["name"], self.run_params)
+        actual_cmd = _build_cmd_str(cmd["path"], self.run_params)
+
+        curses.endwin()
+
+        sep = "─" * min(len(display_cmd) + 6, 76)
+        print(f"\n{sep}")
+        print(f"  $ {display_cmd}")
+        print(f"{sep}\n")
+
+        result = subprocess.run(actual_cmd, shell=True)
+
+        _add_to_history(display_cmd)
+
+        print(f"\n{sep}")
+        print(f"  Exit code: {result.returncode}")
+        print(sep)
+        input("\n  Press Enter to return to cgit...")
+
+        # Restore curses display
+        self.stdscr.clear()
+        self.stdscr.refresh()
+
+    # ------------------------------------------------------------------
+    # Shared header / footer
+    # ------------------------------------------------------------------
+
+    def _header(self, title: str) -> None:
+        _, w = self.stdscr.getmaxyx()
+        _put(self.stdscr, 0, 0, " " * (w - 1), curses.color_pair(C_HEADER))
+        _put(
+            self.stdscr,
+            0,
+            1,
+            f" cgit  {title}",
+            curses.color_pair(C_HEADER) | curses.A_BOLD,
+        )
+
+    def _footer(self, hints: list[tuple[str, str]]) -> None:
+        h, w = self.stdscr.getmaxyx()
+        _put(self.stdscr, h - 1, 0, " " * (w - 1), curses.color_pair(C_FOOTER))
+        x = 2
+        for key, desc in hints:
+            if x >= w - 4:
+                break
+            _put(
+                self.stdscr, h - 1, x, key, curses.color_pair(C_FOOTER) | curses.A_BOLD
+            )
+            x += len(key)
+            seg = f" {desc}   "
+            _put(self.stdscr, h - 1, x, seg, curses.color_pair(C_FOOTER))
+            x += len(seg)
+
+    # ------------------------------------------------------------------
+    # Category screen
+    # ------------------------------------------------------------------
+
+    def _draw_categories(self) -> None:
+        h, w = self.stdscr.getmaxyx()
+        self._header("command navigator")
+        _put(
+            self.stdscr,
+            2,
+            3,
+            "Your development toolkit",
+            curses.color_pair(C_DIM) | curses.A_DIM,
+        )
+        _put(self.stdscr, 3, 2, "─" * (w - 4), curses.color_pair(C_DIM) | curses.A_DIM)
+        for i, cat in enumerate(self.categories):
+            cmds = self.commands.get(cat, [])
+            row = 5 + i
+            if row >= h - 2:
+                break
+            sel = i == self.cat_idx
+            if sel:
+                _put(self.stdscr, row, 1, " " * (w - 2), curses.color_pair(C_SEL))
+            ind = "▶" if sel else " "
+            base = curses.color_pair(C_SEL) | curses.A_BOLD if sel else 0
+            cat_attr = base if sel else curses.color_pair(C_CAT) | curses.A_BOLD
+            _put(self.stdscr, row, 2, ind, base)
+            _put(self.stdscr, row, 4, f" {cat:<6}", cat_attr)
+            _put(
+                self.stdscr,
+                row,
+                13,
+                f"  {len(cmds):2d} commands",
+                base if sel else curses.color_pair(C_DIM) | curses.A_DIM,
+            )
+            desc = CATEGORY_DESCRIPTIONS.get(cat, "")
+            if desc:
+                _put(
+                    self.stdscr,
+                    row,
+                    27,
+                    f"  {desc}",
+                    base if sel else curses.color_pair(C_NORMAL),
+                )
+        self._footer([("↑↓", "navigate"), ("Enter", "select"), ("q", "quit")])
+
+    # ------------------------------------------------------------------
+    # Command list screen (split panel)
+    # ------------------------------------------------------------------
+
+    def _draw_commands(self) -> None:
+        h, w = self.stdscr.getmaxyx()
+        cat = self.categories[self.cat_idx]
+        cmds = self.commands.get(cat, [])
+        self._header(f"› {cat}   {len(cmds)} commands")
+
+        left_w = min(38, max(28, w // 2 - 2))
+        div_x = left_w + 2
+        right_x = div_x + 2
+        right_w = max(0, w - right_x - 2)
+
+        _put(self.stdscr, 2, 3, "Command", curses.color_pair(C_CAT) | curses.A_BOLD)
+        if right_w > 5:
+            _put(
+                self.stdscr,
+                2,
+                right_x,
+                "Details",
+                curses.color_pair(C_CAT) | curses.A_BOLD,
+            )
+        _put(
+            self.stdscr,
+            3,
+            2,
+            "─" * (left_w - 1),
+            curses.color_pair(C_DIM) | curses.A_DIM,
+        )
+        if right_w > 0:
+            _put(
+                self.stdscr,
+                3,
+                right_x,
+                "─" * right_w,
+                curses.color_pair(C_DIM) | curses.A_DIM,
+            )
+        for row in range(2, h - 1):
+            _put(self.stdscr, row, div_x, "│", curses.color_pair(C_DIM) | curses.A_DIM)
+
+        visible = max(1, h - 6)
+        for i, cmd in enumerate(cmds):
+            offset = i - self.cmd_scroll
+            if offset < 0 or offset >= visible:
+                continue
+            row = 4 + offset
+            if row >= h - 1:
+                break
+            sel = i == self.cmd_idx
+            if sel:
+                _put(self.stdscr, row, 2, " " * (left_w - 1), curses.color_pair(C_SEL))
+            attr = curses.color_pair(C_SEL) | curses.A_BOLD if sel else 0
+            ind = "▶" if sel else " "
+            _put(self.stdscr, row, 2, f"{ind} {cmd['name']}", attr)
+
+        if len(cmds) > visible and h > 7:
+            pct = int(self.cmd_scroll / max(1, len(cmds) - visible) * 100)
+            _put(
+                self.stdscr,
+                h - 2,
+                3,
+                f" {pct:3d}% ",
+                curses.color_pair(C_DIM) | curses.A_DIM,
+            )
+
+        # Detail panel
+        if cmds and 0 <= self.cmd_idx < len(cmds) and right_w > 5:
+            cmd = cmds[self.cmd_idx]
+            dr = 4
+            _put(
+                self.stdscr,
+                dr,
+                right_x,
+                cmd["name"],
+                curses.color_pair(C_ACCENT) | curses.A_BOLD,
+            )
+            dr += 2
+            about = cmd.get("about", "")
+            if about and dr < h - 2:
+                words = about.split()
+                line = ""
+                for word in words:
+                    test = f"{line} {word}".strip()
+                    if len(test) > right_w:
+                        _put(
+                            self.stdscr, dr, right_x, line, curses.color_pair(C_NORMAL)
+                        )
+                        dr += 1
+                        line = word
+                    else:
+                        line = test
+                if line and dr < h - 2:
+                    _put(self.stdscr, dr, right_x, line, curses.color_pair(C_NORMAL))
+                    dr += 1
+            raw_params = cmd.get("params", [])
+            if raw_params and dr < h - 2:
+                dr += 1
+                _put(
+                    self.stdscr,
+                    dr,
+                    right_x,
+                    "Parameters:",
+                    curses.color_pair(C_ACCENT) | curses.A_BOLD,
+                )
+                dr += 1
+                for p in raw_params:
+                    if dr >= h - 2:
+                        break
+                    label = f"<{p['display']}>" if p.get("positional") else p["display"]
+                    _put(
+                        self.stdscr, dr, right_x + 2, label, curses.color_pair(C_PARAM)
+                    )
+                    dr += 1
+
+        self._footer(
+            [
+                ("↑↓", "navigate"),
+                ("Enter", "configure & run"),
+                ("Esc", "back"),
+                ("q", "quit"),
+            ]
+        )
+
+    # ------------------------------------------------------------------
+    # Run / parameter-configuration screen
+    # ------------------------------------------------------------------
+
+    def _draw_run(self) -> None:
+        h, w = self.stdscr.getmaxyx()
+        cmd = self.run_cmd
+        if not cmd:
+            return
+        params = self.run_params
+        cat = self.categories[self.cat_idx]
+
+        self._header(f"› {cat} › {cmd['name']}")
+
+        row = 2
+        about = cmd.get("about", "")
+        if about:
+            _put(self.stdscr, row, 3, about, curses.color_pair(C_NORMAL))
+            row += 1
+
+        row += 1
+        _put(
+            self.stdscr, row, 2, "─" * (w - 4), curses.color_pair(C_DIM) | curses.A_DIM
+        )
+        row += 1
+
+        field_w = min(28, max(10, w - _FIELD_X - 3))
+        cursor_y, cursor_x = row, _FIELD_X + 1  # fallback cursor position
+
+        if not params:
+            _put(
+                self.stdscr,
+                row,
+                3,
+                "No parameters — press Enter to run",
+                curses.color_pair(C_DIM) | curses.A_DIM,
+            )
+            row += 1
+        else:
+            for i, p in enumerate(params):
+                if row >= h - 4:
+                    break
+                sel = i == self.run_idx
+                if sel:
+                    _put(self.stdscr, row, 1, " " * (w - 2), curses.color_pair(C_SEL))
+                base = curses.color_pair(C_SEL) | curses.A_BOLD if sel else 0
+                ind = "▶" if sel else " "
+
+                if p.get("positional"):
+                    label = f"<{p['display']}>"
+                    _put(self.stdscr, row, 2, ind, base)
+                    _put(
+                        self.stdscr,
+                        row,
+                        _LABEL_X,
+                        f"{label:<{_FIELD_X - _LABEL_X - 2}}",
+                        base if sel else curses.color_pair(C_PARAM),
+                    )
+                    val = p["value"]
+                    field = f"[{val:<{field_w}}]"
+                    _put(
+                        self.stdscr,
+                        row,
+                        _FIELD_X,
+                        field,
+                        curses.color_pair(C_INPUT) if sel else curses.color_pair(C_DIM),
+                    )
+                    if sel:
+                        cursor_y = row
+                        cursor_x = _FIELD_X + 1 + len(val)
+
+                elif p["takes_value"]:
+                    _put(self.stdscr, row, 2, ind, base)
+                    _put(
+                        self.stdscr,
+                        row,
+                        _LABEL_X,
+                        f"{p['display']:<{_FIELD_X - _LABEL_X - 2}}",
+                        base if sel else curses.color_pair(C_PARAM),
+                    )
+                    val = p["value"]
+                    hint = p.get("value_hint", "")
+                    placeholder = f"  {hint}  " if not val and hint else ""
+                    display_val = val or placeholder
+                    field = f"[{display_val:<{field_w}}]"
+                    _put(
+                        self.stdscr,
+                        row,
+                        _FIELD_X,
+                        field,
+                        (
+                            curses.color_pair(C_INPUT)
+                            if sel
+                            else (
+                                curses.color_pair(C_ACCENT) | curses.A_DIM
+                                if val
+                                else curses.color_pair(C_DIM)
+                            )
+                        ),
+                    )
+                    if sel:
+                        cursor_y = row
+                        cursor_x = _FIELD_X + 1 + len(val)
+
+                else:
+                    check = "[x]" if p["enabled"] else "[ ]"
+                    check_attr = (
+                        base
+                        if sel
+                        else (
+                            curses.color_pair(C_CHECKED) | curses.A_BOLD
+                            if p["enabled"]
+                            else curses.color_pair(C_DIM)
+                        )
+                    )
+                    _put(self.stdscr, row, 2, ind, base)
+                    _put(self.stdscr, row, _LABEL_X, check, check_attr)
+                    _put(
+                        self.stdscr,
+                        row,
+                        _LABEL_X + 4,
+                        p["display"],
+                        base if sel else curses.color_pair(C_PARAM),
+                    )
+
+                row += 1
+
+        # Command preview bar
+        preview_row = h - 3
+        if preview_row > row + 1:
+            _put(
+                self.stdscr,
+                preview_row - 1,
+                2,
+                "─" * (w - 4),
+                curses.color_pair(C_DIM) | curses.A_DIM,
+            )
+            preview = _build_cmd_str(cmd["name"], params)
+            _put(
+                self.stdscr,
+                preview_row,
+                2,
+                "$ ",
+                curses.color_pair(C_DIM) | curses.A_DIM,
+            )
+            _put(
+                self.stdscr,
+                preview_row,
+                4,
+                preview,
+                curses.color_pair(C_ACCENT) | curses.A_BOLD,
+            )
+
+        # Position cursor for active value field
+        on_value = (
+            params
+            and self.run_idx < len(params)
+            and (
+                params[self.run_idx]["takes_value"]
+                or params[self.run_idx].get("positional")
+            )
+        )
+        if on_value:
+            try:
+                self.stdscr.move(cursor_y, min(cursor_x, w - 2))
+            except curses.error:
+                pass
+
+        hints = [("↑↓", "navigate")]
+        has_bools = any(
+            not p["takes_value"] and not p.get("positional") for p in params
+        )
+        has_vals = any(p["takes_value"] for p in params)
+        if has_bools:
+            hints.append(("Space", "toggle"))
+        if has_vals:
+            hints.append(("Type", "enter value"))
+        hints.extend([("Enter", "run"), ("Esc", "back")])
+        self._footer(hints)
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+
+
+def main() -> None:
+    start_cat = sys.argv[1] if len(sys.argv) > 1 else None
+    try:
+        curses.wrapper(lambda scr: CgitTUI(scr, start_cat).run())
+    except KeyboardInterrupt:
+        pass
+
+
+if __name__ == "__main__":
+    main()
