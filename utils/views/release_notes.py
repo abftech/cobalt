@@ -176,6 +176,13 @@ def release_notes_view(request):
         {
             "release": "6.3.4",
             "notes": [
+                "Fix dashboard to allow viewing discussions on a smaller screen",
+                "Django 5.2.12",
+            ],
+        },
+        {
+            "release": "6.3.4",
+            "notes": [
                 "Logging for batch jobs",
                 "Email preview bug",
                 "Double dummy solver",
