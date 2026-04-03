@@ -291,9 +291,25 @@
 
         <!-- FORUM POSTS -->
 
+        <!-- Tab switcher: visible only on small screens -->
+        <div class="d-block d-lg-none mb-2 text-center">
+            <div id="dashboard-tabs" class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn active" data-target="announcements"
+                        style="background-color:#f44336;border-color:#f44336;color:#fff;"
+                        title="Announcements">
+                    <i class="material-icons" style="font-size:16px;vertical-align:middle;">campaign</i>
+                </button>
+                <button type="button" class="btn" data-target="discussions"
+                        style="background-color:#fff;border-color:#4caf50;color:#4caf50;"
+                        title="Discussions">
+                    <i class="material-icons" style="font-size:16px;vertical-align:middle;">people_alt</i>
+                </button>
+            </div>
+        </div>
+
         <div class="row">
 
-            <div class="col-lg-6 col-md-12">
+            <div class="col-lg-6 col-md-12" id="col-announcements">
                 <div class="card" >
                     <div class="card-header card-header-danger" id="dashboard-announce">
                         <h2 class="text-center"><i class="material-icons align-center" style="font-size:27px;">campaign</i>&nbsp;
@@ -355,7 +371,7 @@
                 </div>
             </div>
 
-            <div class="col-lg-6 col-md-12">
+            <div class="col-lg-6 col-md-12" id="col-discussions">
                 <div class="card" >
                     <div class="card-header card-header-success" id="dashboard-discuss">
                         <h2 class="text-center"><i class="material-icons align-center" style="font-size:27px;">people_alt</i>&nbsp;
@@ -459,6 +475,51 @@
                 onAfterPageLoad: function($items) {
                     $('.loading').hide();
                 }
+            });
+
+            // Tab switcher for small screens
+            var activeTab = 'announcements';
+
+            function applyTabLayout() {
+                if ($(window).width() >= 992) {
+                    $('#col-announcements').show();
+                    $('#col-discussions').show();
+                } else if (activeTab === 'announcements') {
+                    $('#col-announcements').show();
+                    $('#col-discussions').hide();
+                } else {
+                    $('#col-announcements').hide();
+                    $('#col-discussions').show();
+                }
+                Waypoint.refreshAll();
+            }
+
+            applyTabLayout();
+            $(window).on('resize', applyTabLayout);
+
+            $('#dashboard-tabs button').on('click', function() {
+                var target = $(this).data('target');
+                activeTab = target;
+                var isAnnouncements = target === 'announcements';
+                // Active state: filled colour for active, white with coloured border for inactive
+                $('#dashboard-tabs button[data-target="announcements"]').css({
+                    'background-color': isAnnouncements ? '#f44336' : '#fff',
+                    'border-color': '#f44336',
+                    'color': isAnnouncements ? '#fff' : '#f44336'
+                });
+                $('#dashboard-tabs button[data-target="discussions"]').css({
+                    'background-color': isAnnouncements ? '#fff' : '#4caf50',
+                    'border-color': '#4caf50',
+                    'color': isAnnouncements ? '#4caf50' : '#fff'
+                });
+                if (isAnnouncements) {
+                    $('#col-announcements').show();
+                    $('#col-discussions').hide();
+                } else {
+                    $('#col-announcements').hide();
+                    $('#col-discussions').show();
+                }
+                Waypoint.refreshAll();
             });
 
             // countup settings
