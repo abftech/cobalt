@@ -35,18 +35,31 @@ The webhook location is:
 
 https://<your environment>.myabf.com.au/payments/stripe-webhook
 
-Environment Variable
-====================
+After creating the webhook endpoint, reveal the **Signing secret** on the webhook detail
+page (Stripe Dashboard → Developers → Webhooks → select your endpoint → Signing secret).
+You will need this value for ``STRIPE_WEBHOOK_SECRET`` below.
 
-You need to set `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY` to the values that you set up
-in the previous step.
+Environment Variables
+=====================
+
+You need to set the following environment variables to the values obtained in the previous steps:
+
+* ``STRIPE_SECRET_KEY`` — secret API key
+* ``STRIPE_PUBLISHABLE_KEY`` — publishable API key
+* ``STRIPE_WEBHOOK_SECRET`` — webhook signing secret (``whsec_...``). Enables signature
+  verification on incoming webhook calls. If not set, signature verification is skipped
+  (legacy mode — not recommended for production).
 
 Running
 =======
 
 To run this in a hosted environment, you need to set up the web callback address within Stripe.
 
-To run this in development, you need to install the Stripe API and run::
+To run this in development, you need to install the Stripe CLI and run::
 
     stripe login
     stripe listen --forward-to 127.0.0.1:8000/payments/stripe-webhook
+
+The ``stripe listen`` command prints a webhook signing secret (``whsec_...``) to the terminal.
+Set this as ``STRIPE_WEBHOOK_SECRET`` in your local environment to enable signature verification
+during development.

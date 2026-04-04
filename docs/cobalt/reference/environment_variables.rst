@@ -45,6 +45,7 @@ SUPPORT_EMAIL                   str             Used to send client side emails.
 DISABLE_PLAYPEN                 str             If set then emails to real users are allowed to be sent. Default is Playpen is on.
 STRIPE_SECRET_KEY               str             Stripe credentials. Used by Payments.
 STRIPE_PUBLISHABLE_KEY          str             Stripe credentials. Used by Payments.
+STRIPE_WEBHOOK_SECRET           str             Stripe webhook signing secret. Enables signature verification on incoming webhooks. Obtain from Stripe Dashboard → Developers → Webhooks → Signing secret. If unset, signature verification is skipped (legacy mode).
 AWS_ACCESS_KEY_ID               str             AWS credentials. Used for SES and SNS.
 AWS_SECRET_ACCESS_KEY           str             AWS credentials. Used for SES and SNS.
 AWS_REGION_NAME                 str             AWS geographical location.
@@ -94,6 +95,7 @@ Development example::
     # Stripe - for payments. Set up a free Stripe account
     export STRIPE_SECRET_KEY=sk_test_key
     export STRIPE_PUBLISHABLE_KEY=pk_test_key
+    export STRIPE_WEBHOOK_SECRET=whsec_test_key  # from Stripe Dashboard → Developers → Webhooks
 
     # AWS - for SMS and SES
     export AWS_ACCESS_KEY_ID=SOMETHING
