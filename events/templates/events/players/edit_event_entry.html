@@ -83,6 +83,10 @@
                         </div>
                     </div>
 
+                    <!-- CALENDAR BUTTONS (loaded for authorised users only) -->
+                    <div hx-get="{% url "utils:calendar_buttons_htmx" event_id=event.id %}"
+                         hx-trigger="load"></div>
+
                     <!-- INCLUDE LINKS TO OTHER ENTRIES (IF MADE) SO USER CAN EDIT THEM -->
                     <div
                         hx-get="{% url "events:get_other_entries_to_event_for_user_htmx" event_id=event.id this_event_entry_id=event_entry.id %}"

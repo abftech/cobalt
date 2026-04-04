@@ -1,167 +1,5 @@
-from urllib.parse import urlencode
-
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
 from django.shortcuts import render
-from django.urls import reverse
-
-from events.models import Event, Session
-
-
-@login_required
-def download_event_ics(request, event_id):
-    """Download an ICS file containing one VEVENT per session for the given event."""
-
-    event = Event.objects.select_related("congress").get(pk=event_id)
-    sessions = Session.objects.filter(event=event).order_by(
-        "session_date", "session_start"
-    )
-
-    lines = [
-        "BEGIN:VCALENDAR",
-        "VERSION:2.0",
-        "PRODID:-//ABF//MyABF//EN",
-        "CALSCALE:GREGORIAN",
-        "METHOD:PUBLISH",
-    ]
-
-    venue_parts = []
-    if event.congress.venue_name:
-        venue_parts.append(event.congress.venue_name)
-    if event.congress.venue_location:
-        venue_parts.append(event.congress.venue_location)
-    location = ", ".join(venue_parts)
-
-    session_list = list(sessions)
-    multi = len(session_list) > 1
-
-    for n, session in enumerate(session_list, start=1):
-        dt_start = (
-            session.session_date.strftime("%Y%m%d")
-            + "T"
-            + session.session_start.strftime("%H%M%S")
-        )
-
-        lines += [
-            "BEGIN:VEVENT",
-            f"UID:cobalt-event-{event_id}-session-{session.pk}@myabf.com.au",
-            f"DTSTART;TZID=Australia/Sydney:{dt_start}",
-        ]
-
-        if session.session_end:
-            dt_end = (
-                session.session_date.strftime("%Y%m%d")
-                + "T"
-                + session.session_end.strftime("%H%M%S")
-            )
-            lines.append(f"DTEND;TZID=Australia/Sydney:{dt_end}")
-
-        summary = f"{event.event_name} - Session {n}" if multi else event.event_name
-        lines.append(f"SUMMARY:{summary}")
-
-        if event.description:
-            lines.append(f"DESCRIPTION:{event.description}")
-
-        if location:
-            lines.append(f"LOCATION:{location}")
-
-        lines.append("END:VEVENT")
-
-    lines.append("END:VCALENDAR")
-
-    ics_content = "\r\n".join(lines) + "\r\n"
-
-    response = HttpResponse(ics_content, content_type="text/calendar")
-    response["Content-Disposition"] = f'attachment; filename="event-{event_id}.ics"'
-    return response
-
-
-def _build_calendar_urls(event, sessions):
-    """Return a list of dicts with Google and Outlook calendar URLs, one per session."""
-
-    venue_parts = []
-    if event.congress.venue_name:
-        venue_parts.append(event.congress.venue_name)
-    if event.congress.venue_location:
-        venue_parts.append(event.congress.venue_location)
-    location = ", ".join(venue_parts)
-
-    calendar_sessions = []
-    session_list = list(sessions)
-    multi = len(session_list) > 1
-
-    for n, session in enumerate(session_list, start=1):
-        label_date = session.session_date.strftime("%a %-d %b")
-        label_time = session.session_start.strftime("%-I:%M%p").lower()
-        label = (
-            f"Session {n} \u2014 {label_date} {label_time}"
-            if multi
-            else f"{label_date} {label_time}"
-        )
-
-        dt_start_google = (
-            session.session_date.strftime("%Y%m%d")
-            + "T"
-            + session.session_start.strftime("%H%M%S")
-        )
-        dt_start_outlook = (
-            session.session_date.strftime("%Y-%m-%d")
-            + "T"
-            + session.session_start.strftime("%H:%M:%S")
-        )
-
-        if session.session_end:
-            dt_end_google = (
-                session.session_date.strftime("%Y%m%d")
-                + "T"
-                + session.session_end.strftime("%H%M%S")
-            )
-            dt_end_outlook = (
-                session.session_date.strftime("%Y-%m-%d")
-                + "T"
-                + session.session_end.strftime("%H:%M:%S")
-            )
-        else:
-            dt_end_google = dt_start_google
-            dt_end_outlook = dt_start_outlook
-
-        google_params = {
-            "action": "TEMPLATE",
-            "text": f"{event.event_name} - Session {n}",
-            "dates": f"{dt_start_google}/{dt_end_google}",
-        }
-        if event.description:
-            google_params["details"] = event.description
-        if location:
-            google_params["location"] = location
-
-        google_url = (
-            f"https://calendar.google.com/calendar/render?{urlencode(google_params)}"
-        )
-
-        outlook_params = {
-            "subject": f"{event.event_name} - Session {n}",
-            "startdt": dt_start_outlook,
-            "enddt": dt_end_outlook,
-        }
-        if event.description:
-            outlook_params["body"] = event.description
-        if location:
-            outlook_params["location"] = location
-
-        outlook_url = f"https://outlook.live.com/calendar/0/deeplink/compose?{urlencode(outlook_params)}"
-        office365_url = f"https://outlook.office.com/calendar/0/deeplink/compose?{urlencode(outlook_params)}"
-
-        calendar_sessions.append(
-            {
-                "label": label,
-                "google_url": google_url,
-                "outlook_url": outlook_url,
-                "office365_url": office365_url,
-            }
-        )
-
-    return calendar_sessions
 
 
 @login_required
@@ -174,10 +12,11 @@ def release_notes_view(request):
 
     release_notes = [
         {
-            "release": "6.3.4",
+            "release": "6.3.5",
             "notes": [
                 "Fix dashboard to allow viewing discussions on a smaller screen",
                 "Django 5.2.12",
+                "DEV - CGIT changes",
             ],
         },
         {
@@ -398,24 +237,8 @@ def release_notes_view(request):
         },
     ]
 
-    event = Event.objects.select_related("congress").filter(pk=553).first()
-    calendar_sessions = []
-    ics_url = None
-
-    if event:
-        sessions = Session.objects.filter(event=event).order_by(
-            "session_date", "session_start"
-        )
-        calendar_sessions = _build_calendar_urls(event, sessions)
-        ics_url = reverse("utils:download_event_ics", kwargs={"event_id": 5536})
-
     return render(
         request,
         "utils/release_notes_view.html",
-        {
-            "release_notes": release_notes,
-            "event": event,
-            "calendar_sessions": calendar_sessions,
-            "ics_url": ics_url,
-        },
+        {"release_notes": release_notes},
     )

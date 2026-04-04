@@ -1,0 +1,104 @@
+{# Reusable calendar add-to-calendar buttons fragment.                       #}
+{# Expects context: calendar_sessions, apple_url, ics_url                    #}
+{# ics_url    - https:// ICS download (Apple Calendar, Outlook, Thunderbird…) #}
+{# calendar_sessions - list of dicts from _build_calendar_urls()             #}
+
+{% if calendar_sessions %}
+
+    <div class="text-left my-2">
+
+        <button class="btn btn-sm btn-outline-secondary"
+                type="button"
+                data-toggle="collapse"
+                data-target="#atc-panel-{{ event_id }}"
+                aria-expanded="false">
+            <i class="fas fa-calendar-alt mr-1"></i>Add to Calendar
+        </button>
+
+        <div class="collapse" id="atc-panel-{{ event_id }}">
+            <div class="border rounded p-2 mt-1" style="display: inline-block;">
+
+                {% if calendar_sessions|length == 1 %}
+
+                    <p class="text-muted mb-1" style="font-size: 0.8rem;">{{ calendar_sessions.0.label }}</p>
+                    <div class="d-flex">
+                        <a href="{{ calendar_sessions.0.google_url }}" target="_blank" rel="noopener noreferrer"
+                           class="btn btn-just-icon btn-round mr-1"
+                           style="background-color: #4285F4; color: #ffffff; border: none;"
+                           data-toggle="tooltip" data-placement="bottom" title="Google Calendar">
+                            <i class="fab fa-google"></i>
+                        </a>
+                        <a href="{{ ics_url }}"
+                           class="btn btn-just-icon btn-round mr-1"
+                           style="background-color: #E74C3C; color: #ffffff; border: none;"
+                           data-toggle="tooltip" data-placement="bottom" title="Apple Calendar / iCal download">
+                            <i class="fas fa-calendar-alt"></i>
+                        </a>
+                        <a href="{{ calendar_sessions.0.outlook_url }}" target="_blank" rel="noopener noreferrer"
+                           class="btn btn-just-icon btn-round mr-1"
+                           style="background-color: #00A4EF; color: #ffffff; border: none;"
+                           data-toggle="tooltip" data-placement="bottom" title="Outlook.com (personal)">
+                            <i class="fab fa-microsoft"></i>
+                        </a>
+                        <a href="{{ calendar_sessions.0.office365_url }}" target="_blank" rel="noopener noreferrer"
+                           class="btn btn-just-icon btn-round"
+                           style="background-color: #0078D4; color: #ffffff; border: none;"
+                           data-toggle="tooltip" data-placement="bottom" title="Office 365 (work/school)">
+                            <i class="fab fa-microsoft"></i>
+                        </a>
+                    </div>
+
+                {% else %}
+
+                    <p class="text-muted mb-1" style="font-size: 0.8rem;">All sessions</p>
+                    <div class="d-flex mb-2">
+                        <a href="{{ ics_url }}"
+                           class="btn btn-just-icon btn-round"
+                           style="background-color: #E74C3C; color: #ffffff; border: none;"
+                           data-toggle="tooltip" data-placement="bottom" title="Apple Calendar / iCal download (all sessions)">
+                            <i class="fas fa-calendar-alt"></i>
+                        </a>
+                    </div>
+
+                    {% for cal_session in calendar_sessions %}
+                        <p class="text-muted mb-1 mt-2" style="font-size: 0.8rem;">{{ cal_session.label }}</p>
+                        <div class="d-flex">
+                            <a href="{{ cal_session.google_url }}" target="_blank" rel="noopener noreferrer"
+                               class="btn btn-just-icon btn-round mr-1"
+                               style="background-color: #4285F4; color: #ffffff; border: none;"
+                               data-toggle="tooltip" data-placement="bottom" title="Google Calendar">
+                                <i class="fab fa-google"></i>
+                            </a>
+                            <a href="{{ cal_session.outlook_url }}" target="_blank" rel="noopener noreferrer"
+                               class="btn btn-just-icon btn-round mr-1"
+                               style="background-color: #00A4EF; color: #ffffff; border: none;"
+                               data-toggle="tooltip" data-placement="bottom" title="Outlook.com (personal)">
+                                <i class="fab fa-microsoft"></i>
+                            </a>
+                            <a href="{{ cal_session.office365_url }}" target="_blank" rel="noopener noreferrer"
+                               class="btn btn-just-icon btn-round"
+                               style="background-color: #0078D4; color: #ffffff; border: none;"
+                               data-toggle="tooltip" data-placement="bottom" title="Office 365 (work/school)">
+                                <i class="fab fa-microsoft"></i>
+                            </a>
+                        </div>
+                    {% endfor %}
+
+                {% endif %}
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        (function () {
+            $('[data-toggle="tooltip"]').tooltip();
+        // Hide tooltips when the panel collapses so they don't linger
+            $('#atc-panel-{{ event_id }}').on('hide.bs.collapse', function () {
+                $('[data-toggle="tooltip"]').tooltip('hide');
+            });
+        })();
+    </script>
+
+{% endif %}

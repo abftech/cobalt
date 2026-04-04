@@ -63,6 +63,7 @@
                             <th>Congress</th>
                             <th>Event</th>
                             <th>Entry Status</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -72,7 +73,11 @@
                                 <td>{{ event.start_date }}</td>
                                 <td><a href="{% url "events:view_congress" congress_id=event.congress.id %}">{{ event.congress }}</a></td>
                                 <td><a href="{% url "events:edit_event_entry" event_id=event.id congress_id=event.congress.id %}">{{ event.event_name }}</a></td>
-                                <td style="text-align: right">{{ event.entry_status }}</td>
+                                <td>{{ event.entry_status }}</td>
+                                <td>
+                                    <div hx-get="{% url "utils:calendar_buttons_htmx" event_id=event.id %}"
+                                         hx-trigger="load"></div>
+                                </td>
                             </tr>
 
                         {% endfor %}

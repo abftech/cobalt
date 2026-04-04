@@ -12,7 +12,8 @@ from utils.views.command_line_utils import (
     command_line_utils_download_csv_log,
 )
 from utils.views.batch_status import batch_status_view
-from utils.views.release_notes import download_event_ics, release_notes_view
+from utils.views.calendar import calendar_buttons_htmx, download_event_ics
+from utils.views.release_notes import release_notes_view
 
 app_name = "utils"  # pylint: disable=invalid-name
 
@@ -97,6 +98,11 @@ urlpatterns = [
         "download-event-ics/<int:event_id>/",
         download_event_ics,
         name="download_event_ics",
+    ),
+    path(
+        "calendar-buttons/<int:event_id>",
+        calendar_buttons_htmx,
+        name="calendar_buttons_htmx",
     ),
     path(
         "command-line-utils",
