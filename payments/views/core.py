@@ -56,6 +56,7 @@ from accounts.models import User
 from cobalt.settings import (
     STRIPE_SECRET_KEY,
     STRIPE_PUBLISHABLE_KEY,
+    STRIPE_WEBHOOK_SECRET,
     AUTO_TOP_UP_LOW_LIMIT,
     BRIDGE_CREDITS,
     GLOBAL_CURRENCY_SYMBOL,
@@ -644,20 +645,54 @@ def stripe_webhook(request):
     payload = request.body
     event = None
 
-    try:
-        event = stripe.Event.construct_from(json.loads(payload), stripe.api_key)
-    except ValueError as error:
-        # Invalid payload
-        log_event(
-            user="Stripe API",
-            severity="HIGH",
-            source="Payments",
-            sub_source="stripe_webhook",
-            message=f"Invalid Payload in message from Stripe: {error}",
-        )
-        logger.critical(f"Invalid Payload in message from Stripe: {error}")
-
-        return HttpResponse(status=400)
+    # CUTOVER: Once STRIPE_WEBHOOK_SECRET is set in all environments, remove the
+    # legacy branch below and keep only the stripe.Webhook.construct_event path.
+    if STRIPE_WEBHOOK_SECRET:
+        # Secure path: verify Stripe signature header
+        logger.info("Using  STRIPE_WEBHOOK_SECRET")
+        sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
+        try:
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, STRIPE_WEBHOOK_SECRET
+            )
+        except ValueError as error:
+            # Invalid payload
+            log_event(
+                user="Stripe API",
+                severity="HIGH",
+                source="Payments",
+                sub_source="stripe_webhook",
+                message=f"Invalid Payload in message from Stripe: {error}",
+            )
+            logger.critical(f"Invalid Payload in message from Stripe: {error}")
+            return HttpResponse(status=400)
+        except stripe.error.SignatureVerificationError as error:
+            # Invalid signature — reject the request
+            log_event(
+                user="Stripe API",
+                severity="CRITICAL",
+                source="Payments",
+                sub_source="stripe_webhook",
+                message=f"Invalid Stripe webhook signature: {error}",
+            )
+            logger.critical(f"Invalid Stripe webhook signature: {error}")
+            return HttpResponse(status=400)
+    else:
+        # LEGACY (insecure): no signature verification — remove once all environments
+        # have STRIPE_WEBHOOK_SECRET configured.
+        try:
+            event = stripe.Event.construct_from(json.loads(payload), stripe.api_key)
+        except ValueError as error:
+            # Invalid payload
+            log_event(
+                user="Stripe API",
+                severity="HIGH",
+                source="Payments",
+                sub_source="stripe_webhook",
+                message=f"Invalid Payload in message from Stripe: {error}",
+            )
+            logger.critical(f"Invalid Payload in message from Stripe: {error}")
+            return HttpResponse(status=400)
 
     # Log message
     stripe_log = StripeLog(event=event)
