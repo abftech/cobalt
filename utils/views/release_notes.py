@@ -17,6 +17,7 @@ def release_notes_view(request):
                 "Fix dashboard to allow viewing discussions on a smaller screen",
                 "Django 5.2.12",
                 "DEV - CGIT changes",
+                "DEV - Add to calendar currently hidden",
             ],
         },
         {

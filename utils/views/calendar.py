@@ -212,7 +212,7 @@ def calendar_buttons_htmx(request, event_id):
     Only renders content for user pk=4 (dev test). Returns empty response for
     all other users so the hx-trigger="load" div on the events page is a no-op.
     """
-    if request.user.pk != 4:
+    if request.user.pk not in [4, 6]:
         return HttpResponse("")
 
     event = get_object_or_404(Event, pk=event_id)
