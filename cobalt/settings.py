@@ -30,42 +30,6 @@ def set_value(val_name, default="not-set"):
     return os.environ[val_name] if val_name in os.environ else default
 
 
-def apply_large_email_batch_config(batch_size):
-    """
-    Checks whether a large email batch configuration set is both configured
-    and applicable to this batch size.
-    """
-    if AWS_SES_CONFIGURATION_SET_LARGE is None:
-        return False
-    return batch_size >= EMAIL_LARGE_BATCH_SIZE
-
-
-def AWS_SES_configuration_set_selector(
-    email_message, dkim_domain=None, dkim_key=None, dkim_selector=None, dkim_headers=()
-):
-    """
-    Selects the appropriate Amazon Simple Email System configuration set for an email,
-    based on batch size (optionally passed in the email via a custom header X-Myabf-Batch-Size).
-    This function is called by the Django-SES package (specified by AWS_SES_CONFIGURATION_SET),
-    and only when AWS_SES_CONFIGURATION_SET_DEFAULT is set.
-    See https://github.com/django-ses/django-ses#ses-event-monitoring-with-configuration-sets
-    and COB-793 for more details.
-    """
-
-    if (
-        AWS_SES_CONFIGURATION_SET_LARGE is None
-        or "X-Myabf-Batch-Size" not in email_message.extra_headers
-    ):
-        return AWS_SES_CONFIGURATION_SET_DEFAULT
-
-    batch_size = int(email_message.extra_headers["X-Myabf-Batch-Size"])
-
-    if apply_large_email_batch_config(batch_size):
-        return AWS_SES_CONFIGURATION_SET_LARGE
-    else:
-        return AWS_SES_CONFIGURATION_SET_DEFAULT
-
-
 ###########################################
 # base settings that need to come first.  #
 ###########################################
@@ -119,16 +83,7 @@ AWS_REGION_NAME = set_value("AWS_REGION_NAME")
 AWS_SES_REGION_NAME = AWS_REGION_NAME
 AWS_SES_REGION_ENDPOINT = set_value("AWS_SES_REGION_ENDPOINT")
 
-# See COB-793: changes to SES configuration set handling
-# Selector function returns the appropriate configuration set for an email
-# Either AWS_SES_CONFIGURATION_SET_DEFAULT or AWS_SES_CONFIGURATION_SET must be set
-EMAIL_LARGE_BATCH_SIZE = int(set_value("EMAIL_LARGE_BATCH_SIZE", 100))
-AWS_SES_CONFIGURATION_SET_DEFAULT = set_value("AWS_SES_CONFIGURATION_SET_DEFAULT", None)
-AWS_SES_CONFIGURATION_SET_LARGE = set_value("AWS_SES_CONFIGURATION_SET_LARGE", None)
-if AWS_SES_CONFIGURATION_SET_DEFAULT is None:
-    AWS_SES_CONFIGURATION_SET = set_value("AWS_SES_CONFIGURATION_SET")
-else:
-    AWS_SES_CONFIGURATION_SET = AWS_SES_configuration_set_selector
+AWS_SES_CONFIGURATION_SET = set_value("AWS_SES_CONFIGURATION_SET")
 
 # Set this to false so we don't need to install m2crypto which needs OS installs to work
 # Not verifying the certificate is lower risk than having us rely on an OS install

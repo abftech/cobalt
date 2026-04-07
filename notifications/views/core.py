@@ -53,7 +53,6 @@ from cobalt.settings import (
     TBA_PLAYER,
     ALL_SYSTEM_ACCOUNTS,
     ALL_SYSTEM_ACCOUNT_SYSTEM_NUMBERS,
-    apply_large_email_batch_config,
 )
 from events.models import (
     CongressMaster,
@@ -279,7 +278,6 @@ def send_cobalt_email_with_template(
     batch_id=None,
     reply_to=None,
     attachments=None,
-    batch_size=1,
     apply_default_template_for_club=None,
     show_club_footer=True,
 ):
@@ -353,12 +351,7 @@ def send_cobalt_email_with_template(
     # Check for playpen - don't send emails to users unless on production or similar
     to_address, context = _to_address_checker(to_address, context)
 
-    # COB-793 - add custom header with batch size
-    headers = {"X-Myabf-Batch-Size": batch_size}
-
-    limited_notifications = apply_large_email_batch_config(batch_size)
-    if limited_notifications:
-        logger.debug(f"Email is part of a large batch of {batch_size}")
+    headers = {}
 
     if reply_to:
         headers["Reply-To"] = reply_to
@@ -391,7 +384,6 @@ def send_cobalt_email_with_template(
     Snooper(
         post_office_email=email,
         batch_id=batch_id,
-        limited_notifications=limited_notifications,
     ).save()
 
     return True
@@ -2694,7 +2686,6 @@ def _dispatch_batch(request, club, batch, attachments, test_user=None):
             reply_to=reply_to,
             sender=sender,
             attachments=attachments if len(attachments) > 0 else None,
-            batch_size=1,
         )
 
         if test_user is None:
@@ -2755,7 +2746,6 @@ def _dispatch_batch_thread(
                 reply_to=reply_to,
                 sender=sender,
                 attachments=attachments if len(attachments) > 0 else None,
-                batch_size=batch.batch_size,
             )
 
             logger.info(

@@ -47,16 +47,7 @@
                         <tbody>
                             {% for thing in things %}
                                 <tr>
-                                    <!-- COB-793 If not getting SES sent notifications, assume sent DTS is last update DTS if sent according to PO -->
-                                    {% if thing.snooper.limited_notifications %}
-                                        {% if thing.status == 0 %}
-                                            <td class="text-left">{{ thing.last_updated|cobalt_nice_datetime }}</td>
-                                        {% else %}
-                                            <td class="text-left">Not yet sent</td>
-                                        {% endif %}
-                                    {% else %}
-                                        <td class="text-left">{{ thing.snooper.ses_sent_at|cobalt_nice_datetime|default_if_none:"Not yet sent" }}</td>
-                                    {% endif %}
+                                    <td class="text-left">{{ thing.snooper.ses_sent_at|cobalt_nice_datetime|default_if_none:"Not yet sent" }}</td>
                                     <td class="text-left">
                                         {# We should get one or the other depending upon whether a template was used or not #}
                                         {{ thing.subject|default_if_none:"" }}
@@ -65,15 +56,7 @@
 
                                     {# show real status #}
                                     <td class="text-left">
-                                        {% if thing.snooper.limited_notifications %}
-                                            {% if thing.status == 0 %}
-                                                Sent
-                                            {% elif thing.status == 1 %}
-                                                Failed
-                                            {% else %}
-                                                Queued
-                                            {% endif %}
-                                        {% elif thing.status != 0 %}
+                                        {% if thing.status != 0 %}
                                             {{ thing.get_status_display }}
                                         {% else %}
                                             {% if thing.snooper.ses_bounce_reason %}
@@ -99,7 +82,7 @@
                                     <td class="text-left" data-toggle="tooltip" title="{{ thing.to.0 }}">{{ thing.to.0|cobalt_hide_email }}</td>
                                     <td class="text-left">{{ thing.snooper.batch_id|default_if_none:"" }}</td>
                                     <td><a onClick='showEmail({{ thing.id }})'
-                                        class="btn btn-sm btn-info">View</a>
+                                           class="btn btn-sm btn-info">View</a>
                                     </td>
                                 </tr>
                             {% endfor %}

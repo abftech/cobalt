@@ -7,13 +7,8 @@
             <div class="card col-md-6">
                 <div class="card-header card-header-primary">
                     <h2>Email Status for: {{ batch_id }}</h2>
-                    <!-- COB-793 changes -->
-                    {% if large_batch %}
-                        <p>Due to the size of this batch, email delivery and tracking statistics are not available</p>
-                    {% else %}
-                        <p>This shows the status of a batch of emails. Queued means it is in a queue, waiting to be sent.
-                            Sent means it has been sent by us.</p>
-                    {% endif %}
+                    <p>This shows the status of a batch of emails. Queued means it is in a queue, waiting to be sent.
+                        Sent means it has been sent by us.</p>
 
                 </div>
                 <div class="card-body">

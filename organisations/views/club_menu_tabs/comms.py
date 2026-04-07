@@ -544,7 +544,6 @@ def email_view_htmx(request, club):
                         "requeued": 0,
                     },
                 },
-                "large_batch": False,
             },
         )
 
@@ -591,7 +590,6 @@ def email_view_htmx(request, club):
         "po_counts": po_counts,
     }
 
-    # COB-793
     return render(
         request,
         "organisations/club_menu/comms/email_view_htmx.html",
@@ -599,7 +597,6 @@ def email_view_htmx(request, club):
             "club": club,
             "email_batch": email_batch,
             "details": details,
-            "large_batch": snooper.limited_notifications,
         },
     )
 

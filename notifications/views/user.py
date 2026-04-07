@@ -84,24 +84,10 @@ def watch_emails(request, batch_id):
 
     batch_id_object = get_object_or_404(BatchID, batch_id=batch_id)
 
-    # COB-793 change to notify user of limited notifications
-    # emails = Snooper.objects.filter(batch_id=batch_id_object)
-    emails = Snooper.objects.select_related("post_office_email").filter(
-        batch_id=batch_id_object
-    )
+    emails = Snooper.objects.filter(batch_id=batch_id_object)
 
-    large_batch = emails.first().limited_notifications if emails.first() else False
-    if large_batch:
-
-        # use sent count from post_office rather than snoopers
-        # and assume all emails are either =sent or queued
-        emails_sent = emails.filter(post_office_email__status=0).count()
-        emails_queued = emails.count() - emails_sent
-
-    else:
-
-        emails_queued = emails.filter(ses_sent_at=None).count()
-        emails_sent = emails.exclude(ses_sent_at=None).count()
+    emails_queued = emails.filter(ses_sent_at=None).count()
+    emails_sent = emails.exclude(ses_sent_at=None).count()
 
     return render(
         request,
@@ -110,7 +96,6 @@ def watch_emails(request, batch_id):
             "emails_queued": emails_queued,
             "emails_sent": emails_sent,
             "batch_id": batch_id,
-            "large_batch": large_batch,
         },
     )
 
