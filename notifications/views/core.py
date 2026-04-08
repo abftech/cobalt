@@ -25,6 +25,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import strip_tags
+from django.templatetags.static import static
 from django.utils.safestring import mark_safe
 from fcm_django.models import FCMDevice
 from firebase_admin.messaging import (
@@ -331,7 +332,7 @@ def send_cobalt_email_with_template(
         default_org_template = None
 
     if "img_src" not in context:
-        context["img_src"] = "notifications/img/myabf-email.png"
+        context["img_src"] = static("notifications/img/myabf-email.png")
 
     # no need to defaul box colour now - default is in template html
     # if "box_colour" not in context:
@@ -364,11 +365,8 @@ def send_cobalt_email_with_template(
             # this_sender = f"{default_org_template.from_name}<donotreply@myabf.com.au>"
             this_sender = custom_sender(default_org_template.from_name)
 
-    if "img_src" in context:
-        context["inline_banner"] = context["img_src"][0] != "/"
-    else:
-        context["inline_banner"] = True
-        context["img_src"] = "notifications/img/myabf-email.png"
+    img_src = context["img_src"]
+    context["inline_banner"] = not img_src.startswith("/") and "://" not in img_src
 
     email = po_email.send(
         sender=this_sender,

@@ -24,6 +24,8 @@
                                         <a href="http://{{ host }}" target="_blank"> <img
                                             {% if inline_banner %}
                                                 src="{% inline_image img_src %}"
+                                            {% elif img_src|slice:":4" == "http" %}
+                                                src="{{ img_src }}"
                                             {% else %}
                                                 src="http://{{ host }}{{ img_src }}"
                                             {% endif %}
@@ -44,14 +46,14 @@
                                         <tr>
                                             <td align="center"
                                                 style="font-family: Helvetica, sans-serif;
-                                                vertical-align: top;
-                                                font-size: 22px;
-                                                border-radius: 4px 4px 0 0;
-                                                color: {{ box_font_colour|default_if_none:"#ffffff" }};
-                                                font-weight: bold;
-                                                padding: 24px;
-                                                text-align: center;
-                                                background-color: {{ box_colour|default_if_none:"#1abc9c" }}"
+                                                       vertical-align: top;
+                                                       font-size: 22px;
+                                                       border-radius: 4px 4px 0 0;
+                                                       color: {{ box_font_colour|default_if_none:"#ffffff" }};
+                                                       font-weight: bold;
+                                                       padding: 24px;
+                                                       text-align: center;
+                                                       background-color: {{ box_colour|default_if_none:"#1abc9c" }}"
                                                 valign="top"
                                                 bgcolor="{{ box_colour|default_if_none:"#1abc9c" }}"
                                                 color="{{ box_font_colour|default_if_none:"#ffffff" }}">
