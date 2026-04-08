@@ -65,9 +65,9 @@
                                                 {% else %}
                                                     Soft Bounce
                                                 {% endif %}
-                                            {% elif thing.snooper.ses_clicked_at %}
+                                            {% elif thing.snooper.ses_last_clicked_at %}
                                                 Clicked
-                                            {% elif thing.snooper.ses_opened_at %}
+                                            {% elif thing.snooper.ses_last_opened_at %}
                                                 Opened
                                             {% elif thing.snooper.ses_delivered_at %}
                                                 Delivered
