@@ -133,6 +133,8 @@ class Command(BaseCommand):
                     f"<p>If you are seeing this, the email batch system is working correctly.</p>"
                 ),
                 "name": first_name,
+                "link": "/dashboard",
+                "link_text": "Click to test click tracking",
             }
 
             ok = send_cobalt_email_with_template(
