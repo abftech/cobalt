@@ -54,6 +54,7 @@ class AbstractEmailAdmin(admin.ModelAdmin):
 class SnooperAdmin(admin.ModelAdmin):
     """Admin class for model Snooper"""
 
+    readonly_fields = ["post_office_email"]
     autocomplete_fields = [
         "batch_id",
     ]

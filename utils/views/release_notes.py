@@ -12,6 +12,13 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.3.8",
+            "notes": [
+                "DEV - Notification model problem",
+                "Fix opening Snooper records through Django Admin",
+            ],
+        },
+        {
             "release": "6.3.7",
             "notes": [
                 "Fix N+1 issue with email viewer",
