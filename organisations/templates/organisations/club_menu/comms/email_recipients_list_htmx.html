@@ -33,12 +33,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <!-- COB-793 -->
-                                {% if snooper.limited_notifications %}
-                                    Unknown
-                                {% else %}
-                                    {{ snooper.ses_delivered_at|cobalt_nice_datetime_short|default_if_none:"No" }}
-                                {% endif %}
+                                {{ snooper.ses_delivered_at|cobalt_nice_datetime_short|default_if_none:"No" }}
                             </td>
                         </tr>
                     {% endfor %}

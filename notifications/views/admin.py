@@ -41,7 +41,12 @@ def admin_view_all_emails(request):
     if not rbac_user_has_role(request.user, role):
         return rbac_forbidden(request, role)
 
-    emails = PostOfficeEmail.objects.all().select_related("snooper").order_by("-pk")
+    cutoff = timezone.now() - timedelta(days=90)
+    emails = (
+        PostOfficeEmail.objects.filter(created__gte=cutoff)
+        .select_related("snooper__batch_id")
+        .order_by("-pk")
+    )
     things = cobalt_paginator(request, emails)
 
     return render(

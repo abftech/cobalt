@@ -47,7 +47,7 @@ NON_AUTH_URLS = [
     "/accounts/unregistered-preferences/dummy",
     "/masterpoints/abf-registration-card",
     "/masterpoints/abf-registration-card-htmx",
-    "/utils/download-event-ics/",
+    "/utils/download-event-ics/1/",
     "/404",
     "/500",
 ]

@@ -12,6 +12,24 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.3.7",
+            "notes": [
+                "Fix N+1 issue with email viewer",
+                "Xero set up instructions",
+                "Prevent double click for processing bridge credits in club session",
+                "Fix extra logo in some email clients",
+                "Notification view - use correct field names",
+                "Remove old code for email batch size",
+                "DEV - bug in _cgit_test_handle_db script",
+            ],
+        },
+        {
+            "release": "6.3.6",
+            "notes": [
+                "Stripe API security fix",
+            ],
+        },
+        {
             "release": "6.3.5",
             "notes": [
                 "Fix dashboard to allow viewing discussions on a smaller screen",

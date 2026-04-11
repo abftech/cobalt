@@ -25,6 +25,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import strip_tags
+from django.templatetags.static import static
 from django.utils.safestring import mark_safe
 from fcm_django.models import FCMDevice
 from firebase_admin.messaging import (
@@ -53,7 +54,6 @@ from cobalt.settings import (
     TBA_PLAYER,
     ALL_SYSTEM_ACCOUNTS,
     ALL_SYSTEM_ACCOUNT_SYSTEM_NUMBERS,
-    apply_large_email_batch_config,
 )
 from events.models import (
     CongressMaster,
@@ -279,7 +279,6 @@ def send_cobalt_email_with_template(
     batch_id=None,
     reply_to=None,
     attachments=None,
-    batch_size=1,
     apply_default_template_for_club=None,
     show_club_footer=True,
 ):
@@ -333,7 +332,7 @@ def send_cobalt_email_with_template(
         default_org_template = None
 
     if "img_src" not in context:
-        context["img_src"] = "notifications/img/myabf-email.png"
+        context["img_src"] = static("notifications/img/myabf-email.png")
 
     # no need to defaul box colour now - default is in template html
     # if "box_colour" not in context:
@@ -353,12 +352,7 @@ def send_cobalt_email_with_template(
     # Check for playpen - don't send emails to users unless on production or similar
     to_address, context = _to_address_checker(to_address, context)
 
-    # COB-793 - add custom header with batch size
-    headers = {"X-Myabf-Batch-Size": batch_size}
-
-    limited_notifications = apply_large_email_batch_config(batch_size)
-    if limited_notifications:
-        logger.debug(f"Email is part of a large batch of {batch_size}")
+    headers = {}
 
     if reply_to:
         headers["Reply-To"] = reply_to
@@ -371,11 +365,8 @@ def send_cobalt_email_with_template(
             # this_sender = f"{default_org_template.from_name}<donotreply@myabf.com.au>"
             this_sender = custom_sender(default_org_template.from_name)
 
-    if "img_src" in context:
-        context["inline_banner"] = context["img_src"][0] != "/"
-    else:
-        context["inline_banner"] = True
-        context["img_src"] = "notifications/img/myabf-email.png"
+    img_src = context["img_src"]
+    context["inline_banner"] = not img_src.startswith("/") and "://" not in img_src
 
     email = po_email.send(
         sender=this_sender,
@@ -391,7 +382,6 @@ def send_cobalt_email_with_template(
     Snooper(
         post_office_email=email,
         batch_id=batch_id,
-        limited_notifications=limited_notifications,
     ).save()
 
     return True
@@ -2694,7 +2684,6 @@ def _dispatch_batch(request, club, batch, attachments, test_user=None):
             reply_to=reply_to,
             sender=sender,
             attachments=attachments if len(attachments) > 0 else None,
-            batch_size=1,
         )
 
         if test_user is None:
@@ -2755,7 +2744,6 @@ def _dispatch_batch_thread(
                 reply_to=reply_to,
                 sender=sender,
                 attachments=attachments if len(attachments) > 0 else None,
-                batch_size=batch.batch_size,
             )
 
             logger.info(

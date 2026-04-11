@@ -58,6 +58,7 @@ Content
 - :doc:`cobalt/how_to/working_with_new_relic`
 - :doc:`cobalt/how_to/upgrade_for_mpc`
 - :doc:`cobalt/how_to/setting_up_xero`
+- :doc:`cobalt/how_to/xero_production_setup`
 - :doc:`cobalt/how_to/using_xero`
 
 **Discussions**
