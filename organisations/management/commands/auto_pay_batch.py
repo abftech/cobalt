@@ -160,7 +160,6 @@ class Command(BaseCommand):
             to_address=membership.user_or_unreg.email,
             batch_id=batch_id,
             context=context,
-            batch_size=batch_id.batch_size,  # Added batch_size parameter
         )
 
     def handle(self, *args, **options):
