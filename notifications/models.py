@@ -358,7 +358,6 @@ class Snooper(models.Model):
     batch_id = models.ForeignKey(
         BatchID, on_delete=models.CASCADE, blank=True, null=True
     )
-    limited_notifications = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Snooper for {self.post_office_email}"
