@@ -12,14 +12,20 @@ LAST_MIGRATION=$(ls -l -D "%Y-%m-%d=%H:%M" */migrations/*.py | sort -k6 | tail -
 # Get timestamp of database
 DATABASE_TIME=$(ls -l -D "%Y-%m-%d=%H:%M" ~/test.db | tail -1 | awk '{print $6}')
 
+NEEDS_REBUILD=0
+
 # If there have been migrations since the database was created, then rebuild it
 if [[ "$LAST_MIGRATION" > "$DATABASE_TIME" ]]; then
-  cgit_dev_test_reload_db
+  NEEDS_REBUILD=1
 fi
 
 # Database goes stale after a few days so check for that too
 ONE_WEEK_AGO=$(date -v-4d +"%Y-%m-%d=%H:%M")
 if [[ "$ONE_WEEK_AGO" > "$DATABASE_TIME" ]]; then
+  NEEDS_REBUILD=1
+fi
+
+if [[ $NEEDS_REBUILD -eq 1 ]]; then
   cgit_dev_test_reload_db
 fi
 

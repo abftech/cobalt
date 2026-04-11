@@ -20,6 +20,7 @@ def release_notes_view(request):
                 "Fix extra logo in some email clients",
                 "Notification view - use correct field names",
                 "Remove old code for email batch size",
+                "DEV - bug in _cgit_test_handle_db script",
             ],
         },
         {
