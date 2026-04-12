@@ -7,3 +7,14 @@ find "Balance"
 screenshot "Bridge Credits Statement"
 find "Bridge Credits"
 screenshot "Bridge Credits Info"
+
+go /payments/member-transfer
+find "Transfer funds"
+screenshot "Member Transfer Form"
+
+go /payments/manual-topup
+find "Top Up"
+screenshot "Manual Top Up Form"
+
+go /payments/statement-csv
+screenshot "Statement CSV Download"

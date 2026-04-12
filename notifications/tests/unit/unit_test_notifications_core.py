@@ -97,13 +97,21 @@ class NotificationsCoreTests:
         )
 
     def test_05_bounce_list_hard_bounce(self):
+        # Use a unique email to avoid collisions — in the test DB multiple users
+        # share the same email address, so querying by email can return the wrong record.
+        unique_email = "hard_bounce_unique_test@example-bounce.com"
+        original_email = self.betty.email
+        self.betty.email = unique_email
+        self.betty.save()
         user_info, _ = UserAdditionalInfo.objects.get_or_create(user=self.betty)
         user_info.email_hard_bounce = True
         user_info.save()
         with patch(
             "notifications.views.core.has_club_email_bounced", return_value=False
         ):
-            result = _email_address_on_bounce_list(self.betty.email)
+            result = _email_address_on_bounce_list(unique_email)
+        self.betty.email = original_email
+        self.betty.save()
         self.manager.save_results(
             status=result is True,
             test_name="_email_address_on_bounce_list hard bounce",
