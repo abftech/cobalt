@@ -242,8 +242,6 @@ def _send_results_emails(results_file, club, request):
                 context["name"] = first_name
                 context["email_body"] = email_body
 
-                # COB-793 - add batch size - assumes 80% of players in event have emails and not opted out
-
                 send_cobalt_email_with_template(
                     to_address=email_address,
                     context=context,
@@ -251,9 +249,6 @@ def _send_results_emails(results_file, club, request):
                     template="system - club",
                     reply_to=reply_to,
                     sender=sender,
-                    batch_size=int(
-                        len(usebio["EVENT"]["PARTICIPANTS"]["PAIR"]) * 2 * 0.8
-                    ),
                 )
 
     # Count emails sent and update batch header
