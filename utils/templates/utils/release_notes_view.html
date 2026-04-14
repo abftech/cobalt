@@ -38,7 +38,7 @@
                             <div class="card-header bg-warning">
                         {% endif %}
 
-                        <h3>Release {{ release_note.release }}</h3>
+                        <h3>Release {{ release_note.release }}{% if release_note.date %} &mdash; {{ release_note.date }}{% endif %}</h3>
                     </div>
 
                     <div class="card-body">

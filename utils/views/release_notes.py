@@ -12,6 +12,12 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.3.13",
+            "notes": [
+                "DEV - Add date to release",
+            ],
+        },
+        {
             "release": "6.3.12",
             "notes": [
                 "DEV - Test harness changes to run in parallel",

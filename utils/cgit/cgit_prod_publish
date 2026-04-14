@@ -34,6 +34,45 @@ then
   fi
 
   echo ""
+  echo "Adding release date to release notes..."
+  echo ""
+
+  VERSION=${BRANCH#release/}
+  RELEASE_DATE=$(date '+%Y-%m-%d')
+  python3 << PYEOF
+import re
+
+release = "$VERSION"
+today = "$RELEASE_DATE"
+
+with open("utils/views/release_notes.py") as f:
+    content = f.read()
+
+if re.search(r'"release": "' + re.escape(release) + r'",\s*\n\s*"date":', content):
+    print(f"Date already set for release {release}")
+    exit(0)
+
+pattern = r'("release": "' + re.escape(release) + r'"),'
+replacement = r'\1,\n            "date": "' + today + '",'
+new_content, count = re.subn(pattern, replacement, content)
+if count:
+    with open("utils/views/release_notes.py", "w") as f:
+        f.write(new_content)
+    print(f"Added date {today} to release {release}")
+else:
+    print(f"WARNING: Release {release} not found in release_notes.py - add the date manually")
+PYEOF
+
+  if ! git diff --quiet utils/views/release_notes.py; then
+    git add utils/views/release_notes.py
+    git commit -m "Add release date to $BRANCH"
+    git push origin "$BRANCH"
+    if [ $? -ne 0 ];then
+      exit 1
+    fi
+  fi
+
+  echo ""
   echo "Syncing branches before deployment..."
   echo ""
 
