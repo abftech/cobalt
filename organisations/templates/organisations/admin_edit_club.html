@@ -115,6 +115,13 @@
                                 </div>
 
                                 <br>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {% cobalt_bs4_field form.internal_settlement_org %}
+                                    </div>
+                                </div>
+
+                                <br>
                                 <button type="submit" name="Save" class="cobalt-save btn btn-success">Save</button>
                                 <a href="{% url "organisations:admin_list_clubs" %}" class="btn btn-default">Cancel</a>
 

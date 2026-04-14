@@ -175,6 +175,17 @@
                                 >List Contacts (Clubs)</button>
 
                                 <button
+                                    class="btn btn-dark mr-1"
+                                    hx-post="{% url "xero:run_xero_api_htmx" %}"
+                                    hx-target="#data"
+                                    hx-vals='{"cmd": "list_branding_themes"}'
+                                    hx-indicator="#spinner"
+                                    data-toggle="tooltip"
+                                    data-placement="top"
+                                    title="List Branding Themes in Xero"
+                                >List Branding Themes</button>
+
+                                <button
                                     class="btn btn-warning mr-1"
                                     hx-post="{% url "xero:reconcile_contacts_htmx" %}"
                                     hx-target="#data"

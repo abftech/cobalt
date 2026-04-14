@@ -9,3 +9,13 @@ click "View completed events"
 screenshot "Completed Events"
 find "View running and upcoming events"
 screenshot "Events Confirmed"
+
+go /events/congress/view/1
+find "Congress"
+screenshot "Congress Detail"
+
+go /events/congress/checkout
+screenshot "Checkout"
+
+go /events/view
+screenshot "My Events"
