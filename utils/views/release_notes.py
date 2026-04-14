@@ -12,6 +12,12 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.3.12",
+            "notes": [
+                "DEV - Test harness changes to run in parallel",
+            ],
+        },
+        {
             "release": "6.3.11",
             "notes": [
                 "DEV - Fix 500 error when opening extras panel for visitor session entries",
