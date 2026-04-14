@@ -117,14 +117,18 @@ def congress_names_for_date_range(club, start_datetime, end_datetime):
             inner_query = Event.objects.filter(
                 congress__congress_master__org=club
             ).values("id")
-            start_date_display = (
+            last_transaction = (
                 OrganisationTransaction.objects.filter(organisation=club)
                 .exclude(event_id__in=inner_query)
                 .filter(created_date__lte=end_datetime)
                 .filter(created_date__gte=start_datetime)
                 .order_by("-pk")
                 .last()
-                .created_date.date()
+            )
+            start_date_display = (
+                last_transaction.created_date.date()
+                if last_transaction
+                else start_datetime.date()
             )
             congress_name_dict[-1] = {
                 "congress_id": -1,
