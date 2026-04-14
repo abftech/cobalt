@@ -12,6 +12,19 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.3.11",
+            "notes": [
+                "DEV - Fix 500 error when opening extras panel for visitor session entries",
+                "DEV - Fix 500 error when sending welcome pack to new MPC member",
+                "DEV - Fix 500 error viewing results with single traveller line per board",
+                "DEV - Fix 500 error in congress finance report for deleted events",
+                "DEV - Fix 500 error uploading USEBIO pairs results missing PERCENTAGE/PLACE",
+                "DEV - Fix 500 error when congress entry answer exceeds field length; add validation",
+                "DEV - Fix 500 error on Stripe pending admin page for customers with no setup intents",
+                "DEV - Fix 500 error in manual adjustment CSV export when settlement amount is null",
+            ],
+        },
+        {
             "release": "6.3.10",
             "notes": [
                 "Fix for email call using old parameters",
