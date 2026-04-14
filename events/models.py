@@ -904,7 +904,7 @@ class EventEntry(models.Model):
         Category, on_delete=models.SET_NULL, null=True, blank=True
     )
     free_format_answer = models.CharField(
-        "Free Format Answer", max_length=60, null=True, blank=True
+        "Free Format Answer", max_length=200, null=True, blank=True
     )
     team_name = models.CharField(max_length=15, null=True, blank=True)
     notes = models.TextField("Notes", null=True, blank=True)

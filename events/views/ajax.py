@@ -1439,6 +1439,9 @@ def change_answer_on_existing_entry_ajax(request, event_entry_id, answer):
     if not event_entry.user_can_change(request.user):
         return JsonResponse({"message": "Access Denied"})
 
+    if len(answer) > 200:
+        return JsonResponse({"message": "Answer is too long (maximum 200 characters)"})
+
     # log it
     EventLog(
         event=event_entry.event,

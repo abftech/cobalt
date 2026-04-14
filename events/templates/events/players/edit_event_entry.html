@@ -133,7 +133,7 @@
 
                                     <div class="form-group">
                                         <label class="bmd-label-static">{{ event.free_format_question }}</label>
-                                        <input type="text" name="question" id="id_question" class="form-control" value="{{ event_entry.free_format_answer|default_if_none:"" }}">
+                                        <input type="text" name="question" id="id_question" class="form-control" maxlength="200" value="{{ event_entry.free_format_answer|default_if_none:"" }}">
 
 
                                     </div>
@@ -648,6 +648,12 @@
                                 title: 'Answer Changed',
                                 html: 'Answer successfully changed',
                                 icon: "success",
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Error',
+                                html: response['message'],
+                                icon: "error",
                             });
                         }
                     });
