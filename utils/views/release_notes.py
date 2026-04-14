@@ -12,6 +12,12 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.3.10",
+            "notes": [
+                "Fix for email call using old parameters",
+            ],
+        },
+        {
             "release": "6.3.9",
             "notes": [
                 "Snooper model change to match production for potential rollback",
