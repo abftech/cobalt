@@ -13,6 +13,7 @@ def release_notes_view(request):
     release_notes = [
         {
             "release": "6.3.13",
+            "date": "2026-04-14",
             "notes": [
                 "DEV - Add date to release",
             ],
