@@ -13,6 +13,7 @@ def release_notes_view(request):
     release_notes = [
         {
             "release": "6.3.15",
+            "date": "15th April 2026",
             "notes": [
                 "DEV - Change date format for release",
                 "DEV - Fix production smoke test to work correctly and cover more areas",
