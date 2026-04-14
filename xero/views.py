@@ -99,7 +99,10 @@ def run_xero_api_htmx(request):
 
     result = {}
 
-    if cmd == "list_contacts":
+    if cmd == "list_branding_themes":
+        result = xero.xero_api_get("https://api.xero.com/api.xro/2.0/BrandingThemes")
+
+    elif cmd == "list_contacts":
         result = xero.xero_api_get("https://api.xero.com/api.xro/2.0/Contacts")
 
     elif cmd == "create_contact":
