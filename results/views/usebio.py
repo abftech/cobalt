@@ -15,7 +15,7 @@ def parse_usebio_file(results_file):
     with open(file_name, "rb") as file:
         xml = file.read()
 
-    xml = xmltodict.parse(xml)
+    xml = xmltodict.parse(xml, force_list=("TRAVELLER_LINE",))
 
     return xml["USEBIO"]
 
