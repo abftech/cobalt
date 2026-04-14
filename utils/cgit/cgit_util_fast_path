@@ -63,10 +63,24 @@ if [ -n "$MODEL_CHANGES" ]; then
   exit 1
 fi
 
+# Check release notes have been updated
+if ! git diff master HEAD --name-only | grep "utils/views/release_notes.py" >/dev/null; then
+  echo ""
+  printf "${YELLOW}Release notes have not been updated (utils/views/release_notes.py).${NC}\n"
+  printf "${YELLOW}Cancel to update them now?${NC}"
+  read -r -p " [Y/n] " response
+  if [ "$response" == "" ]; then response="Y"; fi
+  if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    echo "Aborted. Edit utils/views/release_notes.py and re-run."
+    exit 1
+  fi
+fi
+
 echo ""
 echo "  Pre-flight checks passed:"
 printf "    ${YELLOW}✓${NC} No model changes\n"
 printf "    ${YELLOW}✓${NC} $FILE_CHANGES file(s) changed (under $MAX_FILE_CHANGES limit)\n"
+printf "    ${YELLOW}✓${NC} Release notes reviewed\n"
 echo ""
 echo "  Changed files:"
 git diff master HEAD --name-only | sed 's/^/    /'
