@@ -438,28 +438,31 @@ class CobaltTestManagerAbstract(ABC):
 
             # go through list, import and instantiate
             for test_list_item in self.list_of_tests:
+                module_path = self.list_of_tests[test_list_item]
+
+                # Check filter before instantiation to avoid side effects in __init__
+                if (
+                    self.app_to_test is not None
+                    and self.app_to_test != test_list_item
+                    and not module_path.startswith(f"{self.app_to_test}.")
+                ):
+                    continue
+
                 test_class = getattr(
-                    importlib.import_module(self.list_of_tests[test_list_item]),
+                    importlib.import_module(module_path),
                     test_list_item,
                 )
                 class_instance = test_class(self)
 
-                # Check if only running one test
-                if (
-                    self.app_to_test is None
-                    or self.app_to_test == type(class_instance).__name__
-                ):
-                    print(
-                        f"\nRunning {self.list_of_tests[test_list_item]} - {test_list_item}"
-                    )
+                print(f"\nRunning {module_path} - {test_list_item}")
 
-                    # We rollback any database changes if this is a unit test
-                    if self.rollback_transactions:
-                        with transaction.atomic():
-                            run_methods(class_instance)
-                            transaction.set_rollback(True)
-                    else:
+                # We rollback any database changes if this is a unit test
+                if self.rollback_transactions:
+                    with transaction.atomic():
                         run_methods(class_instance)
+                        transaction.set_rollback(True)
+                else:
+                    run_methods(class_instance)
 
             print("\nFinished running tests\n")
 
