@@ -545,6 +545,8 @@ def stripe_pending(request):
             try:
                 # Get the last set up intent for this customer
                 rc = stripe.SetupIntent.list(customer=customer.stripe_customer_id)
+                if not rc["data"]:
+                    continue
                 created = rc["data"][0]["created"]
                 last_attempt = datetime.datetime.utcfromtimestamp(created)
                 ten_min = datetime.timedelta(minutes=10)
