@@ -430,11 +430,11 @@ def edit_session_entry_extras_htmx(request, club, session, session_entry, messag
     )
 
     # let template know if this is a registered user
-    if player.user_type == User.UserType.USER:
+    if player and player.user_type == User.UserType.USER:
         player.is_user = True
 
     # remove IOU and bridge credits unless a registered user
-    if player.user_type != User.UserType.USER:
+    if not player or player.user_type != User.UserType.USER:
         payment_methods = payment_methods.exclude(
             payment_method__in=["IOU", "Bridge Credits"]
         )
