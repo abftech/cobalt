@@ -2585,6 +2585,12 @@ def club_admin_add_member_detail_htmx(request, club):
                     user_type, details = add_un_registered_user_with_mpc_data(
                         system_number, club, request.user
                     )
+                    # Re-fetch user now that the unregistered user record exists
+                    user = User.objects.filter(system_number=system_number).last()
+                    if not user:
+                        user = User.unreg_objects.filter(
+                            system_number=system_number
+                        ).last()
 
                 success, message = add_member(
                     club,
