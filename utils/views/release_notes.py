@@ -15,6 +15,8 @@ def release_notes_view(request):
             "release": "6.3.16",
             "notes": [
                 "Allow sorting and searching for users when adding tags",
+                "Bug fix for org report XLS",
+                "Better support for tags for contacts",
             ],
         },
         {

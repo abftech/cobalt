@@ -381,9 +381,8 @@ def _organisation_transactions_xls_download_other(
             other_tran.created_date.strftime("%Y-%m-%d %H:%M:%S"),
             formats.detail_row_data,
         )
-        details_sheet.write(
-            row_no, 1, other_tran.member.full_name, formats.detail_row_data
-        )
+        member_name = other_tran.member.full_name if other_tran.member else ""
+        details_sheet.write(row_no, 1, member_name, formats.detail_row_data)
         details_sheet.write(row_no, 2, other_tran.reference_no, formats.detail_row_data)
         details_sheet.write(row_no, 3, other_tran.id, formats.detail_row_number)
         details_sheet.write(row_no, 4, other_tran.type, formats.detail_row_data)

@@ -10,7 +10,7 @@
     <div class="card-body" id="id_comms_email_tab">
 
         <h3>Tags</h3>
-        <p>Tags are used to arrange members into different groups so you can send specific communications only to those who
+        <p>Tags are used to arrange members and contacts into different groups so you can send specific communications only to those who
             are interested.
             Tags are used for general communication, you don't need to set up tags for things like results publishing.
         </p>
@@ -43,9 +43,9 @@
                                 {% include "utils/htmx_confirm_modal.html" with id=tag.id delete_item=tag.tag_name hx_vars=tag.hx_vars hx_target="#id_panel_settings" hx_post=tag.hx_post %}
                                 <td>
                                     <button class="btn btn-sm btn-info"
-                                        hx-post="{% url "organisations:club_menu_tab_settings_users_with_tag_htmx" %}"
-                                        hx-target="#id_panel_settings"
-                                        hx-vars="club_id:{{ club.id }},tag_id:{{ tag.id }}"
+                                            hx-post="{% url "organisations:club_menu_tab_settings_users_with_tag_htmx" %}"
+                                            hx-target="#id_panel_settings"
+                                            hx-vars="club_id:{{ club.id }},tag_id:{{ tag.id }}"
                                     >Manage</button>
                                     <button id="t_delete_tag_{{ tag.id }}" type="button" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#deleteModal{{ tag.id }}">
                                         Delete Tag
