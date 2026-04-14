@@ -104,8 +104,8 @@ def create_player_records_from_usebio_format_pairs(
             event_date = datetime.today()
 
     for detail in xml["PARTICIPANTS"]["PAIR"]:
-        percentage = detail["PERCENTAGE"]
-        position = detail["PLACE"]
+        percentage = detail.get("PERCENTAGE")
+        position = detail.get("PLACE")
         place = ordinal(position)
 
         this_partner_name = ""
