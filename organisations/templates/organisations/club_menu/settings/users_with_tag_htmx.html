@@ -12,9 +12,9 @@
     <div class="card-body" id="id_settings_users_with_tags_tab">
 
         <button class="btn btn-sm btn-outline-secondary text-dark"
-            hx-post="{% url "organisations:club_menu_tab_comms_tags_htmx" %}"
-            hx-target="#id_panel_settings"
-            hx-vars="club_id:{{ club.id }}"
+                hx-post="{% url "organisations:club_menu_tab_comms_tags_htmx" %}"
+                hx-target="#id_panel_settings"
+                hx-vars="club_id:{{ club.id }}"
         >All Tags</button>
 
         {% if club_has_members %}
@@ -79,10 +79,10 @@
                                             <td>{{ user_without_tag.last_name }}</td>
                                             <td>
                                                 <button class="btn btn-sm btn-warning"
-                                                    hx-post="{% url "organisations:club_menu_tab_settings_add_user_to_tag_htmx" %}"
-                                                    hx-target="#list_of_users_with_this_tag"
-                                                    hx-vars="club_id:{{ club.id }}, tag_id:{{ tag.id }}, system_number:{{ user_without_tag.system_number }}"
-                                                    _="on click remove #add_user_to_tag_{{ user_without_tag.system_number }}"
+                                                        hx-post="{% url "organisations:club_menu_tab_settings_add_user_to_tag_htmx" %}"
+                                                        hx-target="#list_of_users_with_this_tag"
+                                                        hx-vars="club_id:{{ club.id }}, tag_id:{{ tag.id }}, system_number:{{ user_without_tag.system_number }}"
+                                                        _="on click remove #add_user_to_tag_{{ user_without_tag.system_number }}"
                                                 >Add Tag
                                                 </button>
                                             </td>
@@ -106,18 +106,22 @@
     </div>
 </div>
 
-{#Just give them the whole list#}
+<script>
+    $(document).ready( function () {
 
-{#<script>#}
-{#    $(document).ready( function () {#}
-{##}
-{#        // Initialise datatable - only show pagination if more than one page, sort in reverse date order, column 0#}
-{#        $('#users_without_tab_table').DataTable({#}
-{#            drawCallback: function (settings) {#}
-{#                const pagination = $(this).closest('.dataTables_wrapper').find('.dataTables_paginate');#}
-{#                pagination.toggle(this.api().page.info().pages > 1);#}
-{#            },#}
-{#        });#}
-{##}
-{#    });#}
-{#</script>#}
+        $('#users_without_tab_table').DataTable({
+            drawCallback: function (settings) {
+                const pagination = $(this).closest('.dataTables_wrapper').find('.dataTables_paginate');
+                pagination.toggle(this.api().page.info().pages > 1);
+            },
+            info: false,
+            searching: true,
+            order: [[1, 'asc'], [0, 'asc']],
+            columnDefs: [
+                { orderable: true, targets: [0, 1] },
+                { orderable: false, targets: [2] },
+            ],
+        });
+
+    });
+</script>

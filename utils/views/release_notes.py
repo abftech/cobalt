@@ -12,6 +12,12 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.3.16",
+            "notes": [
+                "Allow sorting and searching for users when adding tags",
+            ],
+        },
+        {
             "release": "6.3.15",
             "date": "15th April 2026",
             "notes": [
