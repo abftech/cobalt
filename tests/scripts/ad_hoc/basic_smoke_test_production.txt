@@ -1,25 +1,59 @@
+title "Production Smoke Test"
+
+# ─── 1. Login ────────────────────────────────────────────────────────────────
 screenshot "Login page"
 enter_parameter userid into "username"
 enter_parameter password into "password"
 click "Login"
 find "Bridge Credits"
 screenshot "Dashboard"
-go "/payments"
-screenshot "Bridge Credits"
-find "Balance:"
-go "/masterpoints"
-screenshot "Masterpoints"
-find "Last 12 Months"
-go "/events"
-screenshot "Calendar"
-find "Event Type"
-click "View completed events"
-screenshot "Old Events"
-find "View running and upcoming events"
-go "/results"
-screenshot "Results"
+
+# ─── 2. Dashboard ────────────────────────────────────────────────────────────
+find "Your Upcoming Events"
 find "Your Recent Results"
-enter "Julian Foster" into "search_string"
-send_enter to "search_string"
-screenshot "Search Julian"
-find "518891"
+screenshot "Dashboard detail"
+
+# ─── 3. Bridge Credits ───────────────────────────────────────────────────────
+go /payments/
+find "Balance"
+screenshot "Bridge Credits"
+
+# ─── 4. Masterpoints ─────────────────────────────────────────────────────────
+go /masterpoints/
+find "Summary"
+screenshot "Masterpoints"
+
+# ─── 5. Calendar ─────────────────────────────────────────────────────────────
+go /calendar
+find "Calendar"
+screenshot "Calendar"
+
+# ─── 6. Events / Congresses ──────────────────────────────────────────────────
+go /events/
+find "Calendar"
+screenshot "Events"
+
+# ─── 7. Forums ───────────────────────────────────────────────────────────────
+go /forums/
+find "All Forums"
+screenshot "Forums"
+
+# ─── 8. Notifications ────────────────────────────────────────────────────────
+go /notifications/
+find "Your Notifications"
+screenshot "Notifications"
+
+# ─── 9. Results ──────────────────────────────────────────────────────────────
+go /results/
+find "Your Recent Results"
+screenshot "Results"
+
+# ─── 10. Support ─────────────────────────────────────────────────────────────
+go /support/
+find "Contact Support"
+screenshot "Support"
+
+# ─── 11. Profile ─────────────────────────────────────────────────────────────
+go /accounts/profile
+find "Edit Profile"
+screenshot "Profile"

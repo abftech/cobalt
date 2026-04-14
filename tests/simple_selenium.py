@@ -427,7 +427,7 @@ class SimpleSelenium:
         """try to get element by name"""
 
         try:
-            match = self.driver.find_element("id", identifier)
+            match = self.driver.find_element("name", identifier)
         except NoSuchElementException:
             self.add_message(
                 f"Looked for item with name '{identifier}' but did not find it"
