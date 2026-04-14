@@ -1,0 +1,241 @@
+#!/bin/bash
+
+# about: deploy directly to production, skipping test and UAT environments
+# Requires: no model changes, fewer than 20 file changes vs master
+
+source utils/cgit/_cgit_include_vars
+
+MAX_FILE_CHANGES=20
+
+BRANCH=$(git branch --show-current)
+
+clear
+printf "${RED}###########################################################\n"
+echo "#                                                         #"
+echo "#              FAST PATH TO PRODUCTION                    #"
+echo "#              ========================                   #"
+echo "#                                                         #"
+echo "#  Skips test and UAT deployments. Only use for small,    #"
+echo "#  safe changes with no model migrations.                 #"
+echo "#                                                         #"
+echo "###########################################################"
+printf "${NC}\n\n"
+printf "  Current branch: ${YELLOW}${BRANCH}${NC}\n\n"
+
+# Must have a clean working tree
+if [[ -n $(git status -s) ]]; then
+  echo ""
+  printf "${RED}ERROR: Working tree is not clean. Commit or stash changes first.${NC}\n"
+  echo ""
+  git status
+  exit 1
+fi
+
+# Fetch master so comparisons are accurate
+echo "Fetching latest master for comparison..."
+git fetch origin master:master 2>/dev/null
+echo ""
+
+# Count file changes vs master
+FILE_CHANGES=$(git diff master HEAD --name-only | wc -l | tr -d ' ')
+
+printf "  Files changed vs master: ${YELLOW}${FILE_CHANGES}${NC}\n"
+
+if [ "$FILE_CHANGES" -ge "$MAX_FILE_CHANGES" ]; then
+  echo ""
+  printf "${RED}ERROR: $FILE_CHANGES file(s) changed — fast path requires fewer than $MAX_FILE_CHANGES.${NC}\n"
+  echo "Use the standard dev_finish → uat_publish → prod_publish flow instead."
+  echo ""
+  exit 1
+fi
+
+# Check for model changes vs master
+MODEL_CHANGES=$(git diff master HEAD --name-only | grep "models\.py")
+
+if [ -n "$MODEL_CHANGES" ]; then
+  echo ""
+  printf "${RED}ERROR: Model changes detected — fast path is not allowed when models.py has changed.${NC}\n"
+  echo ""
+  echo "Changed model files:"
+  echo "$MODEL_CHANGES"
+  echo ""
+  echo "Use the standard dev_finish → uat_publish → prod_publish flow instead."
+  exit 1
+fi
+
+echo ""
+echo "  Pre-flight checks passed:"
+printf "    ${YELLOW}✓${NC} No model changes\n"
+printf "    ${YELLOW}✓${NC} $FILE_CHANGES file(s) changed (under $MAX_FILE_CHANGES limit)\n"
+echo ""
+echo "  Changed files:"
+git diff master HEAD --name-only | sed 's/^/    /'
+echo ""
+
+# Ask for release version
+OLDRELEASE=$(grep VER $CGIT_ENV/version.py | awk '{print $3}' | tr -d '"')
+echo "  Last release: $OLDRELEASE"
+echo -n "  Release number: "
+read RELEASE
+echo ""
+
+if [ -z "$RELEASE" ]; then
+  echo "No release number entered. Exiting."
+  exit 1
+fi
+
+printf "${YELLOW}WARNING: This will deploy directly to PRODUCTION, skipping test and UAT.${NC}\n"
+echo ""
+printf "  Branch '$BRANCH' will be merged into develop and master.\n"
+printf "  Release branch release/$RELEASE will be created.\n"
+printf "  Code will be deployed to PRODUCTION.\n"
+echo ""
+printf "${YELLOW}Are you sure you want to fast-path to production?${NC}"
+read -r -p " [y/N] " response
+
+if ! [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+  echo ""
+  echo "Aborted."
+  exit 1
+fi
+
+echo ""
+echo "================================================================"
+echo "Starting fast-path release $RELEASE..."
+echo "================================================================"
+echo ""
+
+# --- Step 1: Merge into develop ---
+
+echo "Checking out develop branch..."
+git checkout develop
+if [ $? -ne 0 ]; then exit 1; fi
+
+echo "Pulling latest develop..."
+git pull origin develop
+if [ $? -ne 0 ]; then exit 1; fi
+
+if [ "$BRANCH" != "develop" ]; then
+  echo "Merging $BRANCH into develop..."
+  git merge "$BRANCH"
+  if [ $? -ne 0 ]; then
+    echo "Merge conflict. Resolve conflicts then re-run."
+    exit 1
+  fi
+fi
+
+# --- Step 2: Update version ---
+
+echo "Updating release version to $RELEASE..."
+echo "COBALT_VERSION = \"$RELEASE\"" > $CGIT_ENV/version.py
+
+git add -A
+git commit -m "Updating release version to $RELEASE"
+if [ $? -ne 0 ]; then exit 1; fi
+
+echo "Pushing develop..."
+git push origin develop
+if [ $? -ne 0 ]; then exit 1; fi
+
+# --- Step 3: Create release branch ---
+
+echo "Creating release branch release/$RELEASE..."
+git checkout -b release/"$RELEASE"
+if [ $? -ne 0 ]; then
+  echo "Failed to create release branch."
+  echo "If it already exists: git branch -d release/$RELEASE"
+  exit 1
+fi
+
+echo "Pushing release branch..."
+git push origin release/"$RELEASE"
+if [ $? -ne 0 ]; then exit 1; fi
+
+# --- Step 4: Merge into master ---
+
+echo "Checking out master..."
+git checkout master
+if [ $? -ne 0 ]; then exit 1; fi
+
+echo "Pulling latest master..."
+git pull origin master
+if [ $? -ne 0 ]; then exit 1; fi
+
+echo "Merging release/$RELEASE into master..."
+git merge release/"$RELEASE"
+if [ $? -ne 0 ]; then
+  echo "Merge conflict on master. Resolve conflicts then re-run."
+  exit 1
+fi
+
+echo "Pushing master..."
+git push origin master
+if [ $? -ne 0 ]; then exit 1; fi
+
+# --- Step 5: Deploy to production ---
+
+echo ""
+echo "Switching to release branch for deployment..."
+git checkout release/"$RELEASE"
+if [ $? -ne 0 ]; then exit 1; fi
+
+echo ""
+echo "Deploying to PRODUCTION..."
+echo ""
+
+PRODENV=$(eb list | grep $CGIT_ENV-production)
+PRODNUM=$(eb list | grep $CGIT_ENV-production | wc -l)
+
+if [ "$PRODNUM" -ne 1 ]; then
+  echo "Cannot deploy to Production, found $PRODNUM matching environments."
+  echo "$PRODENV"
+  exit 1
+fi
+
+PREV_VERSION=$(aws elasticbeanstalk describe-environments \
+  --environment-names "$PRODENV" \
+  --query 'Environments[0].VersionLabel' \
+  --output text 2>/dev/null)
+
+utils/cgit/_cgit_scale_environment_for_deployment "$PRODENV"
+ec2_instances=$?
+
+echo "Original instance count: $ec2_instances"
+
+DATE=$(date '+%a_%d/%m/%Y_%H:%M:%S')
+eb deploy -m "release/$RELEASE@$DATE (fast-path)" "$PRODENV"
+if [ $? -ne 0 ]; then
+  echo ""
+  printf "${RED}Deployment failed.${NC}\n"
+  if [ -n "$PREV_VERSION" ]; then
+    echo "To roll back: eb deploy -l \"$PREV_VERSION\" $PRODENV"
+  fi
+  exit 1
+fi
+
+if [ "$ec2_instances" = "1" ]; then
+  echo "Restoring instance count to $ec2_instances..."
+  eb scale "$ec2_instances" "$PRODENV"
+fi
+
+# --- Step 6: Smoke test ---
+
+echo ""
+echo "Running smoke test..."
+cgit_prod_smoke_test
+
+echo ""
+echo "================================================================"
+printf "${YELLOW}Fast-path release $RELEASE to PRODUCTION complete.${NC}\n"
+echo "================================================================"
+if [ -n "$PREV_VERSION" ]; then
+  echo ""
+  echo "Previous version: $PREV_VERSION"
+  echo "To roll back if needed: eb deploy -l \"$PREV_VERSION\" $PRODENV"
+fi
+echo ""
+echo "Note: test and UAT environments were NOT updated."
+echo "Branch '$BRANCH' has not been deleted."
+echo "  git branch -d $BRANCH          # delete local"
+echo "  git push -d origin $BRANCH     # delete remote"
+echo ""
