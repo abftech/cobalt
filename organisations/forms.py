@@ -124,6 +124,7 @@ class OrgForm(forms.ModelForm):
             "bank_bsb",
             "bank_account",
             "default_secondary_payment_method",
+            "internal_settlement_org",
         )
 
         # Make State a choice field
