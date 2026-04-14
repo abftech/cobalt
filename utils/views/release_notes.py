@@ -12,6 +12,19 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.3.15",
+            "notes": [
+                "DEV - Change date format for release",
+            ],
+        },
+        {
+            "release": "6.3.14",
+            "date": "14th April 2026",
+            "notes": [
+                "DEV - Change date format for  release",
+            ],
+        },
+        {
             "release": "6.3.13",
             "date": "14th April 2026",
             "notes": [
