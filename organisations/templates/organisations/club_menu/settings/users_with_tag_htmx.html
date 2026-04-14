@@ -17,7 +17,7 @@
                 hx-vars="club_id:{{ club.id }}"
         >All Tags</button>
 
-        {% if club_has_members %}
+        {% if club_has_members or club_has_contacts %}
 
             <div class="card">
                 <div class="card-header card-header-success">
@@ -33,24 +33,39 @@
                 </div>
             </div>
 
+            {% if club_has_members %}
+                <button class="btn btn-info" _="on click remove .d-none from #users_without_tab_table_div then hide me">
+                    Add Member to Tag
+                </button>
 
-            <button class="btn btn-info" _="on click remove .d-none from #users_without_tab_table_div then hide me">
-                Add Member to Tag
-            </button>
+                <button
+                    class="btn btn-danger"
+                    hx-post="{% url "organisations:club_menu_tab_settings_add_all_members_to_tag_htmx" %}"
+                    hx-target="#list_of_users_with_this_tag"
+                    hx-vars="club_id:{{ club.id }}, tag_id:{{ tag.id }}"
+                >
+                    Add All Members to Tag
+                </button>
+            {% endif %}
 
-            <button
-                class="btn btn-danger"
-                hx-post="{% url "organisations:club_menu_tab_settings_add_all_members_to_tag_htmx" %}"
-                hx-target="#list_of_users_with_this_tag"
-                hx-vars="club_id:{{ club.id }}, tag_id:{{ tag.id }}"
+            {% if club_has_contacts %}
+                <button class="btn btn-info" _="on click remove .d-none from #contacts_without_tag_table_div then hide me">
+                    Add Contact to Tag
+                </button>
 
-            >
-                Add All Members to Tag
-            </button>
+                <button
+                    class="btn btn-danger"
+                    hx-post="{% url "organisations:club_menu_tab_settings_add_all_contacts_to_tag_htmx" %}"
+                    hx-target="#list_of_users_with_this_tag"
+                    hx-vars="club_id:{{ club.id }}, tag_id:{{ tag.id }}"
+                >
+                    Add All Contacts to Tag
+                </button>
+            {% endif %}
 
         {% else %}
 
-            <h3>You need to add members to your club before you can use tags</h3>
+            <h3>You need to add members or contacts to your club before you can use tags</h3>
 
         {% endif %}
 
@@ -60,7 +75,7 @@
 
                 <div class="card">
                     <div class="card-header card-header-warning">
-                        <h3>Users without the Tag "{{ tag.tag_name }}"</h3>
+                        <h3>Members without the Tag "{{ tag.tag_name }}"</h3>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive col-md-6">
@@ -94,10 +109,57 @@
                     </div>
                 </div>
 
-
             {% else %}
 
                 <h3>All of your members already have this tag</h3>
+
+            {% endif %}
+
+        </div>
+
+        <div id="contacts_without_tag_table_div" class="table-responsive d-none">
+
+            {% if contacts_without_tag %}
+
+                <div class="card">
+                    <div class="card-header card-header-warning">
+                        <h3>Contacts without the Tag "{{ tag.tag_name }}"</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive col-md-6">
+                            <table id="contacts_without_tag_table" class="table table-hover table-condensed">
+                                <thead class="text-info">
+                                    <tr>
+                                        <th>First Name</th>
+                                        <th>Last Name</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for contact in contacts_without_tag %}
+                                        <tr id="add_contact_to_tag_{{ contact.system_number }}">
+                                            <td>{{ contact.first_name }}</td>
+                                            <td>{{ contact.last_name }}</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-warning"
+                                                        hx-post="{% url "organisations:club_menu_tab_settings_add_user_to_tag_htmx" %}"
+                                                        hx-target="#list_of_users_with_this_tag"
+                                                        hx-vars="club_id:{{ club.id }}, tag_id:{{ tag.id }}, system_number:{{ contact.system_number }}"
+                                                        _="on click remove #add_contact_to_tag_{{ contact.system_number }}"
+                                                >Add Tag
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            {% else %}
+
+                <h3>All of your contacts already have this tag</h3>
 
             {% endif %}
 
@@ -110,6 +172,20 @@
     $(document).ready( function () {
 
         $('#users_without_tab_table').DataTable({
+            drawCallback: function (settings) {
+                const pagination = $(this).closest('.dataTables_wrapper').find('.dataTables_paginate');
+                pagination.toggle(this.api().page.info().pages > 1);
+            },
+            info: false,
+            searching: true,
+            order: [[1, 'asc'], [0, 'asc']],
+            columnDefs: [
+                { orderable: true, targets: [0, 1] },
+                { orderable: false, targets: [2] },
+            ],
+        });
+
+        $('#contacts_without_tag_table').DataTable({
             drawCallback: function (settings) {
                 const pagination = $(this).closest('.dataTables_wrapper').find('.dataTables_paginate');
                 pagination.toggle(this.api().page.info().pages > 1);

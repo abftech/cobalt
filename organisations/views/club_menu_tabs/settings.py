@@ -62,6 +62,8 @@ from organisations.views.club_menu_tabs.utils import (
 from organisations.club_admin_core import (
     get_count_for_membership_type,
     switch_to_full_club_admin,
+    get_club_contacts,
+    get_club_contact_list,
 )
 from organisations.views.general import compare_form_with_mpc
 from payments.models import OrgPaymentMethod
@@ -1248,9 +1250,15 @@ def users_with_tag_htmx(request, club, partial=False):
     tag_id = request.POST.get("tag_id")
     tag = get_object_or_404(ClubTag, pk=tag_id)
 
-    system_numbers = MemberClubTag.objects.filter(club_tag=tag).values("system_number")
+    tagged_system_numbers = list(
+        MemberClubTag.objects.filter(club_tag=tag).values_list(
+            "system_number", flat=True
+        )
+    )
 
-    users_with_tag = get_club_members_from_system_number_list(system_numbers, club)
+    users_with_tag = get_club_members_from_system_number_list(
+        tagged_system_numbers, club
+    )
 
     # We need the list of members without the tag for the add function
     all_members = get_members_for_club(club)
@@ -1258,21 +1266,26 @@ def users_with_tag_htmx(request, club, partial=False):
     # Check if this club has members to avoid showing edit options that won't work
     club_has_members = bool(all_members)
 
-    # build list of tagged users
-    users_with_tag_list = [
-        user_with_tag.system_number for user_with_tag in users_with_tag
-    ]
-
+    users_with_tag_sn_set = {u.system_number for u in users_with_tag}
     users_without_tag = [
-        member
-        for member in all_members
-        if member.system_number not in users_with_tag_list
+        m for m in all_members if m.system_number not in users_with_tag_sn_set
     ]
 
-    # Add HTMX fields
+    # Contact lists — contacts share the same tag model, just have a different membership status
+    all_contacts = get_club_contacts(club)
+    club_has_contacts = bool(all_contacts)
+    tagged_sn_set = set(tagged_system_numbers)
+    contacts_with_tag = [c for c in all_contacts if c.system_number in tagged_sn_set]
+    contacts_without_tag = [
+        c for c in all_contacts if c.system_number not in tagged_sn_set
+    ]
+
+    # Add HTMX fields for delete (same endpoint works for both members and contacts)
     hx_post = reverse("organisations:club_menu_tab_settings_delete_user_from_tag_htmx")
     for user_with_tag in users_with_tag:
         user_with_tag.hx_vars = f"{{'club_id':{club.id}, 'system_number':{user_with_tag.system_number}, 'tag_id':{tag.id} }}"
+    for contact_with_tag in contacts_with_tag:
+        contact_with_tag.hx_vars = f"{{'club_id':{club.id}, 'system_number':{contact_with_tag.system_number}, 'tag_id':{tag.id} }}"
 
     if partial:
         template = "organisations/club_menu/settings/users_with_tag_sub_htmx.html"
@@ -1285,10 +1298,13 @@ def users_with_tag_htmx(request, club, partial=False):
         {
             "users_with_tag": users_with_tag,
             "users_without_tag": users_without_tag,
+            "contacts_with_tag": contacts_with_tag,
+            "contacts_without_tag": contacts_without_tag,
             "tag": tag,
             "club": club,
             "hx_post": hx_post,
             "club_has_members": club_has_members,
+            "club_has_contacts": club_has_contacts,
         },
     )
 
@@ -1383,6 +1399,23 @@ def add_all_members_to_tag_htmx(request, club):
             club_tag=club_tag, system_number=member.system_number
         )
         member_club_tag.save()
+
+    return users_with_tag_htmx(request, partial=True)
+
+
+@check_club_menu_access(check_comms=True)
+def add_all_contacts_to_tag_htmx(request, club):
+    """Add a tag to all contacts of a club. Returns the users with tag section"""
+
+    club_tag = get_object_or_404(ClubTag, pk=request.POST.get("tag_id"))
+
+    if club_tag.organisation != club:
+        return HttpResponse("Incorrect tag value for this club")
+
+    for system_number in get_club_contact_list(club):
+        MemberClubTag.objects.get_or_create(
+            club_tag=club_tag, system_number=system_number
+        )
 
     return users_with_tag_htmx(request, partial=True)
 
