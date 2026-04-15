@@ -13,6 +13,7 @@ def release_notes_view(request):
     release_notes = [
         {
             "release": "6.3.16",
+            "date": "15th April 2026",
             "notes": [
                 "Allow sorting and searching for users when adding tags",
                 "Bug fix for org report XLS",
