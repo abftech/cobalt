@@ -146,6 +146,10 @@ XERO_ALERT_EMAILS = (
     if _xero_alert_emails_raw
     else []
 )
+#   XERO_SETTLEMENT_SUMMARY_EMAIL. Email address to receive a summary after each
+#   settlement run that emails fee invoices to clubs. Leave unset or empty to disable.
+#   Example: "secretariat@abf.com.au"
+XERO_SETTLEMENT_SUMMARY_EMAIL = set_value("XERO_SETTLEMENT_SUMMARY_EMAIL", "")
 
 DATABASES = {
     "default": {

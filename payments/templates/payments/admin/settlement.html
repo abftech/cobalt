@@ -118,7 +118,9 @@
                         </div>
 
                         <!-- TABLE -->
-                        <div class="mb-2 text-right">
+                        <div class="mb-2 d-flex justify-content-between align-items-center">
+                            <input type="text" id="settlement-search" class="form-control form-control-sm"
+                                   placeholder="Search organisations..." style="max-width: 260px;">
                             <button type="button" id="btn-toggle-detail" class="btn btn-sm btn-outline-secondary">
                                 Show Details
                             </button>
@@ -336,6 +338,17 @@
                 var showing = $('#settlement-table').toggleClass('show-detail').hasClass('show-detail');
                 $(this).text(showing ? 'Hide Details' : 'Show Details');
                 $('#id_totals_colspan').attr('colspan', showing ? 6 : 2);
+            });
+
+            $('#settlement-search').on('input', function() {
+                var term = $(this).val().toLowerCase();
+                $('#settlement-table tbody tr').each(function() {
+                    var row = $(this);
+                    if (row.find('input[name="settle_list"]').length === 0) return;
+                    var orgName = row.find('td:nth-child(3)').text().toLowerCase();
+                    var orgNum = row.find('td:nth-child(2)').text().toLowerCase();
+                    row.toggle(orgName.includes(term) || orgNum.includes(term));
+                });
             });
 
             $(".checkall").click(function() {

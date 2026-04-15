@@ -13,6 +13,8 @@ import sys
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from cobalt.settings import XERO_SETTLEMENT_SUMMARY_EMAIL
+from notifications.views.core import send_cobalt_email_preformatted
 from utils.models import BatchStatus
 from utils.views.cobalt_lock import CobaltLock
 from xero.core import XeroApi
@@ -59,6 +61,7 @@ class Command(BaseCommand):
             xero = XeroApi()
             processed = 0
             failed = 0
+            fee_invoices_emailed = []
 
             # ------------------------------------------------------------------
             # STEP 1: Startup reconciliation — resolve any UPLOADING records left
@@ -146,7 +149,7 @@ class Command(BaseCommand):
 
             for invoice in pending:
                 try:
-                    _upload_invoice(xero, invoice, summary_lines)
+                    _upload_invoice(xero, invoice, summary_lines, fee_invoices_emailed)
                     if invoice.status == "AUTHORISED":
                         processed += 1
                     elif invoice.status == XeroInvoice.STATUS_UPLOAD_FAILED:
@@ -184,6 +187,9 @@ class Command(BaseCommand):
                 f"{pending_count - processed - failed} unchanged"
             )
 
+            if XERO_SETTLEMENT_SUMMARY_EMAIL and fee_invoices_emailed:
+                _send_settlement_summary_email(fee_invoices_emailed)
+
             lock.free_lock()
             lock.delete_lock()
 
@@ -218,11 +224,17 @@ def _find_in_xero(xero: XeroApi, cobalt_reference: str) -> dict | None:
     return None
 
 
-def _upload_invoice(xero: XeroApi, invoice: XeroInvoice, summary_lines: list) -> None:
+def _upload_invoice(
+    xero: XeroApi,
+    invoice: XeroInvoice,
+    summary_lines: list,
+    fee_invoices_emailed: list,
+) -> None:
     """Upload a single PENDING_UPLOAD invoice to Xero, with idempotency.
 
     Mutates the invoice record in-place (saving to DB). Appends a line to
-    summary_lines describing the outcome.
+    summary_lines describing the outcome. Appends to fee_invoices_emailed when
+    a fee invoice is successfully emailed to a club.
     """
     ref = invoice.cobalt_reference
 
@@ -309,6 +321,15 @@ def _upload_invoice(xero: XeroApi, invoice: XeroInvoice, summary_lines: list) ->
                     logger.info(
                         f"upload_xero_settlements: fee invoice email sent for {ref}"
                     )
+                    fee_invoices_emailed.append(
+                        {
+                            "org": invoice.organisation.name,
+                            "invoice_number": invoice.invoice_number,
+                            "cobalt_reference": invoice.cobalt_reference,
+                            "amount": invoice.amount,
+                            "date": invoice.date,
+                        }
+                    )
                 else:
                     summary_lines.append(
                         f"  {ref}: fee invoice email FAILED — check Xero logs"
@@ -371,3 +392,47 @@ def _extract_xero_error(response: dict, invoice_data: dict) -> str:
         if messages:
             return "; ".join(messages)
     return f"Invoice creation failed: {response}"
+
+
+def _send_settlement_summary_email(fee_invoices_emailed: list) -> None:
+    """Send a summary email to XERO_SETTLEMENT_SUMMARY_EMAIL listing all fee invoices
+    emailed to clubs during this settlement run."""
+    total = sum(row["amount"] for row in fee_invoices_emailed)
+    n = len(fee_invoices_emailed)
+
+    rows_html = "".join(
+        f"<tr>"
+        f"<td>{row['org']}</td>"
+        f"<td>{row['invoice_number']}</td>"
+        f"<td>{row['cobalt_reference']}</td>"
+        f"<td style='text-align:right'>${row['amount']:,.2f}</td>"
+        f"<td>{row['date']}</td>"
+        f"</tr>"
+        for row in fee_invoices_emailed
+    )
+
+    msg = (
+        f"<h2>Fee Invoices Sent to Clubs</h2>"
+        f"<table border='1' cellpadding='4' cellspacing='0' style='border-collapse:collapse'>"
+        f"<thead><tr>"
+        f"<th>Club</th><th>Invoice #</th><th>Reference</th><th>Amount</th><th>Date</th>"
+        f"</tr></thead>"
+        f"<tbody>{rows_html}</tbody>"
+        f"</table>"
+        f"<p><strong>Total: {n} invoice(s) — ${total:,.2f}</strong></p>"
+    )
+
+    try:
+        send_cobalt_email_preformatted(
+            to_address=XERO_SETTLEMENT_SUMMARY_EMAIL,
+            subject=f"MyABF Settlement Run \u2014 {n} fee invoice(s) sent",
+            msg=msg,
+            priority="medium",
+        )
+        logger.info(
+            f"upload_xero_settlements: settlement summary email sent to {XERO_SETTLEMENT_SUMMARY_EMAIL}"
+        )
+    except Exception as exc:
+        logger.error(
+            f"upload_xero_settlements: failed to send settlement summary email: {exc}"
+        )
