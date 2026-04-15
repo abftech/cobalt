@@ -12,6 +12,12 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.3.17",
+            "notes": [
+                "Handover notes",
+            ],
+        },
+        {
             "release": "6.3.16",
             "date": "15th April 2026",
             "notes": [
