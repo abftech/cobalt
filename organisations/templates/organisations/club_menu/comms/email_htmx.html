@@ -49,6 +49,16 @@
                 </a>
             {% endif %}
 
+            {% if session_access %}
+                <!-- BUTTON TO SEND SESSION PLAYER EMAIL -->
+                <a
+                    class="text-left btn btn-primary"
+                    href="{% url 'notifications:initiate_admin_session_email' club_id=club.id %}"
+                >
+                    Compose Session Email
+                </a>
+            {% endif %}
+
             <div class="row">
                 <div class="col-md-6">
                     <div class="card">
@@ -173,6 +183,8 @@
                                                                         id="id_{{ thing.id }}_edit_button"
                                                                         {% if thing.batch_type == "MLT" %}
                                                                             href="{% url 'notifications:compose_email_multi_select' club_id=club.id batch_id_id=thing.id %}"
+                                                                        {% elif thing.batch_type == "SES" %}
+                                                                            href="{% url 'notifications:compose_email_session_select' club_id=club.id batch_id_id=thing.id %}"
                                                                         {% else %}
                                                                             href="{% url 'notifications:compose_email_recipients' club_id=club.id batch_id_id=thing.id %}"
                                                                         {% endif %}

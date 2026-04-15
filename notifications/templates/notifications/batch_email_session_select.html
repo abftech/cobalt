@@ -1,0 +1,377 @@
+<!-- Session selection for batch email. Allows user to pick completed sessions by date range and description search -->
+
+{% extends 'notifications/batch_email.html' %}
+
+{% load humanize %}
+{% load static %}
+{% load cobalt_tags %}
+
+{% block header %}
+
+    {% include 'notifications/batch_email_common_scripts.html' %}
+
+    <script src="{% static "assets/js/plugins/moment.min.js" %}"></script>
+    <script src="{% static "assets/js/plugins/bootstrap-datetimepicker.min.js" %}"></script>
+
+    <script>
+
+        // Map of session_id -> array of unique player system_numbers
+        var sessionPlayers = {{ session_players_json|safe }};
+
+        var searchMode = "all";  // "all" = AND, "any" = OR
+
+        function toggleSearchMode() {
+            searchMode = (searchMode === "all") ? "any" : "all";
+            $("#id-mode-btn").text(searchMode === "all" ? "All words" : "Any word");
+            filterSessions();
+        }
+
+        function rowMatchesSearch(description, terms) {
+            if (terms.length === 0) return true;
+            if (searchMode === "all") {
+                return terms.every(function (t) { return description.indexOf(t) !== -1; });
+            } else {
+                return terms.some(function (t) { return description.indexOf(t) !== -1; });
+            }
+        }
+
+        function filterSessions() {
+            const raw = $("#id-search").val().toLowerCase().trim();
+            const terms = raw.length > 0 ? raw.split(/\s+/) : [];
+
+            $(".session-row").each(function () {
+                $(this).toggle(rowMatchesSearch($(this).data("description"), terms));
+            });
+
+            // Show active filter label beside the dropdown button
+            const currentVal = $("#id-search").val();
+            const hasChipMatch = $(".description-chip[data-value='" + currentVal + "']").length > 0;
+            if (hasChipMatch && currentVal) {
+                $("#id-active-filter-text").text(currentVal);
+                $("#id-active-filter").show();
+            } else {
+                $("#id-active-filter").hide();
+            }
+
+            updateSummary();
+        }
+
+        function applyDescriptionChip(value) {
+            // Empty value = clear; same value = toggle off; otherwise apply
+            if (!value || $("#id-search").val() === value) {
+                $("#id-search").val("");
+            } else {
+                $("#id-search").val(value);
+            }
+            filterSessions();
+        }
+
+        function updateSummary() {
+            var visibleCount = 0;
+            var selectedCount = 0;
+            var distinctPlayers = new Set();
+
+            $(".session-row").each(function () {
+                const sessionId = parseInt($(this).data("session-id"), 10);
+                const isVisible = $(this).is(":visible");
+                const isChecked = $(this).find(".session-cb").prop("checked");
+
+                if (isVisible) visibleCount++;
+
+                if (isChecked) {
+                    selectedCount++;
+                    var players = sessionPlayers[sessionId] || [];
+                    for (var i = 0; i < players.length; i++) {
+                        distinctPlayers.add(players[i]);
+                    }
+                }
+            });
+
+            const playerCount = distinctPlayers.size;
+            $("#id-summary-visible").text(visibleCount + " session" + (visibleCount !== 1 ? "s" : "") + " shown");
+            $("#id-summary-selected").text(selectedCount + " selected");
+            $("#id-summary-players").text(playerCount + " player" + (playerCount !== 1 ? "s" : ""));
+
+            const anyChecked = selectedCount > 0;
+            $("#id-continue-btn").prop("disabled", !anyChecked);
+            makeCancelable(!anyChecked);
+        }
+
+        function selectAll() {
+            $(".session-row:visible .session-cb").prop("checked", true);
+            updateSummary();
+        }
+
+        function deselectAll() {
+            $(".session-row:visible .session-cb").prop("checked", false);
+            updateSummary();
+        }
+
+        function applyDateShortcut(months) {
+            const end = moment().format("DD/MM/YYYY");
+            const start = moment().subtract(months, "months").format("DD/MM/YYYY");
+            $("input[name='start_date']").val(start);
+            $("input[name='end_date']").val(end);
+            $("#id-date-filter-form").submit();
+        }
+
+        $(document).ready(function () {
+
+            // Initialise datetimepickers
+            $("#id-date-from").datetimepicker({
+                format: "DD/MM/YYYY",
+                useCurrent: false,
+            });
+            $("#id-date-to").datetimepicker({
+                format: "DD/MM/YYYY",
+                useCurrent: false,
+                defaultDate: new Date(),
+            });
+
+            updateSummary();
+
+            $(".session-cb").on("change", function () {
+                updateSummary();
+            });
+
+            $("#id-search").on("input", function () {
+                filterSessions();
+            });
+
+        });
+
+    </script>
+
+{% endblock header %}
+
+{% block payload %}
+
+    {# suppress the "leave page?" warning — this page manages its own state #}
+    <span id="ignore_cobalt_save" hidden></span>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-info">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- DATE RANGE FILTER -->
+    <div class="card mb-3">
+        <div class="card-header card-header-warning">
+            <h4>Filter Sessions</h4>
+        </div>
+        <div class="card-body">
+            <form id="id-date-filter-form" method="post" action="{% url 'notifications:compose_email_session_select_by_date' club_id=club.id batch_id_id=batch.id %}">
+                {% csrf_token %}
+
+                <!-- DATE RANGE ROW -->
+                <div class="row align-items-end mb-2">
+                    <div class="col-md-3">
+                        <label class="bmd-label-floating">From Date</label>
+                        <div class="input-group date" id="id-date-from">
+                            <input
+                                type="text"
+                                class="form-control"
+                                name="start_date"
+                                value="{{ start_date|date:'d/m/Y' }}"
+                                placeholder="DD/MM/YYYY"
+                            />
+                            <span class="input-group-addon">
+                                <span class="glyphicon glyphicon-calendar"></span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="bmd-label-floating">To Date</label>
+                        <div class="input-group date" id="id-date-to">
+                            <input
+                                type="text"
+                                class="form-control"
+                                name="end_date"
+                                value="{{ end_date|date:'d/m/Y' }}"
+                                placeholder="DD/MM/YYYY"
+                            />
+                            <span class="input-group-addon">
+                                <span class="glyphicon glyphicon-calendar"></span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end flex-wrap" style="gap: 0.4rem; padding-bottom: 2px;">
+                        <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="applyDateShortcut(1)">Last month</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="applyDateShortcut(3)">Last 3 months</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="applyDateShortcut(6)">Last 6 months</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="applyDateShortcut(12)">Last year</button>
+                    </div>
+                </div>
+
+                <!-- SEARCH ROW -->
+                <div class="row align-items-end mb-0">
+                    <div class="col-md-8">
+                        <label class="bmd-label-floating">Description Contains</label>
+                        <div class="input-group">
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="id-search"
+                                placeholder="type to filter sessions…"
+                                autocomplete="off"
+                            />
+                            <span class="input-group-btn">
+                                <button
+                                    type="button"
+                                    id="id-mode-btn"
+                                    class="btn btn-secondary btn-sm"
+                                    title="Toggle between matching all words (AND) or any word (OR)"
+                                    onclick="toggleSearchMode()"
+                                >All words</button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QUICK FILTER DROPDOWN -->
+                {% if session_descriptions %}
+                    <div class="mt-3">
+                        <div class="dropdown d-inline-block">
+                            <button
+                                class="btn btn-secondary btn-sm dropdown-toggle"
+                                type="button"
+                                id="id-quick-filter-btn"
+                                data-toggle="dropdown"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                            >
+                                Quick filters
+                            </button>
+                            <div class="dropdown-menu" aria-labelledby="id-quick-filter-btn">
+                                {% for desc in session_descriptions %}
+                                    <a
+                                        class="dropdown-item description-chip"
+                                        href="#"
+                                        data-value="{{ desc }}"
+                                        onclick="applyDescriptionChip('{{ desc|escapejs }}'); return false;"
+                                    >{{ desc }}</a>
+                                {% endfor %}
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-muted" href="#" onclick="applyDescriptionChip(''); return false;">Clear filter</a>
+                            </div>
+                        </div>
+                        <small class="text-muted ml-2" id="id-active-filter" style="display:none;">
+                            Filtering: <span id="id-active-filter-text"></span>
+                        </small>
+                    </div>
+                {% endif %}
+
+            </form>
+        </div>
+    </div>
+
+    <!-- SESSION LIST -->
+    <form method="post" action="{% url 'notifications:compose_email_session_select' club_id=club.id batch_id_id=batch.id %}">
+        {% csrf_token %}
+
+        <!-- Pass the current date range through with the session selections -->
+        <input type="hidden" name="start_date" value="{{ start_date|date:'d/m/Y' }}" />
+        <input type="hidden" name="end_date" value="{{ end_date|date:'d/m/Y' }}" />
+
+        <div class="card">
+            <div class="card-header card-header-info">
+                <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap: 0.5rem;">
+                    <div class="d-flex align-items-center" style="gap: 1rem;">
+                        <h4 class="mb-0">Completed Sessions</h4>
+                        <!-- LIVE SUMMARY -->
+                        <span class="text-white">
+                            <span id="id-summary-visible" class="badge badge-light text-dark">0 sessions shown</span>
+                            &nbsp;
+                            <span id="id-summary-selected" class="badge badge-warning">0 selected</span>
+                            &nbsp;
+                            <span id="id-summary-players" class="badge badge-success">0 players</span>
+                        </span>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-info" onclick="selectAll()">Select All</button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="deselectAll()">Deselect All</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+
+                {% if sessions %}
+
+                    <div class="table-responsive">
+                        <table class="table table-hover table-condensed mb-0">
+                            <thead>
+                                <tr class="text-primary">
+                                    <th style="width: 40px;"></th>
+                                    <th class="text-left">Date</th>
+                                    <th class="text-left">Description</th>
+                                    <th class="text-left">Director</th>
+                                    <th class="text-left">Type</th>
+                                    <th class="text-right">Players</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for session in sessions %}
+                                    <tr class="session-row" data-description="{{ session.description|lower }}" data-session-id="{{ session.id }}">
+                                        <td>
+                                            <input
+                                                type="checkbox"
+                                                class="session-cb"
+                                                id="session-cb-{{ session.id }}"
+                                                name="session-{{ session.id }}"
+                                                value="{{ session.id }}"
+                                                {% if not selected_ids or session.id in selected_ids %}checked{% endif %}
+                                            />
+                                        </td>
+                                        <td class="text-left">
+                                            <label for="session-cb-{{ session.id }}" class="mb-0" style="cursor:pointer;">
+                                                {{ session.session_date|date:"j M Y" }}
+                                            </label>
+                                        </td>
+                                        <td class="text-left">
+                                            <label for="session-cb-{{ session.id }}" class="mb-0" style="cursor:pointer;">
+                                                {{ session.description }}
+                                            </label>
+                                        </td>
+                                        <td class="text-left">{{ session.director.full_name }}</td>
+                                        <td class="text-left">{{ session.session_type.name }}</td>
+                                        <td class="text-right text-muted">{{ session.player_count }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                {% else %}
+
+                    <div class="p-3">
+                        <p class="text-muted">No completed sessions found in the selected date range.</p>
+                    </div>
+
+                {% endif %}
+
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <button
+                type="submit"
+                id="id-continue-btn"
+                class="btn btn-success"
+                disabled
+            >
+                Continue to Recipients &rarr;
+            </button>
+            <a
+                class="btn btn-secondary ml-2"
+                href="{% url 'organisations:club_menu_tab_entry_point' club.id 'comms' %}"
+                id="id-cancel-btn"
+            >
+                Cancel
+            </a>
+        </div>
+
+    </form>
+
+{% endblock payload %}

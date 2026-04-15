@@ -159,6 +159,21 @@ urlpatterns = [
         name="compose_email_multi_clear_date_range_htmx",
     ),
     path(
+        "initiate-email/session/<int:club_id>",
+        notifications.views.core.initiate_admin_session_email,
+        name="initiate_admin_session_email",
+    ),
+    path(
+        "compose-email/session-select/<int:club_id>/<int:batch_id_id>",
+        notifications.views.core.compose_email_session_select,
+        name="compose_email_session_select",
+    ),
+    path(
+        "compose-email/session-select-by-date/<int:club_id>/<int:batch_id_id>",
+        notifications.views.core.compose_email_session_select_by_date,
+        name="compose_email_session_select_by_date",
+    ),
+    path(
         "compose-email/recipients/<int:club_id>/<int:batch_id_id>",
         notifications.views.core.compose_email_recipients,
         name="compose_email_recipients",

@@ -74,7 +74,13 @@ def email_htmx(request, club, message=None):
                 request.user, f"events.org.{club.id}.view"
             )
 
-    if not (comms_access or congress_view_access or congress_edit_access):
+    session_access = rbac_user_has_role(
+        request.user, f"club_sessions.sessions.{club.id}.edit"
+    )
+
+    if not (
+        comms_access or congress_view_access or congress_edit_access or session_access
+    ):
         # No releavnt access so block and tell them about the comms role
         return rbac_forbidden(request, f"notifications.org.{club.id}.edit", htmx=True)
 
@@ -105,6 +111,10 @@ def email_htmx(request, club, message=None):
                 BatchID.BATCH_TYPE_MULTI,
                 BatchID.BATCH_TYPE_ENTRY,
             ]
+
+    if session_access:
+        permitted_batch_types += [BatchID.BATCH_TYPE_SESSION]
+        editable_batch_types += [BatchID.BATCH_TYPE_SESSION]
 
     # build a list of batch types to include in the selector
     batch_types = [
@@ -145,6 +155,7 @@ def email_htmx(request, club, message=None):
             "comms_access": comms_access,
             "congress_edit_access": congress_edit_access,
             "congress_view_access": congress_view_access,
+            "session_access": session_access,
             "editable_batch_types": editable_batch_types,
         },
     )

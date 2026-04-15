@@ -33,9 +33,7 @@
                     </div>
                 </div>
             </h1>
-            <h2>
-                ({{ club }})
-            </h2>
+            <h2>{{ club }}</h2>
             <h2 id="subject-header">
                 {% if batch.description %}
                     {{ batch.description }}
@@ -70,6 +68,16 @@
                                 1. Select Events
                             </a>
 
+                        {% elif batch.batch_type == "SES" %}
+
+                            <a
+                                class="btn btn-med btn-{% if step == 0 %}dark{% else %}info{% endif %}"
+                                id="step_0_button"
+                                href="{% url 'notifications:compose_email_session_select' club_id=club.id batch_id_id=batch.id %}"
+                            >
+                                1. Select Sessions
+                            </a>
+
                         {% endif %}
 
                         <a
@@ -77,7 +85,7 @@
                             id="step_1_button"
                             href="{% url 'notifications:compose_email_recipients' club_id=club.id batch_id_id=batch.id %}"
                         >
-                            {% if batch.batch_type == "MLT" %}2{% else %}1{% endif %}. Review Recipients
+                            {% if batch.batch_type == "MLT" or batch.batch_type == "SES" %}2{% else %}1{% endif %}. Review Recipients
                         </a>
 
                         <a
@@ -85,14 +93,14 @@
                             id="step_1_button"
                             href="{% url 'notifications:compose_email_options' club_id=club.id batch_id_id=batch.id %}"
                         >
-                            {% if batch.batch_type == "MLT" %}3{% else %}2{% endif %}. Email Options
+                            {% if batch.batch_type == "MLT" or batch.batch_type == "SES" %}3{% else %}2{% endif %}. Email Options
                         </a>
                         <a
                             class="btn btn-med btn-{% if step == 3 %}dark{% else %}info{% endif %}"
                             id="step_1_button"
                             href="{% url 'notifications:compose_email_content' club_id=club.id batch_id_id=batch.id %}"
                         >
-                            {% if batch.batch_type == "MLT" %}4{% else %}3{% endif %}. Email Content
+                            {% if batch.batch_type == "MLT" or batch.batch_type == "SES" %}4{% else %}3{% endif %}. Email Content
                         </a>
                     </div>
                 </div>

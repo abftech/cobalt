@@ -25,6 +25,15 @@
 
         {% endif %}
 
+        {% if session_email_access %}
+            <a
+                class="btn btn-primary ml-2"
+                href="{% url 'notifications:initiate_admin_session_email' club_id=club.id %}"
+            >
+                Compose Session Email
+            </a>
+        {% endif %}
+
         <div class="btn-group">
             <button type="button" class="btn btn-primary dropdown-toggle btn-round" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 New Session
@@ -105,9 +114,9 @@
     >{{ message }}</h3>
 
     <div id="id_panel_sessions"
-        hx-post="{% url "organisations:club_menu_tab_sessions_htmx" %}"
-        hx-trigger="load, tab_load_event from:body"
-        hx-vars="club_id:{{ club.id }}"
+         hx-post="{% url "organisations:club_menu_tab_sessions_htmx" %}"
+         hx-trigger="load, tab_load_event from:body"
+         hx-vars="club_id:{{ club.id }}"
     ></div>
 </div>
 </div>

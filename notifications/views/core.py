@@ -1,7 +1,8 @@
+import json
 import logging
 import re
 import mimetypes
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from html import escape
 from threading import Thread
 from itertools import chain
@@ -19,7 +20,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.core.paginator import Paginator
 from django.db import connection, IntegrityError
 from django.db.models import Count, OuterRef, Subquery, CharField, Q
-from django.db.models.functions import Cast
+from django.db.models.functions import Cast, Lower
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -95,6 +96,7 @@ from organisations.club_admin_core import (
     MEMBERSHIP_STATES_DO_NOT_USE,
     MEMBERSHIP_STATES_TERMINAL,
 )
+from club_sessions.models import Session, SessionEntry
 from organisations.models import (
     Organisation,
     ClubTag,
@@ -1252,6 +1254,26 @@ def initiate_admin_multi_email(request, club_id):
     return redirect("notifications:compose_email_multi_select", club_id, batch.id)
 
 
+def initiate_admin_session_email(request, club_id):
+    """Entry point for session player email — creates the batch and starts composition"""
+
+    role = f"club_sessions.sessions.{club_id}.edit"
+    if not rbac_user_has_role(request.user, role):
+        return rbac_forbidden(request, role)
+
+    org = get_object_or_404(Organisation, pk=club_id)
+
+    batch = create_rbac_batch_id(
+        f"club_sessions.sessions.{club_id}.edit",
+        organisation=org,
+        batch_type=BatchID.BATCH_TYPE_SESSION,
+        batch_size=0,
+        complete=False,
+    )
+
+    return redirect("notifications:compose_email_session_select", club_id, batch.id)
+
+
 def check_user_has_batch_access(user, batch):
     """Check whether the user has the appropriate RBAC role for the batch
 
@@ -1279,6 +1301,8 @@ def check_user_has_batch_access(user, batch):
         ]
     ):
         role = f"events.org.{batch.organisation.id}.edit"
+    elif batch.batch_type == BatchID.BATCH_TYPE_SESSION:
+        role = f"club_sessions.sessions.{batch.organisation.id}.edit"
     else:
         return (False, None)
 
@@ -1353,6 +1377,242 @@ def check_club_and_batch_access():
         return _arguments_wrapper
 
     return _method_wrapper
+
+
+@check_club_and_batch_access()
+def compose_email_session_select(request, club, batch):
+    """Compose batch emails - step 0 - select sessions
+
+    Allows the user to choose which completed sessions to draw recipients from,
+    filtered by date range and optional description search string.
+    """
+
+    if request.method == "POST":
+        # Parse selected session IDs
+        selected_session_ids = []
+        for key, value in request.POST.items():
+            if key.startswith("session-"):
+                try:
+                    selected_session_ids.append(int(value))
+                except ValueError:
+                    pass
+
+        # Save date range from POST
+        start_date_str = request.POST.get("start_date", "")
+        end_date_str = request.POST.get("end_date", "")
+        date_format = "%d/%m/%Y"
+        try:
+            start_date = (
+                datetime.strptime(start_date_str, date_format).date()
+                if start_date_str
+                else date.today() - timedelta(days=30)
+            )
+            end_date = (
+                datetime.strptime(end_date_str, date_format).date()
+                if end_date_str
+                else date.today()
+            )
+        except ValueError:
+            start_date = date.today() - timedelta(days=30)
+            end_date = date.today()
+
+        batch.date_range_from = start_date
+        batch.date_range_to = end_date
+        batch.save()
+
+        # Delete existing activities and recipients
+        BatchActivity.objects.filter(batch=batch).delete()
+        Recipient.objects.filter(batch=batch).delete()
+
+        # Validate session IDs belong to this club in one query
+        valid_session_ids = list(
+            Session.objects.filter(
+                pk__in=selected_session_ids,
+                session_type__organisation=club,
+            ).values_list("pk", flat=True)
+        )
+
+        # Create all BatchActivity records in one bulk insert
+        BatchActivity.objects.bulk_create(
+            [
+                BatchActivity(
+                    batch=batch,
+                    activity_id=sid,
+                    activity_type=BatchActivity.ACTIVITY_TYPE_EVENT,
+                )
+                for sid in valid_session_ids
+            ]
+        )
+
+        # Get distinct system numbers across all selected sessions, restricted to
+        # active registered users — matching exactly what the JS count displays.
+        system_numbers = (
+            SessionEntry.objects.filter(
+                session_id__in=valid_session_ids,
+                system_number__gt=1,
+            )
+            .exclude(system_number__in=ALL_SYSTEM_ACCOUNT_SYSTEM_NUMBERS)
+            .filter(
+                system_number__in=User.objects.filter(is_active=True).values(
+                    "system_number"
+                )
+            )
+            .values_list("system_number", flat=True)
+            .distinct()
+        )
+
+        users = User.objects.filter(system_number__in=system_numbers, is_active=True)
+
+        recipients = [Recipient() for _ in range(users.count())]
+        for i, user in enumerate(users):
+            recipients[i].create_from_user(batch, user)
+
+        Recipient.objects.bulk_create(recipients, ignore_conflicts=True)
+        added_count = len(recipients)
+
+        if added_count > 0:
+            return redirect("notifications:compose_email_recipients", club.id, batch.id)
+        else:
+            messages.add_message(
+                request, messages.INFO, "No players found for selected sessions"
+            )
+
+    # GET — build the session list
+    if batch.date_range_from:
+        start_date = batch.date_range_from
+        end_date = batch.date_range_to
+    else:
+        start_date = date.today() - timedelta(days=30)
+        end_date = date.today()
+
+    sessions_qs = (
+        Session.objects.filter(
+            session_type__organisation=club,
+            status=Session.SessionStatus.COMPLETE,
+            session_date__range=[start_date, end_date],
+        )
+        .order_by("-session_date", "-pk")
+        .select_related("director", "session_type")
+        .annotate(
+            player_count=Count(
+                "sessionentry__system_number",
+                filter=Q(sessionentry__system_number__gt=1),
+                distinct=True,
+            )
+        )
+    )
+
+    # Restore previously selected session IDs (empty = new batch, all will be pre-checked)
+    selected_ids = set(
+        BatchActivity.objects.filter(batch=batch).values_list("activity_id", flat=True)
+    )
+
+    # Distinct session descriptions across ALL completed sessions for this club — used as
+    # quick-filter chips in the UI. Sorted by frequency so common session types appear first.
+    # Strip date-like tokens (e.g. "Monday Afternoon 01/05/2025" → "Monday Afternoon") and
+    # deduplicate so that sessions with the same base name but different dates collapse to one chip.
+    _date_re = re.compile(
+        r"\d{1,2}/\d{1,2}/\d{2,4}"  # 01/05/2025 or 1/5/25
+        r"|\d{1,2}/\d{1,2}"  # 01/05
+        r"|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\.?\s*\d{0,4}"  # 1 May 2025
+        r"|\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\.?\s+\d{1,2},?\s*\d{0,4}"  # May 1 2025
+        r"|\b\d{4}\b",  # bare year like 2025
+        re.IGNORECASE,
+    )
+    raw_descriptions = (
+        Session.objects.filter(
+            session_type__organisation=club,
+            status=Session.SessionStatus.COMPLETE,
+        )
+        .values("description")
+        .annotate(count=Count("id"))
+        .order_by("-count")
+        .values_list("description", flat=True)[:100]
+    )
+    seen = set()
+    session_descriptions = []
+    for desc in raw_descriptions:
+        cleaned = _date_re.sub("", desc).strip(" \t-–—,.")
+        if cleaned and cleaned not in seen:
+            seen.add(cleaned)
+            session_descriptions.append(cleaned)
+        if len(session_descriptions) >= 15:
+            break
+
+    # Build a mapping of session_id -> [system_numbers] for accurate distinct-player counting in JS.
+    # Evaluate sessions_qs now (it will be iterated again in the template, but Django caches it).
+    session_ids = [s.id for s in sessions_qs]
+    entries = (
+        SessionEntry.objects.filter(
+            session_id__in=session_ids,
+            system_number__gt=1,
+        )
+        .exclude(system_number__in=ALL_SYSTEM_ACCOUNT_SYSTEM_NUMBERS)
+        .filter(
+            system_number__in=User.objects.filter(is_active=True).values(
+                "system_number"
+            )
+        )
+        .values("session_id", "system_number")
+        .distinct()
+    )
+    session_players = {}
+    for entry in entries:
+        session_players.setdefault(entry["session_id"], []).append(
+            entry["system_number"]
+        )
+
+    return render(
+        request,
+        "notifications/batch_email_session_select.html",
+        {
+            "club": club,
+            "batch": batch,
+            "sessions": sessions_qs,
+            "selected_ids": selected_ids,
+            "start_date": start_date,
+            "end_date": end_date,
+            "session_players_json": json.dumps(session_players),
+            "session_descriptions": session_descriptions,
+        },
+    )
+
+
+@check_club_and_batch_access()
+def compose_email_session_select_by_date(request, club, batch):
+    """POST — update the date range filter and redirect back to session select"""
+
+    start_date_str = request.POST.get("start_date", "")
+    end_date_str = request.POST.get("end_date", "")
+    date_format = "%d/%m/%Y"
+    error_msg = None
+
+    try:
+        start_date = (
+            datetime.strptime(start_date_str, date_format).date()
+            if start_date_str
+            else date.today() - timedelta(days=30)
+        )
+        end_date = (
+            datetime.strptime(end_date_str, date_format).date()
+            if end_date_str
+            else date.today()
+        )
+    except ValueError:
+        error_msg = "Invalid date"
+
+    if error_msg or end_date < start_date:
+        messages.error(
+            request,
+            error_msg if error_msg else "Invalid date range",
+            extra_tags="cobalt-message-error",
+        )
+    else:
+        batch.date_range_from = start_date
+        batch.date_range_to = end_date
+        batch.save()
+
+    return redirect("notifications:compose_email_session_select", club.id, batch.id)
 
 
 def _batch_has_been_customised(batch):
@@ -1752,7 +2012,7 @@ def compose_email_recipients(request, club, batch):
     # get all of the recients for the batch and paginate
     recipients = Recipient.objects.filter(
         batch=batch,
-    ).order_by("initial", "last_name", "first_name")
+    ).order_by("initial", Lower("last_name"), Lower("first_name"))
 
     recipient_count = recipients.filter(include=True).count()
     if recipient_count != batch.batch_size:
@@ -2400,6 +2660,7 @@ def compose_email_content_preview_htmx(request, club, batch):
     elif batch.batch_type in [
         BatchID.BATCH_TYPE_COMMS,
         BatchID.BATCH_TYPE_RESULTS,
+        BatchID.BATCH_TYPE_SESSION,
     ]:
 
         context["po_template_name"] = "club"
@@ -2655,6 +2916,7 @@ def _dispatch_batch(request, club, batch, attachments, test_user=None):
     elif batch.batch_type in [
         BatchID.BATCH_TYPE_COMMS,
         BatchID.BATCH_TYPE_RESULTS,
+        BatchID.BATCH_TYPE_SESSION,
     ]:
 
         po_template = "system - club"
@@ -2988,8 +3250,11 @@ def get_emails_sent_to_address(email_address, club, viewing_user, slice=20):
             congress_access = rbac_user_has_role(
                 viewing_user, f"events.org.{club.id}.view"
             )
+        session_access = rbac_user_has_role(
+            viewing_user, f"club_sessions.sessions.{club.id}.edit"
+        )
 
-        if comms_access or congress_access:
+        if comms_access or congress_access or session_access:
 
             # build a list of permitted batch types to view for this user
             if comms_access:
@@ -3009,6 +3274,9 @@ def get_emails_sent_to_address(email_address, club, viewing_user, slice=20):
                     BatchID.BATCH_TYPE_MULTI,
                     BatchID.BATCH_TYPE_ENTRY,
                 ]
+
+            if session_access:
+                permitted_batch_types += [BatchID.BATCH_TYPE_SESSION]
 
             # Query PostOfficeEmail objects through the reverse relation from Snooper
             post_office_emails = PostOfficeEmail.objects.filter(

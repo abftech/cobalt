@@ -13,6 +13,7 @@ from organisations.models import ClubLog
 from organisations.views.general import org_balance
 from payments.models import OrgPaymentMethod, UserPendingPayment
 from payments.views.core import update_organisation, update_account
+from rbac.core import rbac_user_has_role
 
 
 @check_club_menu_access()
@@ -171,8 +172,16 @@ def club_menu_tab_sessions_sub_htmx(request, club):
     if len(session_types) == 1:
         session_types = None
 
+    session_email_access = rbac_user_has_role(
+        request.user, f"club_sessions.sessions.{club.id}.edit"
+    )
+
     return render(
         request,
         "organisations/club_menu/sessions/session_tab.html",
-        {"club": club, "session_types": session_types},
+        {
+            "club": club,
+            "session_types": session_types,
+            "session_email_access": session_email_access,
+        },
     )

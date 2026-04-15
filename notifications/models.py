@@ -171,6 +171,7 @@ class BatchID(models.Model):
     BATCH_TYPE_MULTI = "MLT"
     BATCH_TYPE_RESULTS = "RES"
     BATCH_TYPE_ENTRY = "ENT"
+    BATCH_TYPE_SESSION = "SES"
     BATCH_TYPE_UNKNOWN = "UNK"
     BATCH_TYPE = [
         (BATCH_TYPE_ADMIN, "Admin"),
@@ -181,6 +182,7 @@ class BatchID(models.Model):
         (BATCH_TYPE_MULTI, "Multi-event"),
         (BATCH_TYPE_RESULTS, "Results"),
         (BATCH_TYPE_ENTRY, "Entry"),
+        (BATCH_TYPE_SESSION, "Session"),
         (BATCH_TYPE_UNKNOWN, "Unknown"),
     ]
     batch_type = models.CharField(
