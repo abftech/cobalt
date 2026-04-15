@@ -1266,26 +1266,37 @@ def users_with_tag_htmx(request, club, partial=False):
     # Check if this club has members to avoid showing edit options that won't work
     club_has_members = bool(all_members)
 
-    users_with_tag_sn_set = {u.system_number for u in users_with_tag}
-    users_without_tag = [
-        m for m in all_members if m.system_number not in users_with_tag_sn_set
-    ]
+    tagged_sn_set = set(tagged_system_numbers)
+    users_without_tag = [m for m in all_members if m.system_number not in tagged_sn_set]
 
     # Contact lists — contacts share the same tag model, just have a different membership status
     all_contacts = get_club_contacts(club)
     club_has_contacts = bool(all_contacts)
-    tagged_sn_set = set(tagged_system_numbers)
+
+    # Stamp type label on each source list before splitting, then combine and sort
+    for user in all_members:
+        user.member_type = "Member"
+    for contact in all_contacts:
+        contact.member_type = "Contact"
+
     contacts_with_tag = [c for c in all_contacts if c.system_number in tagged_sn_set]
     contacts_without_tag = [
         c for c in all_contacts if c.system_number not in tagged_sn_set
     ]
 
+    tagged = sorted(
+        users_with_tag + contacts_with_tag,
+        key=lambda x: (x.last_name.lower(), x.first_name.lower()),
+    )
+    untagged = sorted(
+        users_without_tag + contacts_without_tag,
+        key=lambda x: (x.last_name.lower(), x.first_name.lower()),
+    )
+
     # Add HTMX fields for delete (same endpoint works for both members and contacts)
     hx_post = reverse("organisations:club_menu_tab_settings_delete_user_from_tag_htmx")
-    for user_with_tag in users_with_tag:
-        user_with_tag.hx_vars = f"{{'club_id':{club.id}, 'system_number':{user_with_tag.system_number}, 'tag_id':{tag.id} }}"
-    for contact_with_tag in contacts_with_tag:
-        contact_with_tag.hx_vars = f"{{'club_id':{club.id}, 'system_number':{contact_with_tag.system_number}, 'tag_id':{tag.id} }}"
+    for person in tagged:
+        person.hx_vars = f"{{'club_id':{club.id}, 'system_number':{person.system_number}, 'tag_id':{tag.id} }}"
 
     if partial:
         template = "organisations/club_menu/settings/users_with_tag_sub_htmx.html"
@@ -1296,10 +1307,8 @@ def users_with_tag_htmx(request, club, partial=False):
         request,
         template,
         {
-            "users_with_tag": users_with_tag,
-            "users_without_tag": users_without_tag,
-            "contacts_with_tag": contacts_with_tag,
-            "contacts_without_tag": contacts_without_tag,
+            "tagged": tagged,
+            "untagged": untagged,
             "tag": tag,
             "club": club,
             "hx_post": hx_post,

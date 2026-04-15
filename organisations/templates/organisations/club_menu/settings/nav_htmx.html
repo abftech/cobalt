@@ -1,4 +1,10 @@
 {# Nav bar part for Settings tab #}
+<style>
+    /* Allow dropdown menus in the settings nav to render above the content cards below.
+       Material Dashboard forces z-index:3 !important on .card .card-header (specificity 0,2,0)
+       so we need specificity >= 0,3,0 to override it. */
+    .card .card-header.card-header-info { overflow: visible; z-index: 200 !important; }
+</style>
 
 {% if selected == "details" %}
     <button class="btn btn-primary"
