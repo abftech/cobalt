@@ -93,7 +93,7 @@
             $("#id-summary-players").text(playerCount + " player" + (playerCount !== 1 ? "s" : ""));
 
             const anyChecked = selectedCount > 0;
-            $("#id-continue-btn").prop("disabled", !anyChecked);
+            $(".continue-btn").prop("disabled", !anyChecked);
             makeCancelable(!anyChecked);
         }
 
@@ -268,12 +268,28 @@
     </div>
 
     <!-- SESSION LIST -->
-    <form method="post" action="{% url 'notifications:compose_email_session_select' club_id=club.id batch_id_id=batch.id %}">
+    <form method="post" action="{% url 'notifications:compose_email_session_select' club_id=club.id batch_id_id=batch.id %}" target="_blank">
         {% csrf_token %}
 
         <!-- Pass the current date range through with the session selections -->
         <input type="hidden" name="start_date" value="{{ start_date|date:'d/m/Y' }}" />
         <input type="hidden" name="end_date" value="{{ end_date|date:'d/m/Y' }}" />
+
+        <div class="mb-3">
+            <button
+                type="submit"
+                class="continue-btn btn btn-success"
+                disabled
+            >
+                Continue to Recipients &rarr;
+            </button>
+            <a
+                class="btn btn-secondary ml-2"
+                href="{% url 'organisations:club_menu_tab_entry_point' club.id 'comms' %}"
+            >
+                Cancel
+            </a>
+        </div>
 
         <div class="card">
             <div class="card-header card-header-info">
@@ -357,8 +373,7 @@
         <div class="mt-3">
             <button
                 type="submit"
-                id="id-continue-btn"
-                class="btn btn-success"
+                class="continue-btn btn btn-success"
                 disabled
             >
                 Continue to Recipients &rarr;
