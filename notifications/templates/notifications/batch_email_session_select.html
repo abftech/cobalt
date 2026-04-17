@@ -78,7 +78,7 @@
 
                 if (isVisible) visibleCount++;
 
-                if (isChecked) {
+                if (isChecked && isVisible) {
                     selectedCount++;
                     var players = sessionPlayers[sessionId] || [];
                     for (var i = 0; i < players.length; i++) {
@@ -90,7 +90,7 @@
             const playerCount = distinctPlayers.size;
             $("#id-summary-visible").text(visibleCount + " session" + (visibleCount !== 1 ? "s" : "") + " shown");
             $("#id-summary-selected").text(selectedCount + " selected");
-            $("#id-summary-players").text(playerCount + " player" + (playerCount !== 1 ? "s" : ""));
+            $("#id-summary-players").text(playerCount + " player" + (playerCount !== 1 ? "s" : "") + " to email");
 
             const anyChecked = selectedCount > 0;
             $(".continue-btn").prop("disabled", !anyChecked);
@@ -136,6 +136,11 @@
 
             $("#id-search").on("input", function () {
                 filterSessions();
+            });
+
+            // On submit, exclude hidden rows so only visible (filter-scoped) sessions are posted.
+            $("#id-session-form").on("submit", function () {
+                $(".session-row:not(:visible) .session-cb").prop("disabled", true);
             });
 
         });
@@ -268,7 +273,7 @@
     </div>
 
     <!-- SESSION LIST -->
-    <form method="post" action="{% url 'notifications:compose_email_session_select' club_id=club.id batch_id_id=batch.id %}" target="_blank">
+    <form id="id-session-form" method="post" action="{% url 'notifications:compose_email_session_select' club_id=club.id batch_id_id=batch.id %}">
         {% csrf_token %}
 
         <!-- Pass the current date range through with the session selections -->

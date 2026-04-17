@@ -13,9 +13,8 @@ def release_notes_view(request):
     release_notes = [
         {
             "release": "6.3.17",
-            "date": "16th April 2026",
             "notes": [
-                "Email club members based on session attendance",
+                "Email club members based on session attendance - Preview Mode",
                 "DEV - Provider handover documentation",
             ],
         },

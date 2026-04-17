@@ -78,10 +78,16 @@ def email_htmx(request, club, message=None):
         request.user, f"club_sessions.sessions.{club.id}.edit"
     )
 
+    # Temp change for Preview Mode for certain users
+    if session_access:
+        session_access = request.user.id in [
+            4,
+        ]
+
     if not (
         comms_access or congress_view_access or congress_edit_access or session_access
     ):
-        # No releavnt access so block and tell them about the comms role
+        # No relevant access so block and tell them about the comms role
         return rbac_forbidden(request, f"notifications.org.{club.id}.edit", htmx=True)
 
     # build a list of permitted batch types to view for this user

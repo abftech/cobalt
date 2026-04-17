@@ -176,6 +176,12 @@ def club_menu_tab_sessions_sub_htmx(request, club):
         request.user, f"club_sessions.sessions.{club.id}.edit"
     )
 
+    # Temp change for Preview Mode for certain users
+    if session_email_access:
+        session_email_access = request.user.id in [
+            4,
+        ]
+
     return render(
         request,
         "organisations/club_menu/sessions/session_tab.html",
