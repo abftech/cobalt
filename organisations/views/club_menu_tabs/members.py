@@ -372,7 +372,7 @@ def tools_auto_pay_or_due_date_htmx(request, club):
 
 
 # User PKs allowed to see the renewal status report during preview
-RENEWAL_REPORT_PREVIEW_USER_PKS = []
+RENEWAL_REPORT_PREVIEW_USER_PKS = [4, 72, 3844, 286, 128]
 
 
 @check_club_menu_access()

@@ -80,9 +80,7 @@ def email_htmx(request, club, message=None):
 
     # Temp change for Preview Mode for certain users
     if session_access:
-        session_access = request.user.id in [
-            4,
-        ]
+        session_access = request.user.id in [4, 72, 3844, 286, 128]
 
     if not (
         comms_access or congress_view_access or congress_edit_access or session_access
