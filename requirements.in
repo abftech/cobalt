@@ -23,7 +23,7 @@
 # Core modules      #
 #####################
 # Django
-Django==5.2.12
+Django==5.2.13
 
 # Postgres
 psycopg2-binary==2.9.10

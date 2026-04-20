@@ -18,6 +18,7 @@ def release_notes_view(request):
                 "Tag changes based on feedback from Chris Newbery",
                 "Membership report - Preview Mode",
                 "DEV - changes to unit tests to improve reliability",
+                "DEV - Django 5.2.13",
             ],
         },
         {
