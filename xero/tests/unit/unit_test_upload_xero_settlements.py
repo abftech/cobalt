@@ -182,7 +182,7 @@ class UploadXeroSettlementsTests:
         }
         with patch.object(xero, "xero_api_get", return_value={"Invoices": []}):
             with patch.object(xero, "xero_api_post", return_value=post_response):
-                _upload_invoice(xero, invoice, [])
+                _upload_invoice(xero, invoice, [], [])
 
         invoice.refresh_from_db()
         status = (
@@ -219,7 +219,7 @@ class UploadXeroSettlementsTests:
             xero, "xero_api_get", return_value={"Invoices": [already_in_xero]}
         ):
             with patch.object(xero, "xero_api_post") as mock_post:
-                _upload_invoice(xero, invoice, [])
+                _upload_invoice(xero, invoice, [], [])
 
         invoice.refresh_from_db()
         status = (
@@ -248,7 +248,7 @@ class UploadXeroSettlementsTests:
 
         with patch.object(xero, "xero_api_get", return_value={"Invoices": []}):
             with patch.object(xero, "xero_api_post", side_effect=Exception("timeout")):
-                _upload_invoice(xero, invoice, [])
+                _upload_invoice(xero, invoice, [], [])
 
         invoice.refresh_from_db()
         status = (
@@ -279,7 +279,7 @@ class UploadXeroSettlementsTests:
             with patch.object(
                 xero, "xero_api_post", side_effect=Exception("final failure")
             ):
-                _upload_invoice(xero, invoice, [])
+                _upload_invoice(xero, invoice, [], [])
 
         invoice.refresh_from_db()
         status = (
@@ -310,7 +310,7 @@ class UploadXeroSettlementsTests:
 
         with patch.object(xero, "xero_api_get", return_value={"Invoices": []}):
             with patch.object(xero, "xero_api_post", return_value=post_response):
-                _upload_invoice(xero, invoice, [])
+                _upload_invoice(xero, invoice, [], [])
 
         invoice.refresh_from_db()
         status = invoice.status != "AUTHORISED" and invoice.upload_attempts == 1
@@ -336,7 +336,7 @@ class UploadXeroSettlementsTests:
             with patch.object(
                 xero, "xero_api_post", side_effect=ValueError("AccountCode invalid")
             ):
-                _upload_invoice(xero, invoice, [])
+                _upload_invoice(xero, invoice, [], [])
 
         invoice.refresh_from_db()
         status = invoice.upload_error == "AccountCode invalid"
