@@ -12,6 +12,15 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.3.18",
+            "notes": [
+                "Refinements to email club members based on session attendance - Preview Mode",
+                "Tag changes based on feedback from Chris Newbery",
+                "Membership report - Preview Mode",
+                "DEV - changes to unit tests to improve reliability",
+            ],
+        },
+        {
             "release": "6.3.17",
             "date": "20th April 2026",
             "notes": [
