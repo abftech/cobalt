@@ -4,6 +4,7 @@ import club_sessions.views.imports
 import club_sessions.views.manage_session
 import club_sessions.views.new_session
 from club_sessions.views import reports
+from club_sessions.views import multi_session_reports
 
 app_name = "club_sessions"  # pylint: disable=invalid-name
 
@@ -127,6 +128,26 @@ urlpatterns = [
         "reports/low-balance",
         reports.low_balance_report_htmx,
         name="reports_low_balance_report_htmx",
+    ),
+    path(
+        "reports/multi-session/<int:club_id>",
+        multi_session_reports.multi_session_report,
+        name="multi_session_report",
+    ),
+    path(
+        "reports/multi-session/<int:club_id>/results",
+        multi_session_reports.multi_session_report_results,
+        name="multi_session_report_results",
+    ),
+    path(
+        "reports/multi-session/<int:club_id>/xlsx",
+        multi_session_reports.multi_session_report_xlsx,
+        name="multi_session_report_xlsx",
+    ),
+    path(
+        "reports/multi-session/<int:club_id>/csv",
+        multi_session_reports.multi_session_report_csv,
+        name="multi_session_report_csv",
     ),
     path(
         "member/top-up",

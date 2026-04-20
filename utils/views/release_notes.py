@@ -12,6 +12,12 @@ def release_notes_view(request):
 
     release_notes = [
         {
+            "release": "6.3.20",
+            "notes": [
+                "Multi-session reports",
+            ],
+        },
+        {
             "release": "6.3.19",
             "date": "20th April 2026",
             "notes": [

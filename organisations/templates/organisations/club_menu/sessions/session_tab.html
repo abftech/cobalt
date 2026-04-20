@@ -33,6 +33,13 @@
             >
                 Compose Session Email
             </a>
+            <a
+                class="btn btn-info ml-2"
+                href="{% url 'club_sessions:multi_session_report' club_id=club.id %}"
+                target="_blank"
+            >
+                Session Reports
+            </a>
         {% endif %}
 
         <div class="btn-group">

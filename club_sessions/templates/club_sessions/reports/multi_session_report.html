@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load cobalt_tags %}
+{% load static %}
+
+{% block title %}- Session Reports{% endblock %}
+
+{% block content %}
+
+    <span id="ignore_cobalt_save" hidden></span>
+
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-header card-header-warning">
+                <h2>{{ club.name }} &mdash; Session Reports</h2>
+            </div>
+            <div class="card-body">
+
+            <!-- FILTER FORM — HTMX auto-refreshes results on any input change -->
+                <form
+                    id="id_report_form"
+                    hx-post="{% url 'club_sessions:multi_session_report_results' club_id=club.id %}"
+                    hx-trigger="change"
+                    hx-target="#id_report_results"
+                >
+                    {% csrf_token %}
+
+                    <div class="row align-items-end mb-3">
+
+                    <!-- DATE RANGE PRESET -->
+                        <div class="col-auto">
+                            <label>
+                                Date Range
+                                <select id="id_date_range_picker" class="form-control">
+                                    {% for label, dates in reference_dates.items %}
+                                        <option value="{{ dates.0 }},{{ dates.1 }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </label>
+                        </div>
+
+                    <!-- START DATE -->
+                        <div class="col-auto">
+                            <label>
+                                Start Date
+                                <input type="date" name="start_date" id="id_start_date" class="form-control" required>
+                            </label>
+                        </div>
+
+                    <!-- END DATE -->
+                        <div class="col-auto">
+                            <label>
+                                End Date
+                                <input type="date" name="end_date" id="id_end_date" class="form-control" required>
+                            </label>
+                        </div>
+
+                    <!-- SESSION TYPE -->
+                        <div class="col-auto">
+                            <label>
+                                Session Type
+                                <select name="session_type_filter" id="id_session_type_filter" class="form-control">
+                                    <option value="all">All</option>
+                                    {% for st in session_types %}
+                                        <option value="{{ st }}">{{ st }}</option>
+                                    {% endfor %}
+                                </select>
+                            </label>
+                        </div>
+
+                    <!-- VIEW TYPE -->
+                        <div class="col-auto">
+                            <label>
+                                View
+                                <select name="view_type" id="id_view_type" class="form-control">
+                                    <option value="player_numbers">Player Numbers</option>
+                                    <option value="dollar_values">Dollar Values</option>
+                                </select>
+                            </label>
+                        </div>
+
+                    <!-- CSV DOWNLOAD -->
+                        <div class="col-auto">
+                            <button type="button" id="id_csv_btn" class="btn btn-info">CSV Download</button>
+                        </div>
+
+                    <!-- EXCEL DOWNLOAD -->
+                        <div class="col-auto">
+                            <button type="button" id="id_excel_btn" class="btn btn-success">Excel Download</button>
+                        </div>
+
+                    </div>
+
+                </form>
+
+            <!-- Hidden form for CSV download -->
+                <form id="id_csv_form" method="post" action="{% url 'club_sessions:multi_session_report_csv' club_id=club.id %}" style="display:none">
+                    {% csrf_token %}
+                    <input type="hidden" name="start_date" id="id_csv_start_date">
+                    <input type="hidden" name="end_date" id="id_csv_end_date">
+                    <input type="hidden" name="view_type" id="id_csv_view_type">
+                    <input type="hidden" name="session_type_filter" id="id_csv_session_type_filter">
+                </form>
+
+            <!-- Hidden form for Excel download -->
+                <form id="id_excel_form" method="post" action="{% url 'club_sessions:multi_session_report_xlsx' club_id=club.id %}" style="display:none">
+                    {% csrf_token %}
+                    <input type="hidden" name="start_date" id="id_xl_start_date">
+                    <input type="hidden" name="end_date" id="id_xl_end_date">
+                    <input type="hidden" name="view_type" id="id_xl_view_type">
+                    <input type="hidden" name="session_type_filter" id="id_xl_session_type_filter">
+                </form>
+
+            <!-- RESULTS AREA — populated by HTMX -->
+                <div id="id_report_results"></div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+    // Preset dropdown: stop the preset's own change from bubbling (avoids double HTMX fire),
+    // update date fields, then dispatch a single change on the form.
+        document.getElementById('id_date_range_picker').addEventListener('change', function (evt) {
+            evt.stopPropagation();
+            var parts = this.value.split(',');
+            document.getElementById('id_start_date').value = parts[0];
+            document.getElementById('id_end_date').value = parts[1];
+            document.getElementById('id_report_form').dispatchEvent(new Event('change'));
+        });
+
+    // Replace results with spinner before any HTMX request targeting the results div
+        document.body.addEventListener('htmx:beforeRequest', function (evt) {
+            if (evt.detail.target && evt.detail.target.id === 'id_report_results') {
+                evt.detail.target.innerHTML =
+                    '<div class="text-center my-4"><img style="width:40px" src="{% static "assets/img/spinners/bars.svg" %}"/></div>';
+            }
+        });
+
+    // CSV download: copy current filter values into the hidden form and submit
+        document.getElementById('id_csv_btn').addEventListener('click', function () {
+            document.getElementById('id_csv_start_date').value = document.getElementById('id_start_date').value;
+            document.getElementById('id_csv_end_date').value = document.getElementById('id_end_date').value;
+            document.getElementById('id_csv_view_type').value = document.getElementById('id_view_type').value;
+            document.getElementById('id_csv_session_type_filter').value = document.getElementById('id_session_type_filter').value;
+            document.getElementById('id_csv_form').submit();
+        });
+
+    // Excel download: copy current filter values into the hidden form and submit
+        document.getElementById('id_excel_btn').addEventListener('click', function () {
+            document.getElementById('id_xl_start_date').value = document.getElementById('id_start_date').value;
+            document.getElementById('id_xl_end_date').value = document.getElementById('id_end_date').value;
+            document.getElementById('id_xl_view_type').value = document.getElementById('id_view_type').value;
+            document.getElementById('id_xl_session_type_filter').value = document.getElementById('id_session_type_filter').value;
+            document.getElementById('id_excel_form').submit();
+        });
+
+    // Initial load: set default dates from first preset option then trigger HTMX
+        document.addEventListener('DOMContentLoaded', function () {
+            var picker = document.getElementById('id_date_range_picker');
+            var parts = picker.value.split(',');
+            document.getElementById('id_start_date').value = parts[0];
+            document.getElementById('id_end_date').value = parts[1];
+            document.getElementById('id_report_form').dispatchEvent(new Event('change'));
+        });
+
+    </script>
+
+{% endblock %}

@@ -1,0 +1,109 @@
+{% load humanize %}
+{% load static %}
+
+{% if page_obj %}
+
+    <h4 class="mt-2">Dollar Values &mdash; {{ start_date }} to {{ end_date }}</h4>
+
+    {% include "club_sessions/reports/_multi_session_pagination.html" %}
+
+    <div class="table-responsive">
+        <table class="table table-condensed table-hover" style="font-size: 0.9rem;">
+
+        <!-- TOTALS AT TOP -->
+            <thead>
+                <tr class="font-weight-bold table-secondary">
+                    <td>Grand Total</td>
+                    <td></td><td></td><td></td><td></td>
+                    <td class="text-right">{{ grand.tables|floatformat:"-1"|intcomma }}</td>
+                    {% for val in grand.pm_values %}
+                        <td class="text-right">${{ val|floatformat:2|intcomma }}</td>
+                    {% endfor %}
+                    <td class="text-right">${{ grand.unprocessed|floatformat:2|intcomma }}</td>
+                    <td class="text-right">${{ grand.total|floatformat:2|intcomma }}</td>
+                </tr>
+                <tr class="thead-dark">
+                    <th>Description</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Director</th>
+                    <th>Type</th>
+                    <th class="text-right">Tables</th>
+                    {% for pm in payment_methods %}
+                        <th class="text-right">{{ pm }}</th>
+                    {% endfor %}
+                    <th class="text-right">Unprocessed</th>
+                    <th class="text-right">Total</th>
+                </tr>
+            </thead>
+
+        <!-- SESSION BLOCKS (paginated) -->
+            <tbody>
+                {% for block in page_obj %}
+
+                <!-- TABLE FEES ROW -->
+                    <tr>
+                        <td>{{ block.session.description }}</td>
+                        <td>{{ block.session.session_date }}</td>
+                        <td>{{ block.session.time_of_day }}</td>
+                        <td>{{ block.session.director.full_name|default:"-" }}</td>
+                        <td>{{ block.session.session_type.name }}</td>
+                        <td class="text-right">{{ block.tables|floatformat:"-1"|intcomma }}</td>
+                        {% for val in block.pm_amounts %}
+                            <td class="text-right">${{ val|floatformat:2|intcomma }}</td>
+                        {% endfor %}
+                        <td class="text-right">${{ block.unprocessed|floatformat:2|intcomma }}</td>
+                        <td class="text-right">${{ block.session_total|floatformat:2|intcomma }}</td>
+                    </tr>
+
+                <!-- EXTRAS ROWS -->
+                    {% for extra in block.extras_by_desc %}
+                        <tr class="table-light" style="font-style: italic; font-size: 0.85rem;">
+                            <td class="pl-4">{{ extra.desc }}</td>
+                            <td></td><td></td><td></td><td></td><td></td>
+                            {% for val in extra.pm_values %}
+                                <td class="text-right">${{ val|floatformat:2|intcomma }}</td>
+                            {% endfor %}
+                            <td></td>
+                            <td class="text-right">${{ extra.row_total|floatformat:2|intcomma }}</td>
+                        </tr>
+                    {% endfor %}
+
+                <!-- SESSION TOTAL ROW -->
+                    <tr class="font-weight-bold table-secondary">
+                        <td class="pl-3">Session Total</td>
+                        <td></td><td></td><td></td><td></td>
+                        <td class="text-right">{{ block.tables|floatformat:"-1"|intcomma }}</td>
+                        {% for val in block.combined_pm %}
+                            <td class="text-right">${{ val|floatformat:2|intcomma }}</td>
+                        {% endfor %}
+                        <td class="text-right">${{ block.unprocessed|floatformat:2|intcomma }}</td>
+                        <td class="text-right">${{ block.grand_session_total|floatformat:2|intcomma }}</td>
+                    </tr>
+                    <tr><td colspan="{{ payment_methods|length|add:8 }}" style="padding: 2px;"></td></tr>
+
+                {% endfor %}
+            </tbody>
+
+        <!-- TOTALS AT BOTTOM -->
+            <tfoot>
+                <tr class="font-weight-bold table-secondary">
+                    <td>Grand Total</td>
+                    <td></td><td></td><td></td><td></td>
+                    <td class="text-right">{{ grand.tables|floatformat:"-1"|intcomma }}</td>
+                    {% for val in grand.pm_values %}
+                        <td class="text-right">${{ val|floatformat:2|intcomma }}</td>
+                    {% endfor %}
+                    <td class="text-right">${{ grand.unprocessed|floatformat:2|intcomma }}</td>
+                    <td class="text-right">${{ grand.total|floatformat:2|intcomma }}</td>
+                </tr>
+            </tfoot>
+
+        </table>
+    </div>
+
+    {% include "club_sessions/reports/_multi_session_pagination.html" %}
+
+{% else %}
+    <p class="text-muted mt-3">No sessions found for the selected criteria.</p>
+{% endif %}

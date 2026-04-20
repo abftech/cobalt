@@ -1,0 +1,80 @@
+{% load humanize %}
+{% load static %}
+
+{% if page_obj %}
+
+    <h4 class="mt-2">Player Numbers &mdash; {{ start_date }} to {{ end_date }}</h4>
+
+    {% include "club_sessions/reports/_multi_session_pagination.html" %}
+
+    <div class="table-responsive">
+        <table class="table table-condensed table-hover" style="font-size: 0.9rem;">
+
+        <!-- TOTALS AT TOP -->
+            <thead>
+                <tr class="font-weight-bold table-secondary">
+                    <td>Totals ({{ totals.sessions }} session{{ totals.sessions|pluralize }})</td>
+                    <td></td><td></td><td></td><td></td>
+                    <td class="text-right">{{ totals.tables|floatformat:"-1"|intcomma }}</td>
+                    {% for val in totals.pm_values %}
+                        <td class="text-right">{{ val|intcomma }}</td>
+                    {% endfor %}
+                    <td class="text-right">{{ totals.unprocessed|intcomma }}</td>
+                    <td class="text-right">{{ totals.total|intcomma }}</td>
+                </tr>
+                <tr class="thead-dark">
+                    <th>Description</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Director</th>
+                    <th>Type</th>
+                    <th class="text-right">Tables</th>
+                    {% for pm in payment_methods %}
+                        <th class="text-right">{{ pm }}</th>
+                    {% endfor %}
+                    <th class="text-right">Unprocessed</th>
+                    <th class="text-right">Total</th>
+                </tr>
+            </thead>
+
+        <!-- SESSION ROWS (paginated) -->
+            <tbody>
+                {% for row in page_obj %}
+                    <tr>
+                        <td>{{ row.session.description }}</td>
+                        <td>{{ row.session.session_date }}</td>
+                        <td>{{ row.session.time_of_day }}</td>
+                        <td>{{ row.session.director.full_name|default:"-" }}</td>
+                        <td>{{ row.session.session_type.name }}</td>
+                        <td class="text-right">{{ row.tables|floatformat:"-1"|intcomma }}</td>
+                        {% for val in row.pm_values %}
+                            <td class="text-right">{{ val|intcomma }}</td>
+                        {% endfor %}
+                        <td class="text-right">{{ row.unprocessed|intcomma }}</td>
+                        <td class="text-right">{{ row.total|intcomma }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+
+        <!-- TOTALS AT BOTTOM -->
+            <tfoot>
+                <tr class="font-weight-bold table-secondary">
+                    <td>Totals ({{ totals.sessions }} session{{ totals.sessions|pluralize }})</td>
+                    <td></td><td></td><td></td><td></td>
+                    <td class="text-right">{{ totals.tables|floatformat:"-1"|intcomma }}</td>
+                    {% for val in totals.pm_values %}
+                        <td class="text-right">{{ val|intcomma }}</td>
+                    {% endfor %}
+                    <td class="text-right">{{ totals.unprocessed|intcomma }}</td>
+                    <td class="text-right">{{ totals.total|intcomma }}</td>
+                </tr>
+            </tfoot>
+
+        </table>
+    </div>
+
+    {% include "club_sessions/reports/_multi_session_pagination.html" %}
+
+{% else %}
+    <p class="text-muted mt-3">No sessions found for the selected criteria.</p>
+{% endif %}
