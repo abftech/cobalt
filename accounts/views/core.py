@@ -84,7 +84,10 @@ def _register_handle_valid_form(form, request):
     # Check for an unregistered user
     user = form.save(commit=False)
 
-    un_reg = User.unreg_objects.filter(username=user.username).first()
+    try:
+        un_reg = User.unreg_objects.filter(system_number=int(user.username)).first()
+    except (ValueError, TypeError):
+        un_reg = None
 
     if un_reg:
         # If we have a matching unregistered user, then use that instead, use the provided email address
@@ -100,6 +103,17 @@ def _register_handle_valid_form(form, request):
 
     # Update club records
     replace_unregistered_user_with_real_user(user)
+
+    if not user.pk:
+        existing = User._default_manager.filter(
+            system_number=user.system_number
+        ).first()
+        if existing:
+            messages.error(
+                request,
+                "An account already exists for this ABF number. Please log in instead.",
+            )
+            return redirect("accounts:login")
 
     user.save()
 
@@ -368,6 +382,7 @@ def _check_duplicate_email(user):
 
     return others_same_email.exists()
 
+
 def add_un_registered_user_with_mpc_data(
     system_number: int, club: Organisation, added_by: User, origin: str = "Manual"
 ) -> (str, dict):
@@ -391,7 +406,7 @@ def add_un_registered_user_with_mpc_data(
         user_type=User.UserType.UNREGISTERED,
         system_number=system_number,
         username=system_number,
- #       last_updated_by=added_by,
+        #       last_updated_by=added_by,
         last_name=details["Surname"],
         first_name=details["GivenNames"],
         # email=mpc_email,

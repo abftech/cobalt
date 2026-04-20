@@ -16,6 +16,7 @@ def release_notes_view(request):
             "notes": [
                 "Email club members based on session attendance - Preview Mode",
                 "DEV - Provider handover documentation",
+                "Fix bug with registering an unregistered user",
             ],
         },
         {
