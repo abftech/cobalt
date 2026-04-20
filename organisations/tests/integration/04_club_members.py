@@ -109,12 +109,6 @@ def _csv_upload_helper(
         output=f"{membership.start_date=} {membership_start_date=}",
     )
 
-    # TODO - See if this is a timezone issue
-    print(f"{membership.end_date=}")
-    print(f"{membership.end_date + timedelta(days=1)}")
-    print(f"{(membership.end_date + timedelta(days=1)).strftime("%d/%m/%Y")}")
-    print(f"{membership_end_date}")
-
     # logic for end date is it will use the day before, not the day provided
     manager.save_results(
         status=membership.end_date.strftime("%d/%m/%Y") == membership_end_date,
