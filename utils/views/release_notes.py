@@ -19,6 +19,7 @@ def release_notes_view(request):
                 "Membership report - Preview Mode",
                 "DEV - changes to unit tests to improve reliability",
                 "DEV - Django 5.2.13",
+                "Bug fix for organisations/finance/transactions missing event",
             ],
         },
         {

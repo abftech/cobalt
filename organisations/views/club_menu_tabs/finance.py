@@ -188,9 +188,10 @@ def _summary_by_events(request, club):
 
     # Augment data
     for event_transaction in event_transactions:
-        event_transaction["description"] = event_names_dict[
-            event_transaction["event_id"]
-        ]
+        event_transaction["description"] = event_names_dict.get(
+            event_transaction["event_id"],
+            f"Deleted event ({event_transaction['event_id']})",
+        )
 
     return cobalt_paginator(request, event_transactions)
 
