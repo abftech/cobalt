@@ -27,7 +27,7 @@ class ClubMembership:
         self.manager.login_user(self.manager.betty)
 
         # set it up
-        setup_auto_top_up(self.manager)
+        setup_auto_top_up(self.manager, user=self.manager.betty)
 
         # Set balance to $20
         last_trans = MemberTransaction.objects.filter(member=self.manager.betty).last()

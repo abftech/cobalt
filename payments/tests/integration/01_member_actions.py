@@ -1,7 +1,5 @@
 """Tests for things a member is likely to do that uses payments"""
 
-import time
-
 from django.urls import reverse
 from selenium.webdriver.support.select import Select
 
@@ -15,6 +13,7 @@ from payments.tests.integration.common_functions import (
     check_balance_for_user,
     check_last_transaction_for_user,
     stripe_manual_payment_screen,
+    poll_for_db_condition,
 )
 from tests.test_manager import CobaltTestManagerIntegration
 
@@ -237,7 +236,7 @@ class MemberTransfer:
         self.manager.login_user(alan)
 
         # set it up
-        setup_auto_top_up(self.manager)
+        setup_auto_top_up(self.manager, user=alan)
         self.manager.save_results(
             status=True,
             test_name="Turn on auto top up for Alan",
@@ -308,8 +307,12 @@ class MemberTransfer:
         )
 
         #############################
-        # Give Stripe time to call us back
-        time.sleep(5)
+        # Poll until Stripe webhook callback creates Fiona's transaction
+        poll_for_db_condition(
+            lambda: MemberTransaction.objects.filter(
+                member=fiona, description=desc
+            ).exists()
+        )
 
         # Check after
 

@@ -6,12 +6,24 @@ from payments.views.core import get_balance, org_balance
 from payments.models import MemberTransaction, OrganisationTransaction
 
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from tests.test_manager import CobaltTestManagerIntegration
 
 """
     Common functions for payments.
 """
+
+
+def poll_for_db_condition(condition_fn, timeout=30, interval=1):
+    """Poll condition_fn every interval seconds until it returns True or timeout expires."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if condition_fn():
+            return True
+        time.sleep(interval)
+    return False
 
 
 def setup_auto_top_up(manager: CobaltTestManagerIntegration, user: User = None):
@@ -32,8 +44,11 @@ def setup_auto_top_up(manager: CobaltTestManagerIntegration, user: User = None):
     # Works better on small screens if scrolled down
     manager.selenium_scroll_to_bottom()
 
-    # wait for iFrame to load the old fashioned way
-    time.sleep(3)
+    # Wait for Stripe to inject the iframe, then pause for its internal JS to render card fields
+    WebDriverWait(manager.driver, 20).until(
+        EC.presence_of_element_located((By.TAG_NAME, "iframe"))
+    )
+    time.sleep(2)
 
     # Stripe fields are in an iFrame, we need to switch to that to find them
     manager.driver.switch_to.frame(manager.driver.find_element(By.TAG_NAME, "iframe"))
@@ -53,8 +68,13 @@ def setup_auto_top_up(manager: CobaltTestManagerIntegration, user: User = None):
     # Hit submit
     manager.driver.find_element(By.ID, "submit").click()
 
-    # Give Stripe some time to come back to us
-    time.sleep(5)
+    # Poll DB until Stripe webhook callback has set stripe_auto_confirmed
+    target_user = user if user else manager.test_user
+    poll_for_db_condition(
+        lambda: User.objects.filter(
+            pk=target_user.pk, stripe_auto_confirmed="On"
+        ).exists()
+    )
 
     # Login main user again
     if user:
@@ -64,7 +84,11 @@ def setup_auto_top_up(manager: CobaltTestManagerIntegration, user: User = None):
 def stripe_manual_payment_screen(manager: CobaltTestManagerIntegration):
     """Enter details on manual payment screen to confirm payment"""
 
-    time.sleep(5)
+    # Wait for Stripe to inject the iframe, then pause for its internal JS to render card fields
+    WebDriverWait(manager.driver, 20).until(
+        EC.presence_of_element_located((By.TAG_NAME, "iframe"))
+    )
+    time.sleep(2)
 
     manager.driver.switch_to.frame(manager.driver.find_element(By.TAG_NAME, "iframe"))
 
@@ -87,8 +111,11 @@ def stripe_manual_payment_screen(manager: CobaltTestManagerIntegration):
     manager.driver.switch_to.default_content()
     manager.driver.find_element(By.ID, "button-text").click()
 
-    # Give Stripe some time to come back to us
-    time.sleep(3)
+    # Wait for Stripe to process and show the success div (form gets hidden, result shown)
+    WebDriverWait(manager.driver, 20).until(
+        lambda d: "hidden"
+        not in d.find_element(By.CSS_SELECTOR, ".sr-result").get_attribute("class")
+    )
 
 
 def check_last_transaction_for_user(
