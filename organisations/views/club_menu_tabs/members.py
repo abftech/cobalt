@@ -371,6 +371,10 @@ def tools_auto_pay_or_due_date_htmx(request, club):
     )
 
 
+# User PKs allowed to see the renewal status report during preview
+RENEWAL_REPORT_PREVIEW_USER_PKS = []
+
+
 @check_club_menu_access()
 def reports_htmx(request, club):
     """Reports sub menu"""
@@ -388,6 +392,7 @@ def reports_htmx(request, club):
             "member_admin": member_admin,
             "has_errors": has_errors,
             "full_membership_mgmt": club.full_club_admin,
+            "show_renewal_report": request.user.pk in RENEWAL_REPORT_PREVIEW_USER_PKS,
         },
     )
 
@@ -607,6 +612,9 @@ def _build_renewal_report_data(club):
 def club_admin_report_renewal_htmx(request, club):
     """Renewal status report: shows which members have renewed after a bulk renewal"""
 
+    if request.user.pk not in RENEWAL_REPORT_PREVIEW_USER_PKS:
+        return rbac_forbidden(request, f"orgs.members.{club.id}.edit")
+
     if not rbac_user_has_role(request.user, f"orgs.members.{club.id}.edit"):
         return rbac_forbidden(request, f"orgs.members.{club.id}.edit")
 
@@ -637,6 +645,9 @@ def club_admin_report_renewal_csv(request, club_id):
 
     club = get_object_or_404(Organisation, pk=club_id)
 
+    if request.user.pk not in RENEWAL_REPORT_PREVIEW_USER_PKS:
+        return rbac_forbidden(request, f"orgs.members.{club.id}.edit")
+
     club_role = f"orgs.members.{club.id}.edit"
     if not rbac_user_has_role(request.user, club_role):
         rbac_model_for_state = get_rbac_model_for_state(club.state)
@@ -663,34 +674,41 @@ def club_admin_report_renewal_csv(request, club_id):
     )
     writer.writerow([])
 
-    header_row = [
-        f"{GLOBAL_ORG} Number",
-        "First Name",
-        "Last Name",
-        "Membership Type",
-        "Current Status",
-        "Renewal Status",
-        "Renewal From",
-        "Renewal To",
-        "Fee",
-        "Is Paid",
-        "Payment Method",
-        "Paid Date",
-        f"{BRIDGE_CREDITS} Balance",
-        "Auto Top-Up",
-    ]
+    writer.writerow(
+        [
+            "Section",
+            f"{GLOBAL_ORG} Number",
+            "Registered",
+            "First Name",
+            "Last Name",
+            "Membership Type",
+            "Current Status",
+            "Renewal Status",
+            "Renewal From",
+            "Renewal To",
+            "Renewal Fee",
+            "Is Paid",
+            "Payment Method",
+            "Paid Date",
+            "Due Date",
+            "Auto Pay Date",
+            "Current Paid Until",
+            f"{BRIDGE_CREDITS} Balance",
+            "Auto Top-Up",
+        ]
+    )
 
     def format_date_or_none(a_date):
         return a_date.strftime("%d/%m/%Y") if a_date else ""
 
-    def write_section(title, members):
-        writer.writerow([title])
-        writer.writerow(header_row)
+    def write_members(section_label, members):
         for member in members:
             renewal = getattr(member, "renewal", None)
             writer.writerow(
                 [
+                    section_label,
                     member.system_number,
+                    "No" if member.user_type == "Unregistered User" else "Yes",
                     member.first_name,
                     member.last_name,
                     member.latest_membership.membership_type.name,
@@ -706,6 +724,9 @@ def club_admin_report_renewal_csv(request, club_id):
                         else ""
                     ),
                     format_date_or_none(renewal.paid_date) if renewal else "",
+                    format_date_or_none(renewal.due_date) if renewal else "",
+                    format_date_or_none(renewal.auto_pay_date) if renewal else "",
+                    format_date_or_none(member.latest_membership.paid_until_date),
                     (
                         cobalt_currency(member.bridge_credits_balance)
                         if member.bridge_credits_balance is not None
@@ -714,12 +735,11 @@ def club_admin_report_renewal_csv(request, club_id):
                     member.auto_top_up if member.auto_top_up is not None else "",
                 ]
             )
-        writer.writerow([])
 
-    write_section("Renewed", renewed)
-    write_section("Renewal Sent - Awaiting Payment", pending)
-    write_section("Active - Not Yet Renewed", active_no_renewal)
-    write_section("Lapsed", lapsed)
+    write_members("Renewed", renewed)
+    write_members("Renewal Sent - Awaiting Payment", pending)
+    write_members("Active - Not Yet Renewed", active_no_renewal)
+    write_members("Lapsed", lapsed)
 
     return response
 
