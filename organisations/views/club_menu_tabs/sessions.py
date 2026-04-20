@@ -178,7 +178,7 @@ def club_menu_tab_sessions_sub_htmx(request, club):
 
     # Temp change for Preview Mode for certain users
     if session_email_access:
-        session_email_access = request.user.id in [4, 72, 3844, 286, 128]
+        session_email_access = request.user.id in [4, 72, 3844, 286, 128, 5999]
 
     return render(
         request,
