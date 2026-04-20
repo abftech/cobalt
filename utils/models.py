@@ -28,7 +28,7 @@ class Batch(models.Model):
     start_time = models.DateTimeField("Start Time", default=timezone.now)
     end_time = models.DateTimeField("End Time", null=True, blank=True)
     instance = models.CharField("Instance", max_length=10, null=True, blank=True)
-    node = models.CharField("Node running job", max_length=50, default=HOSTNAME)
+    node = models.CharField("Node running job", max_length=50, default="NOTSET")
     job_status = models.CharField(
         "Job Status", choices=JOB_STATUSES, max_length=10, default="Started"
     )
