@@ -20,6 +20,27 @@ then
   exit
 fi
 
+fetch_if_missing() {
+  local branch="$1"
+  if ! git rev-parse --verify "$branch" > /dev/null 2>&1; then
+    printf "${BLUE}Branch '$branch' not found locally — fetching from origin...${NC}\n"
+    git fetch origin "$branch":"$branch" 2>/dev/null || git fetch origin "$branch" 2>/dev/null
+    if ! git rev-parse --verify "$branch" > /dev/null 2>&1; then
+      # Try resolving as origin/branch
+      if git rev-parse --verify "origin/$branch" > /dev/null 2>&1; then
+        printf "${BLUE}Using origin/$branch${NC}\n"
+        eval "$2='origin/$branch'"
+      else
+        printf "${RED}Error: branch '$branch' not found locally or on origin.${NC}\n"
+        exit 1
+      fi
+    fi
+  fi
+}
+
+fetch_if_missing "$OLD" OLD
+fetch_if_missing "$NEW" NEW
+
 if [[ -z $(git status -s) ]]
 then
   # Nothing

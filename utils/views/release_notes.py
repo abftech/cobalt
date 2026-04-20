@@ -20,6 +20,7 @@ def release_notes_view(request):
                 "DEV - changes to unit tests to improve reliability",
                 "DEV - Django 5.2.13",
                 "Bug fix for organisations/finance/transactions missing event",
+                "DEV - fix cgit_util_compare to load branch locally.",
             ],
         },
         {
