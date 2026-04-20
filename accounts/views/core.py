@@ -113,7 +113,7 @@ def _register_handle_valid_form(form, request):
                 request,
                 "An account already exists for this ABF number. Please log in instead.",
             )
-            return redirect("accounts:login")
+            return redirect("login")
 
     user.save()
 
