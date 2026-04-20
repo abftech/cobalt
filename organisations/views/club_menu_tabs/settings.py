@@ -56,7 +56,6 @@ from organisations.views.admin import get_secretary_from_org_form
 from organisations.views.club_menu_tabs.members import _send_welcome_pack
 from organisations.views.club_menu_tabs.utils import (
     _user_is_uber_admin,
-    get_club_members_from_system_number_list,
     get_members_for_club,
 )
 from organisations.club_admin_core import (
@@ -1256,18 +1255,12 @@ def users_with_tag_htmx(request, club, partial=False):
         )
     )
 
-    users_with_tag = get_club_members_from_system_number_list(
-        tagged_system_numbers, club
-    )
-
-    # We need the list of members without the tag for the add function
     all_members = get_members_for_club(club)
 
     # Check if this club has members to avoid showing edit options that won't work
     club_has_members = bool(all_members)
 
     tagged_sn_set = set(tagged_system_numbers)
-    users_without_tag = [m for m in all_members if m.system_number not in tagged_sn_set]
 
     # Contact lists — contacts share the same tag model, just have a different membership status
     all_contacts = get_club_contacts(club)
@@ -1278,6 +1271,16 @@ def users_with_tag_htmx(request, club, partial=False):
         user.member_type = "Member"
     for contact in all_contacts:
         contact.member_type = "Contact"
+
+    # Exclude members whose system_number also exists as a contact to avoid duplicate rows
+    # (e.g. deleted members whose contact record was auto-created, or contacts later given a member record)
+    contact_sn_set = {c.system_number for c in all_contacts}
+    members_only = [m for m in all_members if m.system_number not in contact_sn_set]
+
+    users_with_tag = [m for m in members_only if m.system_number in tagged_sn_set]
+    users_without_tag = [
+        m for m in members_only if m.system_number not in tagged_sn_set
+    ]
 
     contacts_with_tag = [c for c in all_contacts if c.system_number in tagged_sn_set]
     contacts_without_tag = [

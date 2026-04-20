@@ -803,12 +803,16 @@ def _un_reg_edit_htmx_common(
 ):
     """Common part of editing un registered user, used whether form was filled in or not"""
 
-    member_tags = MemberClubTag.objects.prefetch_related("club_tag").filter(
-        club_tag__organisation=club, system_number=un_reg.system_number
+    member_tags = (
+        MemberClubTag.objects.prefetch_related("club_tag")
+        .filter(club_tag__organisation=club, system_number=un_reg.system_number)
+        .order_by("club_tag__tag_name")
     )
     used_tags = member_tags.values("club_tag__tag_name")
-    available_tags = ClubTag.objects.filter(organisation=club).exclude(
-        tag_name__in=used_tags
+    available_tags = (
+        ClubTag.objects.filter(organisation=club)
+        .exclude(tag_name__in=used_tags)
+        .order_by("tag_name")
     )
 
     email_address = club_email_for_member(club, un_reg.system_number)
@@ -1147,12 +1151,16 @@ def edit_member_htmx(request, club, message=""):
     hx_vars = f"club_id:{club.id},member_id:{member.id}"
 
     # Get member tags
-    member_tags = MemberClubTag.objects.prefetch_related("club_tag").filter(
-        club_tag__organisation=club, system_number=member.system_number
+    member_tags = (
+        MemberClubTag.objects.prefetch_related("club_tag")
+        .filter(club_tag__organisation=club, system_number=member.system_number)
+        .order_by("club_tag__tag_name")
     )
     used_tags = member_tags.values("club_tag__tag_name")
-    available_tags = ClubTag.objects.filter(organisation=club).exclude(
-        tag_name__in=used_tags
+    available_tags = (
+        ClubTag.objects.filter(organisation=club)
+        .exclude(tag_name__in=used_tags)
+        .order_by("tag_name")
     )
 
     emails = get_emails_sent_to_address(member.email, club, request.user)

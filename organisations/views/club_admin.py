@@ -88,12 +88,16 @@ def activity_tags_htmx(request, club):
     member_details = get_member_details(club, system_number)
 
     # Get member tags
-    member_tags = MemberClubTag.objects.prefetch_related("club_tag").filter(
-        club_tag__organisation=club, system_number=member_details.system_number
+    member_tags = (
+        MemberClubTag.objects.prefetch_related("club_tag")
+        .filter(club_tag__organisation=club, system_number=member_details.system_number)
+        .order_by("club_tag__tag_name")
     )
     used_tags = member_tags.values("club_tag__tag_name")
-    available_tags = ClubTag.objects.filter(organisation=club).exclude(
-        tag_name__in=used_tags
+    available_tags = (
+        ClubTag.objects.filter(organisation=club)
+        .exclude(tag_name__in=used_tags)
+        .order_by("tag_name")
     )
 
     return render(

@@ -35,10 +35,10 @@
 
                     <!-- CARD BODY WITH DRAG AND DROP FUNCTIONS -->
                     <div id="member_tags"
-                        class="card-body drag-addable"
-                        ondragstart="onDragStartRemove(event);"
-                        ondrop="drop(event)"
-                        ondragover="allowDrop(event)">
+                         class="card-body drag-addable"
+                         ondragstart="onDragStartRemove(event);"
+                         ondrop="drop(event)"
+                         ondragover="allowDrop(event)">
 
                         {% for tag in member_tags %}
 
@@ -65,10 +65,10 @@
 
                     <!-- CARD BODY WITH DRAG AND DROP FUNCTIONS -->
                     <div class="card-body drag-removable"
-                        id="available_tags"
-                        ondrop="drop(event)"
-                        ondragover="allowDrop(event)"
-                        ondragstart="onDragStartAdd(event);"
+                         id="available_tags"
+                         ondrop="drop(event)"
+                         ondragover="allowDrop(event)"
+                         ondragstart="onDragStartAdd(event);"
                     >
 
                         {% for tag in available_tags %}
@@ -101,9 +101,13 @@
         ev.preventDefault();
     }
 
-    // Handle drag event
+    // Handle drag event — lock container heights to prevent layout shift during drag
     function drag(ev) {
         ev.dataTransfer.setData("text", ev.target.id);
+        ["member_tags", "available_tags"].forEach(function(id) {
+            const el = document.getElementById(id);
+            el.style.minHeight = el.offsetHeight + "px";
+        });
     }
 
     // Drag is over
@@ -123,48 +127,64 @@
         $("#available_tags").addClass("drag-remove");
     }
 
+    // Insert a button into a container in alphabetical order (single DOM mutation)
+    function insertSorted(container, button) {
+        const label = button.textContent.trim().toLowerCase();
+        const successor = Array.from(container.querySelectorAll("button")).find(
+            b => b !== button && b.textContent.trim().toLowerCase() > label
+        );
+        if (successor) {
+            container.insertBefore(button, successor);
+        } else {
+            container.appendChild(button);
+        }
+    }
+
     // Handle drop event
     function drop(ev) {
 
-        // remove from list of tags for this member
         let postData;
         ev.preventDefault();
         onDragEnd();
 
-        // Only allow drop on div, not on other elements
+        // Resolve the container even when the drop lands on a child button
+        const container = ev.target.closest("#member_tags, #available_tags");
+        if (!container) return;
 
-        // Add to list of tags for this member
-        if (ev.target.id === "member_tags"){
-            const id = ev.dataTransfer.getData("text");
-            ev.target.appendChild(document.getElementById(id));
+        const id = ev.dataTransfer.getData("text");
+        const el = document.getElementById(id);
 
-            const moved = $("#" + id);
-            moved.addClass("btn-danger");
-            moved.removeClass("btn-default");
+        // Ignore drop onto itself
+        if (el === ev.target) return;
 
-            postData = {
+        const scrollY = window.scrollY;
+        insertSorted(container, el);
+        window.scrollTo(0, scrollY);
+
+        // Release locked heights now that the DOM has settled
+        ["member_tags", "available_tags"].forEach(function(id) {
+            document.getElementById(id).style.minHeight = "";
+        });
+
+        if (container.id === "member_tags") {
+            $("#" + id).addClass("btn-danger").removeClass("btn-default");
+            postData = new URLSearchParams({
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
                 'club_id': {{ club.id }},
                 'tag_id': id.split("_")[1],
                 'system_number': {{ member.system_number }}
-            };
-
-            const url = '{% url "organisations:club_menu_tab_comms_tags_add_user_tag" %}';
-            htmx.ajax('POST', url, {'target': '#tag_message', 'values': postData});
+            });
+            fetch('{% url "organisations:club_menu_tab_comms_tags_add_user_tag" %}', {method: 'POST', body: postData});
         }
-        if (ev.target.id === "available_tags") {
-            const id = ev.dataTransfer.getData("text");
-            ev.target.appendChild(document.getElementById(id));
-
-            const moved = $("#" + id);
-            moved.addClass("btn-default");
-            moved.removeClass("btn-danger");
-            postData = {
+        if (container.id === "available_tags") {
+            $("#" + id).addClass("btn-default").removeClass("btn-danger");
+            postData = new URLSearchParams({
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
                 'club_id': {{ club.id }},
                 'tag_id': id.split("_")[1],
                 'system_number': {{ member.system_number }}
-            };
-            const url = '{% url "organisations:club_menu_tab_comms_tags_remove_user_tag" %}';
-            htmx.ajax('POST', url, {'target': '#tag_message', 'values': postData});
+            });
+            fetch('{% url "organisations:club_menu_tab_comms_tags_remove_user_tag" %}', {method: 'POST', body: postData});
         }
     }
 
