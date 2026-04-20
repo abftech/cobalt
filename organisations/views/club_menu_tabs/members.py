@@ -529,6 +529,201 @@ def club_admin_report_active_csv(request, club_id):
     return club_admin_report_all_csv(request, club_id, active_only=True)
 
 
+def _build_renewal_report_data(club):
+    """Build the four-section data for the renewal status report.
+
+    Returns:
+        tuple: (renewed, pending, active_no_renewal, lapsed) lists of
+               augmented MemberClubDetails objects. Members in the renewed/pending
+               sections have a .renewal attribute pointing to their next-period
+               MemberMembershipType record. All members have .bridge_credits_balance
+               and .auto_top_up attributes.
+    """
+    renewal_start = club.next_renewal_date
+
+    # Get all members except contacts and deceased, sorted A-Z by last name
+    all_members = get_club_members(
+        club,
+        sort_option="last_desc",
+        active_only=False,
+        exclude_contacts=True,
+        exclude_deceased=True,
+    )
+
+    # Keep only current/due/lapsed members, excluding life members (does_not_renew)
+    relevant_members = [
+        m
+        for m in all_members
+        if m.membership_status
+        in [
+            MemberClubDetails.MEMBERSHIP_STATUS_CURRENT,
+            MemberClubDetails.MEMBERSHIP_STATUS_DUE,
+            MemberClubDetails.MEMBERSHIP_STATUS_LAPSED,
+        ]
+        and not m.latest_membership.membership_type.does_not_renew
+    ]
+
+    # Fetch renewal-period memberships for these members in one query
+    system_numbers = [m.system_number for m in relevant_members]
+    renewal_qs = MemberMembershipType.objects.filter(
+        membership_type__organisation=club,
+        start_date=renewal_start,
+        system_number__in=system_numbers,
+    ).select_related("membership_type", "payment_method")
+    renewal_dict = {rm.system_number: rm for rm in renewal_qs}
+
+    # Augment each member with balance and auto top-up info
+    for member in relevant_members:
+        user = member.user_or_unreg
+        if user and user.user_type == User.UserType.USER:
+            member.bridge_credits_balance = get_balance(user)
+            if user.auto_amount and user.stripe_auto_confirmed == "On":
+                member.auto_top_up = "On"
+            else:
+                member.auto_top_up = "Off"
+        else:
+            member.bridge_credits_balance = None
+            member.auto_top_up = None
+
+    # Categorise into four sections
+    renewed, pending, active_no_renewal, lapsed = [], [], [], []
+    for member in relevant_members:
+        renewal = renewal_dict.get(member.system_number)
+        if renewal:
+            member.renewal = renewal
+            if renewal.is_paid:
+                renewed.append(member)
+            else:
+                pending.append(member)
+        elif member.membership_status == MemberClubDetails.MEMBERSHIP_STATUS_LAPSED:
+            lapsed.append(member)
+        else:
+            active_no_renewal.append(member)
+
+    return renewed, pending, active_no_renewal, lapsed
+
+
+@check_club_menu_access()
+def club_admin_report_renewal_htmx(request, club):
+    """Renewal status report: shows which members have renewed after a bulk renewal"""
+
+    if not rbac_user_has_role(request.user, f"orgs.members.{club.id}.edit"):
+        return rbac_forbidden(request, f"orgs.members.{club.id}.edit")
+
+    renewed, pending, active_no_renewal, lapsed = _build_renewal_report_data(club)
+
+    return render(
+        request,
+        "organisations/club_menu/members/report_renewal_htmx.html",
+        {
+            "club": club,
+            "renewed": renewed,
+            "pending": pending,
+            "active_no_renewal": active_no_renewal,
+            "lapsed": lapsed,
+            "renewal_start": club.next_renewal_date,
+            "current_period_start": club.last_renewal_date,
+            "current_end": club.current_end_date,
+            "total_renewed_fees": sum((m.renewal.fee or 0) for m in renewed),
+            "total_pending_fees": sum((m.renewal.fee or 0) for m in pending),
+            "generated_at": timezone.now(),
+        },
+    )
+
+
+@login_required()
+def club_admin_report_renewal_csv(request, club_id):
+    """CSV download of the renewal status report"""
+
+    club = get_object_or_404(Organisation, pk=club_id)
+
+    club_role = f"orgs.members.{club.id}.edit"
+    if not rbac_user_has_role(request.user, club_role):
+        rbac_model_for_state = get_rbac_model_for_state(club.state)
+        state_role = f"orgs.state.{rbac_model_for_state}.edit"
+        if not rbac_user_has_role(request.user, state_role) and not rbac_user_has_role(
+            request.user, "orgs.admin.edit"
+        ):
+            return rbac_forbidden(request, club_role)
+
+    renewed, pending, active_no_renewal, lapsed = _build_renewal_report_data(club)
+
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="renewal_report.csv"'
+
+    now = timezone.now()
+    writer = csv.writer(response)
+    writer.writerow(
+        [
+            club.name,
+            "Renewal Status Report",
+            f"Downloaded by {request.user.full_name}",
+            now,
+        ]
+    )
+    writer.writerow([])
+
+    header_row = [
+        f"{GLOBAL_ORG} Number",
+        "First Name",
+        "Last Name",
+        "Membership Type",
+        "Current Status",
+        "Renewal Status",
+        "Renewal From",
+        "Renewal To",
+        "Fee",
+        "Is Paid",
+        "Payment Method",
+        "Paid Date",
+        f"{BRIDGE_CREDITS} Balance",
+        "Auto Top-Up",
+    ]
+
+    def format_date_or_none(a_date):
+        return a_date.strftime("%d/%m/%Y") if a_date else ""
+
+    def write_section(title, members):
+        writer.writerow([title])
+        writer.writerow(header_row)
+        for member in members:
+            renewal = getattr(member, "renewal", None)
+            writer.writerow(
+                [
+                    member.system_number,
+                    member.first_name,
+                    member.last_name,
+                    member.latest_membership.membership_type.name,
+                    member.get_membership_status_display(),
+                    renewal.get_membership_state_display() if renewal else "",
+                    format_date_or_none(renewal.start_date) if renewal else "",
+                    format_date_or_none(renewal.end_date) if renewal else "",
+                    renewal.fee if renewal else "",
+                    "Yes" if renewal and renewal.is_paid else ("No" if renewal else ""),
+                    (
+                        renewal.payment_method.payment_method
+                        if renewal and renewal.payment_method
+                        else ""
+                    ),
+                    format_date_or_none(renewal.paid_date) if renewal else "",
+                    (
+                        cobalt_currency(member.bridge_credits_balance)
+                        if member.bridge_credits_balance is not None
+                        else ""
+                    ),
+                    member.auto_top_up if member.auto_top_up is not None else "",
+                ]
+            )
+        writer.writerow([])
+
+    write_section("Renewed", renewed)
+    write_section("Renewal Sent - Awaiting Payment", pending)
+    write_section("Active - Not Yet Renewed", active_no_renewal)
+    write_section("Lapsed", lapsed)
+
+    return response
+
+
 # JPG deprecated - replaced
 @login_required()
 def report_all_csv(request, club_id):

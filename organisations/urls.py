@@ -402,6 +402,16 @@ urlpatterns = [
         name="club_menu_tab_members_report_all_csv",
     ),
     path(
+        "club-menu/tabs/members-reports-renewal",
+        organisations.views.club_menu_tabs.members.club_admin_report_renewal_htmx,
+        name="club_menu_tab_members_report_renewal_htmx",
+    ),
+    path(
+        "club-menu/tabs/members-reports-renewal-csv/<int:club_id>/",
+        organisations.views.club_menu_tabs.members.club_admin_report_renewal_csv,
+        name="club_menu_tab_members_report_renewal_csv",
+    ),
+    path(
         "club-menu/tabs/members-add-un-reg",
         organisations.views.club_menu_tabs.members.add_un_reg_htmx,
         name="club_menu_tab_members_add_un_reg_htmx",

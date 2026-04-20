@@ -1,0 +1,242 @@
+{% load humanize %}
+{% load cobalt_tags %}
+
+<span id="ignore_cobalt_save" hidden></span>
+
+
+<div class="card">
+    <div class="card-header card-header-info">
+        <h2>Members</h2>
+        {% include "organisations/club_menu/members/nav_htmx.html" with selected="reports" %}
+    </div>
+    <div class="card-body">
+
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h4>Renewal Status Report &mdash; {{ club.name }}</h4>
+                <p class="mb-1 text-muted">
+                    Current period: {{ current_period_start|date:"d M Y" }} &ndash; {{ current_end|date:"d M Y" }}
+                    &nbsp;|&nbsp;
+                    Renewal period from: {{ renewal_start|date:"d M Y" }}
+                </p>
+                <p class="mb-0 text-muted small">Generated {{ generated_at|date:"d M Y H:i" }}</p>
+            </div>
+            <a href="{% url "organisations:club_menu_tab_members_report_renewal_csv" club_id=club.id %}"
+               class="btn btn-sm bg-primary ml-3">
+                Download CSV
+            </a>
+        </div>
+
+        {% comment %}Section 1: Renewed{% endcomment %}
+        <h5 class="mt-4">
+            <span class="badge badge-success">Renewed</span>
+            &nbsp;{{ renewed|length }} member{{ renewed|length|pluralize }}
+            &nbsp;&mdash;&nbsp;Total fees: {{ total_renewed_fees|cobalt_currency }}
+        </h5>
+        {% if renewed %}
+            <div class="table-responsive">
+                <table id="id_renewed_table" class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>ABF#</th>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Membership Type</th>
+                            <th>Current Status</th>
+                            <th>Renewal Status</th>
+                            <th>Renewal Period</th>
+                            <th>Fee</th>
+                            <th>Payment Method</th>
+                            <th>Paid Date</th>
+                            <th>Bridge Credits</th>
+                            <th>Auto Top-Up</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in renewed %}
+                            <tr>
+                                <td>{{ member.system_number }}{% if member.user_type == "Unregistered User" %} <span class="badge badge-warning" title="This member is not registered with MyABF" data-toggle="tooltip">Unreg</span>{% endif %}</td>
+                                <td>{{ member.first_name }}</td>
+                                <td>{{ member.last_name }}</td>
+                                <td>{{ member.latest_membership.membership_type.name }}</td>
+                                <td>{{ member.get_membership_status_display }}</td>
+                                <td>{{ member.renewal.get_membership_state_display }}</td>
+                                <td>{{ member.renewal.start_date|date:"d M Y" }} &ndash; {{ member.renewal.end_date|date:"d M Y" }}</td>
+                                <td>{{ member.renewal.fee|cobalt_currency }}</td>
+                                <td>{% if member.renewal.payment_method %}{{ member.renewal.payment_method.payment_method }}{% else %}&mdash;{% endif %}</td>
+                                <td>{% if member.renewal.paid_date %}{{ member.renewal.paid_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</td>
+                                <td>{% if member.bridge_credits_balance is not None %}{{ member.bridge_credits_balance|cobalt_currency }}{% else %}&mdash;{% endif %}</td>
+                                <td>{% if member.auto_top_up %}{{ member.auto_top_up }}{% else %}&mdash;{% endif %}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted ml-2">No members have renewed yet.</p>
+        {% endif %}
+
+        {% comment %}Section 2: Renewal Sent - Awaiting Payment{% endcomment %}
+        <h5 class="mt-4">
+            <span class="badge badge-warning">Renewal Sent &mdash; Awaiting Payment</span>
+            &nbsp;{{ pending|length }} member{{ pending|length|pluralize }}
+            &nbsp;&mdash;&nbsp;Total fees: {{ total_pending_fees|cobalt_currency }}
+        </h5>
+        {% if pending %}
+            <div class="table-responsive">
+                <table id="id_pending_table" class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>ABF#</th>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Membership Type</th>
+                            <th>Current Status</th>
+                            <th>Renewal Status</th>
+                            <th>Renewal Period</th>
+                            <th>Fee</th>
+                            <th>Due Date</th>
+                            <th>Auto Pay Date</th>
+                            <th>Bridge Credits</th>
+                            <th>Auto Top-Up</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in pending %}
+                            <tr>
+                                <td>{{ member.system_number }}{% if member.user_type == "Unregistered User" %} <span class="badge badge-warning" title="This member is not registered with MyABF" data-toggle="tooltip">Unreg</span>{% endif %}</td>
+                                <td>{{ member.first_name }}</td>
+                                <td>{{ member.last_name }}</td>
+                                <td>{{ member.latest_membership.membership_type.name }}</td>
+                                <td>{{ member.get_membership_status_display }}</td>
+                                <td>{{ member.renewal.get_membership_state_display }}</td>
+                                <td>{{ member.renewal.start_date|date:"d M Y" }} &ndash; {{ member.renewal.end_date|date:"d M Y" }}</td>
+                                <td>{{ member.renewal.fee|cobalt_currency }}</td>
+                                <td>{% if member.renewal.due_date %}{{ member.renewal.due_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</td>
+                                <td>{% if member.renewal.auto_pay_date %}{{ member.renewal.auto_pay_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</td>
+                                <td>{% if member.bridge_credits_balance is not None %}{{ member.bridge_credits_balance|cobalt_currency }}{% else %}&mdash;{% endif %}</td>
+                                <td>{% if member.auto_top_up %}{{ member.auto_top_up }}{% else %}&mdash;{% endif %}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted ml-2">No renewal notices are outstanding.</p>
+        {% endif %}
+
+        {% comment %}Section 3: Active - Not Yet Renewed{% endcomment %}
+        <h5 class="mt-4">
+            <span class="badge badge-info">Active &mdash; Not Yet Renewed</span>
+            &nbsp;{{ active_no_renewal|length }} member{{ active_no_renewal|length|pluralize }}
+        </h5>
+        {% if active_no_renewal %}
+            <div class="table-responsive">
+                <table id="id_active_no_renewal_table" class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>ABF#</th>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Membership Type</th>
+                            <th>Current Status</th>
+                            <th>Paid Until</th>
+                            <th>Bridge Credits</th>
+                            <th>Auto Top-Up</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in active_no_renewal %}
+                            <tr>
+                                <td>{{ member.system_number }}{% if member.user_type == "Unregistered User" %} <span class="badge badge-warning" title="This member is not registered with MyABF" data-toggle="tooltip">Unreg</span>{% endif %}</td>
+                                <td>{{ member.first_name }}</td>
+                                <td>{{ member.last_name }}</td>
+                                <td>{{ member.latest_membership.membership_type.name }}</td>
+                                <td>{{ member.get_membership_status_display }}</td>
+                                <td>{% if member.latest_membership.paid_until_date %}{{ member.latest_membership.paid_until_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</td>
+                                <td>{% if member.bridge_credits_balance is not None %}{{ member.bridge_credits_balance|cobalt_currency }}{% else %}&mdash;{% endif %}</td>
+                                <td>{% if member.auto_top_up %}{{ member.auto_top_up }}{% else %}&mdash;{% endif %}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted ml-2">All active members have been included in a renewal.</p>
+        {% endif %}
+
+        {% comment %}Section 4: Lapsed{% endcomment %}
+        <h5 class="mt-4">
+            <span class="badge badge-danger">Lapsed</span>
+            &nbsp;{{ lapsed|length }} member{{ lapsed|length|pluralize }}
+        </h5>
+        {% if lapsed %}
+            <div class="table-responsive">
+                <table id="id_lapsed_table" class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>ABF#</th>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Membership Type</th>
+                            <th>Paid Until</th>
+                            <th>Bridge Credits</th>
+                            <th>Auto Top-Up</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in lapsed %}
+                            <tr>
+                                <td>{{ member.system_number }}{% if member.user_type == "Unregistered User" %} <span class="badge badge-warning" title="This member is not registered with MyABF" data-toggle="tooltip">Unreg</span>{% endif %}</td>
+                                <td>{{ member.first_name }}</td>
+                                <td>{{ member.last_name }}</td>
+                                <td>{{ member.latest_membership.membership_type.name }}</td>
+                                <td>{% if member.latest_membership.paid_until_date %}{{ member.latest_membership.paid_until_date|date:"d M Y" }}{% else %}&mdash;{% endif %}</td>
+                                <td>{% if member.bridge_credits_balance is not None %}{{ member.bridge_credits_balance|cobalt_currency }}{% else %}&mdash;{% endif %}</td>
+                                <td>{% if member.auto_top_up %}{{ member.auto_top_up }}{% else %}&mdash;{% endif %}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted ml-2">No lapsed members.</p>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+
+        $('[data-toggle="tooltip"]').tooltip();
+
+        var tableOptions = {
+            pageLength: 20,
+            searching: true,
+            ordering: true,
+            info: false,
+            drawCallback: function (settings) {
+                var pagination = $(this).closest('.dataTables_wrapper').find('.dataTables_paginate');
+                pagination.toggle(this.api().page.info().pages > 1);
+            },
+        };
+
+        // Default sort: last name (col 2) then first name (col 1)
+        var defaultOrder = [[2, 'asc'], [1, 'asc']];
+
+        if ($('#id_renewed_table').length) {
+            $('#id_renewed_table').DataTable($.extend({}, tableOptions, { order: defaultOrder }));
+        }
+        if ($('#id_pending_table').length) {
+            $('#id_pending_table').DataTable($.extend({}, tableOptions, { order: defaultOrder }));
+        }
+        if ($('#id_active_no_renewal_table').length) {
+            $('#id_active_no_renewal_table').DataTable($.extend({}, tableOptions, { order: defaultOrder }));
+        }
+        if ($('#id_lapsed_table').length) {
+            $('#id_lapsed_table').DataTable($.extend({}, tableOptions, { order: defaultOrder }));
+        }
+
+    });
+</script>

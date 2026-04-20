@@ -1,6 +1,8 @@
 {% load humanize %}
 {% load cobalt_tags %}
 
+<span id="ignore_cobalt_save" hidden></span>
+
 <div class="card">
     <div class="card-header card-header-info">
         <h2>Members</h2>
@@ -25,6 +27,19 @@
                     </td>
                     <td class="text-left pl-5">
                         Export CSV of all members
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button
+                            class="btn bg-primary btn-block"
+                            hx-post="{% url "organisations:club_menu_tab_members_report_renewal_htmx" %}"
+                            hx-vars="club_id:{{ club.id }}"
+                            hx-target="#id_panel_members"
+                        >Renewal Status Report</button>
+                    </td>
+                    <td class="text-left pl-5">
+                        Show which members have renewed, are pending, or have lapsed
                     </td>
                 </tr>
             </tbody>

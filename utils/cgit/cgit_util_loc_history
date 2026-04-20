@@ -1,0 +1,187 @@
+#!/usr/bin/env python3
+
+# about: show a visual chart of lines of code over time (monthly), current branch only
+# Usage: cgit_util_loc_history [--html] [--changes]
+#   --html     write an HTML page to /tmp and open it in a browser
+#   --changes  show net lines changed per month instead of cumulative total
+
+import re
+import subprocess
+import sys
+from collections import defaultdict
+
+
+EXCLUDE_PATTERNS = re.compile(
+    r"(static/|docs/_build/|\.xml$|migrations/|"
+    r"\.(png|jpg|jpeg|ico|so|pptx|pdf|gif|woff|woff2|ttf|eot|svg)$)"
+)
+
+HTML_MODE = "--html" in sys.argv
+CHANGES_MODE = "--changes" in sys.argv
+
+
+def run(cmd):
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    return result.stdout
+
+
+def get_monthly_data():
+    """Walk git log oldest→newest, return per-month deltas and cumulative totals."""
+    log = run(
+        [
+            "git",
+            "log",
+            "--numstat",
+            "--no-merges",
+            "--reverse",
+            "--format=COMMIT %ad",
+            "--date=format:%Y-%m",
+        ]
+    )
+
+    monthly_delta = defaultdict(int)
+    current_month = None
+
+    for line in log.splitlines():
+        if line.startswith("COMMIT "):
+            current_month = line[7:].strip()
+        elif current_month and line.strip():
+            parts = line.split("\t")
+            if len(parts) == 3:
+                added_raw, removed_raw, filepath = parts
+                if EXCLUDE_PATTERNS.search(filepath):
+                    continue
+                # Binary files show "-" instead of a number
+                try:
+                    added = int(added_raw)
+                    removed = int(removed_raw)
+                except ValueError:
+                    continue
+                monthly_delta[current_month] += added - removed
+
+    if not monthly_delta:
+        return [], []
+
+    months = sorted(monthly_delta)
+    running = 0
+    cumulative = []
+    changes = []
+    for month in months:
+        delta = monthly_delta[month]
+        running += delta
+        cumulative.append((month, max(running, 0)))
+        changes.append((month, delta))
+
+    return cumulative, changes
+
+
+def render_text(data, label, value_header):
+    if not data:
+        print("No data found.")
+        return
+
+    values = [v for _, v in data]
+    max_val = max(abs(v) for v in values) if values else 1
+    bar_width = 50
+    month_w = 8
+
+    branch = run(["git", "rev-parse", "--abbrev-ref", "HEAD"]).strip()
+    sep = f"+{'-' * (month_w + 2)}+{'-' * 14}+{'-' * (bar_width + 2)}+"
+    print()
+    print(f"  {label}  (branch: {branch})")
+    print()
+    print(sep)
+    print(f"| {'Month':<{month_w}} | {value_header:>12} | {'':^{bar_width}} |")
+    print(sep)
+
+    for month, val in data:
+        filled = round(abs(val) / max_val * bar_width) if max_val else 0
+        bar = "█" * filled
+        val_fmt = f"{val:+,}" if CHANGES_MODE else f"{val:,}"
+        print(f"| {month:<{month_w}} | {val_fmt:>12} | {bar:<{bar_width}} |")
+
+    print(sep)
+    print()
+
+
+def render_html(data, label, value_header):
+    if not data:
+        return "<p>No data found.</p>"
+
+    values = [v for _, v in data]
+    max_val = max(abs(v) for v in values) if values else 1
+    branch = run(["git", "rev-parse", "--abbrev-ref", "HEAD"]).strip()
+
+    rows = []
+    for month, val in data:
+        pct = round(abs(val) / max_val * 100) if max_val else 0
+        colour = "bg-danger" if val < 0 else "bg-success" if CHANGES_MODE else "bg-primary"
+        val_fmt = f"{val:+,}" if CHANGES_MODE else f"{val:,}"
+        bar = (
+            f"<div class='progress' style='height:18px'>"
+            f"<div class='progress-bar {colour}' style='width:{pct}%'>{val_fmt}</div>"
+            f"</div>"
+        )
+        rows.append(
+            f"<tr><td>{month}</td>"
+            f"<td class='text-end'>{val_fmt}</td>"
+            f"<td style='width:60%'>{bar}</td></tr>"
+        )
+
+    peak_label = "Peak change" if CHANGES_MODE else "Peak total"
+    summary = f"{peak_label}: {max_val:,} lines"
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>LOC History &mdash; {branch}</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+</head>
+<body class="p-4">
+  <h4>{label}</h4>
+  <p class="text-muted">Branch: <code>{branch}</code></p>
+  <table class="table table-sm table-hover table-bordered">
+    <thead class="thead-light">
+      <tr><th>Month</th><th class="text-end">{value_header}</th><th>Chart</th></tr>
+    </thead>
+    <tbody>
+      {''.join(rows)}
+      <tr class="table-secondary"><td colspan="3"><strong>{summary}</strong></td></tr>
+    </tbody>
+  </table>
+</body>
+</html>"""
+
+
+def main():
+    cumulative, changes = get_monthly_data()
+
+    if CHANGES_MODE:
+        data = changes
+        label = "Net lines changed per month"
+        value_header = "Net Change"
+    else:
+        data = cumulative
+        label = "Total lines of code over time"
+        value_header = "Lines"
+
+    if HTML_MODE:
+        import os
+        import tempfile
+
+        html = render_html(data, label, value_header)
+        tmp = tempfile.NamedTemporaryFile(
+            mode="w", suffix=".html", prefix="loc_history_", dir="/tmp", delete=False
+        )
+        tmp.write(html)
+        tmp.close()
+        print(f"Wrote {tmp.name}")
+        os.system(f"open {tmp.name}")
+    else:
+        render_text(data, label, value_header)
+
+
+if __name__ == "__main__":
+    main()
