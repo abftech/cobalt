@@ -194,6 +194,25 @@
                             {% endfor %}
                         </select>
 
+                        <!-- EVENT CATEGORY -->
+                        <label for="id_event_category" class="ml-lg-2">Category</label>
+                        <select
+                            class="selectpicker"
+                            data-style="btn btn-success"
+                            id="id_event_category"
+                            name="event_category"
+                            multiple
+                        >
+                            <option value="All">All</option>
+                            {% for group_name, group_categories in event_category_groups %}
+                                <optgroup label="{{ group_name }}">
+                                    {% for code, label in group_categories %}
+                                        <option value="{{ code }}">{{ label }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                            {% endfor %}
+                        </select>
+
                     </div>
                     <!-- SEARCH -->
                     <div>
@@ -244,7 +263,7 @@
 
         // Show or hide the filter buttons if there are (or aren't) filters set
         function manage_filter_buttons(){
-            if ($("#id_state").val() !== "All" || $("#id_congress_type").val() !== "All" || $("#id_congress_venue_type").val() !== "All" || $("#id_congress_search_string").val() !== "") {
+            if ($("#id_state").val() !== "All" || $("#id_congress_type").val() !== "All" || $("#id_congress_venue_type").val() !== "All" || $("#id_event_category").val() !== "All" || $("#id_congress_search_string").val() !== "") {
                 $("#id_filters").show();
             } else {
                 $("#id_filters").hide();
@@ -254,7 +273,7 @@
         // when something changes we check if we should allow the save filters button to show or not
         function check_save_filter_button(){
             // show unless everything is at defaults:
-            if ($("#id_state").val() !== "All" || $("#id_congress_type").val() !== "All" || $("#id_congress_venue_type").val() !== "All" || $("#id_congress_search_string").val() !== "") {
+            if ($("#id_state").val() !== "All" || $("#id_congress_type").val() !== "All" || $("#id_congress_venue_type").val() !== "All" || $("#id_event_category").val() !== "All" || $("#id_congress_search_string").val() !== "") {
                 $("#save_filters").show();
             }else {
                 $("#save_filters").hide();
@@ -267,6 +286,7 @@
             $('select[name=state]').val("All");
             $('select[name=congress_type]').val("All");
             $('select[name=congress_venue_type]').val("All");
+            $('select[name=event_category]').val("All");
 
             // refresh select pickers
             $('.selectpicker').selectpicker('refresh')
@@ -290,7 +310,7 @@
             });
 
             // if dropdowns change, reload and handle resetting values
-            $("#id_state, #id_congress_type, #id_congress_venue_type").on("changed.bs.select", function(e, clickedIndex, isSelected, oldValue) {
+            $("#id_state, #id_congress_type, #id_congress_venue_type, #id_event_category").on("changed.bs.select", function(e, clickedIndex, isSelected, oldValue) {
 
                 // trigger the reload from the server. Logically we would do this after fixing
                 // the data in the dropdowns, but if we do that we get a CSRF error that I can't work out
@@ -367,6 +387,7 @@
                 const state = $("#id_state").val();
                 const congress_type = $("#id_congress_type").val();
                 const congress_venue_type = $("#id_congress_venue_type").val();
+                const event_category = $("#id_event_category").val();
                 const search_string = $("#id_congress_search_string").val();
 
                 // convert to json and add csrf token
@@ -374,6 +395,7 @@
                     "state": state,
                     "congress_type": congress_type,
                     "congress_venue_type": congress_venue_type,
+                    "event_category": event_category,
                     "search_string": search_string,
                     'csrfmiddlewaretoken': '{{ csrf_token }}'
                 }
@@ -402,6 +424,7 @@
                     $('select[name=state]').val(result.state);
                     $('select[name=congress_type]').val(result.congress_type);
                     $('select[name=congress_venue_type]').val(result.congress_venue_type);
+                    $('select[name=event_category]').val(result.event_category || "All");
 
                     // refresh select pickers
                     $('.selectpicker').selectpicker('refresh')
@@ -421,6 +444,7 @@
                     $('select[name=state]').val("All");
                     $('select[name=congress_type]').val("All");
                     $('select[name=congress_venue_type]').val("All");
+                    $('select[name=event_category]').val("All");
 
                     // refresh select pickers
                     $('.selectpicker').selectpicker('refresh')

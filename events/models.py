@@ -79,10 +79,9 @@ EVENT_CATEGORY_CODES = {code: label for code, label in EVENT_CATEGORIES}
 
 # Groups used for rendering the category selector
 EVENT_CATEGORY_GROUPS = {
-    "Masterpoints": ["I", "R", "N", "K"],
+    "Masterpoints": ["O", "I", "R", "N", "K"],
     "Age": ["V", "S", "Y"],
     "Sex": ["M", "F", "X"],
-    "Open": ["O"],
 }
 EVENT_PLAYER_FORMAT = [
     ("Individual", "Individual"),

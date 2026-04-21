@@ -56,6 +56,8 @@ from events.models import (
     PartnershipDesk,
     CongressDownload,
     CONGRESS_TYPES,
+    EVENT_CATEGORY_CODES,
+    EVENT_CATEGORY_GROUPS,
 )
 from events.forms import (
     PartnershipForm,
@@ -97,6 +99,12 @@ def congress_listing(request, reverse_list=False):
             (f"O{online_platform}", f"Online - {online_platform.label}")
         )
 
+    # Build grouped category structure for the selectpicker optgroups
+    event_category_groups = [
+        (group_name, [(code, EVENT_CATEGORY_CODES[code]) for code in codes])
+        for group_name, codes in EVENT_CATEGORY_GROUPS.items()
+    ]
+
     return render(
         request,
         "events/players/congress_listing.html",
@@ -104,6 +112,7 @@ def congress_listing(request, reverse_list=False):
             "states": states,
             "congress_types": CONGRESS_TYPES,
             "congress_venue_types": congress_venue_types,
+            "event_category_groups": event_category_groups,
             "reverse_list": reverse_list,
         },
     )
@@ -157,6 +166,7 @@ def congress_listing_data_htmx(request):
     state = request.POST.getlist("state")
     congress_type = request.POST.getlist("congress_type")
     congress_venue_type = request.POST.getlist("congress_venue_type")
+    event_category = request.POST.getlist("event_category")
     congress_search_string = request.POST.get("congress_search_string")
 
     # Reverse list means we want the historic date (closed events, going backwards)
@@ -202,6 +212,18 @@ def congress_listing_data_htmx(request):
     if "All" not in congress_venue_type:
 
         congresses = _congress_listing_venue_type(congresses, congress_venue_type)
+
+    if "All" not in event_category and event_category:
+        q = Q()
+        for cat in event_category:
+            if cat == "O":
+                # Open includes events explicitly set to Open or with no categories set
+                q |= Q(event__event_categories__contains=[cat]) | Q(
+                    event__event_categories=[]
+                )
+            else:
+                q |= Q(event__event_categories__contains=[cat])
+        congresses = congresses.filter(q).distinct()
 
     if congress_search_string:
         congresses = congresses.filter(
