@@ -17,6 +17,7 @@ from .models import (
     CongressDownload,
     PartnershipDesk,
     EVENT_PLAYER_FORMAT_SIZE,
+    EVENT_CATEGORIES,
 )
 from organisations.models import Organisation
 from django_summernote.widgets import SummernoteInplaceWidget
@@ -352,13 +353,25 @@ class EventForm(forms.ModelForm):
         required=False,
     )
 
+    event_categories = forms.MultipleChoiceField(
+        choices=EVENT_CATEGORIES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        initial=["O"],
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        instance = kwargs.get("instance")
+        if instance and instance.pk:
+            self.initial["event_categories"] = instance.event_categories or ["O"]
+
     class Meta:
         model = Event
         fields = (
             "event_name",
             "description",
             "max_entries",
-            "event_type",
             "entry_open_date",
             "entry_close_date",
             "entry_close_time",
@@ -392,6 +405,28 @@ class EventForm(forms.ModelForm):
             )
         return cleaned_data
 
+    def clean_event_categories(self):
+        """Validate category selections and enforce Open default."""
+        cats = self.cleaned_data.get("event_categories") or []
+
+        # Default to Open if nothing selected
+        if not cats:
+            return ["O"]
+
+        # Remove Open if any non-Open category is selected
+        non_open = [c for c in cats if c != "O"]
+        if non_open:
+            cats = non_open
+
+        # At most one sex-based category
+        sex_cats = [c for c in cats if c in ("M", "F", "X")]
+        if len(sex_cats) > 1:
+            raise ValidationError(
+                "Only one sex-based category (Mens, Womens, Mixed) can be selected."
+            )
+
+        return cats
+
     def clean_entry_early_payment_discount(self):
         data = self.cleaned_data["entry_early_payment_discount"]
         if data is None:
@@ -413,6 +448,10 @@ class EventForm(forms.ModelForm):
         """Override to deal with translating per player to per entry"""
 
         instance = super(EventForm, self).save(commit=False)
+
+        # Persist event_categories from the MultipleChoiceField (not a ModelField so
+        # the default ModelForm save won't write it to the instance automatically)
+        instance.event_categories = self.cleaned_data.get("event_categories") or ["O"]
 
         players_per_entry = EVENT_PLAYER_FORMAT_SIZE[instance.player_format]
         if instance.player_format == "Teams":

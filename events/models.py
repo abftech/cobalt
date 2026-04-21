@@ -4,6 +4,7 @@ from decimal import Decimal
 import bleach
 import pytz
 from django.contrib.humanize.templatetags.humanize import ordinal
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
@@ -60,18 +61,29 @@ CONGRESS_STATUSES = [
     ("Published", "Published"),
     ("Closed", "Closed"),
 ]
-EVENT_TYPES = [
-    ("Open", "Open"),
-    ("Restricted", "Restricted"),
-    ("Novice", "Novice"),
-    ("Senior", "Senior"),
-    ("Youth", "Youth"),
-    ("Rookies", "Rookies"),
-    ("Veterans", "Veterans"),
-    ("Womens", "Womens"),
-    ("Intermediate", "Intermediate"),
-    ("Mixed", "Mixed"),
+EVENT_CATEGORIES = [
+    ("O", "Open"),
+    ("I", "Intermediate"),
+    ("R", "Restricted"),
+    ("N", "Novice"),
+    ("V", "Veterans"),
+    ("S", "Seniors"),
+    ("Y", "Youth"),
+    ("M", "Mens"),
+    ("F", "Womens"),
+    ("X", "Mixed"),
+    ("K", "Rookie"),
 ]
+
+EVENT_CATEGORY_CODES = {code: label for code, label in EVENT_CATEGORIES}
+
+# Groups used for rendering the category selector
+EVENT_CATEGORY_GROUPS = {
+    "Masterpoints": ["I", "R", "N", "V", "S", "Y"],
+    "Sex": ["M", "F", "X"],
+    "Age": ["K"],
+    "Open": ["O"],
+}
 EVENT_PLAYER_FORMAT = [
     ("Individual", "Individual"),
     ("Pairs", "Pairs"),
@@ -454,8 +466,11 @@ class Event(models.Model):
     event_name = models.CharField("Event Name", max_length=100)
     description = models.CharField("Description", max_length=400, null=True, blank=True)
     max_entries = models.IntegerField("Maximum Entries", null=True, blank=True)
-    event_type = models.CharField(
-        "Event Type", max_length=14, choices=EVENT_TYPES, null=True, blank=True
+    event_categories = ArrayField(
+        models.CharField(max_length=1),
+        default=list,
+        blank=True,
+        verbose_name="Event Categories",
     )
     # Open and close dates can be overridden at the event level
     entry_open_date = models.DateField(null=True, blank=True)
@@ -512,6 +527,17 @@ class Event(models.Model):
 
     def __str__(self):
         return f"{self.congress} - {self.event_name}"
+
+    def get_event_categories_display(self):
+        """Return a short display string for the event's categories.
+
+        Shows up to 3 letter codes joined by spaces. If more than 3, returns 'Multiple'.
+        Falls back to 'O' (Open) if no categories are set.
+        """
+        cats = self.event_categories or ["O"]
+        if len(cats) > 3:
+            return "Multiple"
+        return " ".join(cats)
 
         # If the text changes, run it through bleach before saving
 

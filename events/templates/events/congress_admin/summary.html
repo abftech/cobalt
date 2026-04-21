@@ -113,7 +113,7 @@
 
                                 <tr>
                                     <td><a href="{% url "events:admin_event_summary" event_id=event.id %}">{{ event.event_name }}</a></td>
-                                    <td>{{ event.event_type|default_if_none:"" }}</td>
+                                    <td>{{ event.get_event_categories_display }}</td>
                                     <td>{% if event.is_open %}Entries Open{% else %}Entries Closed{% endif %}</td>
 
                                     <!-- SHOW FULL ENTRY FEE IF NOT MEMBERS ONLY -->

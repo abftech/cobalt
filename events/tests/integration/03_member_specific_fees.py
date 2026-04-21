@@ -73,11 +73,11 @@ def _change_data_and_check(
         # Test the form
 
         # make a random change
-        event_type = "Senior" if event.event_type == "Rookies" else "Rookies"
+        event_categories = ["S"] if event.event_categories != ["S"] else ["K"]
 
         form_data = {
             "event_name": "Team",
-            "event_type": event_type,
+            "event_categories": event_categories,
             "player_format": "Teams",
             "entry_youth_payment_discount": 0,
             "list_priority_order": 0,
@@ -120,10 +120,14 @@ def _change_data_and_check(
             f"{manager.base_url}/events/congress-builder/create/edit-event/{congress.id}/{event.id}"
         )
 
-        # make a random change
-        event_type = "Senior" if event.event_type == "Rookies" else "Rookies"
+        # make a random change — toggle Seniors category checkbox
+        cat_id = (
+            "id_event_cat_S"
+            if "S" not in (event.event_categories or [])
+            else "id_event_cat_K"
+        )
 
-        manager.selenium_wait_for_select_and_pick_an_option("id_event_type", event_type)
+        manager.selenium_wait_for_clickable(cat_id).click()
 
         manager.selenium_wait_for_clickable("id_save").click()
 

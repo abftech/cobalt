@@ -170,7 +170,7 @@ class EventModelTests:
         event = Event(
             congress=congress,
             event_name="pytest event",
-            event_type="Open",
+            event_categories=["O"],
             entry_fee=Decimal(ENTRY_FEE),
             entry_early_payment_discount=Decimal(EARLY_DISCOUNT),
             player_format="Pairs",
@@ -451,7 +451,7 @@ class EventModelTests:
         event = Event(
             congress=congress,
             event_name="pytest event",
-            event_type="Open",
+            event_categories=["O"],
             entry_fee=Decimal(ENTRY_FEE),
             entry_early_payment_discount=Decimal(EARLY_DISCOUNT),
             player_format="Pairs",
@@ -532,7 +532,7 @@ class EventModelTests:
         event = Event(
             congress=congress,
             event_name="pytest event",
-            event_type="Open",
+            event_categories=["O"],
             entry_fee=Decimal(ENTRY_FEE),
             entry_early_payment_discount=Decimal(EARLY_DISCOUNT),
             player_format="Pairs",

@@ -229,18 +229,98 @@
 
                                     <div class="row">
                                         <div class="col-3 justify-content-center align-self-center">
-                                            Event Type (optional)
+                                            Event Category (optional)
                                         </div>
                                         <div class="col-7">
-                                            <div id="div_id_event_type" class="form-group">
-                                                <span class="cobalt-form-error" id="id_event_type_errors">{{ form.event_type.errors|striptags }}</span>
-                                                {% render_field form.event_type class+="form-control" %}
+                                            <div id="div_id_event_categories" class="form-group">
+                                                <span class="cobalt-form-error" id="id_event_categories_errors">{{ form.event_categories.errors|striptags }}</span>
+                                                <div class="row">
+                                                    <div class="col-6">
+                                                        <small class="text-muted font-weight-bold">Masterpoints</small><br>
+                                                        {% for value, label in form.event_categories.field.choices %}
+                                                            {% if value == "I" or value == "R" or value == "N" or value == "V" or value == "S" or value == "Y" %}
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input event-cat-input event-cat-masterpoints" type="checkbox"
+                                                                           name="event_categories" value="{{ value }}" id="id_event_cat_{{ value }}"
+                                                                           {% if value in form.event_categories.value %}checked{% endif %}>
+                                                                    <label class="form-check-label" for="id_event_cat_{{ value }}">{{ label }}</label>
+                                                                </div>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <small class="text-muted font-weight-bold">Sex</small><br>
+                                                        {% for value, label in form.event_categories.field.choices %}
+                                                            {% if value == "M" or value == "F" or value == "X" %}
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input event-cat-input event-cat-sex" type="checkbox"
+                                                                           name="event_categories" value="{{ value }}" id="id_event_cat_{{ value }}"
+                                                                           {% if value in form.event_categories.value %}checked{% endif %}>
+                                                                    <label class="form-check-label" for="id_event_cat_{{ value }}">{{ label }}</label>
+                                                                </div>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                        <br>
+                                                        <small class="text-muted font-weight-bold">Age</small><br>
+                                                        {% for value, label in form.event_categories.field.choices %}
+                                                            {% if value == "K" %}
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input event-cat-input" type="checkbox"
+                                                                           name="event_categories" value="{{ value }}" id="id_event_cat_{{ value }}"
+                                                                           {% if value in form.event_categories.value %}checked{% endif %}>
+                                                                    <label class="form-check-label" for="id_event_cat_{{ value }}">{{ label }}</label>
+                                                                </div>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                        <br>
+                                                        <small class="text-muted font-weight-bold">Default</small><br>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox"
+                                                                   name="event_categories" value="O" id="id_event_cat_O"
+                                                                   {% if "O" in form.event_categories.value %}checked{% endif %}>
+                                                            <label class="form-check-label" for="id_event_cat_O">Open</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="col-2 justify-content-center align-self-center">
-                                            <a href="javascript:void(0)" onclick='help("Event Type", "Classification of who can enter.");'>help</a>
+                                            <a href="javascript:void(0)" onclick='help("Event Category", "Classification of who can enter. Open is the default. Select one or more specific categories if the event is restricted.");'>help</a>
                                         </div>
                                     </div>
+                                    <script>
+                                        (function () {
+                                            var openCheckbox = document.getElementById('id_event_cat_O');
+                                            var catInputs = document.querySelectorAll('.event-cat-input');
+                                            var sexInputs = document.querySelectorAll('.event-cat-sex');
+
+                                            function syncOpen() {
+                                                var anyNonOpen = false;
+                                                catInputs.forEach(function (el) {
+                                                    if (el.checked) anyNonOpen = true;
+                                                });
+                                                openCheckbox.checked = !anyNonOpen;
+                                            }
+
+                                            catInputs.forEach(function (el) {
+                                                el.addEventListener('change', function () {
+                                                    syncOpen();
+                                                });
+                                            });
+
+                                            // Enforce sex exclusivity: uncheck others when one is picked
+                                            sexInputs.forEach(function (el) {
+                                                el.addEventListener('change', function () {
+                                                    if (el.checked) {
+                                                        sexInputs.forEach(function (other) {
+                                                            if (other !== el) other.checked = false;
+                                                        });
+                                                    }
+                                                    syncOpen();
+                                                });
+                                            });
+                                        })();
+                                    </script>
 
                                     <br>
                                     <div class="row">

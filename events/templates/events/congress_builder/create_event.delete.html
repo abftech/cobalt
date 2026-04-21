@@ -105,16 +105,16 @@
                             <br>
                             <div class="row">
                                 <div class="col-3 justify-content-center align-self-center">
-                                    Event Type
+                                    Event Category
                                 </div>
                                 <div class="col-7">
-                                    <div id="div_id_event_type" class="form-group">
-                                        <span class="cobalt-form-error" id="id_event_type_errors">{{ form.event_type.errors|striptags }}</span>
-                                        {% render_field form.event_type class+="form-control" %}
+                                    <div id="div_id_event_categories" class="form-group">
+                                        <span class="cobalt-form-error" id="id_event_categories_errors">{{ form.event_categories.errors|striptags }}</span>
+                                        {{ form.event_categories }}
                                     </div>
                                 </div>
                                 <div class="col-2 justify-content-center align-self-center">
-                                    <a href="javascript:void(0)" onclick='help("Event Type", "Classification of who can enter.");'>help</a>
+                                    <a href="javascript:void(0)" onclick='help("Event Category", "Classification of who can enter.");'>help</a>
                                 </div>
                             </div>
                             <br>
