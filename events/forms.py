@@ -355,6 +355,7 @@ class EventForm(forms.ModelForm):
 
     event_cat_masterpoints = forms.MultipleChoiceField(
         choices=[
+            ("O", "Open"),
             ("I", "Intermediate"),
             ("R", "Restricted"),
             ("N", "Novice"),
@@ -363,25 +364,26 @@ class EventForm(forms.ModelForm):
         widget=forms.SelectMultiple,
         required=False,
     )
-    event_cat_age = forms.ChoiceField(
+    event_cat_age = forms.MultipleChoiceField(
         choices=[
-            ("", "---"),
+            ("_all", "All"),
             ("V", "Veterans"),
             ("S", "Seniors"),
             ("Y", "Youth"),
         ],
+        widget=forms.SelectMultiple,
         required=False,
     )
-    event_cat_sex = forms.ChoiceField(
+    event_cat_sex = forms.MultipleChoiceField(
         choices=[
-            ("", "---"),
+            ("_all", "All"),
             ("M", "Mens"),
             ("F", "Womens"),
             ("X", "Mixed"),
         ],
+        widget=forms.SelectMultiple,
         required=False,
     )
-    event_cat_open = forms.BooleanField(required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -390,15 +392,12 @@ class EventForm(forms.ModelForm):
             "O"
         ]
         self.initial["event_cat_masterpoints"] = [
-            c for c in cats if c in ("I", "R", "N", "K")
+            c for c in cats if c in ("O", "I", "R", "N", "K")
         ]
-        self.initial["event_cat_age"] = next(
-            (c for c in cats if c in ("V", "S", "Y")), ""
-        )
-        self.initial["event_cat_sex"] = next(
-            (c for c in cats if c in ("M", "F", "X")), ""
-        )
-        self.initial["event_cat_open"] = "O" in cats
+        age_cats = [c for c in cats if c in ("V", "S", "Y")]
+        self.initial["event_cat_age"] = age_cats if age_cats else ["_all"]
+        sex_cats = [c for c in cats if c in ("M", "F", "X")]
+        self.initial["event_cat_sex"] = sex_cats if sex_cats else ["_all"]
 
     class Meta:
         model = Event
@@ -435,20 +434,15 @@ class EventForm(forms.ModelForm):
                 "Congress is in the past. Edits are not allowed. Start a new one by creating a copy via Club Admin - Calendar"
             )
 
-        # Assemble event_categories from the four sub-fields
+        # Assemble event_categories from the three sub-fields
         masterpoints = list(cleaned_data.get("event_cat_masterpoints") or [])
-        age = cleaned_data.get("event_cat_age") or ""
-        sex = cleaned_data.get("event_cat_sex") or ""
-        open_selected = cleaned_data.get("event_cat_open", False)
+        age_list = [v for v in (cleaned_data.get("event_cat_age") or []) if v != "_all"]
+        sex_list = [v for v in (cleaned_data.get("event_cat_sex") or []) if v != "_all"]
 
-        categories = masterpoints[:]
-        if age:
-            categories.append(age)
-        if sex:
-            categories.append(sex)
+        categories = masterpoints + age_list + sex_list
 
-        # Default to Open if nothing specific selected, or if Open explicitly ticked
-        if not categories or open_selected:
+        # Default to Open if nothing selected
+        if not categories:
             categories = ["O"]
 
         cleaned_data["event_categories"] = categories

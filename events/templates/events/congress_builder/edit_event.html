@@ -229,7 +229,7 @@
 
                                     <div class="row">
                                         <div class="col-3 justify-content-center align-self-center">
-                                            Event Category
+                                            Event Categories
                                         </div>
                                         <div class="col-7">
                                             <span class="cobalt-form-error">
@@ -240,56 +240,159 @@
                                             <div class="form-group row mb-2">
                                                 <label class="col-4 col-form-label font-weight-bold">Masterpoints</label>
                                                 <div class="col-8">
-                                                    {% render_field form.event_cat_masterpoints class="selectpicker event-cat-non-open" data-style="btn btn-default btn-sm" data-live-search="false" title="None selected" id="id_event_cat_masterpoints" %}
+                                                    {% render_field form.event_cat_masterpoints class="selectpicker" data-style="btn btn-info btn-sm" id="id_event_cat_masterpoints" %}
                                                 </div>
                                             </div>
                                             <div class="form-group row mb-2">
                                                 <label class="col-4 col-form-label font-weight-bold">Age</label>
                                                 <div class="col-8">
-                                                    {% render_field form.event_cat_age class="selectpicker event-cat-non-open" data-style="btn btn-default btn-sm" id="id_event_cat_age" %}
-                                                </div>
-                                            </div>
-                                            <div class="form-group row mb-2">
-                                                <label class="col-4 col-form-label font-weight-bold">Sex</label>
-                                                <div class="col-8">
-                                                    {% render_field form.event_cat_sex class="selectpicker event-cat-non-open" data-style="btn btn-default btn-sm" id="id_event_cat_sex" %}
+                                                    {% render_field form.event_cat_age class="selectpicker" data-style="btn btn-warning btn-sm" id="id_event_cat_age" %}
                                                 </div>
                                             </div>
                                             <div class="form-group row mb-0">
-                                                <label class="col-4 col-form-label font-weight-bold">Open</label>
-                                                <div class="col-8 d-flex align-items-center">
-                                                    {% render_field form.event_cat_open class+="form-check-input mt-0" id="id_event_cat_open" %}
+                                                <label class="col-4 col-form-label font-weight-bold">Sex</label>
+                                                <div class="col-8">
+                                                    {% render_field form.event_cat_sex class="selectpicker" data-style="btn btn-success btn-sm" id="id_event_cat_sex" %}
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-2 justify-content-center align-self-center">
-                                            <a href="javascript:void(0)" onclick='help("Event Category", "Classification of who can enter. Open is the default. Select specific categories if they apply. Selecting Open clears all other selections.");'>help</a>
+                                            <a href="javascript:void(0)" onclick='help("Event Category", "Classification of who can enter. Open is the default. Select specific categories if they apply.");'>help</a>
                                         </div>
                                     </div>
+                                    {% if page_type == "edit" %}
+                                        <div class="row" id="align_cats_row" style="display:none;">
+                                            <div class="col-3"></div>
+                                            <div class="col-7">
+                                                <button type="button" id="add_cats_from_selectors" class="btn btn-warning btn-sm">
+                                                    Align categories for entrants
+                                                </button>
+                                            </div>
+                                            <div class="col-2 align-self-center">
+                                                <a href="javascript:void(0)" onclick='help("Align categories for entrants", "You have added event categories. If you click this button it will generate the categories below so people who enter can choose which category they want to be in.");'>help</a>
+                                            </div>
+                                        </div>
+                                    {% endif %}
                                     <script>
                                         $(document).ready(function () {
                                             $('.selectpicker').selectpicker();
 
-                                            function hasNonOpenSelection() {
-                                                const mpSelected = $('#id_event_cat_masterpoints').val() && $('#id_event_cat_masterpoints').val().length > 0;
-                                                const ageSelected = $('#id_event_cat_age').val() !== '';
-                                                const sexSelected = $('#id_event_cat_sex').val() !== '';
-                                                return mpSelected || ageSelected || sexSelected;
+                                            const catLabels = {
+                                                'O': 'Open', 'I': 'Intermediate', 'R': 'Restricted',
+                                                'N': 'Novice', 'K': 'Rookie',
+                                                'V': 'Veterans', 'S': 'Seniors', 'Y': 'Youth',
+                                                'M': 'Mens', 'F': 'Womens', 'X': 'Mixed'
+                                            };
+
+                                            // Build the cross-product of selected categories.
+                                            // Each combination is the mp label optionally suffixed with
+                                            // age and/or sex labels, joined by " - ".
+                                            // Returns an array of strings, e.g. ["Open - Seniors", "Intermediate - Seniors"]
+                                            function selectedValues(selectId) {
+                                                return Array.from(document.getElementById(selectId).options)
+                                                    .filter(o => o.selected)
+                                                    .map(o => o.value);
                                             }
 
-                                            // When a non-open control changes: uncheck Open if anything is selected
-                                            $('.event-cat-non-open').on('changed.bs.select change', function () {
-                                                $('#id_event_cat_open').prop('checked', !hasNonOpenSelection());
+                                            function getDesiredCategories() {
+                                                const mp = selectedValues('id_event_cat_masterpoints');
+                                                const age = selectedValues('id_event_cat_age').filter(v => v !== '_all');
+                                                const sex = selectedValues('id_event_cat_sex').filter(v => v !== '_all');
+                                                const ageItems = age.length >= 2 ? age.map(v => catLabels[v]) : [null];
+                                                const sexItems = sex.length >= 2 ? sex.map(v => catLabels[v]) : [null];
+                                                const labels = [];
+                                                mp.forEach(function (m) {
+                                                    ageItems.forEach(function (a) {
+                                                        sexItems.forEach(function (s) {
+                                                            labels.push([catLabels[m], a, s].filter(Boolean).join(' - '));
+                                                        });
+                                                    });
+                                                });
+                                                return labels;
+                                            }
+
+                                            function updateAddCatsButton() {
+                                                $('#align_cats_row').toggle(getDesiredCategories().length > 1);
+                                            }
+
+                                            // Masterpoints: if all non-Open options are deselected, auto-select Open
+                                            $('#id_event_cat_masterpoints').on('changed.bs.select', function () {
+                                                const selected = selectedValues('id_event_cat_masterpoints');
+                                                const hasNonOpen = selected.some(v => v !== 'O');
+                                                if (!hasNonOpen && !selected.includes('O')) {
+                                                    $(this).selectpicker('val', ['O']);
+                                                }
+                                                updateAddCatsButton();
                                             });
 
-                                            // When Open is checked: clear all other selectpickers
-                                            $('#id_event_cat_open').on('change', function () {
-                                                if ($(this).is(':checked')) {
-                                                    $('#id_event_cat_masterpoints').selectpicker('deselectAll').selectpicker('refresh');
-                                                    $('#id_event_cat_age').val('').selectpicker('refresh');
-                                                    $('#id_event_cat_sex').val('').selectpicker('refresh');
-                                                }
+                                            // Age and Sex: All is mutually exclusive with specific options.
+                                            // We update both the underlying <option> selected props AND the
+                                            // dropdown <li> selected classes so the checkmarks update immediately
+                                            // without closing the dropdown.
+                                            function syncAllOption(selectId) {
+                                                $(`#${selectId}`).on('changed.bs.select', function (e, clickedIndex, isSelected) {
+                                                    const $select = $(this);
+                                                    const selected = $select.val() || [];
+                                                    let newVal = null;
+
+                                                    if (selected.length === 0) {
+                                                        newVal = ['_all'];
+                                                    } else if (clickedIndex === 0 && isSelected) {
+                                                        // All was just ticked — deselect everything else
+                                                        newVal = ['_all'];
+                                                    } else if (selected.includes('_all') && selected.length > 1) {
+                                                        // A specific option was added — remove All
+                                                        newVal = selected.filter(v => v !== '_all');
+                                                    }
+
+                                                    if (newVal !== null) {
+                                                        // Update underlying <option> selected props
+                                                        $select.find('option').each(function () {
+                                                            $(this).prop('selected', newVal.includes($(this).val()));
+                                                        });
+
+                                                        // Re-sync the open dropdown checkmarks using selectpicker's
+                                                        // own setOptionStatus(), then update the button text
+                                                        const picker = $select.data('selectpicker');
+                                                        if (picker) {
+                                                            picker.setOptionStatus();
+                                                            $select.selectpicker('render');
+                                                        }
+                                                    }
+                                                });
+                                            }
+
+                                            syncAllOption('id_event_cat_age');
+                                            syncAllOption('id_event_cat_sex');
+
+                                            // Call updateAddCatsButton after age/sex changes too
+                                            $('#id_event_cat_age, #id_event_cat_sex').on('changed.bs.select', function () {
+                                                updateAddCatsButton();
                                             });
+
+                                            {% if page_type == "edit" %}
+                                            // Align categories for entrants button
+                                                $('#add_cats_from_selectors').on('click', function () {
+                                                    const labels = getDesiredCategories();
+
+                                                    $.ajax({
+                                                        url: '{% url "events:sync_entry_categories_ajax" %}',
+                                                        method: 'POST',
+                                                        headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                                                        data: {event_id: {{ event.id }}, 'categories[]': labels},
+                                                        dataType: 'json'
+                                                    }).done(function (response) {
+                                                        const cats = response.data.categories;
+                                                        const $list = $('#categories_list');
+                                                        $list.empty();
+                                                        cats.forEach(function (cat) {
+                                                            $list.append($('<option>').val(cat.id).text(cat.description));
+                                                        });
+                                                        $('#categories_div').show();
+                                                        $('#category_show').hide();
+                                                    });
+                                                });
+                                            {% endif %}
                                         });
                                     </script>
 

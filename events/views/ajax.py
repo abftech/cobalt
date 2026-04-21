@@ -421,6 +421,60 @@ def payment_options_for_user_ajax(request):
 
 
 @login_required()
+def sync_entry_categories_ajax(request):
+    """Sync entry categories for an event to match the given list.
+
+    Adds categories that are in the desired list but not present,
+    and deletes categories that are present but not in the desired list.
+    """
+
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+
+    event_id = request.POST.get("event_id")
+    desired_labels = request.POST.getlist("categories[]")
+
+    event = get_object_or_404(Event, pk=event_id)
+
+    role = f"events.org.{event.congress.congress_master.org.id}.edit"
+    if not rbac_user_has_role(request.user, role):
+        return rbac_forbidden(request, role)
+
+    existing = {c.description.lower(): c for c in Category.objects.filter(event=event)}
+    desired_lower = {label.lower() for label in desired_labels}
+
+    for name, cat in existing.items():
+        if name not in desired_lower:
+            cat.delete()
+            log_event(
+                user=request.user,
+                severity="INFO",
+                source="Events",
+                sub_source="events_admin",
+                message=f"Removed entry category '{cat.description}' from {event.href}",
+            )
+
+    for label in desired_labels:
+        if label.lower() not in existing:
+            category = Category(event=event, description=label)
+            category.save()
+            log_event(
+                user=request.user,
+                severity="INFO",
+                source="Events",
+                sub_source="events_admin",
+                message=f"Added entry category '{label}' to {event.href}",
+            )
+
+    current_categories = list(
+        Category.objects.filter(event=event).values("id", "description")
+    )
+    return JsonResponse(
+        {"data": {"message": "Success", "categories": current_categories}}
+    )
+
+
+@login_required()
 def add_category_ajax(request):
     """Ajax call to add an event category to an event"""
 

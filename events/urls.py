@@ -366,6 +366,11 @@ urlpatterns = [
         name="add_category_ajax",
     ),
     path(
+        "congress-builder/create/sync-entry-categories",
+        ajax.sync_entry_categories_ajax,
+        name="sync_entry_categories_ajax",
+    ),
+    path(
         "congress-builder/view-draft",
         congress_builder.view_draft_congresses,
         name="view_draft_congresses",
