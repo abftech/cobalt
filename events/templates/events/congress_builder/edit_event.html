@@ -229,97 +229,68 @@
 
                                     <div class="row">
                                         <div class="col-3 justify-content-center align-self-center">
-                                            Event Category (optional)
+                                            Event Category
                                         </div>
                                         <div class="col-7">
-                                            <div id="div_id_event_categories" class="form-group">
-                                                <span class="cobalt-form-error" id="id_event_categories_errors">{{ form.event_categories.errors|striptags }}</span>
-                                                <div class="row">
-                                                    <div class="col-6">
-                                                        <small class="text-muted font-weight-bold">Masterpoints</small><br>
-                                                        {% for value, label in form.event_categories.field.choices %}
-                                                            {% if value == "I" or value == "R" or value == "N" or value == "V" or value == "S" or value == "Y" %}
-                                                                <div class="form-check">
-                                                                    <input class="form-check-input event-cat-input event-cat-masterpoints" type="checkbox"
-                                                                           name="event_categories" value="{{ value }}" id="id_event_cat_{{ value }}"
-                                                                           {% if value in form.event_categories.value %}checked{% endif %}>
-                                                                    <label class="form-check-label" for="id_event_cat_{{ value }}">{{ label }}</label>
-                                                                </div>
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <small class="text-muted font-weight-bold">Sex</small><br>
-                                                        {% for value, label in form.event_categories.field.choices %}
-                                                            {% if value == "M" or value == "F" or value == "X" %}
-                                                                <div class="form-check">
-                                                                    <input class="form-check-input event-cat-input event-cat-sex" type="checkbox"
-                                                                           name="event_categories" value="{{ value }}" id="id_event_cat_{{ value }}"
-                                                                           {% if value in form.event_categories.value %}checked{% endif %}>
-                                                                    <label class="form-check-label" for="id_event_cat_{{ value }}">{{ label }}</label>
-                                                                </div>
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                        <br>
-                                                        <small class="text-muted font-weight-bold">Age</small><br>
-                                                        {% for value, label in form.event_categories.field.choices %}
-                                                            {% if value == "K" %}
-                                                                <div class="form-check">
-                                                                    <input class="form-check-input event-cat-input" type="checkbox"
-                                                                           name="event_categories" value="{{ value }}" id="id_event_cat_{{ value }}"
-                                                                           {% if value in form.event_categories.value %}checked{% endif %}>
-                                                                    <label class="form-check-label" for="id_event_cat_{{ value }}">{{ label }}</label>
-                                                                </div>
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                        <br>
-                                                        <small class="text-muted font-weight-bold">Default</small><br>
-                                                        <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox"
-                                                                   name="event_categories" value="O" id="id_event_cat_O"
-                                                                   {% if "O" in form.event_categories.value %}checked{% endif %}>
-                                                            <label class="form-check-label" for="id_event_cat_O">Open</label>
-                                                        </div>
-                                                    </div>
+                                            <span class="cobalt-form-error">
+                                                {{ form.event_cat_masterpoints.errors|striptags }}
+                                                {{ form.event_cat_age.errors|striptags }}
+                                                {{ form.event_cat_sex.errors|striptags }}
+                                            </span>
+                                            <div class="form-group row mb-2">
+                                                <label class="col-4 col-form-label font-weight-bold">Masterpoints</label>
+                                                <div class="col-8">
+                                                    {% render_field form.event_cat_masterpoints class="selectpicker event-cat-non-open" data-style="btn btn-default btn-sm" data-live-search="false" title="None selected" id="id_event_cat_masterpoints" %}
+                                                </div>
+                                            </div>
+                                            <div class="form-group row mb-2">
+                                                <label class="col-4 col-form-label font-weight-bold">Age</label>
+                                                <div class="col-8">
+                                                    {% render_field form.event_cat_age class="selectpicker event-cat-non-open" data-style="btn btn-default btn-sm" id="id_event_cat_age" %}
+                                                </div>
+                                            </div>
+                                            <div class="form-group row mb-2">
+                                                <label class="col-4 col-form-label font-weight-bold">Sex</label>
+                                                <div class="col-8">
+                                                    {% render_field form.event_cat_sex class="selectpicker event-cat-non-open" data-style="btn btn-default btn-sm" id="id_event_cat_sex" %}
+                                                </div>
+                                            </div>
+                                            <div class="form-group row mb-0">
+                                                <label class="col-4 col-form-label font-weight-bold">Open</label>
+                                                <div class="col-8 d-flex align-items-center">
+                                                    {% render_field form.event_cat_open class+="form-check-input mt-0" id="id_event_cat_open" %}
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-2 justify-content-center align-self-center">
-                                            <a href="javascript:void(0)" onclick='help("Event Category", "Classification of who can enter. Open is the default. Select one or more specific categories if the event is restricted.");'>help</a>
+                                            <a href="javascript:void(0)" onclick='help("Event Category", "Classification of who can enter. Open is the default. Select specific categories if they apply. Selecting Open clears all other selections.");'>help</a>
                                         </div>
                                     </div>
                                     <script>
-                                        (function () {
-                                            var openCheckbox = document.getElementById('id_event_cat_O');
-                                            var catInputs = document.querySelectorAll('.event-cat-input');
-                                            var sexInputs = document.querySelectorAll('.event-cat-sex');
+                                        $(document).ready(function () {
+                                            $('.selectpicker').selectpicker();
 
-                                            function syncOpen() {
-                                                var anyNonOpen = false;
-                                                catInputs.forEach(function (el) {
-                                                    if (el.checked) anyNonOpen = true;
-                                                });
-                                                openCheckbox.checked = !anyNonOpen;
+                                            function hasNonOpenSelection() {
+                                                const mpSelected = $('#id_event_cat_masterpoints').val() && $('#id_event_cat_masterpoints').val().length > 0;
+                                                const ageSelected = $('#id_event_cat_age').val() !== '';
+                                                const sexSelected = $('#id_event_cat_sex').val() !== '';
+                                                return mpSelected || ageSelected || sexSelected;
                                             }
 
-                                            catInputs.forEach(function (el) {
-                                                el.addEventListener('change', function () {
-                                                    syncOpen();
-                                                });
+                                            // When a non-open control changes: uncheck Open if anything is selected
+                                            $('.event-cat-non-open').on('changed.bs.select change', function () {
+                                                $('#id_event_cat_open').prop('checked', !hasNonOpenSelection());
                                             });
 
-                                            // Enforce sex exclusivity: uncheck others when one is picked
-                                            sexInputs.forEach(function (el) {
-                                                el.addEventListener('change', function () {
-                                                    if (el.checked) {
-                                                        sexInputs.forEach(function (other) {
-                                                            if (other !== el) other.checked = false;
-                                                        });
-                                                    }
-                                                    syncOpen();
-                                                });
+                                            // When Open is checked: clear all other selectpickers
+                                            $('#id_event_cat_open').on('change', function () {
+                                                if ($(this).is(':checked')) {
+                                                    $('#id_event_cat_masterpoints').selectpicker('deselectAll').selectpicker('refresh');
+                                                    $('#id_event_cat_age').val('').selectpicker('refresh');
+                                                    $('#id_event_cat_sex').val('').selectpicker('refresh');
+                                                }
                                             });
-                                        })();
+                                        });
                                     </script>
 
                                     <br>
@@ -474,6 +445,7 @@
 
 {% endblock %}
 {% block footer %}
+    <script src="{% static "assets/js/plugins/bootstrap-selectpicker.js" %}"></script>
     <script src="{% static "assets/js/plugins/moment.min.js" %}"></script>
     <script src="{% static "assets/js/plugins/bootstrap-datetimepicker.min.js" %}"></script>
     <script src="{% static "assets/js/plugins/sweetalert2.js" %}"></script>

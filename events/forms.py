@@ -353,18 +353,52 @@ class EventForm(forms.ModelForm):
         required=False,
     )
 
-    event_categories = forms.MultipleChoiceField(
-        choices=EVENT_CATEGORIES,
-        widget=forms.CheckboxSelectMultiple,
+    event_cat_masterpoints = forms.MultipleChoiceField(
+        choices=[
+            ("I", "Intermediate"),
+            ("R", "Restricted"),
+            ("N", "Novice"),
+            ("K", "Rookie"),
+        ],
+        widget=forms.SelectMultiple,
         required=False,
-        initial=["O"],
     )
+    event_cat_age = forms.ChoiceField(
+        choices=[
+            ("", "---"),
+            ("V", "Veterans"),
+            ("S", "Seniors"),
+            ("Y", "Youth"),
+        ],
+        required=False,
+    )
+    event_cat_sex = forms.ChoiceField(
+        choices=[
+            ("", "---"),
+            ("M", "Mens"),
+            ("F", "Womens"),
+            ("X", "Mixed"),
+        ],
+        required=False,
+    )
+    event_cat_open = forms.BooleanField(required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = kwargs.get("instance")
-        if instance and instance.pk:
-            self.initial["event_categories"] = instance.event_categories or ["O"]
+        cats = (instance.event_categories if instance and instance.pk else None) or [
+            "O"
+        ]
+        self.initial["event_cat_masterpoints"] = [
+            c for c in cats if c in ("I", "R", "N", "K")
+        ]
+        self.initial["event_cat_age"] = next(
+            (c for c in cats if c in ("V", "S", "Y")), ""
+        )
+        self.initial["event_cat_sex"] = next(
+            (c for c in cats if c in ("M", "F", "X")), ""
+        )
+        self.initial["event_cat_open"] = "O" in cats
 
     class Meta:
         model = Event
@@ -386,16 +420,13 @@ class EventForm(forms.ModelForm):
         )
 
     def clean(self):
-        """Check if congress can be edited"""
+        """Check if congress can be edited and assemble event_categories."""
 
-        # clean the data
         cleaned_data = super().clean()
 
-        # Get Event instance
+        # Get Event instance to check edit permissions
         instance = super(EventForm, self).save(commit=False)
 
-        # If we don't have an id (Event is new) or start_date of congress is within 15 weeks or flag is set,
-        # then allow editing
         if instance.id and (
             instance.congress.start_date < (now() - timedelta(weeks=15)).date()
             and not instance.congress.allow_edit_of_old_congress
@@ -403,29 +434,25 @@ class EventForm(forms.ModelForm):
             raise ValidationError(
                 "Congress is in the past. Edits are not allowed. Start a new one by creating a copy via Club Admin - Calendar"
             )
+
+        # Assemble event_categories from the four sub-fields
+        masterpoints = list(cleaned_data.get("event_cat_masterpoints") or [])
+        age = cleaned_data.get("event_cat_age") or ""
+        sex = cleaned_data.get("event_cat_sex") or ""
+        open_selected = cleaned_data.get("event_cat_open", False)
+
+        categories = masterpoints[:]
+        if age:
+            categories.append(age)
+        if sex:
+            categories.append(sex)
+
+        # Default to Open if nothing specific selected, or if Open explicitly ticked
+        if not categories or open_selected:
+            categories = ["O"]
+
+        cleaned_data["event_categories"] = categories
         return cleaned_data
-
-    def clean_event_categories(self):
-        """Validate category selections and enforce Open default."""
-        cats = self.cleaned_data.get("event_categories") or []
-
-        # Default to Open if nothing selected
-        if not cats:
-            return ["O"]
-
-        # Remove Open if any non-Open category is selected
-        non_open = [c for c in cats if c != "O"]
-        if non_open:
-            cats = non_open
-
-        # At most one sex-based category
-        sex_cats = [c for c in cats if c in ("M", "F", "X")]
-        if len(sex_cats) > 1:
-            raise ValidationError(
-                "Only one sex-based category (Mens, Womens, Mixed) can be selected."
-            )
-
-        return cats
 
     def clean_entry_early_payment_discount(self):
         data = self.cleaned_data["entry_early_payment_discount"]

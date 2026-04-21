@@ -79,9 +79,9 @@ EVENT_CATEGORY_CODES = {code: label for code, label in EVENT_CATEGORIES}
 
 # Groups used for rendering the category selector
 EVENT_CATEGORY_GROUPS = {
-    "Masterpoints": ["I", "R", "N", "V", "S", "Y"],
+    "Masterpoints": ["I", "R", "N", "K"],
+    "Age": ["V", "S", "Y"],
     "Sex": ["M", "F", "X"],
-    "Age": ["K"],
     "Open": ["O"],
 }
 EVENT_PLAYER_FORMAT = [
@@ -529,15 +529,15 @@ class Event(models.Model):
         return f"{self.congress} - {self.event_name}"
 
     def get_event_categories_display(self):
-        """Return a short display string for the event's categories.
+        """Return a display string for the event's categories.
 
-        Shows up to 3 letter codes joined by spaces. If more than 3, returns 'Multiple'.
-        Falls back to 'O' (Open) if no categories are set.
+        Shows up to 3 full category labels joined by commas. If more than 3, returns 'Multiple'.
+        Falls back to Open if no categories are set.
         """
         cats = self.event_categories or ["O"]
         if len(cats) > 3:
             return "Multiple"
-        return " ".join(cats)
+        return ", ".join(EVENT_CATEGORY_CODES.get(c, c) for c in cats)
 
         # If the text changes, run it through bleach before saving
 

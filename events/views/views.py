@@ -501,8 +501,11 @@ def view_congress(request, congress_id, fullscreen=False):
                     entry_fee += "*"
                     includes_teams_event = True
 
+                cats_display = event.get_event_categories_display()
                 program["event"] = (
-                    f"<td rowspan='{rows}'><span class='title'>{event.event_name}</td><td rowspan='{rows}'><span class='title'>{entry_fee}</span></td>"
+                    f"<td rowspan='{rows}'><span class='title'>{event.event_name}</span>"
+                    f"<br><small class='text-muted'>{cats_display}</small></td>"
+                    f"<td rowspan='{rows}'><span class='title'>{entry_fee}</span></td>"
                 )
                 if program["entry"]:
                     program["links"] = (

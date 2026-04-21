@@ -760,7 +760,12 @@ def create_event(request, congress_id):
     return render(
         request,
         "events/congress_builder/edit_event.html",
-        {"form": form, "congress": congress, "page_type": "add", "event": dummy_event},
+        {
+            "form": form,
+            "congress": congress,
+            "page_type": "add",
+            "event": dummy_event,
+        },
     )
 
 
