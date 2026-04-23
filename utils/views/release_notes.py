@@ -13,6 +13,7 @@ def release_notes_view(request):
     release_notes = [
         {
             "release": "6.3.20",
+            "date": "23rd April 2026",
             "notes": [
                 "Multi-session reports",
             ],
